@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\Scripter">
+      <UniqueIdentifier>{ddf3fad3-5704-433c-9c10-5ed933c28172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\etc">
+      <UniqueIdentifier>{87a1cb5a-e518-4c66-b9c5-250d024a13eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Render">
+      <UniqueIdentifier>{69461697-1d8d-4292-9916-1cf4860f25e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\File">
+      <UniqueIdentifier>{be336ef4-07ce-4331-9cbf-665fba01bd44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Audio">
+      <UniqueIdentifier>{67ba9697-75ac-4c79-bc7c-60b2599268b1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LONS_main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripter\LOScriptPoint.cpp">
+      <Filter>源文件\Scripter</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripter\LOScriptReader.cpp">
+      <Filter>源文件\Scripter</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripter\ONSvariable.cpp">
+      <Filter>源文件\Scripter</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripter\FuncInterface.cpp">
+      <Filter>源文件\Scripter</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOImageModule.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Scripter\LOScriptReader_command.cpp">
+      <Filter>源文件\Scripter</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOLayer.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOLayerInfo.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOMatrix2d.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOFontBase.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOAnimation.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOEffect.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\BinArray.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="File\LOFileModule.cpp">
+      <Filter>源文件\File</Filter>
+    </ClCompile>
+    <ClCompile Include="File\LOCompressInfo.cpp">
+      <Filter>源文件\File</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOFontInfo.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOImageModule_command.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOImageModule2.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOCodePage.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOString.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\LOAudioElement.cpp">
+      <Filter>源文件\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Audio\LOAudioModule.cpp">
+      <Filter>源文件\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="File\LOPackFile.cpp">
+      <Filter>源文件\File</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOTexture.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOSurface.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOEvent1.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\SDL_mem.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOLog.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOImageModule_NSsystem.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOVariant.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,37 +1,49 @@
-# Onscripter-LONSdev
+# Onscripter-LONS
+
+#### 重要
+LONS已经接近第一个debug版本的发布，考虑到开发过程中经常要重构，有时一下写不完，不能编译的本版传上来也不好，
+因此之后的修改过程会转到Onscripter-LONSdev中，只有当我觉得条件成熟了才会同步到本工程中。
+最近真的是太忙。。。
 
 #### 介绍
-LONS的开发过程工程，成熟代码请转onscripter-lons项目
+LONS将作为一个全新的Onscripter引擎，采用c++进行完全重写，SDL2框架。事多，慢更。。。
 
-#### 软件架构
-软件架构说明
+#### 目标
+兼容现有的ONS脚本，实时渲染，多线程脚本，live2D支持，粒子特效，2D碰撞
 
+#### 总体概况
+1、能运行.....................已完成
 
-#### 安装教程
+2、兼容现有的ONS..............70%，可以跑，但还不完美
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+3、扩展多线程脚本，多级精灵支持，动画混合，命令扩展..........正在做
 
-#### 使用说明
+4、live2D.............................画饼中
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+5、粒子特效............................画饼中
 
-#### 参与贡献
+6、2D碰撞.............................画饼中
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+#### 编译
+1、在不同的平台上你应该使用不同的工具链
 
+windows: vs2017以上，直接使用LONS.sln
 
-#### 特技
+android: 参考CMakeLists.txt，并启用对应的宏
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+注意部分代码是与平台有关的，没有正确设定宏参数可能会导致编译错误或者运行错误
+
+#### 最近准备进行的工作
+1、完成重构
+
+2、完成存读档系统
+
+#### 依赖库
+1、SDL2-2.0.12 LONS专用魔改版，详见本人项目
+
+2、SDL2_ttf-2.0.15
+
+3、SDL2_mixer-2.0.4
+
+4、SDL2_image-2.0.5
+

@@ -1,0 +1,3 @@
+*loadscript_test
+mov %1,999
+return

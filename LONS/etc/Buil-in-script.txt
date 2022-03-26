@@ -1,0 +1,15 @@
+;this file is LONS's default system.
+;it will be ".h" file built in LONS.
+*lons_textgosub__
+textbtnwait %5021
+if %5021 == -1 gosub *lons_rmenu__
+texec
+return
+
+;nothing to do
+*lons_pretextgosub__
+return
+
+
+*lons_rmenu__
+return

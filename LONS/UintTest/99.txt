@@ -1,0 +1,934 @@
+;$V1000G500S1024,576
+;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
+*define
+;lsp 333,
+;btnwait %0
+globalon
+filelog
+labellog
+
+resettimer
+delay 10
+gettimer %1
+debuglog %1
+
+debuglog "分辨率是否是1024*576？"
+
+
+;基本的赋值测试
+mov $1," abc我是abc";
+debuglog $1
+_chkval_ $1," abc我是abc","变量赋值不通过"
+mov %1,456789
+_chkval_ %1,456789,"变量赋值不通过"
+
+;数组基本赋值
+dim ?4[5]
+movl ?4,100,20,15,10,5,200
+_chkval_ ?4[5],200,"数组变量赋值不通过"
+
+
+;基本的四则运算
+mov %1,100 + 20*15*(10 / 5) - 200^1*2 + 1 mod 2
+debuglog %1
+_chkval_ %1,301,"四则运算不通过"
+
+;使用变量的四则运行
+mov %1,200,%2,1,%3,2
+mov %4,2
+mov ?4[0],100 + ?4[1] * 15 * (10 / 5) - %1^%2*%3 + %%4 mod %3
+debuglog ?4[0]
+_chkval_ ?4[0],301,"变量四则运算不通过"
+
+;字符串相加
+mov $1,"abc",$2,"我是",$3,""
+mov $0,$1 + $2 + $3 + "cba"
+_chkval_ $0,"abc我是cba","字符串连接不通过"
+
+;逻辑运算
+mov %1,0
+mov %2,1
+mov %3,2
+if %1 = 0 && %1== 0 && %2 > 0 & %2 >= 1 && %3 < 3 && %3 <= 2 mov %1,1
+_chkval_ %1,1,"逻辑比较不通过"
+
+if %2 == 4 mov %1,3
+else mov %1,4
+_chkval_ %1,4,"[else]逻辑比较不通过"
+
+mov %1,1
+notif %1 = 0 && %1== 0 && %2 > 0 & %2 >= 1 && %3 < 3 && %3 <= 2 mov %1,0
+_chkval_ %1,0,"逻辑比较不通过"
+
+;四则运算
+gosub *operationTest
+gosub "*字符串测试"
+
+;goto测试
+goto *test_continue
+debuglog "[goto] 测试不通过"
+*test_gotoback
+
+;gosub
+gosub *gosub_test
+debuglog "[return *标签] 测试不通过"
+*gosub_back
+
+;jumpb、jumpf、skip测试
+gosub *jumptest
+
+;for next测试
+gosub *for_next_test
+
+;时间类测试
+gosub *timer_test
+
+;子程序测试
+gosub *defsub_test
+
+;文件相关
+gosub *IO_test
+
+;时间日期等
+gosub *infomation_test
+
+gosub *lsp_test
+
+gosub *bg_test
+
+;精灵移动测试
+gosub *msp_test
+
+;对话窗口
+gosub *window_test
+
+;print测试
+gosub *print_test
+
+;按钮测试
+gosub *btnwait_test
+
+game
+*start
+
+btnwait %0
+reset
+end
+return
+
+
+
+;测试goto的
+*test_continue
+mov $1,"test_gotoback"
+goto $1
+debuglog "[goto] 测试不通过"
+end
+
+*gosub_test
+return *gosub_back
+
+;jumpb、jumpf、skip测试
+*jumptest
+jumpf
+debuglog "[jumpf]测试不通过"
+~
+mov %1,1
+~
+inc %1
+if %1 == 1 jumpb
+_chkval_ %1,2,"[jumpb]不通过"
+
+mov %1,0
+inc %1
+if %1 == 1 skip -1
+mov %2,0
+skip 1 :inc %2
+mov %333,100
+skip 2
+mov %333,200
+
+if %1 != 2 || %2 == 1 || %3 == 200 debuglog "[skip]不通过"
+
+
+;tablegoto
+mov %1,0
+mov $1,""
+*tablegoto_0
+if %1 < 3 tablegoto %1,*tablegoto_1,*tablegoto_2,*tablegoto_3
+_chkval_ $1,"aaa","[tablegoto]不通过"
+
+return
+
+*tablegoto_1
+inc %1
+add $1,"a"
+goto *tablegoto_0
+
+*tablegoto_2
+inc %1
+add $1,"a"
+goto *tablegoto_0
+
+*tablegoto_3
+inc %1
+add $1,"a"
+goto *tablegoto_0
+
+
+
+*operationTest
+cos %1,33
+;debuglog %1
+_chkval_ %1,838,"[cos]不通过"
+
+sin %1,33
+;debuglog %1
+_chkval_ %1,544,"[sin]不通过"
+
+tan %1,33
+_chkval_ %1,649,"[tan]不通过"
+
+dec %1
+_chkval_ %1,648,"[dec]不通过"
+
+inc %1
+_chkval_ %1,649,"[inc]不通过"
+
+div %1,10
+_chkval_ %1,64,"[div]不通过"
+
+mul %1,10
+;debuglog %1
+_chkval_ %1,640,"[mul]不通过"
+
+rnd %1,100
+if %1 >= 100 debuglog "[rnd]不通过"
+
+rnd2 %2,100,1000
+if %2 < 100 || %2 > 1000 debuglog "[rnd2]不通过"
+
+mov %1,636
+add %1,-2 - 2
+;debuglog %1
+_chkval_ %1,632,"[add]不通过"
+
+mov $1,"ojbk"
+add $1,"是啊" + "bbc"
+_chkval_ $1,"ojbk是啊bbc","[add]字符串不通过"
+
+mov %1,632
+sub %1,-2-2
+;debuglog %1
+_chkval_ %1,636,"[sub]不通过"
+
+intlimit 500,20,120
+if %500 < 20 || %500 > 120 debuglog "[intlimit]不通过"
+mov %500,0
+if %500 < 20 || %500 > 120 debuglog "[intlimit]不通过"
+mov %500,200
+if %500 < 20 || %500 > 120 debuglog "[intlimit]不通过"
+
+return
+
+*字符串测试
+mov $1,"|12|c我|是|"
+
+itoa $2,123456
+_chkval_ $2,"123456","[itoa]不通过"
+
+atoi %2,"654321"
+_chkval_ %2,654321,"[atoi]不通过"
+
+itoa2 $2,123456
+_chkval_ $2,"１２３４５６","[itoa2]不通过"
+
+len %1,$1
+_chkval_ %1,11,"[len]不通过"
+
+lenword %1,$1
+_chkval_ %1,9,"[lenword]不通过"
+
+mid $2,$1,5,2
+_chkval_ $2,"我","[mid]不通过"
+
+midword $2,$1,2,4
+_chkval_ $2,"2|c我","[midword]不通过"
+
+numalias newfgo,125
+if newfgo != 125 debuglog "[numalias]测试不通过"  
+
+stralias man_a0,":a/10,20,2;man_alpha.bmp"
+mov $1,man_a0
+_chkval_ $1,":a/10,20,2;man_alpha.bmp","[stralias]不通过"
+
+mov $1,"|12|c我|是|"
+split $1,"|",$1,%2,$3,$4,$5,$6
+if $1 != "" || %2 != 12 || $3 != "c我"||$4!="是"||$5!=""||$6!="" debuglog "[split]测试不通过"  
+_chkval_ $4,"是","[split]不通过"
+return
+
+
+*for_next_test
+mov %3,0
+for %1 = 5 to 0 step -1
+	for %2 = 2 to 5
+		inc %3
+		if %2 == 4 break
+	next
+next
+debuglog %2,%1,%3
+if %2 != 4 || %1 != -1 || %3 != 18 debuglog "[for...next break] 不通过"
+return
+
+
+*timer_test
+resettimer
+delay 1000
+gettimer %1
+debuglog "delay:",%1
+if %1 < 999 | %1 > 1010 debuglog "[delay] 不通过",%1
+
+resettimer
+wait 200
+gettimer %1
+debuglog "wait:",%1
+if %1 < 199 | %1 > 210 debuglog "[wait] 不通过",%1
+
+resettimer
+waittimer 50
+gettimer %1
+debuglog "waittimer:",%1
+if %1 < 49 | %1 > 60 debuglog "[waittimer] 不通过",%1
+
+return
+
+*defsub_test
+defsub Xyz68
+defsub _bing_123_ass
+
+Xyz68 1,-2,"abc哦啊！",100+2*6
+_bing_123_ass "123"
+
+labelexist %1,*_bing_123_ass
+_chkval_ %1,1,"[labelexist]不通过"
+labelexist %1,*_bing_123_ass_TTT
+_chkval_ %1,0,"[labelexist]不通过"
+return
+
+*Xyz68
+getparam %1,%2,$3,%4
+if %1 != 1 || %2 != -2 || $3!="abc哦啊！" || %4 != 112 debuglog "[getparam] 不通过"
+return
+
+*_bing_123_ass
+getparam %1
+_chkval_ %1,123,"[getparam]不通过"
+return
+
+
+*IO_test
+nsadir "data"
+nsa
+ns2
+fileexist %1,"SYSTEM_SRR03.ogg"
+fileexist %2,"otm.png"
+fileexist %3,"data\NS.txt"
+debuglog %1
+debuglog %2
+debuglog %3
+if %1 != 1 || %2 != 1 || %3 != 1 debuglog "[fileexist  nasdir  nsa] 不通过"
+readfile $0,"data\NS.txt"
+_chkval_ $0,"123456","[readfile]不通过"
+
+loadscript "script.xyz"
+gosub *loadscript_test
+_chkval_ %1,999,"[loadscript_test]不通过"
+
+return
+
+*infomation_test
+getversion %1
+_chkval_ %1,296,"[getversion]不通过"
+
+getenvironment $1,$2,$3
+mid $0,$1,0,4
+debuglog $2
+_chkval_ $0,"LONS","[getenvironment]不通过"
+
+mov %1,0,%2,0,%3,0
+date %1,%2,%3
+
+if %1-21 > 20 || %1-21 < 0 || %2 < 1 || %2 > 12 || %3 < 1 || %3 > 31 debuglog "[date]不通过",%1,%2,%3
+
+mov %1,-1,%2,-1,%3,-1
+time %1,%2,%3
+if %1 > 24 || %1 < 0 || %2 > 60 || %2 < 0 || %3 > 60 || %3 < 0 debuglog "[date]不通过",%1,%2,%3
+return
+
+*lsp_test
+;btnwait %0
+;lsp 20,"000.png",10,5
+;btnwait %0
+;btnwait %0
+
+lsp 20,":c;bg308_e_no.jpg",10,5
+print 1
+
+lsp 20,"6.jpg",10,5
+print 1
+getspsize 20,%1,%2
+if %1 != 918 || %2 != 653 debuglog "[lsp]不通过",%1,%2
+
+;btnwait %0
+
+lsp 20,":a;6.jpg",100,40
+getspsize 20,%1,%2
+if %1 != 459 || %2 != 653 debuglog "[lsp]不通过",%1,%2
+
+;btnwait %0
+
+;csp -1
+;print 1
+;btnwait %0
+
+lsp 20,":c;>200,100,#08EFA3",100,40
+print 1
+getspsize 20,%1,%2
+if %1 != 200 || %2 != 100 debuglog "[lsp]不通过",%1,%2
+
+getpixcolor $1,100,40
+debuglog $1
+_chkval_ $1,"08efa3","[getpixcolor]不通过"
+
+mov $499,"■■■■■■■"
+lsp 15,":s/40,40,0;#00ffff#ffff00$499",0,0
+print 1
+getpixcolor $1,20,20
+_chkval_ $1,"00ffff","[lsp]不通过"
+
+cell 15,1
+getspsize 15,%1,%2,%3
+debuglog %3
+_chkval_ %3,2,"[cell]不通过"
+
+
+csp -1
+print 1
+getspsize 20,%1,%2
+if %1 != 0 || %2 != 0 debuglog "[csp]不通过",%1,%2
+;btnwait %0
+
+lsp 0,":a/10,500,0;otm.png",200,200
+cell 0,4
+getspsize 0,%1,%2,%3
+if %1 != 132 || %2 != 119 || %3 != 5 debuglog "[lsp]不通过",%1,%2,%3
+
+vsp 0,0
+getspmode %1,0
+_chkval_ %1,0,"[vsp]不通过"
+
+print 1
+getspmode %1,0
+_chkval_ %1,0,"[vsp]不通过"
+
+vsp 0,1
+getspmode %1,0
+_chkval_ %1,1,"[vsp]不通过"
+
+lsph 20,":c;>200,100,#08EFA3",100,40
+getspmode %3,20
+getspsize 20,%1,%2
+if %1 != 200 || %2 != 100 || %3 != 0 debuglog "[lsph]不通过",%1,%2,%3
+
+lsp 20,"6.jpg",10,5
+lsp 20,":a;6.jpg",100,40
+getspsize 20,%1,%2
+getsppos 20,%3,%4
+if %1 != 459 || %2 != 653 debuglog "[lsp]不通过",%1,%2
+if %3 != 100 || %4 != 40 debuglog "[getsppos]不通过",%3,%4
+
+csp -1
+getspsize 20,%1,%2,%3
+getspmode %4,20
+if %1 != 0 || %2 != 0 || %3 != 0 || %4 != 0 debuglog "[csp]不通过",%1,%2,%3,%4
+
+lsph 20,":c;>200,100,#08EFA3",100,40
+lsp 0,":a/10,500,0;otm.png",200,200
+allsphide
+getspmode %1,20
+getspmode %2,0
+if %1 != 0 || %2 != 0 "[allsphide]不通过",%1,%2
+
+allspresume
+getspmode %1,20
+getspmode %2,0
+if %1 != 1 || %2 != 1 "[allspresume]不通过",%1,%2
+csp -1
+
+;lsp2 now
+lsp2 2,":c;>200,100,#08EFA3",200,100,50,50,0
+print 1
+getpixcolor $1,149,74
+getpixcolor $2,249,124
+getpixcolor $3,250,125
+if $1 != "000000" || $2!= "08efa3" || $3 != "000000" debuglog "[lsp2]不通过",$1,$2,$3
+
+csp2 2
+print 1
+getpixcolor $2,249,124
+if $2 != "000000" debuglog "[csp2]不通过",$2
+
+lsp2add 1,":c;>200,100,#ff00ff",0,0,100,100,0
+lsp2 2,":c;>200,100,#08EFA3",0,0,100,100,0
+print 1
+getpixcolor $1,0,0
+if $1 != "ffefff" debuglog "[lsp2add]不通过",$1
+
+;某些渲染器并不支持lsp2sub，所以不再提供这个支持
+;lsp2sub 1,":c;>200,100,#ff00ff",0,0,100,100,0
+;print 1
+;getpixcolor $1,0,0
+;debuglog $1
+
+csp -1
+csp2 -1
+;纹理缓存测试
+lsp 0,":c;>100,100,#00ff00",0,0,255
+lsp 1,":c;>100,100,#00ff00",100,0,150
+lsp 2,":c;>100,100,#00ff00",200,0,80
+lsp 3,":c;>100,100,#00ff00",300,0,10
+print 1
+getpixcolor $1,5,5
+getpixcolor $2,105,5
+getpixcolor $3,205,5
+getpixcolor $4,305,5
+if $1 != "00ff00" || $2 != "009600" || $3 != "005000" || $4 != "000a00" debuglog "texture cache faild!",$1,$2,$3,$4
+
+csp -1
+
+return
+
+*bg_test
+bg white
+print 1
+getpixcolor $1,5,5
+if $1 != "ffffff" debuglog "[bg]不通过",$1
+
+bg black,1
+getpixcolor $1,5,5
+if $1 != "000000" debuglog "[bg]不通过",$1
+
+bg #ff00ff,10,500
+delay 20
+getpixcolor $1,5,5
+if $1 != "ff00ff" debuglog "[bg]不通过",$1
+
+bg "#00ff00"
+print 10,500
+delay 20
+getpixcolor $1,5,5    ;有时候不通过是同步刷新的问题
+if $1 != "00ff00" debuglog "[bg]不通过",$1
+
+bg "bg308_e_no.jpg",1
+delay 1000
+
+bg "#ff00ff"
+lsp 379,":s/40,40,0;#ffffff文字测试，单击继续",0,0
+print 1
+btnwait %0
+
+csp -1
+bg black
+
+return
+
+*msp_test
+lsp 20,"6.jpg",10,5
+msp 20,10,5
+getsppos 20,%1,%2
+if %1 != 20 || %2 != 10 debuglog "msp测试不通过",%1,%2
+
+msp 20,100,100
+print 1
+getsppos 20,%1,%2
+if %1 != 120 || %2 != 110 debuglog "msp测试不通过",%1,%2
+
+msp 20,-100,-100
+print 1
+getsppos 20,%1,%2
+if %1 != 20 || %2 != 10 debuglog "msp测试不通过",%1,%2
+
+msp 20,-10,-5
+msp 20,-5,6
+getsppos 20,%1,%2
+if %1 != 5 || %2 != 11 debuglog "msp测试不通过",%1,%2
+
+amsp 20,423,567
+getsppos 20,%1,%2
+if %1 != 423 || %2 != 567 debuglog "msp测试不通过",%1,%2
+
+amsp 20,0-2,-3
+print 1
+getsppos 20,%1,%2
+if %1 != -2 || %2 != -3 debuglog "msp测试不通过",%1,%2
+
+csp 20
+
+lsp2 2,":c;>200,100,#08EFA3",200,100,50,60,2
+getspposex2 2,%1,%2,%3,%4,%5
+if %1 != 200 || %2 != 100 || %3 != 50 || %4 != 60 || %5 != 2 debuglog "getspposex2测试不通过",%1,%2,%3,%4,%5
+
+msp2 2,-5,5,10,-10,4
+getspposex2 2,%1,%2,%3,%4,%5
+if %1 != 195 || %2 != 105 || %3 != 60 || %4 != 50 || %5 != 6 debuglog "msp2测试不通过",%1,%2,%3,%4,%5
+msp2 2,-5,5,10,-10,4
+print 1
+getspposex2 2,%1,%2,%3,%4,%5
+if %1 != 190 || %2 != 110 || %3 != 70 || %4 != 40 || %5 != 10 debuglog "msp2测试不通过",%1,%2,%3,%4,%5
+
+csp2 2
+
+lsp 7,":c;>200,100,#08EFA3",200,100,50
+amsp 7,-100,101,21
+getsppos 7,%1,%2
+getspalpha 7,%3
+if %1 != -100 || %2 != 101 || %3 != 21 debuglog "amsp测试不通过",%1,%2,%3
+amsp 7,400,-20,100
+print 1
+getsppos 7,%1,%2
+getspalpha 7,%3
+if %1 != 400 || %2 != -20 || %3 != 100 debuglog "amsp测试不通过",%1,%2,%3
+csp 7
+
+lsp2 2,":c;>200,100,#08EFA3",200,100,50,60,2
+amsp2 2,300,-100,100,70,255
+getspposex2 2,%1,%2,%3,%4,%5
+if %1 != 300 || %2 != -100 || %3 != 100 || %4 != 70 || %5 != 255 debuglog "amsp2测试不通过",%1,%2,%3,%4,%5
+amsp2 2,-1,100,100,100,0
+print 1
+getspposex2 2,%1,%2,%3,%4,%5
+if %1 != -1 || %2 != 100 || %3 != 100 || %4 != 100 || %5 != 0 debuglog "amsp2测试不通过",%1,%2,%3,%4,%5
+csp2 2
+
+
+return
+
+;对话窗口设置
+*window_test
+;erasetextwindow 0
+csp -1
+csp2 -1
+bg #ffff00
+print 1
+setwindow 10,10,15,15,24,24,0,0,30,1,1,#ff00ff,0,0,1024,200
+textgosub *window_gosub
+mov %99,23
+
+对话窗口框设置测试，单击继续。\
+
+setwindow  10,10,15,15,24,24,0,0,30,1,1,#999999,0,0,1024,200
+mov %99,24
+
+对话框颜色切换，单击继续。\
+
+;测试erasetextwindow是否正常
+mov %99,25
+erasetextwindow 1
+
+对话框模式切换，单击继续，下面到。\
+
+;到这里文本框应该是隐藏的，此时整体应该是黄色的
+mov %99,0
+mov $1,"#ffff00"
+_chkcolor_ 0,0,200,100,$1
+if $1 != "#ffff00" debuglog "erasetextwindow 1 测试不通过",$1
+
+mov $1,"#ffff00"
+
+显示点其他内容。 \
+texthide   ;隐藏文字，文本框还在
+mov $1,"#999900"
+_chkcolor_ 0,0,200,100,$1
+if $1 != "#999900" debuglog "texthide测试不通过",$1
+
+mov $1,"#999900"
+textshow  ;重新显示文字
+_chkcolor_ 0,0,200,100,$1
+if $1 == "#999900" debuglog "textshow测试不通过",$1
+
+
+显示点其他内容2。 \
+mov $1,"#ffff00"
+textoff  ;整个对话框隐藏
+_chkcolor_ 0,0,200,100,$1
+if $1 != "#ffff00" debuglog "textoff测试不通过",$1
+
+mov $1,"#ffff00"
+texton   ;重新显示整个对话
+_chkcolor_ 0,0,200,100,$1
+if $1 == "#ffff00" debuglog "texton测试不通过",$1
+mov $1,"#999900"
+_chkcolor_ 0,0,200,100,$1
+if $1 == "#999900" debuglog "texton测试不通过",$1
+
+textclear  ;文字被清除，但是对话框还在
+mov $1,"#999900"
+_chkcolor_ 0,0,200,100,$1
+if $1 != "#999900" debuglog "textclear测试不通过",$1
+
+显示点其他内容3。 @
+texec  ;texec遇到@不清除
+mov $1,"#999900"
+_chkcolor_ 0,0,200,100,$1
+if $1 == "#999900" debuglog "texec测试@不通过",$1
+
+继续显示内容。 \
+texec  ;texec遇到\清除
+mov $1,"#999900"
+_chkcolor_ 0,0,200,100,$1
+if $1 != "#999900" debuglog "texec测试\不通过",$1
+
+;textbtnwait %0
+;窗口部分测试结束
+return
+
+*window_gosub
+;btnwait %0
+if %99 == 23 getpixcolor $1,1,1 :if $1 != "ff0000" debuglog "setwindow测试不通过",$1
+if %99 == 24 getpixcolor $1,1,1 :if $1 != "999900" debuglog "setwindow测试不通过",$1
+if %99 == 25 then
+	print 1
+	getpixcolor $1,1,1
+	if $1 != "ffff00" debuglog "erasetextwindow测试不通过",$1
+endif
+;textbtnwait %0
+return
+
+*text_test
+;什么也不做
+return
+
+*ppp_test
+textgosub *text_test
+bg #ffff00,1
+setwindow  10,10,15,15,24,24,0,0,30,1,1,#999999,0,0,1024,200
+erasetextwindow 0
+这是一个测试。@
+texec
+;btnwait %0
+delay 10000
+return
+
+
+*screen_shot_test
+bg #ff00AB
+print 1
+getscreenshot 102,58
+savescreenshot "shot.bmp"
+return
+
+
+*Memory_test1
+mov $1,"#ff00ab"
+mov $2,"#ee1122"
+mov $3,"#aabbcc"
+
+bg $1
+btnwait %0
+bg $2,11,2500
+btnwait %0
+
+for %1 = 1 to 3
+	bg $%1
+	print 1
+	;btnwait %0
+next
+
+btnwait %0
+
+for %2 = 1 to 50
+for %1 = 1 to 3
+	bg $%1
+	print 1
+	delay 50
+	;btnwait %0
+next
+next
+
+;bg #ffffff
+btnwait %0
+return
+
+
+*print_test
+csp -1
+csp2 -2
+print 1
+
+;nsadir "data"
+;nsa
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff左百叶窗",200,300
+print 2,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff右百叶窗",200,300
+print 3,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff上百叶窗",200,300
+print 4,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff下百叶窗",200,300
+print 5,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff左帷幕",200,300
+print 6,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff右帷幕",200,300
+print 7,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff上帷幕",200,300
+print 8,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff下帷幕",200,300
+print 9,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff透明渐变",200,300
+print 10,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff左边滚动",200,300
+print 11,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff右边滚动",200,300
+print 12,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff上边滚动",200,300
+print 13,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff下边滚动",200,300
+print 14,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff绝对值掩膜",200,300
+print 15,1500,"mask08a.jpg"
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff马赛克淡出",200,300
+print 16,1500
+
+bg #00ff00
+lsp 1,":s/30,30,0;#ffffff马赛克淡入",200,300
+print 17,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff渐变掩膜",200,300
+print 18,1500,"mask08a.jpg"
+
+;btnwait %0
+return
+
+
+;测试按钮命令
+*btnwait_test
+csp -1
+csp2 -1
+bg #000000
+
+;btndef "data\four.png"
+;btn 20,0,0,100,100,0,0
+;btnwait %0
+
+;测试exbtn，基本上这个正常其他就正常了
+lsp 20,":a/4,0,3;data\four.png",0,100
+lsp 21,":a/4,0,3;data\four.png",100,100
+cell 21,2
+vsp 21,0
+lsp 22,":a/4,0,3;data\four.png",200,100
+cell 22,3
+
+exbtn 20,20,"C21P22,2S1,(data\SRA_SYS01.ogg)"
+exbtn 22,22,"P20,3"
+exbtn_d "S1,(data\SRA_SYS02.ogg)C20"
+spbtn 21,21
+;延迟创建一个线程检查按钮执行情况
+delaygosub *btnwait_test_thread,1200
+btnwait %0
+return
+
+*btnwait_test_thread
+;移动到按钮外
+_mouseclick_ 50,50,0
+delay 100
+getpixcolor $1,150,150
+if $1 != "00ff00" debuglog "[exbtn_d]测试不通过",$1
+getpixcolor $1,250,150
+if $1 != "00ff00" debuglog "[exbtn_d]测试不通过",$1
+
+;移动到第一个按钮上
+_mouseclick_ 50,150,0
+delay 100
+getpixcolor $1,50,150
+if $1 != "00ffff" debuglog "[exbtn]测试不通过",$1
+getpixcolor $1,150,150
+if $1 != "000000" debuglog "[exbtn]测试不通过",$1
+getpixcolor $1,250,150
+if $1 != "ffff00" debuglog "[exbtn]测试不通过",$1
+
+;移动到第二个按钮上
+_mouseclick_ 150,150,0
+delay 100
+getpixcolor $1,150,150
+if $1 != "00ffff" debuglog "[exbtn]测试不通过",$1
+getpixcolor $1,50,150
+if $1 != "000000" debuglog "[exbtn]测试不通过",$1
+
+;移动到第三个按钮上
+_mouseclick_ 250,150,0
+delay 100
+getpixcolor $1,50,150
+if $1 != "ff00ff" debuglog "[exbtn]测试不通过",$1
+getpixcolor $1,250,150
+if $1 != "00ffff" debuglog "[exbtn]测试不通过",$1
+
+;左键完成测试
+_mouseclick_ 350,350,1
+return
+
+*save_test
+dim ?2[10][10][10]
+mov %4,1
+for %1 = 0 to 10
+	for %2 = 0 to 10
+		for %3 = 0 to 10
+			mov ?2[%1][%2][%3],%4
+			inc %4
+		next
+	next
+next
+mov $0,"我的abc"
+for %1000 = 2 to 499
+	mov %%1000,%1000+1
+	itoa $%1000,%%1000
+next
+savepoint
+savedir "Lsav"
+
+return
+
+*testScript
+debuglog "thread has run"
+
+return
