@@ -20,9 +20,15 @@ public:
 		TYPE_FLOAT,
 		TYPE_STRING,
 		TYPE_LOSTRING,
+		TYPE_PTR,
 	};
 
 	LOVariant();
+	LOVariant(LOString *str);
+	LOVariant(int val);
+	//需要小心的指明用的哪一个构造函数
+	LOVariant(void *ptr);
+	LOVariant(const char *ptr, int len);
 	LOVariant& operator=(const LOVariant &obj) {
 		if (this != &obj) {
 			if (obj.bytes) {
@@ -48,6 +54,7 @@ public:
 	void SetFloat(float val);
 	void SetString(std::string *str);
 	void SetLOString(LOString *str);
+	void SetPtr(void *ptr);
 
 	//所有的get类都不做有效性检查
 	char GetChar();
@@ -57,6 +64,7 @@ public:
 	float GetFloat();
 	std::string GetString();
 	LOString GetLOString();
+	void* GetPtr();
 private:
 	enum {
 		CFG_RECORED = 4,   //类型

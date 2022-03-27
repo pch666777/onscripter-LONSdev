@@ -197,42 +197,24 @@ std::vector<LOLayerInfoCacheIndex*> LOImageModule::SortCacheList(std::vector<LOL
 	return dest;
 }
 
-#define threeParam ((LOEventParamBtnRef*)e->param)
 
-void EventDo(LOEvent1 *e, double postime) {
-	if (!e->enterEdit()) return;  //事件已经不再有效
+//在正式处理事件前必须处理帧刷新时遗留的事件
+void LOImageModule::DoPreEvent() {
+	for (int ii = 0; ii < preEventList.size(); ii += 2) {
+		int ev = (int)preEventList[ii];
+		LOEventHook *e = preEventList[ii + 1];
 
-	auto *img = (LOImageModule*)FunctionInterface::imgeModule;
-	switch (e->eventID) {
-	case LOEvent1::EVENT_PREPARE_EFFECT:   //print2-18准备活动完成，并且进行第一帧
-		if (e->param == LOImageModule::PARAM_SCREENSHORT) { //截图
-			img->ScreenShotCountinue(e);
-		}
-		else if (e->param == LOImageModule::PARAM_BGCOPY) {
-
-		}
-		else {
-			img->PrepareEffect((LOEffect*)(threeParam->ptr1), (const char*)(threeParam->ptr2));
+		if (ev == PRE_EVENT_PREPRINTOK) {
 			e->FinishMe();
 		}
-		break;
+		else if (ev == PRE_EVENT_EFFECTCONTIUE) {
 
-	case LOEvent1::EVENT_WAIT_PRINT:    //等待effect运行完
-		if (img->ContinueEffect((LOEffect*)(threeParam->ptr1), postime)) {  //effect运算，完成返回真
-			e->FinishMe();
 		}
-		else e->closeEdit();  //关闭编辑状态，下次才能继续获取事件
-		break;
-	case FunctionInterface::SCRIPTER_RUN_SPSTR:
-		img->RunExbtnStr(threeParam->ref->GetStr());
-		e->FinishMe();
-		break;
-	default:
-		break;
 	}
 }
 
 void LOImageModule::DoDelayEvent(double postime) {
+	/*
 	//延迟事件队列只应该用于 updisplay() 里需要等待帧完成后刷新后通知的情况
 	//虽然增加了事件执行的复杂度，但是我认为这是必要的，统一处理事件更容易确定程序中用了哪些通讯事件，以及外部处理中断事件
 	LOEventSlot *slot = GetEventSlot(LOEvent1::EVENT_IMGMODULE_AFTER);
@@ -241,30 +223,27 @@ void LOImageModule::DoDelayEvent(double postime) {
 	int ecount = slot->ForeachCall(&EventDo, postime);
 	//运行时的同时事件不可能超过20个，超过该检查问题了
 	if (ecount > 20) SimpleError("LonsEvent is too much! check event logic please!");
+	*/
 }
 
 
-//暂时不支持异步
+//print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait) {
-
+	//考虑到需要存档
+	iswait = true;
 	if (!HasPrintQue(print_name)) return READER_WAIT_NONE;
-	iswait = true;  //刷新都改为同步的，异步暂时不考虑
 
-	if (iswait) SDL_LockMutex(doQueMutex);
-	else {
-		if (SDL_TryLockMutex(doQueMutex) != 0) return READER_WAIT_ENTER_PRINT;
-	}
+	//print是一个竞争过程，只有执行完成一个才能下一个
+	SDL_LockMutex(doQueMutex);
 	//非print1则要求抓取当前显示的图像，下一帧在继续执行
 	//这里有一个坑，抓取的图形在进行 if(ef)后才会进入 queLayerMap中，所以要在这步以后才FilterCacheQue
 	if (ef) {
-		auto *param = new LOEventParamBtnRef;
-		param->ptr1 = (intptr_t)ef;
-		param->ptr2 = (intptr_t)print_name;
-		LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_PREPARE_EFFECT, param);
-		G_SendEvent(e);
-		if(!iswait) return READER_WAIT_PREPARE;
+		auto *e = LOEventHook::CreatePrintPreHook(ef, print_name);
+		//提交到等待位置
+		printPreHook.store((intptr_t)e);
 		e->waitEvent(1, -1);
 		e->InvalidMe();
+		//遇到程序退出
 		if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 
@@ -311,21 +290,19 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		}
 	}
 	ClearCacheMap(&list);
-	//提交一次刷新标记
-	LOEvent1 *ep = NULL;
+	//等待print完成才继续
+	LOEventHook *ep = NULL;
 	if (iswait) {
-		auto *param = new LOEventParamBtnRef;
-		param->ptr1 = (intptr_t)ef;
-		param->ptr2 = (intptr_t)print_name;
-		ep = new LOEvent1(LOEvent1::EVENT_WAIT_PRINT, param);
-		G_SendEvent(ep);
+		ep = LOEventHook::CreatePrintPreHook(ef, print_name);
+		//提交到等待位置
+		printHook.store((intptr_t)ep);
 	}
 	SDL_UnlockMutex(layerQueMutex);
 	SDL_UnlockMutex(btnQueMutex);
 	if (ep) {
 		ep->waitEvent(1, -1);
 		ep->InvalidMe();
-		if (moduleState >= MODULE_STATE_EXIT) return 0;
+		//if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 	SDL_UnlockMutex(doQueMutex);
 	return 0;
@@ -340,6 +317,7 @@ void LOImageModule::ExportQuequ2(std::unordered_map<int, LOLayerInfoCacheIndex*>
 
 //捕获SDL事件，将对指定的事件进行处理
 void LOImageModule::CaptureEvents(SDL_Event *event) {
+	/*
 	LOEvent1 *catMsg = NULL;
 	LOEventParamBtnRef *param;
 	LOLayer *layer;
@@ -462,6 +440,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	default:
 		break;
 	}
+	*/
 }
 
 //转换鼠标位置，超出视口位置等于事件没有发生
@@ -477,11 +456,11 @@ bool LOImageModule::TranzMousePos(int xx, int yy) {
 }
 
 //立刻按钮捕获模式
-void LOImageModule::LeaveCatchBtn(LOEvent1 *msg) {
-	lastActiveLayer = nullptr;
-	//赋值交给脚本线程执行，避免出现线程竞争
-	msg->FinishMe();
-}
+//void LOImageModule::LeaveCatchBtn(LOEvent1 *msg) {
+//	lastActiveLayer = nullptr;
+//	//赋值交给脚本线程执行，避免出现线程竞争
+//	msg->FinishMe();
+//}
 
 
 void LOImageModule::ClearDialogText(char flag) {
@@ -509,6 +488,7 @@ void LOImageModule::CutDialogueAction() {
 }
 
 
+/*
 LOSurface* LOImageModule::ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect) {
 	LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_PREPARE_EFFECT, PARAM_SCREENSHORT);
 	auto *param = new LOEventParamBtnRef;
@@ -563,7 +543,7 @@ void LOImageModule::ScreenShotCountinue(LOEvent1 *e) {
 	param->ptr2 = (intptr_t)su;  //替换掉dst的指针
 	e->FinishMe();
 }
-
+*/
 
 void LOImageModule::RunExbtnStr(LOString *s) {
 	const char *obuf, *buf;
@@ -639,7 +619,7 @@ void LOImageModule::ResetMe() {
 	}
 	//清理按钮
 	btnMap.clear();
-	blocksEvent.InvalidAll();
+	//blocksEvent.InvalidAll();
 	ClearAllLayerInfo();
 	moduleState = MODULE_STATE_NOUSE;
 	//等待脚本模块重置

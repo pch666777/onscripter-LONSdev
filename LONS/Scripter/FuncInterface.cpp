@@ -18,6 +18,10 @@ BinArray *FunctionInterface::GloVariableFS = new BinArray(1024, true);
 BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 std::atomic_int FunctionInterface::flagPrepareEffect{};
 std::atomic_int FunctionInterface::flagRenderNew{};
+
+std::atomic_intptr_t FunctionInterface::printPreHook{ 0 };
+std::atomic_intptr_t FunctionInterface::printHook{ 0 };
+
 LOString FunctionInterface::userGoSubName[3] = {"lons_pretextgosub__","lons_textgosub__",""};
 std::unordered_set<std::string> FunctionInterface::fileLogSet;
 std::unordered_set<std::string> FunctionInterface::labelLogSet;

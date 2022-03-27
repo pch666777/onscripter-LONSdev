@@ -8,6 +8,26 @@ LOVariant::LOVariant(){
 	bytes = nullptr;
 }
 
+LOVariant::LOVariant(LOString *str) {
+	bytes = nullptr;
+	SetLOString(str);
+}
+
+LOVariant::LOVariant(int val) {
+	bytes = nullptr;
+	SetInt(val);
+}
+
+LOVariant::LOVariant(void *ptr) {
+	bytes = nullptr;
+	SetPtr(ptr);
+}
+
+LOVariant::LOVariant(const char *ptr, int len) {
+	bytes = nullptr;
+	SetChars(ptr, len);
+}
+
 
 LOVariant::~LOVariant(){
 	FreeMem();
@@ -51,7 +71,8 @@ void LOVariant::SetChar(char c) {
 }
 
 void LOVariant::SetChars(const char* bin, int len) {
-	NewMem(len);
+	//尾部追加一个\0，方便使用
+	NewMem(len + 1);
 	bytes[CFG_RECORED] = TYPE_CHARS;
 	memcpy(bytes + CFG_DATAS, bin, len);
 }
@@ -63,7 +84,8 @@ char LOVariant::GetChar() {
 const char* LOVariant::GetChars(int *len) {
 	*len = *(int*)(bytes);
 	(*len) -= CFG_DATAS;
-	return (const char*)bytes;
+	(*len) -= 1;   //不包括 \0
+	return (const char*)(bytes + CFG_DATAS);
 }
 
 void LOVariant::SetInt(int val) {
@@ -103,7 +125,8 @@ void LOVariant::SetString(std::string *str) {
 		FreeMem();
 		return;
 	}
-	NewMem(str->length());
+	//追加\0
+	NewMem(str->length() + 1);
 	bytes[CFG_RECORED] = TYPE_STRING;
 	memcpy(bytes + CFG_DATAS, str->c_str(), str->length());
 }
@@ -111,26 +134,42 @@ void LOVariant::SetString(std::string *str) {
 std::string LOVariant::GetString() {
 	int len = *(int*)bytes;
 	len -= CFG_DATAS;
+	len -= 1;
 	return std::string((const char*)(bytes + CFG_DATAS), len);
 }
-
-
-LOString LOVariant::GetLOString() {
-	int len = *(int*)bytes;
-	len -= CFG_DATAS + 1;
-	LOString str((const char*)(bytes + CFG_DATAS + 1), len);
-	str.SetEncoder(LOCodePage::GetEncoder(bytes[CFG_DATAS]));
-	return str;
-}
-
 
 void LOVariant::SetLOString(LOString *str) {
 	if (!str) {
 		FreeMem();
 		return;
 	}
-	NewMem(str->length() + 1);
+	//前面追加一个语言，后面追加一个\0
+	NewMem(str->length() + 2);
 	bytes[CFG_RECORED] = TYPE_LOSTRING;
 	bytes[CFG_DATAS] = str->GetEncoder()->codeID;
 	memcpy(bytes + CFG_DATAS + 1, str->c_str(), str->length());
+}
+
+LOString LOVariant::GetLOString() {
+	int len = *(int*)bytes;
+	len -= CFG_DATAS;
+	len -= 2; //去掉一个语言，一个\0
+	LOString str((const char*)(bytes + CFG_DATAS + 1), len);
+	str.SetEncoder(LOCodePage::GetEncoder(bytes[CFG_DATAS]));
+	return str;
+}
+
+
+//这里ptr固定为一个int64
+void LOVariant::SetPtr(void *ptr) {
+	NewMem(sizeof(int64_t));
+	bytes[CFG_RECORED] = TYPE_PTR;
+	*(int64_t*)(bytes + CFG_DATAS) = (int64_t)ptr;
+}
+
+
+void* LOVariant::GetPtr() {
+	int64_t val = *(int64_t*)(bytes + CFG_DATAS);
+	if (sizeof(intptr_t) == 4) return (void*)(val & 0xffffffff);
+	else return (void*)val;
 }

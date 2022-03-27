@@ -13,36 +13,9 @@
 #include "../Scripter/ONSvariable.h"
 #include "LOVariant.h"
 
-class LOEventParamBase {
-public:
-	enum PARAM_TYPE {
-		TYPE_BASE,
-		TYPE_TREE_PTR, //提供了三个不能del的指针存储
-	};
-	LOEventParamBase() { };
-	virtual ~LOEventParamBase() { };
-	virtual intptr_t GetParam(int index) { return 0; }
-protected:
-	int ptype;
-};
-
-
-class ONSVariableRef;
-class LOEventParamBtnRef :public LOEventParamBase {
-public:
-	LOEventParamBtnRef();
-	~LOEventParamBtnRef();
-	intptr_t GetParam(int index);
-
-	intptr_t ptr1;
-	intptr_t ptr2;
-	ONSVariableRef *ref;
-};
-
 //=====================================
-class LOEventSlot;
 
-class LOEvent1
+class LOEventHook
 {
 public:
 	enum {
@@ -78,17 +51,17 @@ public:
 		ANSWER_SEPLAYOVER = 8
 	};
 
-	LOEvent1(int id, int64_t pa);
-	LOEvent1(int id, LOEventParamBase* pa);
-	~LOEvent1();
-	void SetValue(int64_t va);
-	void SetValuePtr(LOEventParamBase* va);
-	//void SetUseCount(int count);
-	void AddUseCount();
-	//void SubUseCount();
-	//bool isUseCountZero();
-	static void NoUseEvent(LOEvent1 *e);
-	static void SetExitFlag(int flag);
+	enum {
+		MOD_RENDER = 1,
+		MOD_SCRIPTER,
+		MOD_AUDIO,
+
+		FUN_ENMPTY,
+		FUN_TIMER_CHECK,
+	};
+
+	LOEventHook();
+	~LOEventHook();
 
 	bool isFinish();
 	bool isState(int sa);
@@ -98,71 +71,47 @@ public:
 	//是否处于可编辑状态
 	bool isActive();
 
-
 	bool InvalidMe();
 	bool enterEdit();
 	bool closeEdit();
 	bool waitEvent(int sleepT, int overT);
 
-	int eventID;
-	//uint64_t function;
-	int64_t param;
-	int64_t value;
-
 	//要求捕获的事件
 	int64_t catchFlag;
 	//时间戳
 	Uint32 timeStamp;
+	//模块
+	int16_t callMod;
+	//函数
+	uint16_t callFun;
 	//参数表
 	std::vector<LOVariant*> paramList;
+
+	//创建一个等待事件
+	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
+	//创建一个print准备
+	static LOEventHook* CreatePrintPreHook(void *ef, const char *printName);
 private:
-	void BaseInit(int id);
 	bool upState(int sa);
 	bool isParamPtr;
 	bool isValuePtr;
 	std::atomic_int state;
 	std::atomic_int usecount;   //存在同一个事件发送到多个事件槽的情况，使用引用计数
 	static std::atomic_int exitFlag;
+
+	static LOEventHook* CreateHookBase();
 };
 
-//================= LOEventSlot ==================
-class LOEventSlot {
-public:
-	struct C_Element{  //节点
-		LOEvent1 *e = nullptr;
-		C_Element *next = nullptr;
-	};
-
-	typedef void(*funcTS)(LOEvent1*,double);   //函数指针
-
-	LOEventSlot();
-	~LOEventSlot();
-
-	LOEvent1 *GetFirstEvent(int *eventID, int64_t *param);
-	LOEvent1 *GetHeaderEvent();
-	LOEvent1 *GetHeaderEvent(LOEvent1 *es);
-	void SendToSlot(LOEvent1 *e);
-	void SendToSlotHeader(LOEvent1 *e);
-	void Remove(LOEvent1 *e);
-	void OrganizeEvent();
-	void InvalidAll();
-	int ForeachCall(funcTS func, double postime);
-private:
-	C_Element *first;
-	std::atomic_int state;
-
-	void lock();
-	void unlock();
-};
+//=============================
 
 class LOEventManager {
 public:
 	LOEventManager();
 	~LOEventManager();
-	void AddEvent(LOEvent1 *e, int level);
+	void AddEvent(LOEventHook *e, int level);
 
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
-	LOEvent1* GetNextEvent(int *listindex, int *index);
+	LOEventHook* GetNextEvent(int *listindex, int *index);
 private:
 	//事件列表
 	std::vector<std::atomic_intptr_t*> lowList;
@@ -185,16 +134,7 @@ private:
 	std::mutex _mutex;
 };
 
-extern void G_SendEvent(LOEvent1 *e);
-extern void G_SendEventMulit(LOEvent1 *e, LOEvent1::TYPE_EVENT t);
-extern void G_InitSlots();
-extern void G_DestroySlots();
-extern LOEventSlot* GetEventSlot(int index);
-extern LOEvent1 * G_GetEvent(LOEvent1::TYPE_EVENT t);
-extern LOEvent1 * G_GetEvent(LOEvent1::TYPE_EVENT t, int eventID);
-extern LOEvent1 * G_GetEventIsParam(LOEvent1::TYPE_EVENT t, int eventID, int64_t param);
-extern LOEvent1 * G_GetSelfEventIsParam(LOEvent1::TYPE_EVENT t, int64_t param);
-extern void G_TransferEvent(LOEvent1 *e, LOEvent1::TYPE_EVENT t);  //事件转移到其他事件槽上
 extern void G_PrecisionDelay(double t);
 extern void G_ClearAllEventSlots();
+extern LOEventManager G_hookManager;
 #endif // !__LOEVENT1_H__

@@ -15,7 +15,6 @@
 
 #define ONS_VERSION "ver0.5-20220116"
 
-class LOEvent;
 
 class LOImageModule :public FunctionInterface{
 public:
@@ -33,6 +32,11 @@ public:
 		TEXTURE_COLOR,
 		//TEXTURE_GEO
 		//TEXTURE_DESCRIBE,
+	};
+
+	enum {
+		PRE_EVENT_PREPRINTOK = 1,
+		PRE_EVENT_EFFECTCONTIUE,
 	};
 
 	enum {
@@ -265,6 +269,7 @@ private:
 	SDL_Texture *effectTex;
 	SDL_Texture *maskTex;      //遮片纹理
 	Uint32 tickTime;
+	std::vector<LOEventHook*> preEventList;
 
 	LOStack<LOLayerInfoCacheIndex> poolData;  //分配池
 	//std::unordered_map<int, LOLayer*> activeLayerMap;
@@ -300,6 +305,7 @@ private:
 	void ExportQuequ2(std::unordered_map<int, LOLayerInfoCacheIndex*> *map);
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
 	void DoDelayEvent(double postime);
+	void DoPreEvent();
 	void CaptureEvents(SDL_Event *event);
 	bool TranzMousePos(int xx, int yy);
 	void LeaveCatchBtn(LOEvent1 *msg);

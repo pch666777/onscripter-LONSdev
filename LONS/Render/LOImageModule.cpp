@@ -373,8 +373,7 @@ int LOImageModule::RefreshFrame(double postime) {
 		//(second frame):enter effecting ->(if cut) -> send finish signed.
 
 		//收到请求后，本帧会刷新到effct层上
-		LOEvent1 *premsg = G_GetEvent(LOEvent1::EVENT_PREPARE_EFFECT);
-		//LOEvent *premsg = LonsEvent.GetEvent(LOEvent::MSG_Prepare_Effect);
+		auto *premsg = (LOEventHook*)(printPreHook.load());
 		if (premsg) {
 			//if (premsg->loadParamInt(0) == PARAM_BGCOPY) {
 			//	SDL_Texture *bgtex = SDL_CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
@@ -390,8 +389,9 @@ int LOImageModule::RefreshFrame(double postime) {
 			SDL_SetRenderTarget(render, NULL);
 			SDL_RenderCopy(render, effectTex, NULL, NULL);
 			//LOLog_i("prepare ok!") ;
-			//事件转移到后处理
-			G_TransferEvent(premsg, LOEvent1::EVENT_IMGMODULE_AFTER);
+			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
+			preEventList.push_back((LOEventHook*)PRE_EVENT_PREPRINTOK);
+			preEventList.push_back(premsg);
 			//LOLog_i("prepare event change!") ;
 		}
 		else {
@@ -406,10 +406,10 @@ int LOImageModule::RefreshFrame(double postime) {
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
-		//LOEvent *effmsg = LonsEvent.GetEvent(LOEvent::MSG_Wait_Print);
-		LOEvent1 *effmsg = G_GetEvent(LOEvent1::EVENT_WAIT_PRINT);
+		auto *effmsg = (LOEventHook*)printHook.load();
 		if (effmsg) {
-			G_TransferEvent(effmsg, LOEvent1::EVENT_IMGMODULE_AFTER);
+			preEventList.push_back((LOEventHook*)PRE_EVENT_EFFECTCONTIUE);
+			preEventList.push_back(effmsg);
 		}
 		return 0;
 	}
