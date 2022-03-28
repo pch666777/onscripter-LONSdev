@@ -15,7 +15,7 @@
 
 //=====================================
 
-class LOEventHook
+class LOEventHook_t
 {
 public:
 	enum {
@@ -60,8 +60,8 @@ public:
 		FUN_TIMER_CHECK,
 	};
 
-	LOEventHook();
-	~LOEventHook();
+	LOEventHook_t();
+	~LOEventHook_t();
 
 	bool isFinish();
 	bool isState(int sa);
@@ -75,6 +75,7 @@ public:
 	bool enterEdit();
 	bool closeEdit();
 	bool waitEvent(int sleepT, int overT);
+	void ResetMe();
 
 	//要求捕获的事件
 	int64_t catchFlag;
@@ -88,22 +89,21 @@ public:
 	std::vector<LOVariant*> paramList;
 
 	//创建一个等待事件
-	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
+	static LOEventHook_t* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
-	static LOEventHook* CreatePrintPreHook(void *ef, const char *printName);
+	static LOEventHook_t* CreatePrintPreHook(LOEventHook_t *e, void *ef, const char *printName);
 private:
 	bool upState(int sa);
-	bool isParamPtr;
-	bool isValuePtr;
 	std::atomic_int state;
-	std::atomic_int usecount;   //存在同一个事件发送到多个事件槽的情况，使用引用计数
 	static std::atomic_int exitFlag;
-
-	static LOEventHook* CreateHookBase();
+	//===================================
+	static LOEventHook_t* CreateHookBase();
 };
 
-//=============================
+typedef std::shared_ptr<LOEventHook_t> LOEventHook;
 
+//=============================
+/*
 class LOEventManager {
 public:
 	LOEventManager();
@@ -133,8 +133,9 @@ private:
 	//增长队列时锁定
 	std::mutex _mutex;
 };
+extern LOEventManager G_hookManager;
+*/
 
 extern void G_PrecisionDelay(double t);
 extern void G_ClearAllEventSlots();
-extern LOEventManager G_hookManager;
 #endif // !__LOEVENT1_H__

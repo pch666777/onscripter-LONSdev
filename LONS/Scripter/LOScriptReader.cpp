@@ -120,17 +120,18 @@ LOScriptReader::LOScriptReader()
 	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
 	subStack = new LOStack<LOScriptPoint>;
 	loopStack = new LOStack<LogicPointer>;
-
+	blockingEvent = nullptr;
 	ResetBaseConfig();
 }
 
 LOScriptReader::~LOScriptReader()
 {
-	blocksEvent.InvalidAll();
+	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
 	delete nslogic;
 	if(subStack) delete subStack;
 	if(loopStack) delete loopStack;
+	if (blockingEvent) delete blockingEvent;
 }
 
 int LOScriptReader::MainTreadRunning() {
@@ -172,7 +173,7 @@ int LOScriptReader::MainTreadRunning() {
 		if (moduleState & MODULE_STATE_RESET) { //重置，到这一步说明其他模块已经重置完成了
 			ResetMe();
 			//清理所有的事件队列
-			G_ClearAllEventSlots();
+			//G_ClearAllEventSlots();
 			//清理所有的变量
 			ONSVariableBase::ResetAll();
 			moduleState = MODULE_STATE_NOUSE;
@@ -484,7 +485,7 @@ int LOScriptReader::ContinueEvent() {
 	//if (this->GetCurrentLine() == 903) {
 	//	int safdsfasf =1;
 	//}
-
+	/*
 	LOEvent1 *e = blocksEvent.GetHeaderEvent();
 	LOEventParamBtnRef *param;
 	bool isfinish = false;
@@ -555,28 +556,10 @@ int LOScriptReader::ContinueEvent() {
 			}
 		}
 	}
-
+	*/
 	return RET_VIRTUAL;   //没有阻塞事件，进入下一个命令
 }
 
-//检查延时是否完成
-bool LOScriptReader::DelayTimeCheck(LOEvent1 *e) {
-	auto *param = (LOEventParamBtnRef*)e->param;
-	Uint32 tnow = SDL_GetTicks();
-	Uint32 told = param->ptr1 & 0xffffffff;   //ticks
-	Uint32 tdst = param->ptr2 & 0xffffffff;   //delay time
-	if (tnow - told > tdst - 2 ) return true;
-	//else if (tnow - told > tdst - 10) { //延时差距10毫秒内，直接阻塞完成
-	//	printf("enter 10ms wait.\n");
-	//	tnow = SDL_GetTicks();
-	//	do {
-	//		G_PrecisionDelay(0.5);
-	//		//SDL_Delay(1);
-	//	} while (SDL_GetTicks() - told < tdst - 1);
-	//	return true;
-	//}
-	return false;
-}
 
 void LOScriptReader::NewThreadGosub(LOString *pname, LOString threadName) {
 	if (threadName.length() == 0) threadName = LOString::RandomStr(8);
@@ -587,12 +570,6 @@ void LOScriptReader::NewThreadGosub(LOString *pname, LOString threadName) {
 		scripter->moduleState = MODULE_STATE_RUNNING;
 		LOLog_i("create scripter thread:%s", threadName.c_str());
 	}
-}
-
-void LOScriptReader::BtnCatchFinish(LOEvent1 *e) {
-	auto *param = (LOEventParamBtnRef*)e->param;
-	int val = (int)e->value;
-	param->ref->SetValue((double)val);
 }
 
 
@@ -1491,6 +1468,9 @@ void LOScriptReader::ResetBaseConfig() {
 	st_globalon = false;
 	st_errorsave = false;
 	st_labellog = false;
+
+	if (blockingEvent) delete blockingEvent;
+	blockingEvent = nullptr;
 }
 
 //重置脚本模块，注意只应该从主脚本调用这个函数
@@ -1500,7 +1480,7 @@ void LOScriptReader::ResetMe() {
 		LeaveScriptReader(nextReader);
 	}
 	//重置必要的属性
-	blocksEvent.InvalidAll();
+	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
 	delete nslogic;
 	if (subStack) delete subStack;

@@ -339,8 +339,8 @@ public:
 	//static std::vector<LOString> workDirs;        //搜索目录，因为接口类到处都在使用，干脆把io部分挪到这里来
 	static std::atomic_int flagPrepareEffect;        //print时要求截取当前画面
 	static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
-	static std::atomic_intptr_t printPreHook;    //要求抓取图像
-	static std::atomic_intptr_t printHook;       //要求等待print完成
+	static LOEventHook_t printPreHook;    //要求抓取图像
+	static LOEventHook_t printHook;       //要求等待print完成
 
 	static LOString userGoSubName[3];
 	//在某些系统上，只能从指定程序读取文件而不能写入文件，因此分为两个部分

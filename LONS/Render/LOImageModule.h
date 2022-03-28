@@ -141,8 +141,8 @@ public:
 
 
 
-	LOSurface* ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect);
-	void ScreenShotCountinue(LOEvent1 *e);
+	//LOSurface* ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect);
+	//void ScreenShotCountinue(LOEvent1 *e);
 	LOSurface* SurfaceFromFile(LOString *filename, bool *ispng = NULL);
 	int RefreshFrame(double postime);        //刷新帧显示
 
@@ -269,7 +269,7 @@ private:
 	SDL_Texture *effectTex;
 	SDL_Texture *maskTex;      //遮片纹理
 	Uint32 tickTime;
-	std::vector<LOEventHook*> preEventList;
+	std::vector<LOEventHook> preEventList;
 
 	LOStack<LOLayerInfoCacheIndex> poolData;  //分配池
 	//std::unordered_map<int, LOLayer*> activeLayerMap;
@@ -305,10 +305,8 @@ private:
 	void ExportQuequ2(std::unordered_map<int, LOLayerInfoCacheIndex*> *map);
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
 	void DoDelayEvent(double postime);
-	void DoPreEvent();
+	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	bool TranzMousePos(int xx, int yy);
-	void LeaveCatchBtn(LOEvent1 *msg);
 	void CutDialogueAction();
-	void BtnWaitFinish(LOEvent *e);
 };

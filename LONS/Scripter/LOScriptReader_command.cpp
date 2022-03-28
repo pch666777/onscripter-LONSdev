@@ -157,6 +157,7 @@ int LOScriptReader::delayCommand(FunctionInterface *reader) {
 	if (val > 10) {
 		//delay事件会同时响应 left click 和 超时
 		//需要发送到两个事件槽
+		/*
 		auto *param = new LOEventParamBtnRef;
 		param->ptr1 = SDL_GetTicks();
 		param->ptr2 = val;
@@ -166,7 +167,7 @@ int LOScriptReader::delayCommand(FunctionInterface *reader) {
 		G_SendEventMulit(e, LOEvent1::EVENT_CATCH_BTN);
 		reader->blocksEvent.SendToSlot(e);
 		e->closeEdit(); //unlock it
-
+		*/
 	}
 	else if (val > 1) { //2-10毫秒的延时没有必要再发送到事件中，直接暂停，影响不大,1毫秒命令花的时间都有了
 		int timecut = SDL_GetTicks();
@@ -812,6 +813,7 @@ int LOScriptReader::getcselstrCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::delaygosubCommand(FunctionInterface *reader) {
+	/*
 	LOEventParamBtnRef *param = new LOEventParamBtnRef();
 	LOEvent1 *e = new LOEvent1(SCRIPTER_DELAY_GOSUB, param);
 	param->ptr1 = SDL_GetTicks();
@@ -820,6 +822,7 @@ int LOScriptReader::delaygosubCommand(FunctionInterface *reader) {
 	LOString s = reader->GetParamStr(0);
 	param->ref->SetValue(&s);
 	reader->blocksEvent.SendToSlot(e);
+	*/
 	return RET_CONTINUE;
 }
 

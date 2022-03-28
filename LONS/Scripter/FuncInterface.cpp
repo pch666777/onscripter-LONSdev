@@ -19,8 +19,8 @@ BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 std::atomic_int FunctionInterface::flagPrepareEffect{};
 std::atomic_int FunctionInterface::flagRenderNew{};
 
-std::atomic_intptr_t FunctionInterface::printPreHook{ 0 };
-std::atomic_intptr_t FunctionInterface::printHook{ 0 };
+LOEventHook_t FunctionInterface::printPreHook;
+LOEventHook_t FunctionInterface::printHook;
 
 LOString FunctionInterface::userGoSubName[3] = {"lons_pretextgosub__","lons_textgosub__",""};
 std::unordered_set<std::string> FunctionInterface::fileLogSet;
@@ -461,7 +461,7 @@ void FunctionInterface::SetExitFlag(int flag) {
 	if (audioModule) audioModule->ResetMe();
 	if (scriptModule) scriptModule->moduleState = flag;
 	if (imgeModule) imgeModule->moduleState = flag;
-	LOEvent1::SetExitFlag(1);
+	//LOEvent1::SetExitFlag(1);
 }
 
 

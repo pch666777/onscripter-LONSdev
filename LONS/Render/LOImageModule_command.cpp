@@ -570,6 +570,7 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	dialogText.append(text);
 	LoadDialogText(&dialogText, true);  //文字都是由text命令控制的，不受上次的符号影响
 
+	/*
 	//结尾符号进入参数传递
 	LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
 	e->value = pageEndFlag;
@@ -578,7 +579,7 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	G_SendEvent(e);                         //进入layer初始化
 	reader->blocksEvent.SendToSlot(e);      //阻塞脚本
 	e->closeEdit();
-
+	*/
 	EnterTextDisplayMode(true);  //will display here
 
 	//after show text
@@ -635,7 +636,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
-
+	/*
 	//参数
 	auto *param = new LOEventParamBtnRef;
 	param->ptr1 = SDL_GetTicks(); //时间戳
@@ -652,7 +653,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	G_SendEvent(e);   //按钮队列
 	reader->blocksEvent.SendToSlot(e);  //线程阻塞
 	e->closeEdit();  //unlock
-
+	*/
 	return RET_CONTINUE;
 }
 
@@ -778,6 +779,7 @@ int LOImageModule::setwindow2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::clickCommand(FunctionInterface *reader) {
+	/*
 	LOEvent1 *e ;
 	if (reader->isName("lrclick")) e = new LOEvent1(FunctionInterface::SCRIPTER_EVENT_LEFTCLICK, (int64_t)0);
 	else e = new LOEvent1(FunctionInterface::SCRIPTER_EVENT_CLICK, (int64_t)0);  //左键右键都可以
@@ -786,7 +788,7 @@ int LOImageModule::clickCommand(FunctionInterface *reader) {
 	G_SendEventMulit(e, LOEvent1::EVENT_CATCH_BTN);
 	reader->blocksEvent.SendToSlot(e);
 	e->closeEdit();
-
+	*/
 	//reader->AddNextEvent((intptr_t)e);
 	return RET_CONTINUE;
 }
@@ -897,7 +899,8 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 	dst.w = src.w; dst.h = src.h;
 
 	ONSVariableRef *v = reader->GetParamRef(4);
-	LOSurface *su = ScreenShot(&src, &dst);
+	LOSurface *su = nullptr;
+		//ScreenShot(&src, &dst);
 	if (su && v && v->GetStr()) { //
 		//if (reader->GetCurrentLine() == 644) {
 		//	int debugbreak = 0;
@@ -969,7 +972,7 @@ int LOImageModule::getscreenshotCommand(FunctionInterface *reader) {
 	dst.h = reader->GetParamInt(1);
 
 	if (screenshotSu) delete screenshotSu;
-	screenshotSu =  ScreenShot(&src, &dst);
+	//screenshotSu =  ScreenShot(&src, &dst);
 	//SDL_SaveBMP(su->GetSurface(), "test.bmp");
 	return RET_CONTINUE;
 }
@@ -1095,12 +1098,16 @@ int LOImageModule::btnCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::spstrCommand(FunctionInterface *reader) {
+	/*
 	LOEventParamBtnRef *param = new LOEventParamBtnRef;
 	param->ref = new ONSVariableRef(ONSVariableRef::TYPE_STRING_IM);
 	param->ref->SetValue(&reader->GetParamStr(0));
 	LOEvent1 *e = new LOEvent1(SCRIPTER_RUN_SPSTR, param);
 	reader->blocksEvent.SendToSlot(e);
 	G_SendEventMulit(e, LOEvent1::EVENT_IMGMODULE_AFTER);
+	*/
+
+
 	return RET_CONTINUE;
 }
 

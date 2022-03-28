@@ -529,14 +529,14 @@ void LOLayer::DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime
 		if (layerType == LAYER_DIALOG) {
 			//正常的对话文字对话事件是可以取到事件的，没有取到事件说明已经在单击事件中完成了
 			//直接跳过
-			LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
-			if (e) e->closeEdit();
-			else { //跳过，确保不会在首帧返回，而是继续执行
-				ai->lastTime = 1;
-				ai->currentLine = 0;
-				ai->currentPos = 0;
-				ai->isadd = true;
-			}
+			//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
+			//if (e) e->closeEdit();
+			//else { //跳过，确保不会在首帧返回，而是继续执行
+			//	ai->lastTime = 1;
+			//	ai->currentLine = 0;
+			//	ai->currentPos = 0;
+			//	ai->isadd = true;
+			//}
 		}
 
 		if(!ai->isadd)return;  //普通模式的直接返回
@@ -605,12 +605,12 @@ void LOLayer::DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime
 		ai->isEnble = false;
 		ai->finish = true;
 		if (layerType == LAYER_DIALOG) {
-			LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
-			//LOEvent1 *e = G_GetSelfEventIsParam(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
-			if (e) {
-				e->FinishMe();
-				//printf("text finish!!\n");
-			}
+			//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
+			////LOEvent1 *e = G_GetSelfEventIsParam(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
+			//if (e) {
+			//	e->FinishMe();
+			//	//printf("text finish!!\n");
+			//}
 		}
 	}
 

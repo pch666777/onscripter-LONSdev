@@ -276,12 +276,12 @@ private:
 	//bool isAddLine;
 	int  parseDeep;    //startparse进入多少个嵌套了
 	LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
-	//STEADY_CLOCK::time_point ttimer;       //计时器
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
 	std::vector<LOString> cselList;
 	int gloableMax;
+	LOEventHook_t *blockingEvent;
 	
 	LOScriptPoint* GetScriptPoint(LOString lname);
 	int ContinueRun();
@@ -297,8 +297,8 @@ private:
 	int GetAliasRef(LOString &s, bool isstr, bool &isok);
 	int ReturnEvent(int ret,const char *&buf, int &line);
 	LOString GetCurrentFile();
-	bool DelayTimeCheck(LOEvent1 *e);
-	void BtnCatchFinish(LOEvent1 *e);
+	//bool DelayTimeCheck(LOEvent1 *e);
+	//void BtnCatchFinish(LOEvent1 *e);
 	void NewThreadGosub(LOString *pname, LOString threadName);
 
 	const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);

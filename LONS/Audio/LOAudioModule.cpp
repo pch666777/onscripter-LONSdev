@@ -28,7 +28,8 @@ void LOAudioModule::ResetMe() {
 	//先解除播放回调
 	Mix_ChannelFinished(NULL);
 	Mix_HookMusicFinished(NULL);
-	blocksEvent.InvalidAll();
+
+	//blocksEvent.InvalidAll();
 
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
 		if (_audioPtr[ii]) {
@@ -119,8 +120,10 @@ void musicFinished() {
 	//让主脚本进程再回调LOAudioModule中的相关函数
 	LOAudioModule *au = (LOAudioModule*)(FunctionInterface::audioModule);
 	if (au->afterBgmName.length() > 0) {
+		/*
 		LOEvent1 *e = new LOEvent1(FunctionInterface::SCRIPTER_BGMLOOP_NEXT, (int64_t)1 );
 		FunctionInterface::scriptModule->blocksEvent.SendToSlot(e);
+		*/
 		//LOEvent *e = new LOEvent(LOEvent::MSG_BGMLOOP_NEXT);
 		//FunctionInterface::scriptModule->AddNextEvent((intptr_t)e);
 	}
@@ -131,8 +134,8 @@ void channelFinish(int channel) {
 	au->channelFinish_t(channel);
 	//0频道绑定了按钮超时事件
 	if (channel == 0) {
-		LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_SEZERO_FINISH);
-		if (e) e->InvalidMe();  //直接失效事件
+		//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_SEZERO_FINISH);
+		//if (e) e->InvalidMe();  //直接失效事件
 	}
 }
 

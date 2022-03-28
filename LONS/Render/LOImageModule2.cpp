@@ -4,7 +4,6 @@
 #include "../etc/LOEvent1.h"
 #include "LOImageModule.h"
 
-
 uint64_t LOImageModule::GetIndexKey(int fullid, const char* print_name) {
 	return GetIndexKey(fullid, LOString::HashStr(print_name));
 }
@@ -199,18 +198,24 @@ std::vector<LOLayerInfoCacheIndex*> LOImageModule::SortCacheList(std::vector<LOL
 
 
 //在正式处理事件前必须处理帧刷新时遗留的事件
-void LOImageModule::DoPreEvent() {
-	for (int ii = 0; ii < preEventList.size(); ii += 2) {
-		int ev = (int)preEventList[ii];
-		LOEventHook *e = preEventList[ii + 1];
+void LOImageModule::DoPreEvent(double postime) {
+	for (int ii = 0; ii < preEventList.size(); ii++){
+		LOEventHook e = preEventList[ii];
 
-		if (ev == PRE_EVENT_PREPRINTOK) {
+		if (e->catchFlag == PRE_EVENT_PREPRINTOK) {  //print准备完成
+			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
+			const char *printName = e->paramList[1]->GetChars(nullptr);
+			PrepareEffect(ef, printName);
 			e->FinishMe();
 		}
-		else if (ev == PRE_EVENT_EFFECTCONTIUE) {
-
+		else if (e->catchFlag == PRE_EVENT_EFFECTCONTIUE) { //继续运行
+			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
+			if (ContinueEffect(ef, postime)) e->FinishMe();
+			else e->closeEdit();
 		}
 	}
+
+	preEventList.clear();
 }
 
 void LOImageModule::DoDelayEvent(double postime) {
@@ -238,11 +243,10 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//非print1则要求抓取当前显示的图像，下一帧在继续执行
 	//这里有一个坑，抓取的图形在进行 if(ef)后才会进入 queLayerMap中，所以要在这步以后才FilterCacheQue
 	if (ef) {
-		auto *e = LOEventHook::CreatePrintPreHook(ef, print_name);
+		LOEventHook_t::CreatePrintPreHook(&printPreHook, ef, print_name);
+		printPreHook.ResetMe();
 		//提交到等待位置
-		printPreHook.store((intptr_t)e);
-		e->waitEvent(1, -1);
-		e->InvalidMe();
+		printPreHook.waitEvent(1, -1);
 		//遇到程序退出
 		if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
@@ -291,17 +295,16 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	}
 	ClearCacheMap(&list);
 	//等待print完成才继续
-	LOEventHook *ep = NULL;
+	LOEventHook_t *ep = NULL;
 	if (iswait) {
-		ep = LOEventHook::CreatePrintPreHook(ef, print_name);
+		ep = LOEventHook_t::CreatePrintPreHook(&printHook, ef, print_name);
 		//提交到等待位置
-		printHook.store((intptr_t)ep);
+		ep->ResetMe();
 	}
 	SDL_UnlockMutex(layerQueMutex);
 	SDL_UnlockMutex(btnQueMutex);
 	if (ep) {
 		ep->waitEvent(1, -1);
-		ep->InvalidMe();
 		//if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 	SDL_UnlockMutex(doQueMutex);
@@ -317,6 +320,14 @@ void LOImageModule::ExportQuequ2(std::unordered_map<int, LOLayerInfoCacheIndex*>
 
 //捕获SDL事件，将对指定的事件进行处理
 void LOImageModule::CaptureEvents(SDL_Event *event) {
+	//时间戳，历遍事件时一起传递
+	Uint32 timeSnape = SDL_GetTicks();
+
+	switch (event->type){
+	case SDL_MOUSEMOTION:
+		//更新鼠标位置
+		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
+	}
 	/*
 	LOEvent1 *catMsg = NULL;
 	LOEventParamBtnRef *param;

@@ -4,14 +4,14 @@
 #include <stdint.h>
 #include <atomic>
 
-LOEventManager G_hookManager;
+//LOEventManager G_hookManager;
 
 
 //==================== LOEvent1 ===================
-//std::atomic_int LOEvent1::exitFlag{};
+std::atomic_int LOEventHook_t::exitFlag{};
 
 
-LOEventHook::LOEventHook() {
+LOEventHook_t::LOEventHook_t() {
 	callMod = MOD_SCRIPTER;
 	callFun = FUN_ENMPTY;
 }
@@ -23,46 +23,50 @@ void LOEvent1::SetExitFlag(int flag) {
 }
 */
 
-LOEventHook::~LOEventHook() {
+LOEventHook_t::~LOEventHook_t() {
 	for (int ii = 0; ii < paramList.size(); ii++) delete paramList[ii];
 }
 
-bool LOEventHook::isFinish() {
+bool LOEventHook_t::isFinish() {
 	return state.load() == STATE_FINISH;
 };
 
-bool LOEventHook::isInvalid() {
+bool LOEventHook_t::isInvalid() {
 	return state.load() == STATE_INVALID;
 }
 
 
-bool LOEventHook::isActive() {
+bool LOEventHook_t::isActive() {
 	return isState(STATE_NONE);
 }
 
-bool LOEventHook::isState(int sa) {
+bool LOEventHook_t::isState(int sa) {
 	return state.load() == sa;
 };
 
-bool LOEventHook::FinishMe() {
+bool LOEventHook_t::FinishMe() {
 	return upState(STATE_FINISH);
 }
 
-bool LOEventHook::InvalidMe() {
+bool LOEventHook_t::InvalidMe() {
 	return upState(STATE_INVALID);
 }
 
-bool LOEventHook::enterEdit() {
+bool LOEventHook_t::enterEdit() {
 	int ov = STATE_NONE;
 	return state.compare_exchange_strong(ov, STATE_EDIT);
 }
 
-bool LOEventHook::closeEdit() {
+bool LOEventHook_t::closeEdit() {
 	int ov = STATE_EDIT;
 	return state.compare_exchange_strong(ov, STATE_NONE);
 }
 
-bool LOEventHook::upState(int sa) {
+void LOEventHook_t::ResetMe() {
+	state.store(STATE_NONE);
+}
+
+bool LOEventHook_t::upState(int sa) {
 	int ov = state.load();
 	while (ov < sa) {
 		if (state.compare_exchange_strong(ov, sa)) return true;
@@ -73,7 +77,7 @@ bool LOEventHook::upState(int sa) {
 }
 
 //
-bool LOEventHook::waitEvent(int sleepT, int overT) {
+bool LOEventHook_t::waitEvent(int sleepT, int overT) {
 	Uint32 t1 = SDL_GetTicks();
 
 	while (!isFinish()) {
@@ -84,13 +88,13 @@ bool LOEventHook::waitEvent(int sleepT, int overT) {
 }
 
 
-LOEventHook* LOEventHook::CreateHookBase() {
-	auto *e = new LOEventHook();
+LOEventHook_t* LOEventHook_t::CreateHookBase() {
+	auto *e = new LOEventHook_t();
 	e->timeStamp = SDL_GetTicks();
 	return e;
 }
 
-LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNext) {
+LOEventHook_t* LOEventHook_t::CreateTimerWaitHook(LOString *scripter, bool isclickNext) {
 	auto *e = CreateHookBase();
 	e->callMod = MOD_SCRIPTER;
 	e->callFun = FUN_TIMER_CHECK;
@@ -99,8 +103,9 @@ LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNe
 	return e;
 }
 
-LOEventHook* LOEventHook::CreatePrintPreHook(void *ef,const char *printName) {
-	auto *e = CreateHookBase();
+LOEventHook_t* LOEventHook_t::CreatePrintPreHook(LOEventHook_t *e, void *ef, const char *printName) {
+	e->paramList.clear();
+	e->timeStamp = SDL_GetTicks();
 	e->paramList.push_back(new LOVariant(ef));
 	e->paramList.push_back(new LOVariant(printName, strlen(printName)));
 	return e;
@@ -128,7 +133,7 @@ void G_PrecisionDelay(double t) {
 
 
 //===========================================//
-
+/*
 LOEventManager::LOEventManager() {
 	lowStart = normalStart = highStart = 0;
 }
@@ -204,3 +209,5 @@ std::vector<std::atomic_intptr_t*> *LOEventManager::GetList(int listindex) {
 	else if (listindex > 0) return &highList;
 	else return &normalList;
 }
+*/
+

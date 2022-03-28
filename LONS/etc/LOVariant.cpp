@@ -82,9 +82,10 @@ char LOVariant::GetChar() {
 }
 
 const char* LOVariant::GetChars(int *len) {
-	*len = *(int*)(bytes);
-	(*len) -= CFG_DATAS;
-	(*len) -= 1;   //不包括 \0
+	int tlen = *(int*)(bytes);
+	tlen -= CFG_DATAS;
+	tlen -= 1;   //不包括 \0
+	if (len) *len = tlen;
 	return (const char*)(bytes + CFG_DATAS);
 }
 

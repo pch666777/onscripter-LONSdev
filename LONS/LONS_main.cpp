@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
 	srand((unsigned)time(NULL));   //初始化随机数种子
 
-	G_InitSlots();   //初始化线程同步事件槽
+	//G_InitSlots();   //初始化线程同步事件槽
 
 	//auto *eventManager = new LOEventManager();
 	//for (int ii = 0; ii < 10; ii++) eventManager->AddEvent(new LOEvent1(11, 1), 0);
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
 	}
 
 	FreeModules(filemodule, reader, imagemodule, audiomodule);
-	G_DestroySlots();  //释放线程同步信号槽
+	//G_DestroySlots();  //释放线程同步信号槽
 
 	if (exitflag == -1) exitflag = 0;
 	return exitflag;
