@@ -62,6 +62,17 @@ public:
 		SHADER_INVERT, //反色
 	};
 
+	//printName结构
+	class PrintNameMap{
+	public:
+		std::string *mapName = nullptr;
+		std::map<int, LOLayerData*> *map = nullptr;
+		~PrintNameMap() {
+			delete mapName;
+			delete map;
+		}
+	};
+
 
 	int z_order;    //对话框所在的位置，大于这个值的sp将被显示在对话框的下方
 	int trans_mode;   //透明类型
@@ -85,7 +96,7 @@ public:
 	LOLayer *bgLayer;          //背景层
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
 	std::map<int, LOLayer*> btnMap;
-	std::map<int, LOShareLayerData> backLayers; //后台图层组
+	std::vector<PrintNameMap*> backDataMaps;
 
 	bool breakflag = false;
 	bool dialogWinHasChange;
@@ -103,7 +114,9 @@ public:
 	LOLayer* FindLayerInBase(int fullid);
 
 	//新建一个图层数据
-	LOShareLayerData CreateLayerData(int fullid);
+	LOLayerData* CreateLayerData(int fullid, const char *printName);
+	//获取printName对应的map
+	PrintNameMap* GetPrintNameMap(const char *printName);
 
 	//新建一个layerinfo，如果已经有的话释放掉旧的
 	LOLayerInfo *GetInfoNewAndFreeOld(int fullid, const char* print_name);
@@ -135,8 +148,8 @@ public:
 
 
 	LOLayer* GetRootLayer(int fullid);
-	bool loadSpCore(LOShareLayerData &info, LOString &tag, int x, int y, int alpha);
-	bool loadSpCoreWith(LOShareLayerData &info, LOString &tag, int x, int y, int alpha,int eff);
+	bool loadSpCore(LOLayerData &info, LOString &tag, int x, int y, int alpha);
+	bool loadSpCoreWith(LOLayerData &info, LOString &tag, int x, int y, int alpha,int eff);
 
 
 
@@ -147,9 +160,9 @@ public:
 
 	bool ContinueEffect(LOEffect *ef, double postime);
 
-	bool ParseTag(LOShareLayerData &info ,LOString *tag);
+	bool ParseTag(LOLayerData *info ,LOString *tag);
 
-	bool ParseImgSP(LOLayerData &info, LOString *tag, const char *buf);
+	bool ParseImgSP(LOLayerData *info, LOString *tag, const char *buf);
 
 	LOtextureBase* RenderText(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
 	LOtextureBase* RenderText2(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, int startx);

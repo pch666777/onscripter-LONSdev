@@ -4,14 +4,38 @@
 
 #include "LOLayerData.h"
 
+
+LOLayerDataBase::LOLayerDataBase() {
+	fullid = -1;
+	flags = 0;
+	offsetX = offsetY = centerX = centerY = 0;
+	alpha = -1;
+	showSrcX = showSrcY = showWidth = showHeight = 0;
+	cellNum = tWidth = tHeight = 0;
+	scaleX = scaleY = rotate = 0.0;
+	showType = texType = 0;
+}
+
 LOLayerData::LOLayerData() {
 	flags = 0;
-	threadLock.store(0);
+	//threadLock.store(0);
+}
+
+LOLayerData::LOLayerData(const LOLayerData &obj)
+:LOLayerDataBase(obj)
+{
+	//首先调用基类的拷贝函数
+	//接着特殊处理一下
+	if (obj.fileTextName) fileTextName.reset(new LOString(*obj.fileTextName));
+	if (obj.maskName) maskName.reset(new LOString(*obj.maskName));
+	texture = obj.texture;
+	if (obj.actions) actions.reset(new std::vector<LOShareAction>(*obj.actions));
+	if (obj.eventHooks) eventHooks.reset(new std::vector<LOShareEventHook>(*obj.eventHooks));
 }
 
 LOLayerData::~LOLayerData() {
-	if (actions) for (int ii = 0; ii < actions->size(); ii++) delete actions->at(ii);
-	if (eventHooks) for (int ii = 0; ii < eventHooks->size(); ii++) delete eventHooks->at(ii);
+	//if (actions) for (int ii = 0; ii < actions->size(); ii++) delete actions->at(ii);
+	//if (eventHooks) for (int ii = 0; ii < eventHooks->size(); ii++) delete eventHooks->at(ii);
 }
 
 void LOLayerData::GetSimpleDst(SDL_Rect *dst) {
@@ -86,15 +110,29 @@ void LOLayerData::SetTextureType(int dt) {
 }
 
 
-void LOLayerData::SetAction(LOAction *action) {
-	//同一种类型的action只能存在一个
-	lockMe();
-	if(!actions)
-	for(int ii = 0; ii < )
-	unLockMe();
+void LOLayerData::SetAction(LOAction *ac) {
+	LOShareAction acs(ac);
+	SetAction(acs);
 }
 
 
+void LOLayerData::SetAction(LOShareAction &ac) {
+	//同一种类型的action只能存在一个
+	if (actions) {
+		for (auto iter = actions->begin(); iter != actions->end(); ) {
+			if ((*iter)->acType == ac->acType) {
+				//计数会-1？
+				iter = actions->erase(iter);
+			}
+			else iter++;
+		}
+	}
+	else actions.reset(new std::vector<LOShareAction>());
+	actions->push_back(ac);
+}
+
+
+/*
 void LOLayerData::lockMe() {
 	int ta = 0;
 	int tb = 1;
@@ -121,3 +159,4 @@ void LOLayerData::cpuDelay() {
 		sum += rand() % 3;
 	}
 }
+*/

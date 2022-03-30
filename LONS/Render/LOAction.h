@@ -40,7 +40,7 @@ public:
 	};
 
 	AnimaType acType;
-	AnimaLoop loopModel;
+	AnimaLoop loopMode;
 	//加速度
 	int gVal;
 private:
@@ -58,7 +58,7 @@ public:
 	int16_t cellCount = 1;	 //动画分格总数
 	int8_t  cellForward = 1; //前进方向, -1表示倒放
 	int8_t  cellCurrent = 0; //动画当前的位于的格数
-	std::vector<int32_t> cellTimes;  //每格动画的时间，数量为1则每格的时间都是一致的，单位毫秒
+	std::vector<int32_t> cellTimes;  //每格动画的时间
 };
 
 

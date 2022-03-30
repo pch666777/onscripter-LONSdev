@@ -13,26 +13,10 @@
 #include "LOTexture.h"
 #include "LOAction.h"
 
-class LOLayerData{
+//基本类型都放在一起，拷贝方便
+class LOLayerDataBase {
 public:
-	LOLayerData();
-	~LOLayerData();
-
-	//显示模式
-	enum {
-		SHOW_NORMAL = 1,
-		SHOW_RECT = 2,
-		SHOW_SCALE = 4,
-		SHOW_ROTATE = 8
-	};
-
-	enum {
-		FLAGS_VISIABLE = 1,
-		FLAGS_CHILDVISIABLE = 2,
-		FLAGS_USECACHE = 4 ,
-	};
-
-
+	LOLayerDataBase();
 	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
 	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
 	int16_t offsetX;    //显示目标左上角位置
@@ -55,24 +39,58 @@ public:
 	double scaleY;	//y方向的缩放
 	double rotate;	//旋转，角度
 
+protected:
+	uint8_t showType;
+	uint8_t texType;  //data是哪一种类型的
+};
+
+class LOLayerData :public LOLayerDataBase{
+public:
+	LOLayerData();
+	LOLayerData(const LOLayerData &obj);
+	~LOLayerData();
+
+	//禁用赋值
+	const LOLayerData& operator=(const LOLayerData &obj) = delete;
+
+	//拷贝构造
+
+	//显示模式
+	enum {
+		SHOW_NORMAL = 1,
+		SHOW_RECT = 2,
+		SHOW_SCALE = 4,
+		SHOW_ROTATE = 8
+	};
+
+	enum {
+		FLAGS_VISIABLE = 1,
+		FLAGS_CHILDVISIABLE = 2,
+		FLAGS_USECACHE = 4 ,
+	};
+
+
 	/*
 	LOString *fileName;  //透明样式;文件名
 	LOString *maskName;
 	LOtexture *texture;
 	LOStack<LOAnimation> *actions;
 	*/
+	//文本直接复制一份即可，无需引用计数
 	//文件名或者显示的文字或者执行的命令
 	std::unique_ptr<LOString> fileTextName;
 	//遮片名称
 	std::unique_ptr<LOString> maskName;
-	//纹理
-	std::unique_ptr<LOtexture> texture;
 
-	//事件组和动作组删除已失效对象的时机很重要，只有在主线程才删除对象
+	//纹理使用引用计数
+	LOShareTexture texture;
+
+	//每一个动作、事件钩子我们都不确定什么时候删除，所以需要一个引用计数
+	//所有的action和eventHook都只有在print时才同步
 	//动作组
-	std::unique_ptr<std::vector<LOAction*>> actions; 
+	std::unique_ptr<std::vector<LOShareAction>> actions; 
 	//事件组
-	std::unique_ptr<std::vector<LOEventHook*>> eventHooks;
+	std::unique_ptr<std::vector<LOShareEventHook>> eventHooks;
 
 
 	bool isShowScale() { return showType & SHOW_SCALE; }
@@ -93,20 +111,18 @@ public:
 	void SetTextureType(int dt);
 
 	//添加敏感类事件时删除
-	void SetAction(LOAction *action);
-	
+	void SetAction(LOShareAction &ac);
+	void SetAction(LOAction *ac);
 private:
-	void lockMe();
-	void unLockMe();
-	void cpuDelay();
+	//void lockMe();
+	//void unLockMe();
+	//void cpuDelay();
 
 	//插入移除 actions 和 eventHooks要特别注意
 	//图层有一个变量确定是否有 action 和 eventHook失效事件，有的话锁定，删除
-	std::atomic_int threadLock;
-	uint8_t showType;
-	uint8_t texType;  //data是哪一种类型的
+	//std::atomic_int threadLock;
 };
 
-typedef std::shared_ptr<LOLayerData> LOShareLayerData;
+//typedef std::shared_ptr<LOLayerData> LOShareLayerData;
 
 #endif // !__H_LOLAYERDATA_

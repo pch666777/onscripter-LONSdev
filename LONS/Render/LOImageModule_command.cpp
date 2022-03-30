@@ -32,7 +32,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 
 	//已经在队列里的需要释放
 	//
-	LOShareLayerData info = CreateLayerData(fullid);
+	LOLayerData* info = CreateLayerData(fullid);
 	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_SPRINT, ids), reader->GetPrintName());
 	loadSpCore(info, tag, xx, yy, alpha);
 	info->SetVisable(visiable);

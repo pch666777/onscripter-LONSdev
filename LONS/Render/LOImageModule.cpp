@@ -661,7 +661,7 @@ void LOImageModule::ScaleTextParam(LOLayerInfo *info, LOFontWindow *fontwin) {
 
 
 //做一些准备工作，以便更好的加载
-bool LOImageModule::ParseTag(LOShareLayerData &info, LOString *tag) {
+bool LOImageModule::ParseTag(LOLayerData *info, LOString *tag) {
 	if (info->fileTextName) {
 		SDL_LogError(0, "ONScripterImage::ParseTag() info->fileName not a empty value!");
 		return false;
@@ -762,58 +762,56 @@ const char* LOImageModule::ParseTrans(int *alphaMode, const char *buf) {
 	return buf;
 }
 
-bool LOImageModule::ParseImgSP(LOLayerData &info, LOString *tag, const char *buf) {
+bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf) {
 	buf = tag->SkipSpace(buf);
 	if (buf[0] == '/') {
 		LOActionNS *anim = new LOActionNS;
+		LOShareAction ac(anim);
+		//检查一下参数是否合法
 		buf++;
 		anim->cellCount = tag->GetInt(buf);
 		if (anim->cellCount == 0) {
 			SDL_Log("Animation grid number cannot be 0!\n");
-			delete anim;
 			return false;
 		}
-		info->ReplaceAction(anim);
+		info->SetAction(ac);
 
 		//读取每格的时间
-		anim->perTime = new int[anim->cellCount];
 		//有逗号表示继续对时间进行描述
 		if (buf[0] == ',') {
 			buf++;
 			if (buf[0] == '<') { //对每格时间进行描述 lsp 150,":a/10,<100 200 300 400 500 600 700 800 900 1000>,0;data\erk.png",69,113
 				buf++;
 				for (int ii = 0; ii < anim->cellCount; ii++) {
-					*(anim->perTime + ii) = tag->GetInt(buf);
+					anim->cellTimes.push_back(tag->GetInt(buf));
 					buf++;
 				}
 			}
 			else {  //只有一格数表示每格的时间是一样的
 				int temp = tag->GetInt(buf);
 				for (int ii = 0; ii < anim->cellCount; ii++)
-					*(anim->perTime + ii) = temp;
+					anim->cellTimes.push_back(temp);
 			}
 			buf++;
-			anim->loopMode = buf[0] - '0'; // 3...no animation
+			anim->loopMode = (LOAction::AnimaLoop)(buf[0] - '0'); // 3...no animation
 		}
 		else { //表示只划分格，不做动画
-			for (int ii = 0; ii < anim->cellCount; ii++)
-				*(anim->perTime + ii) = 0;
-			anim->loopMode = 3;
+			for (int ii = 0; ii < anim->cellCount; ii++) 
+				anim->cellTimes.push_back(0);
+			anim->loopMode = LOAction::LOOP_CELL;
 		}
 		anim->cellCurrent = 0; //总是指向马上要执行的帧
 		anim->cellForward = 1; //1或者-1
-		anim->isEnble = true;
-		anim->control = LOAnimation::CON_REPLACE;
 		while (buf[0] != ';' && buf[0] != '\0') buf++;
 	}
 	if (buf[0] == ';') buf++;
 
-	if (info->fileName) {
+	if (info->fileTextName) {
 		SimpleError("ONScripterImage::ParseImgSP() info->fileName not a empty value!");
 		return false;
 	}
 	else {
-		info->fileName = new LOString(buf, tag->GetEncoder());
+		info->fileTextName.reset(new LOString(buf, tag->GetEncoder()));
 		return true;
 	}
 }
@@ -1528,8 +1526,20 @@ LOLayer* LOImageModule::FindLayerInBtnQuePosition(int x, int y) {
 }
 
 
-LOShareLayerData LOImageModule::CreateLayerData(int fullid) {
-	LOShareLayerData ac(new LOLayerData());
+LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
+	auto *ac = new LOLayerData();
 	ac->fullid = fullid;
+	//检查是否已经有对象，有的话释放掉原来的
+	auto iter = backLayersMap.find(fullid);
+	if (iter != backLayersMap.end()) delete iter->second;
+	backLayersMap[fullid] = ac;
 	return ac;
+}
+
+
+LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {
+	for (int ii = 0; ii < backDataMaps.size(); ii++) {
+		if (backDataMaps[ii].mapName->compare(printName) == 0) return &backDataMaps[ii];
+	}
+
 }

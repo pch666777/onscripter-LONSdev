@@ -53,7 +53,7 @@ public:
 
 	//成员///////////
 	int id[3];
-	std::shared_ptr<LOLayerData> curInfo;  //前台数据
+	std::unique_ptr<LOLayerData> curInfo;  //前台数据
 	SysLayerType layerType;     //图层所在的组，在new图层时已经把LAYER_SPRINT转换
 	LOLayer *parent;   //父对象
 	LOLayer *rootLyr;    //在准备阶段是属于哪一个根图层的
@@ -65,7 +65,7 @@ public:
 	LOLayer(SysLayerType lyrType);
 
 	//普通图层显然是根据后台数据创建
-	LOLayer(LOShareLayerData &data);
+	LOLayer(LOLayerData &data);
 	~LOLayer();
 
 	LOMatrix2d matrix;  //变换矩阵

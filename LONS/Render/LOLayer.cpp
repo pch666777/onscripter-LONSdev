@@ -19,11 +19,11 @@ LOLayer::LOLayer(SysLayerType lyrType) {
 	BaseNew(lyrType);
 }
 
-LOLayer::LOLayer(LOShareLayerData &data) {
+LOLayer::LOLayer(LOLayerData &data) {
 	int lyrType;
-	GetTypeAndIds(&lyrType, id, data->fullid);
+	GetTypeAndIds(&lyrType, id, data.fullid);
 	BaseNew((SysLayerType)lyrType);
-	curInfo = data;
+	curInfo.reset(new LOLayerData(data));
 	//挂到父对象的层级
 	if (!rootLyr->InserChild(this)) LOLog_e("new LOLayer() no father:%d,%d,%d", id[0], id[1], id[2]);
 }
