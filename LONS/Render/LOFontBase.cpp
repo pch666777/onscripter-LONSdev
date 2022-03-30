@@ -130,3 +130,15 @@ void TextConitue::CaleY(int ysize, bool shadow, bool outline) {
 	if (maxh < ysize) maxh = ysize;
 }
 
+
+LOLineInfo::LOLineInfo() {
+	x = y = w = h = 0;
+	rubyLink = nullptr;
+}
+LOLineInfo::~LOLineInfo() {
+	if (rubyLink) {
+		for (int ii = 0; ii < rubyLink->size(); ii++) delete rubyLink->at(ii);
+		delete rubyLink;
+		rubyLink = nullptr;
+	}
+}

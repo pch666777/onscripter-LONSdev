@@ -1,7 +1,4 @@
 //事件处理
-//事件按处理时间可分为限时事件和非限时事件，应避免历遍事件，效率很低
-//事件自动关联到处理的槽上，事件完成后从槽中移除，加入到缓存区进行处理
-
 #ifndef __LOEVENT1_H__
 #define __LOEVENT1_H__
 
@@ -15,7 +12,7 @@
 
 //=====================================
 
-class LOEventHook_t
+class LOEventHook
 {
 public:
 	enum {
@@ -60,8 +57,8 @@ public:
 		FUN_TIMER_CHECK,
 	};
 
-	LOEventHook_t();
-	~LOEventHook_t();
+	LOEventHook();
+	~LOEventHook();
 
 	bool isFinish();
 	bool isState(int sa);
@@ -89,18 +86,19 @@ public:
 	std::vector<LOVariant*> paramList;
 
 	//创建一个等待事件
-	static LOEventHook_t* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
+	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
-	static LOEventHook_t* CreatePrintPreHook(LOEventHook_t *e, void *ef, const char *printName);
+	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
 private:
 	bool upState(int sa);
 	std::atomic_int state;
 	static std::atomic_int exitFlag;
 	//===================================
-	static LOEventHook_t* CreateHookBase();
+	static LOEventHook* CreateHookBase();
 };
 
-typedef std::shared_ptr<LOEventHook_t> LOEventHook;
+typedef std::shared_ptr<LOEventHook> LOShareEventHook;
+typedef std::vector<LOShareEventHook> LOShareEventHookVec;
 
 //=============================
 /*

@@ -13,6 +13,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	bool visiable = !reader->isName("lsph");
 	int ids[] = { 0,255,255 };
 	int fixpos = 0;
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, ids);
 
 	ids[0] = reader->GetParamInt(0);
 	if (reader->isName("lspc")) {
@@ -28,7 +29,10 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	
 	reader->ExpandStr(tag);
 	LeveTextDisplayMode();
-		//已经在队列里的需要释放
+
+	//已经在队列里的需要释放
+	//
+	LOShareLayerData info = CreateLayerData(fullid);
 	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_SPRINT, ids), reader->GetPrintName());
 	loadSpCore(info, tag, xx, yy, alpha);
 	info->SetVisable(visiable);

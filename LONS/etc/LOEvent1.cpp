@@ -8,10 +8,10 @@
 
 
 //==================== LOEvent1 ===================
-std::atomic_int LOEventHook_t::exitFlag{};
+std::atomic_int LOEventHook::exitFlag{};
 
 
-LOEventHook_t::LOEventHook_t() {
+LOEventHook::LOEventHook() {
 	callMod = MOD_SCRIPTER;
 	callFun = FUN_ENMPTY;
 }
@@ -23,50 +23,50 @@ void LOEvent1::SetExitFlag(int flag) {
 }
 */
 
-LOEventHook_t::~LOEventHook_t() {
+LOEventHook::~LOEventHook() {
 	for (int ii = 0; ii < paramList.size(); ii++) delete paramList[ii];
 }
 
-bool LOEventHook_t::isFinish() {
+bool LOEventHook::isFinish() {
 	return state.load() == STATE_FINISH;
 };
 
-bool LOEventHook_t::isInvalid() {
+bool LOEventHook::isInvalid() {
 	return state.load() == STATE_INVALID;
 }
 
 
-bool LOEventHook_t::isActive() {
+bool LOEventHook::isActive() {
 	return isState(STATE_NONE);
 }
 
-bool LOEventHook_t::isState(int sa) {
+bool LOEventHook::isState(int sa) {
 	return state.load() == sa;
 };
 
-bool LOEventHook_t::FinishMe() {
+bool LOEventHook::FinishMe() {
 	return upState(STATE_FINISH);
 }
 
-bool LOEventHook_t::InvalidMe() {
+bool LOEventHook::InvalidMe() {
 	return upState(STATE_INVALID);
 }
 
-bool LOEventHook_t::enterEdit() {
+bool LOEventHook::enterEdit() {
 	int ov = STATE_NONE;
 	return state.compare_exchange_strong(ov, STATE_EDIT);
 }
 
-bool LOEventHook_t::closeEdit() {
+bool LOEventHook::closeEdit() {
 	int ov = STATE_EDIT;
 	return state.compare_exchange_strong(ov, STATE_NONE);
 }
 
-void LOEventHook_t::ResetMe() {
+void LOEventHook::ResetMe() {
 	state.store(STATE_NONE);
 }
 
-bool LOEventHook_t::upState(int sa) {
+bool LOEventHook::upState(int sa) {
 	int ov = state.load();
 	while (ov < sa) {
 		if (state.compare_exchange_strong(ov, sa)) return true;
@@ -77,7 +77,7 @@ bool LOEventHook_t::upState(int sa) {
 }
 
 //
-bool LOEventHook_t::waitEvent(int sleepT, int overT) {
+bool LOEventHook::waitEvent(int sleepT, int overT) {
 	Uint32 t1 = SDL_GetTicks();
 
 	while (!isFinish()) {
@@ -88,13 +88,13 @@ bool LOEventHook_t::waitEvent(int sleepT, int overT) {
 }
 
 
-LOEventHook_t* LOEventHook_t::CreateHookBase() {
-	auto *e = new LOEventHook_t();
+LOEventHook* LOEventHook::CreateHookBase() {
+	auto *e = new LOEventHook();
 	e->timeStamp = SDL_GetTicks();
 	return e;
 }
 
-LOEventHook_t* LOEventHook_t::CreateTimerWaitHook(LOString *scripter, bool isclickNext) {
+LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNext) {
 	auto *e = CreateHookBase();
 	e->callMod = MOD_SCRIPTER;
 	e->callFun = FUN_TIMER_CHECK;
@@ -103,7 +103,7 @@ LOEventHook_t* LOEventHook_t::CreateTimerWaitHook(LOString *scripter, bool iscli
 	return e;
 }
 
-LOEventHook_t* LOEventHook_t::CreatePrintPreHook(LOEventHook_t *e, void *ef, const char *printName) {
+LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName) {
 	e->paramList.clear();
 	e->timeStamp = SDL_GetTicks();
 	e->paramList.push_back(new LOVariant(ef));

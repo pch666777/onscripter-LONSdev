@@ -13,7 +13,7 @@
 #include "LOTexture.h"
 #include <SDL.h>
 
-#define ONS_VERSION "ver0.5-20220116"
+#define ONS_VERSION "ver0.5-20220330"
 
 
 class LOImageModule :public FunctionInterface{
@@ -78,10 +78,6 @@ public:
 	SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
 	SDL_mutex* doQueMutex;      //添加、展开队列时必须保证没有其他线程进入
 
-	//LOEffect currentEffect;
-
-	LOLayer *lonsLayers[LOLayer::LAYER_BASE_COUNT];
-	//int lonsLayers_show[LOLayer::LAYER_BASE_COUNT];  //决定了怎么显示对象
 	LOLayer *nssysLayer;      //直接的image按钮位于的图层，包括默认的NS系统
 	LOLayer *dialogLayer;     //对话框，系统默认用地立绘
 	LOLayer *lsp2Layer;        //lsp2所使用的图层组
@@ -89,6 +85,7 @@ public:
 	LOLayer *bgLayer;          //背景层
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
 	std::map<int, LOLayer*> btnMap;
+	std::map<int, LOShareLayerData> backLayers; //后台图层组
 
 	bool breakflag = false;
 	bool dialogWinHasChange;
@@ -105,6 +102,8 @@ public:
 	LOLayer* FindLayerInBase(LOLayer::SysLayerType type, const int *ids);
 	LOLayer* FindLayerInBase(int fullid);
 
+	//新建一个图层数据
+	LOShareLayerData CreateLayerData(int fullid);
 
 	//新建一个layerinfo，如果已经有的话释放掉旧的
 	LOLayerInfo *GetInfoNewAndFreeOld(int fullid, const char* print_name);
@@ -136,8 +135,8 @@ public:
 
 
 	LOLayer* GetRootLayer(int fullid);
-	bool loadSpCore(LOLayerInfo *info, LOString &tag, int x, int y, int alpha);
-	bool loadSpCoreWith(LOLayerInfo *info, LOString &tag, int x, int y, int alpha,int eff);
+	bool loadSpCore(LOShareLayerData &info, LOString &tag, int x, int y, int alpha);
+	bool loadSpCoreWith(LOShareLayerData &info, LOString &tag, int x, int y, int alpha,int eff);
 
 
 
@@ -148,9 +147,9 @@ public:
 
 	bool ContinueEffect(LOEffect *ef, double postime);
 
-	bool ParseTag(LOLayerInfo *info ,LOString *tag);
+	bool ParseTag(LOShareLayerData &info ,LOString *tag);
 
-	bool ParseImgSP(LOLayerInfo *info, LOString *tag, const char *buf);
+	bool ParseImgSP(LOLayerData &info, LOString *tag, const char *buf);
 
 	LOtextureBase* RenderText(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
 	LOtextureBase* RenderText2(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, int startx);
@@ -269,7 +268,7 @@ private:
 	SDL_Texture *effectTex;
 	SDL_Texture *maskTex;      //遮片纹理
 	Uint32 tickTime;
-	std::vector<LOEventHook> preEventList;
+	std::vector<LOEventHook*> preEventList;
 
 	LOStack<LOLayerInfoCacheIndex> poolData;  //分配池
 	//std::unordered_map<int, LOLayer*> activeLayerMap;

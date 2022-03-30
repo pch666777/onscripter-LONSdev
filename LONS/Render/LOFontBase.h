@@ -12,6 +12,8 @@ LONS应该是符号换行严格的，即结尾为标点符号，如，。！等�
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <string>
+#include <vector>
+#include <memory>
 #include "../etc/LOStack.h"
 
 
@@ -133,6 +135,20 @@ public:
 
 	bool Openfont();
 	void Closefont();
+};
+
+
+//所有的lineinfo的位置都是相对的
+class LOLineInfo {
+public:
+	LOLineInfo();
+	~LOLineInfo();
+	int16_t x;
+	int16_t y;
+	int16_t w;
+	int16_t h;
+	//ruby也是LineInfo，在显示的时候，如果显示到ruby对应的x y才显示ruby
+	std::vector<LOLineInfo*> *rubyLink;
 };
 
 #endif // !__LOFONTBASE_H__

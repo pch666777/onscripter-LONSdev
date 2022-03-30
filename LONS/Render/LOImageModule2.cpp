@@ -200,7 +200,7 @@ std::vector<LOLayerInfoCacheIndex*> LOImageModule::SortCacheList(std::vector<LOL
 //在正式处理事件前必须处理帧刷新时遗留的事件
 void LOImageModule::DoPreEvent(double postime) {
 	for (int ii = 0; ii < preEventList.size(); ii++){
-		LOEventHook e = preEventList[ii];
+		LOEventHook *e = preEventList[ii];
 
 		if (e->catchFlag == PRE_EVENT_PREPRINTOK) {  //print准备完成
 			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
@@ -243,7 +243,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//非print1则要求抓取当前显示的图像，下一帧在继续执行
 	//这里有一个坑，抓取的图形在进行 if(ef)后才会进入 queLayerMap中，所以要在这步以后才FilterCacheQue
 	if (ef) {
-		LOEventHook_t::CreatePrintPreHook(&printPreHook, ef, print_name);
+		LOEventHook::CreatePrintPreHook(&printPreHook, ef, print_name);
 		printPreHook.ResetMe();
 		//提交到等待位置
 		printPreHook.waitEvent(1, -1);
@@ -295,9 +295,9 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	}
 	ClearCacheMap(&list);
 	//等待print完成才继续
-	LOEventHook_t *ep = NULL;
+	LOEventHook *ep = NULL;
 	if (iswait) {
-		ep = LOEventHook_t::CreatePrintPreHook(&printHook, ef, print_name);
+		ep = LOEventHook::CreatePrintPreHook(&printHook, ef, print_name);
 		//提交到等待位置
 		ep->ResetMe();
 	}

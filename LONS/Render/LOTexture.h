@@ -6,9 +6,11 @@
 #define __LOTEXTURE_H__
 
 #include <SDL.h>
+#include <stdint.h>
 #include <atomic>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 #include "../etc/LOString.h"
 #include "../Scripter/FuncInterface.h"
@@ -132,5 +134,7 @@ private:
 	SDL_Texture *tex;
 	SDL_Rect srcRect;  //显示的源目标
 };
+
+typedef std::shared_ptr<LOtexture> LOShareTexture;
 
 #endif // !__LOTEXTURE_H__

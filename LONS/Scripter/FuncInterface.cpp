@@ -19,8 +19,8 @@ BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 std::atomic_int FunctionInterface::flagPrepareEffect{};
 std::atomic_int FunctionInterface::flagRenderNew{};
 
-LOEventHook_t FunctionInterface::printPreHook;
-LOEventHook_t FunctionInterface::printHook;
+LOEventHook FunctionInterface::printPreHook;
+LOEventHook FunctionInterface::printHook;
 
 LOString FunctionInterface::userGoSubName[3] = {"lons_pretextgosub__","lons_textgosub__",""};
 std::unordered_set<std::string> FunctionInterface::fileLogSet;

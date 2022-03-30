@@ -32,11 +32,11 @@ LOImageModule::LOImageModule(){
 	doQueMutex = SDL_CreateMutex();
 	poolMutex = SDL_CreateMutex();
 
-	int ids[] = { 0,-1,-1 };
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		ids[0] = ii;
-		lonsLayers[ii] = new LOLayer(LOLayer::LAYER_CC_USE, ids);
-	}
+	//int ids[] = { 0,-1,-1 };
+	//for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+	//	ids[0] = ii;
+	//	lonsLayers[ii] = new LOLayer(LOLayer::LAYER_CC_USE, ids);
+	//}
 
 	memset(shaderList, 0, sizeof(int) * 20);
 	queLayerinfoMapStart("_lons");
@@ -84,10 +84,6 @@ LOImageModule::~LOImageModule(){
 	SDL_DestroyMutex(presentMutex);
 	SDL_DestroyMutex(doQueMutex);
 	SDL_DestroyMutex(poolMutex);
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		delete lonsLayers[ii];
-	}
-
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
@@ -284,6 +280,10 @@ int LOImageModule::MainLoop() {
 	bool minisize = false;
 	moduleState = MODULE_STATE_RUNNING;
 
+	//第一帧要锁住print信号
+	printHook.FinishMe();
+	printPreHook.FinishMe();
+
 	while (loopflag) {
 		hightTimeNow = SDL_GetPerformanceCounter();
 		posTime = ((double)(hightTimeNow - lastTime)) / perHtickTime;
@@ -389,9 +389,9 @@ int LOImageModule::RefreshFrame(double postime) {
 			SDL_RenderCopy(render, effectTex, NULL, NULL);
 			//LOLog_i("prepare ok!") ;
 			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
-			LOEventHook ev(new LOEventHook_t());
-			ev->catchFlag = PRE_EVENT_PREPRINTOK;
-			preEventList.push_back(ev);
+			//LOEventHook *ev = new LOEventHook;
+			//ev->catchFlag = PRE_EVENT_PREPRINTOK;
+			//preEventList.push_back(ev);
 			//LOLog_i("prepare event change!") ;
 		}
 		else {
@@ -407,9 +407,9 @@ int LOImageModule::RefreshFrame(double postime) {
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (printHook.enterEdit()) {
-			LOEventHook ev(new LOEventHook_t());
-			ev->catchFlag = PRE_EVENT_EFFECTCONTIUE;
-			preEventList.push_back(ev);
+			//LOEventHook ev(new LOEventHook_t());
+			//ev->catchFlag = PRE_EVENT_EFFECTCONTIUE;
+			//preEventList.push_back(ev);
 		}
 		return 0;
 	}
@@ -422,25 +422,25 @@ int LOImageModule::RefreshFrame(double postime) {
 void LOImageModule::UpDisplay(double postime) {
 	tickTime += (int)postime;
 	//位于底部的要先渲染
-	UpDataLayer(lonsLayers[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
-	UpDataLayer(lonsLayers[LOLayer::LAYER_SPRINT], tickTime, 1023, z_order + 1, 0);
-	UpDataLayer(lonsLayers[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
+	UpDataLayer(&G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
+	UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, z_order + 1, 0);
+	UpDataLayer(&G_baseLayer[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
 	if (winbackMode) {
-		UpDataLayer(lonsLayers[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
 	}
 	else {
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
-		UpDataLayer(lonsLayers[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
+		UpDataLayer(&G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
 	}
 	//UpDataLayer(lonsLayers[LOLayer::LAYER_BUTTON], tickTime, 1023, 0);
-	UpDataLayer(lonsLayers[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
+	UpDataLayer(&G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
 }
 
 void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int dest, int level) {
@@ -458,13 +458,12 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 
 		//在下方的对象先渲染，渲染父对象
 		if (lyr->curInfo->texture) {
-			//检查纹理是否已经被加载，没有则加载
-			//LOtexture *tex = lyr->curInfo->texture;
 			//运行图层的action
+			/*
 			if (lyr->curInfo->actions) {
 				lyr->DoAnimation(lyr->curInfo, curTime);
 			}
-
+			*/
 			//if (!lyr->curInfo->texture->isNull()) {
 			if (lyr->curInfo->texture->isAvailable()) {
 				lyr->ShowMe(render);
@@ -521,6 +520,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 
 //完成了返回true, 否则返回false
 bool LOImageModule::ContinueEffect(LOEffect *ef, double postime) {
+	/*
 	if (ef) { //print 2-8
 		int ids[] = { LOLayer::IDEX_NSSYS_EFFECT,255,255 };
 		LOLayer *elyr = FindLayerInBase(LOLayer::LAYER_NSSYS, ids);
@@ -537,6 +537,7 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, double postime) {
 		}
 		else return true; //maybe has some error!
 	}
+	*/
 	return true; //print 1
 }
 
@@ -660,8 +661,8 @@ void LOImageModule::ScaleTextParam(LOLayerInfo *info, LOFontWindow *fontwin) {
 
 
 //做一些准备工作，以便更好的加载
-bool LOImageModule::ParseTag(LOLayerInfo *info, LOString *tag) {
-	if (info->fileName) {
+bool LOImageModule::ParseTag(LOShareLayerData &info, LOString *tag) {
+	if (info->fileTextName) {
 		SDL_LogError(0, "ONScripterImage::ParseTag() info->fileName not a empty value!");
 		return false;
 	}
@@ -670,63 +671,52 @@ bool LOImageModule::ParseTag(LOLayerInfo *info, LOString *tag) {
 	//LOLog_i("tag is %s",tag->c_str()) ;
 	buf = ParseTrans(&alphaMode, tag->c_str());
 	if (alphaMode == LOLayerInfo::TRANS_STRING) {
-		info->loadType = LOtexture::TEX_SIMPLE_STR;
-		info->usecache = false;
-		info->fileName = new LOString(buf, tag->GetEncoder());
+		info->SetTextureType(LOtexture::TEX_SIMPLE_STR);
+		info->fileTextName.reset(new LOString(buf, tag->GetEncoder()));
 	}
 	else {
 		buf = tag->SkipSpace(buf);
 		if (buf[0] == '>') {
 			buf = tag->SkipSpace(buf + 1);
-			info->loadType = LOtexture::TEX_COLOR_AREA;
-			info->usecache = true;
-			info->fileName = new LOString(buf, tag->GetEncoder());
+			info->SetTextureType(LOtexture::TEX_COLOR_AREA);
+			info->fileTextName.reset(new LOString(buf, tag->GetEncoder()));
 		}
 		else if (buf[0] == '*') {
 			buf++;
 			if (buf[0] == 'd') {
-				info->loadType = LOtexture::TEX_DRAW_COMMAND;
-				info->usecache = false;
+				info->SetTextureType(LOtexture::TEX_DRAW_COMMAND);
 			}
 			else if (buf[0] == 's') {
-				info->loadType = LOtexture::TEX_ACTION_STR;
+				info->SetTextureType(LOtexture::TEX_ACTION_STR);
 				info->alphaMode = LOLayerInfo::TRANS_COPY;
-				info->usecache = false;
 			}
 			else if (buf[0] == 'S') {
-				info->loadType = LOtexture::TEX_MULITY_STR;
+				info->SetTextureType(LOtexture::TEX_MULITY_STR);
 				info->alphaMode = LOLayerInfo::TRANS_COPY;
-				info->usecache = false;
 			}
 			else if (buf[0] == '>') {
-				info->loadType = LOtexture::TEX_COLOR_AREA;
+				info->SetTextureType(LOtexture::TEX_COLOR_AREA);
 				info->alphaMode = LOLayerInfo::TRANS_COPY;
-				info->usecache = true;
 				//LOLog_i("usecache is %c",info->usecache) ;
 			}
 			else if (buf[0] == 'b') {
 				//"*b;50,100,内容" ;绘制一个NS样式的按钮，通常模式时只显示文字，鼠标悬停时显示变色文字和有一定透明度的灰色
-				info->loadType = LOtexture::TEX_NSSIMPLE_BTN;
+				info->SetTextureType(LOtexture::TEX_NSSIMPLE_BTN);
 				info->alphaMode = LOLayerInfo::TRANS_COPY;
-				info->usecache = false;
 			}
 			else if (buf[0] == '*') {
 				//** 空纹理，基本上只是为了挂载子对象
-				info->loadType = LOtexture::TEX_EMPTY;
-				info->usecache = true;
+				info->SetTextureType(LOtexture::TEX_EMPTY);
 			}
 			buf += 2;
-			info->fileName = new LOString(buf, tag->GetEncoder());
+			info->fileTextName.reset(new LOString(buf, tag->GetEncoder()));
 		}
 		else {
-			info->loadType = LOtexture::TEX_IMG;
+			info->SetTextureType(LOtexture::TEX_IMG);
 			info->alphaMode = alphaMode;
-			info->usecache = true;
 			ParseImgSP(info, tag, buf);
 		}
 	}
-	//info->alphaMode = info->GetTextureFlag(1);
-	//info->CreateSecondFlag(info->GetCellCount());
 	return true;
 }
 
@@ -772,10 +762,10 @@ const char* LOImageModule::ParseTrans(int *alphaMode, const char *buf) {
 	return buf;
 }
 
-bool LOImageModule::ParseImgSP(LOLayerInfo *info, LOString *tag, const char *buf) {
+bool LOImageModule::ParseImgSP(LOLayerData &info, LOString *tag, const char *buf) {
 	buf = tag->SkipSpace(buf);
 	if (buf[0] == '/') {
-		LOAnimationNS *anim = new LOAnimationNS;
+		LOActionNS *anim = new LOActionNS;
 		buf++;
 		anim->cellCount = tag->GetInt(buf);
 		if (anim->cellCount == 0) {
@@ -857,21 +847,21 @@ void LOImageModule::FreeLayerInfoData(LOLayerInfo *info) {
 }
 
 LOLayer* LOImageModule::FindLayerInBase(LOLayer::SysLayerType type, const int *ids) {
-	return lonsLayers[type]->FindChild(ids);
+	return G_baseLayer[type].FindChild(ids);
 }
 
 LOLayer* LOImageModule::FindLayerInBase(int fullid) {
 	LOLayer::SysLayerType type;
 	int ids[] = { -1,-1,-1 };
 	GetTypeAndIds( (int*)(&type), ids, fullid);
-	return lonsLayers[type]->FindChild(ids);
+	return G_baseLayer[type].FindChild(ids);
 }
 
 LOLayer* LOImageModule::GetRootLayer(int fullid) {
 	int ids[3];
 	LOLayer::SysLayerType type;
 	GetTypeAndIds((int*)(&type), ids, fullid);
-	return lonsLayers[type];
+	return &G_baseLayer[type];
 }
 
 
@@ -913,11 +903,11 @@ void LOImageModule::RemoveBtn(int fullid) {
 //"*s;$499" 对话框文字sp，特效跟随setwindow的值
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
-bool LOImageModule::loadSpCore(LOLayerInfo *info, LOString &tag, int x, int y, int alpha) {
+bool LOImageModule::loadSpCore(LOShareLayerData &info, LOString &tag, int x, int y, int alpha) {
 	return loadSpCoreWith(info,tag, x, y, alpha,0);
 }
 
-bool LOImageModule::loadSpCoreWith(LOLayerInfo *info, LOString &tag, int x, int y, int alpha, int eff) {
+bool LOImageModule::loadSpCoreWith(LOShareLayerData &info, LOString &tag, int x, int y, int alpha, int eff) {
 	info->SetShowType(LOLayerInfo::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
@@ -1174,11 +1164,12 @@ LOLayer* LOImageModule::GetLayerOrNew(int fullid) {
 	LOLayer::SysLayerType type;
 	GetTypeAndIds( (int*)(&type), ids, fullid);
 	LOLayer *lyr = FindLayerInBase(type, ids);
-	if (!lyr)lyr = new LOLayer(type, ids);
+	//if (!lyr)lyr = new LOLayer(type, ids);
 	return lyr;
 }
 
 LOLayerInfo* LOImageModule::GetInfoLayerAvailable(int fullid, const char* cacheN) {
+	/*
 	//首先应该检查是否在队列组中
 	uint64_t key = GetIndexKey(fullid, cacheN);
 	LOLayerInfo *info = NULL;
@@ -1197,7 +1188,8 @@ LOLayerInfo* LOImageModule::GetInfoLayerAvailable(int fullid, const char* cacheN
 		}
 	}
 	SDL_UnlockMutex(poolMutex);
-	return info;
+	*/
+	return nullptr;
 }
 
 
@@ -1227,7 +1219,7 @@ LOLayerInfo* LOImageModule::GetInfoUnLayerAvailable(LOLayer::SysLayerType type, 
 	SDL_UnlockMutex(poolMutex);
 	if (info) return nullptr; //图层已经存在
 
-	LOLayer *lyr = lonsLayers[type]->FindChild(ids);
+	LOLayer *lyr = G_baseLayer[type].FindChild(ids);
 	if (lyr) return nullptr;
 
 	return GetInfoNew(fullid, cacheN);
@@ -1274,7 +1266,8 @@ LOLayerInfo* LOImageModule::LayerInfomation(int fullid, const char* cacheN) {
 	//有图层的复制图层信息
 	LOLayer *lyr = FindLayerInBase(fullid);
 	if (lyr) {
-		info->CopyConWordFrom(lyr->curInfo, -1, false);
+
+		//info->CopyConWordFrom(lyr->curInfo, -1, false);
 		//info->CopyActionFrom(lyr->curInfo->actions, false);
 		//队列信息叠加进入
 		if (minfo) info->CopyConWordFrom( &minfo->info, minfo->info.GetLayerControl(), false);
@@ -1500,12 +1493,14 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 		lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
 		if (lyr) {
 			//确认下一行的开始位置
+			/*
 			LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
 			if (text) {
 				startline = text->lineInfo->size() - 1;
 				startpos = text->lineInfo->top()->sumx;
 				isAdd = true;
 			}
+			*/
 		}
 	}
 
@@ -1530,4 +1525,11 @@ LOLayer* LOImageModule::FindLayerInBtnQuePosition(int x, int y) {
 		if (iter->second->isPositionInsideMe(x, y)) return iter->second;
 	}
 	return nullptr;
+}
+
+
+LOShareLayerData LOImageModule::CreateLayerData(int fullid) {
+	LOShareLayerData ac(new LOLayerData());
+	ac->fullid = fullid;
+	return ac;
 }

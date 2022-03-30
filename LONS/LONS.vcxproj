@@ -167,6 +167,7 @@
     <ClCompile Include="File\LOFileModule.cpp" />
     <ClCompile Include="File\LOPackFile.cpp" />
     <ClCompile Include="LONS_main.cpp" />
+    <ClCompile Include="Render\LOAction.cpp" />
     <ClCompile Include="Render\LOAnimation.cpp" />
     <ClCompile Include="Render\LOEffect.cpp" />
     <ClCompile Include="Render\LOFontBase.cpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="Render\LOImageModule_command.cpp" />
     <ClCompile Include="Render\LOImageModule_NSsystem.cpp" />
     <ClCompile Include="Render\LOLayer.cpp" />
+    <ClCompile Include="Render\LOLayerData.cpp" />
     <ClCompile Include="Render\LOLayerInfo.cpp" />
     <ClCompile Include="Render\LOMatrix2d.cpp" />
     <ClCompile Include="Render\LOSurface.cpp" />

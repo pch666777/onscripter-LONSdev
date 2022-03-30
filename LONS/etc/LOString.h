@@ -6,6 +6,7 @@
 
 #include "LOCodePage.h"
 #include <string>
+#include <memory>
 #include <random>   //c++ 11
 
 
@@ -99,5 +100,8 @@ private:
 	int GetWordBase(LOString &s, int current, int stop, int type);
 	const char* GetWordBase(LOString &s, const char *buf, int stop, int type);
 };
+
+
+typedef std::shared_ptr<LOString> LOShareString;
 
 #endif // !__LOSTRING_H__
