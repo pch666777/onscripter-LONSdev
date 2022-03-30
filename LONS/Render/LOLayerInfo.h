@@ -198,18 +198,4 @@ private:
 //	bool useCache;
 //};
 
-class LOLayerInfoCacheIndex {
-public:
-	bool iswork = false;              //在分配池中的位置
-	const char *name = NULL;    //跟哪一个cache绑定
-	std::unordered_map<int, LOLayerInfoCacheIndex*> *map = NULL; //跟哪一个map绑定
-	LOLayerInfo info;
-
-	void Reset() {
-		iswork = false;
-		name = NULL;
-		info.Reset();
-	}
-};
-
 #endif

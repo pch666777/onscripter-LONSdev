@@ -67,6 +67,10 @@ public:
 	public:
 		std::string *mapName = nullptr;
 		std::map<int, LOLayerData*> *map = nullptr;
+		PrintNameMap(const char *fn) {
+			mapName = new std::string(fn);
+			map = new std::map<int, LOLayerData*>;
+		}
 		~PrintNameMap() {
 			delete mapName;
 			delete map;
@@ -96,7 +100,7 @@ public:
 	LOLayer *bgLayer;          //背景层
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
 	std::map<int, LOLayer*> btnMap;
-	std::vector<PrintNameMap*> backDataMaps;
+	std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
 
 	bool breakflag = false;
 	bool dialogWinHasChange;
@@ -118,38 +122,9 @@ public:
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
-	//新建一个layerinfo，如果已经有的话释放掉旧的
-	LOLayerInfo *GetInfoNewAndFreeOld(int fullid, const char* print_name);
-	LOLayerInfo *GetInfoNewAndNoFreeOld(int fullid, const char* print_name);
-	std::vector<LOLayerInfo*> BatchInfoNew(const char* print_name, std::vector<int> *list, bool isfree);
-	LOLayerInfo *GetInfoNew(int fullid, const char* print_name);
-	LOLayerInfo* GetInfoLayerAvailable(int fullid, const char* cacheN);
-	LOLayerInfo* GetInfoLayerAvailable(LOLayer::SysLayerType type, int *ids, const char* cacheN);
-	LOLayerInfo* GetInfoUnLayerAvailable(int fullid, const char* cacheN);
-	LOLayerInfo* GetInfoUnLayerAvailable(LOLayer::SysLayerType type, int *ids, const char* cacheN);
-	void ClearAllLayerInfo();
-
-	void NotUseInfo(LOLayerInfoCacheIndex *minfo);
-	uint64_t GetIndexKey(int fullid, const char* print_name);
-	uint64_t GetIndexKey(int fullid, int hash);
-	LOLayerInfo* LayerInfomation(LOLayer::SysLayerType type, int *ids, const char* cacheN);
-	LOLayerInfo* LayerInfomation(int fullid, const char* cacheN);
-	BinArray* GetQueLayerUsedState(int sfullID, const char* print_name, int checkIndex);
-
-
-	bool LayerIsVisable(int fullid, const char* cacheN);
-
-	LOLayerInfoCacheIndex *GetCacheIndexFromPool(int fullid, const char* cacheN);
-
-	int GetInfoCacheFromName(const char *buf);
-
-	void FreeInfoFromAllCache(int fullid);
-
-
-
 	LOLayer* GetRootLayer(int fullid);
-	bool loadSpCore(LOLayerData &info, LOString &tag, int x, int y, int alpha);
-	bool loadSpCoreWith(LOLayerData &info, LOString &tag, int x, int y, int alpha,int eff);
+	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha);
+	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);
 
 
 
@@ -283,18 +258,6 @@ private:
 	Uint32 tickTime;
 	std::vector<LOEventHook*> preEventList;
 
-	LOStack<LOLayerInfoCacheIndex> poolData;  //分配池
-	//std::unordered_map<int, LOLayer*> activeLayerMap;
-	std::map<uint64_t, LOLayerInfoCacheIndex*> queLayerinfoMap;
-	std::vector<int> prinNameList;   //print name 的hash队列
-	int poolCurrent;   //分配池的当前位置
-	SDL_mutex *poolMutex;  //为了在多线程中使用，添加移除时锁定队列
-	//void IncreasePool();
-	std::vector<LOLayerInfoCacheIndex*> SortCacheList(std::vector<LOLayerInfoCacheIndex*> *list);
-	//LOLayerInfoCacheIndex * GetCacheIndexFromName(int fullid, const char *print_name, int *mapindex);
-	void ClearCacheMap(std::vector<LOLayerInfoCacheIndex*> *list);
-	std::vector<LOLayerInfoCacheIndex*> FilterCacheQue(const char *print_name,int layertype, int conid, bool isremove);
-	std::map<uint64_t, LOLayerInfoCacheIndex*>::iterator queLayerinfoMapStart(const char *print_name);
 	bool HasPrintQue(const char *print_name);
 
 	void ResetViewPort();
@@ -314,7 +277,6 @@ private:
 	void FreeLayerInfoData(LOLayerInfo *info);
 
 	LOLayer* GetLayerOrNew(int fullid);
-	void ExportQuequ2(std::unordered_map<int, LOLayerInfoCacheIndex*> *map);
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
 	void DoDelayEvent(double postime);
 	void DoPreEvent(double postime);

@@ -30,17 +30,8 @@ LOImageModule::LOImageModule(){
 	btnQueMutex = SDL_CreateMutex();
 	presentMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
-	poolMutex = SDL_CreateMutex();
-
-	//int ids[] = { 0,-1,-1 };
-	//for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-	//	ids[0] = ii;
-	//	lonsLayers[ii] = new LOLayer(LOLayer::LAYER_CC_USE, ids);
-	//}
 
 	memset(shaderList, 0, sizeof(int) * 20);
-	queLayerinfoMapStart("_lons");
-	queLayerinfoMapStart("_main");
 }
 
 void LOImageModule::ResetConfig() {
@@ -83,7 +74,6 @@ LOImageModule::~LOImageModule(){
 	SDL_DestroyMutex(layerQueMutex);
 	SDL_DestroyMutex(presentMutex);
 	SDL_DestroyMutex(doQueMutex);
-	SDL_DestroyMutex(poolMutex);
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
@@ -493,6 +483,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
+	LOLayerData *
 	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
@@ -865,31 +856,7 @@ LOLayer* LOImageModule::GetRootLayer(int fullid) {
 
 //移除按钮定义，-1移除所有，-2移除btn定义的
 void LOImageModule::RemoveBtn(int fullid) {
-	if (fullid == -1 || fullid == -2) {
-		SDL_LockMutex(btnQueMutex);
-		if (fullid == -1) btnMap.clear();
-		else {
-			auto iter = btnMap.begin();
-			while (iter != btnMap.end()) {
-				if (iter->second->layerType == LOLayer::LAYER_NSSYS) iter = btnMap.erase(iter);
-				else iter++;
-			}
-		}
-		SDL_UnlockMutex(btnQueMutex);
-		//移除队列中所有的按钮定义
-		SDL_LockMutex(poolMutex);
-		for (int ii = 0; ii < poolData.size(); ii++) {
-			LOLayerInfoCacheIndex *minfo = poolData.at(ii);
-			bool isDest = true;
-			if (fullid == -2) isDest = (GetIDs(minfo->info.fullid, IDS_LAYER_TYPE) == LOLayer::LAYER_NSSYS);
-			if (minfo->iswork && isDest) minfo->info.UnsetBtn();
-		}
-		SDL_UnlockMutex(poolMutex);
-	}
-	else {
-		auto iter = btnMap.find(fullid);
-		if (iter != btnMap.end()) btnMap.erase(iter);
-	}
+
 }
 
 
@@ -901,11 +868,11 @@ void LOImageModule::RemoveBtn(int fullid) {
 //"*s;$499" 对话框文字sp，特效跟随setwindow的值
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
-bool LOImageModule::loadSpCore(LOShareLayerData &info, LOString &tag, int x, int y, int alpha) {
-	return loadSpCoreWith(info,tag, x, y, alpha,0);
+bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha) {
+	return loadSpCoreWith(info, tag, x, y, alpha,0);
 }
 
-bool LOImageModule::loadSpCoreWith(LOShareLayerData &info, LOString &tag, int x, int y, int alpha, int eff) {
+bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int y, int alpha, int eff) {
 	info->SetShowType(LOLayerInfo::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
@@ -1539,7 +1506,8 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 
 LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {
 	for (int ii = 0; ii < backDataMaps.size(); ii++) {
-		if (backDataMaps[ii].mapName->compare(printName) == 0) return &backDataMaps[ii];
+		if (backDataMaps[ii]->mapName->compare(printName) == 0) return backDataMaps[ii].get();
 	}
-
+	backDataMaps.push_back(std::make_unique<PrintNameMap>(printName));
+	return backDataMaps[backDataMaps.size() - 1].get();
 }

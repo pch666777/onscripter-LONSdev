@@ -8,8 +8,6 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 184968) {
 	//	int debugbreak = 1;
 	//}
-
-
 	bool visiable = !reader->isName("lsph");
 	int ids[] = { 0,255,255 };
 	int fixpos = 0;
@@ -32,8 +30,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 
 	//已经在队列里的需要释放
 	//
-	LOLayerData* info = CreateLayerData(fullid);
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_SPRINT, ids), reader->GetPrintName());
+	LOLayerData* info = CreateLayerData(fullid, reader->GetPrintName());
 	loadSpCore(info, tag, xx, yy, alpha);
 	info->SetVisable(visiable);
 	return RET_CONTINUE;
