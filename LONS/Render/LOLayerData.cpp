@@ -17,13 +17,13 @@ LOLayerDataBase::LOLayerDataBase() {
 }
 
 LOLayerData::LOLayerData() {
-	flags = 0;
-	//threadLock.store(0);
+	isinit = false;
 }
 
 LOLayerData::LOLayerData(const LOLayerData &obj)
 :LOLayerDataBase(obj)
 {
+	isinit = false;
 	//首先调用基类的拷贝函数
 	//接着特殊处理一下
 	if (obj.fileTextName) fileTextName.reset(new LOString(*obj.fileTextName));
@@ -108,6 +108,10 @@ void LOLayerData::SetTextureType(int dt) {
 		flags &= (~FLAGS_USECACHE);
 		break;
 	}
+}
+
+void LOLayerData::SetBaseTexture(LOShareBaseTexture &base) {
+	texture.reset(new LOtexture(base));
 }
 
 

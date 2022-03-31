@@ -51,7 +51,7 @@ public:
 	LOtextureBase(SDL_Texture *tx);
 	~LOtextureBase();
 
-	SDL_Texture* GetTexture(SDL_Rect *re);
+	//SDL_Texture* GetTexture(SDL_Rect *re);
 	void SetSurface(LOSurface *s);
 	LOSurface *GetSurface() { return baseSurface; }
 	void SetName(LOString &s) { Name.assign(s); }
@@ -110,10 +110,11 @@ public:
 		EFF_INVERT,
 	};
 	LOtexture();
-	LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access);
+	LOtexture(LOShareBaseTexture &base);
+	//LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access);
 	~LOtexture();
 
-	void SetBaseTexture(LOtextureBase *base);
+	void SetBaseTexture(LOShareBaseTexture &base);
 	bool isNull() { return baseTexture == nullptr; }
 	bool isAvailable();
 	bool isBig();
@@ -131,10 +132,10 @@ public:
 	SDL_Texture *GetTexture();
 	//SDL_Rect *GetSrcRect() { return &srcRect; }
 
-	static LOShareBaseTexture& findTextureBaseFromMap(LOString &fname);
-	static LOShareBaseTexture& addTextureBaseToMap(LOString &fname, LOtextureBase *base);
+	static LOShareBaseTexture findTextureBaseFromMap(LOString &fname);
+	static LOShareBaseTexture addTextureBaseToMap(LOString &fname, LOtextureBase *base);
 	static void notUseTextureBase(LOShareBaseTexture &base);
-	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
+	static LOShareBaseTexture addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
 	static bool CopySurfaceToTextureRGBA(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst);
 
 	int baseW();

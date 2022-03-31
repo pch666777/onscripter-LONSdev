@@ -111,6 +111,7 @@ public:
 	void SetAlpha(int alp);
 	void SetCell(int ce);
 	void SetTextureType(int dt);
+	void SetBaseTexture(LOShareBaseTexture &base);
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();
@@ -119,6 +120,7 @@ public:
 	void SetAction(LOShareAction &ac);
 	void SetAction(LOAction *ac);
 private:
+	bool isinit;
 	//void lockMe();
 	//void unLockMe();
 	//void cpuDelay();

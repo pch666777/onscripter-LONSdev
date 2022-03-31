@@ -550,11 +550,11 @@ void LOImageModule::ShowFPS(double postime) {
 
 		rect.w = (int)((double)fpstex[ii].ww / G_gameScaleX);
 		rect.h = (int)((double)fpstex[ii].hh / G_gameScaleX);
-		auto ittt = fpstex[ii].GetTexture(NULL);
+		//auto ittt = fpstex[ii].GetTexture(NULL);
 
-		//LOLog_i("%d fps number!", ii) ;
+		////LOLog_i("%d fps number!", ii) ;
 
-		SDL_RenderCopy(render, fpstex[ii].GetTexture(NULL), NULL, &rect);
+		//SDL_RenderCopy(render, fpstex[ii].GetTexture(NULL), NULL, &rect);
 		rect.x -= rect.w;
 		fps = fps / 10;
 	}
@@ -583,7 +583,7 @@ bool LOImageModule::InitFps() {
 		//LOLog_i("fps surface is:%x",su) ;
 		if (su) {
 			fpstex[ii].SetSurface(new LOSurface(su));
-			fpstex[ii].GetTexture(NULL);
+			//fpstex[ii].GetTexture(NULL);
 		}
 	}
 	fpsconfig.Closefont();
@@ -875,10 +875,12 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 	info->SetShowType(LOLayerInfo::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
-	GetUseTextrue(info, nullptr, true);
+	LOShareBaseTexture base = GetUseTextrue(info, nullptr, true);
 	//LOLog_i("base surface is %x",base->GetSurface()) ;
 	//空纹理不参与下面的设置了，以免出现问题
-	if (!info->texture) return false ;
+	if (!base) return false ;
+
+	info->texture.reset(new LOtexture(base)) ;
 	info->SetPosition(x, y);
 	if (!info->actions) {  //没有动画则使用默认的宽高
 		info->showWidth = info->texture->baseW();
@@ -897,8 +899,10 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 
 
 
-void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) {
+LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) {
 	//LOLog_i("info is %x",info) ;
+	LOShareBaseTexture base;
+
 	if (!info->isCache()) {
 		//唯一性纹理
 		std::unique_ptr<LOString> data = std::move(info->fileTextName);
@@ -926,16 +930,16 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 			SimpleError(errs.c_str());
 		}
 		//LOtexture::addTextureBaseToMap(*info->fileName, tx);
-		return ;
+		return base;
 	}
 	else {
 		//缓存类纹理
-		info->texture = LOtexture::findTextureBaseFromMap( *info->fileTextName);  // new LOTexture时会自动增加base
+		base = LOtexture::findTextureBaseFromMap( *info->fileTextName);  // new LOTexture时会自动增加base
 		//有效
-		if (info->texture) return ;
+		if (base) return base;
 		switch (info->texType) {
 		case LOtexture::TEX_IMG:
-			TextureFromFile(info);
+			base = TextureFromFile(info);
 			break;
 		case LOtexture::TEX_COLOR_AREA:
 			//tx = TextureFromColor(info);
@@ -947,9 +951,9 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 			LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
 			break;
 		}
-		return;
+		return base;
 	}
-	return;
+	return base;
 }
 
 //单行文字
@@ -1060,10 +1064,11 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 }           
 
 
-void LOImageModule::TextureFromFile(LOLayerData *info) {
+LOShareBaseTexture LOImageModule::TextureFromFile(LOLayerData *info) {
 	bool ispng, useAlpha;
 	LOUniqSurface tmp(SurfaceFromFile(info->fileTextName.get(), &ispng));
-	if (!tmp) return ;
+	LOShareBaseTexture base;
+	if (!tmp) return base;
 	//转换透明格式 
 	if (info->alphaMode != LOLayerInfo::TRANS_COPY && !tmp->hasAlpha()) {
 		if (info->alphaMode == LOLayerInfo::TRANS_ALPHA && !ispng) {
@@ -1085,7 +1090,8 @@ void LOImageModule::TextureFromFile(LOLayerData *info) {
 	}
 
 	LOString s = info->fileTextName->toLower() + "?" + std::to_string(info->alphaMode) + ";";
-	info->texture = LOtexture::addTextureBaseToMap(s, new LOtextureBase(tmp.get()));
+	base = LOtexture::addTextureBaseToMap(s, new LOtextureBase(tmp.get()));
+	return base;
 }
 
 LOSurface* LOImageModule::SurfaceFromFile(LOString *filename, bool *ispng) {

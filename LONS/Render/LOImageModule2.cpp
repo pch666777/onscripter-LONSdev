@@ -41,10 +41,12 @@ void LOImageModule::DoDelayEvent(double postime) {
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait) {
-	/*
 	//考虑到需要存档
 	iswait = true;
-	if (!HasPrintQue(print_name)) return READER_WAIT_NONE;
+
+	//检查是不是有需要刷新的
+	PrintNameMap *pmap = GetPrintNameMap(print_name);
+	if (pmap->map->size() == 0) return;
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
@@ -59,11 +61,32 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 
-	std::vector<LOLayerInfoCacheIndex*> unorderlist = FilterCacheQue(print_name, -1, -1, true);
-
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
 	SDL_LockMutex(btnQueMutex);
+
+	//现在关键是要比对出那些层是新增的，哪些是修改的，哪些是删除的
+
+	//历遍图层，注意需要先处理父对象
+	for (int level = 1; level <= 3; level++) {
+		for (auto iter = pmap->map->begin(); iter != pmap->map->end();) {
+			LOLayerData *data = iter->second;
+			//检查是不是现在要处理的
+			bool isnow = false;
+			if (level < 3 && GetIDs(data->fullid, level)) isnow = true;
+			else if (level >= 3) isnow = true;
+			else isnow = false;
+
+			//
+			if (isnow) {
+				iter = pmap->map->erase(iter);
+
+			}
+			else iter++;
+
+		}
+	}
+
 
 	LOLayer *layer, *temp;
 	std::vector<LOLayerInfoCacheIndex*> list = SortCacheList(&unorderlist);
@@ -116,7 +139,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		//if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 	SDL_UnlockMutex(doQueMutex);
-	*/
+
 	return 0;
 }
 

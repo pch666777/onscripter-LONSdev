@@ -108,7 +108,7 @@ public:
 	LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 
-	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
+	LOShareBaseTexture GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
 	void RemoveBtn(int fullid);
 	//const char* NewSysBtndef();
@@ -261,15 +261,13 @@ private:
 	Uint32 tickTime;
 	std::vector<LOEventHook*> preEventList;
 
-	bool HasPrintQue(const char *print_name);
-
 	void ResetViewPort();
 	void CaleWindowSize(int scX, int scY, int srcW, int srcH, int dstW, int dstH, SDL_Rect *result);
 	void ShowFPS(double postime);
 	bool InitFps();
 	void ResetConfig();
 	void FreeFps();
-	void TextureFromFile(LOLayerData *info);
+	LOShareBaseTexture TextureFromFile(LOLayerData *info);
 	LOtextureBase* TextureFromColor(LOLayerInfo *info);
 	LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
 	LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);

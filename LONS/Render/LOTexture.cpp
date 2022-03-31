@@ -128,7 +128,7 @@ void LOtextureBase::AvailableRect(int maxx, int maxy, SDL_Rect *rect) {
 
 //=================================================
 
-LOShareBaseTexture &LOtexture::findTextureBaseFromMap(LOString &fname) {
+LOShareBaseTexture LOtexture::findTextureBaseFromMap(LOString &fname) {
 	LOString s = fname.toLower();
 	auto iter = baseMap.find(s);
 	if (iter != baseMap.end()) {
@@ -139,7 +139,7 @@ LOShareBaseTexture &LOtexture::findTextureBaseFromMap(LOString &fname) {
 }
 
 
-LOShareBaseTexture& LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
+LOShareBaseTexture LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
 	LOString s = fname.toLower();
 	//auto iter = baseMap.find(s);
 	//if (iter != baseMap.end) delete iter->second;
@@ -150,7 +150,7 @@ LOShareBaseTexture& LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBas
 }
 
 //只能运行在主线程
-LOShareBaseTexture& LOtexture::addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access) {
+LOShareBaseTexture LOtexture::addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access) {
 	LOString s = fname.toLower();
 	SDL_Texture *tx = CreateTexture(LOtextureBase::render, format, access, w, h);
 	return addTextureBaseToMap(s, new LOtextureBase(tx));
@@ -176,11 +176,21 @@ LOtexture::LOtexture() {
 	NewTexture();
 }
 
-LOtexture::LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access) {
+
+LOtexture::LOtexture(LOShareBaseTexture &base) {
 	NewTexture();
-	SDL_Texture *t = CreateTexture(LOtextureBase::render, format, access, w, h);
-	SetBaseTexture(new LOtextureBase(t));
+	SetBaseTexture(base);
 }
+
+void LOtexture::SetBaseTexture(LOShareBaseTexture &base) {
+	baseTexture = base;
+}
+
+//LOtexture::LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access) {
+//	NewTexture();
+//	SDL_Texture *t = CreateTexture(LOtextureBase::render, format, access, w, h);
+//	SetBaseTexture(new LOtextureBase(t));
+//}
 
 void LOtexture::NewTexture() {
 	useflag = 0;
