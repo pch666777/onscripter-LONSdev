@@ -745,12 +745,11 @@ void LOLayer::GetLayerUsedState(char *bin, int *ids) {
 	}
 }
 
-
-
-//int LOLayer::GetIDs(int fullid, int pos) {
-//	if (pos < 0 || pos > 2) return -1;
-//	if (pos == 0) return (fullid >> 16) & 0x3FF;
-//	if (pos == 1) return (fullid >> 8) & 0xFF;
-//	if (pos == 2) return fullid & 0xFF;
-//}
+//根据提供的id，在前台图层组中搜索图层
+LOLayer* LOLayer::FindViewLayer(int fullid) {
+	int lyrType;
+	int ids[3];
+	GetTypeAndIds(&lyrType, ids, fullid);
+	return G_baseLayer[lyrType].FindChild(ids);
+}
 

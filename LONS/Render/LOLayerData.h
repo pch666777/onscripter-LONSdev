@@ -17,6 +17,8 @@
 class LOLayerDataBase {
 public:
 	LOLayerDataBase();
+	void resetMe();
+
 	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
 	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
 	int16_t offsetX;    //显示目标左上角位置
@@ -67,6 +69,12 @@ public:
 		FLAGS_VISIABLE = 1,
 		FLAGS_CHILDVISIABLE = 2,
 		FLAGS_USECACHE = 4 ,
+		FLAGS_DELETE = 8,
+		//只更新了位置、缩放等简单数值
+		FLAGS_UPDATA = 16,
+		FLAGS_NEWFILE = 32,
+		//更新了事件钩子和动作
+		FLAGS_UPDATAEX = 64,
 	};
 
 
@@ -99,6 +107,8 @@ public:
 	bool isVisiable() { return flags & FLAGS_VISIABLE; }
 	bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
 	bool isCache() { return flags & FLAGS_USECACHE; }
+	bool isDelete() { return flags & FLAGS_DELETE; }
+	bool isNewFile() { return flags & FLAGS_NEWFILE; }
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();
@@ -111,7 +121,8 @@ public:
 	void SetAlpha(int alp);
 	void SetCell(int ce);
 	void SetTextureType(int dt);
-	void SetBaseTexture(LOShareBaseTexture &base);
+	void SetNewFile(LOShareBaseTexture &base);
+	void SetDelete();
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();

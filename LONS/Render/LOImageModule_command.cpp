@@ -150,50 +150,32 @@ int LOImageModule::cspCommand(FunctionInterface *reader) {
 
 	LeveTextDisplayMode();
 
-	int ids[] = { reader->GetParamInt(0),255,255 };
-	if (reader->isName("csp2")) CspCore(LOLayer::LAYER_SPRINTEX, ids, reader->GetPrintName());
-	else CspCore(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
+	if (reader->GetParamInt(0) < 0) CspCore(-1, reader->GetPrintName());
+	else {
+		int fullid = GetFullID(LOLayer::LAYER_SPRINTEX, reader->GetParamInt(0), 255, 255);
+		CspCore(fullid, reader->GetPrintName());
+	}
 	return RET_CONTINUE;
 }
 
-void LOImageModule::CspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name) {
-	/*
-	if (cid[0] < 0) {
-		//释放掉队列中的任务
-		std::vector<LOLayerInfoCacheIndex*> list = FilterCacheQue(print_name, sptype, -1, true);
-		for (auto iter = list.begin(); iter != list.end(); iter++) {
-			NotUseInfo(*iter);
-		}
-		//根据现有的图层新建删除队列
-		LOLayer *layer = lonsLayers[sptype];
-		if (layer->childs) {
-			for (auto iter = layer->childs->begin(); iter != layer->childs->end(); iter++) {
-				LOLayerInfo *lyrinfo = (*iter).second->curInfo;
-				//int a = GetIDs(lyrinfo->fullid, 0);
-				//int b = GetIDs(lyrinfo->fullid, 1);
-				//int c = GetIDs(lyrinfo->fullid, 2);
-				LOLayerInfo *info = GetInfoNew(lyrinfo->fullid, print_name);
-				info->SetLayerDelete();
-			}
+//fullid为-1时清除全部print_name队列
+void LOImageModule::CspCore(int fullid, const char *print_name) {
+	auto *map = GetPrintNameMap(print_name)->map;
+	if (map->size() == 0) return;
+	if (fullid < 0) {
+		//清除所有对象
+		for (auto iter = map->begin(); iter != map->end(); iter++) {
+			iter->second->SetDelete();
 		}
 	}
 	else {
-		//释放掉队列中项目
-		int fullid = GetFullID(sptype, cid);
-		uint64_t key = GetIndexKey(fullid, print_name);
-		auto iter = queLayerinfoMap.find(key);
-		if (iter != queLayerinfoMap.end()) {
-			NotUseInfo(iter->second);
-			queLayerinfoMap.erase(iter);
-		}
-		//根据图层释放存在生成删除信息
-		LOLayer *layer = FindLayerInBase(GetFullID(sptype, cid));
-		if (layer) {
-			LOLayerInfo *info = GetInfoNew(layer->GetFullid(), print_name);
-			info->SetLayerDelete();
+		//清除某个对象
+		auto iter = map->find(fullid);
+		if (iter != map->end()) {
+			//layerdata在print同步时才删除
+			iter->second->SetDelete();
 		}
 	}
-	*/
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
@@ -798,7 +780,7 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 
 	//无论如何btn的系统层都将被清除
 	int ids[] = { LOLayer::IDEX_NSSYS_BTN,255,255 };
-	CspCore(LOLayer::LAYER_NSSYS, ids, "_lons");
+	//CspCore(LOLayer::LAYER_NSSYS, ids, "_lons");
 	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();

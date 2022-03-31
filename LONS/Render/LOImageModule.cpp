@@ -1341,16 +1341,6 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 }
 
 
-void LOImageModule::DeleteLayerData(int fullid, const char *printName) {
-	auto *printMap = GetPrintNameMap(printName);
-	auto iter = printMap->map->find(fullid);
-	if (iter != printMap->map->end()) {
-		delete iter->second;
-		printMap->map->erase(iter);
-	}
-}
-
-
 LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {
 	for (int ii = 0; ii < backDataMaps.size(); ii++) {
 		if (backDataMaps[ii]->mapName->compare(printName) == 0) return backDataMaps[ii].get();

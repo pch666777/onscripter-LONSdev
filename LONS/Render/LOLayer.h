@@ -116,8 +116,8 @@ public:
 
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上
 	//只是根据ids预期父对象，识别返回null
-	static LOLayer* GetExpectFather(int lyrType, int *ids);
-
+	//static LOLayer* GetExpectFather(int lyrType, int *ids);
+	static LOLayer* FindViewLayer(int fullid);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 

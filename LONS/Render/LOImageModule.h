@@ -119,8 +119,6 @@ public:
 
 	//新建一个图层数据
 	LOLayerData* CreateLayerData(int fullid, const char *printName);
-	//后台删除一个图层数据
-	void DeleteLayerData(int fullid, const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
@@ -171,7 +169,7 @@ public:
 	int printStack(FunctionInterface *reader, int fix);
 	int bgCommand(FunctionInterface *reader);
 	int cspCommand(FunctionInterface *reader);
-	void CspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name);
+	void CspCore(int fullid, const char *print_name);
 	int mspCommand(FunctionInterface *reader);
 	int cellCommand(FunctionInterface *reader);
 	int humanzCommand(FunctionInterface *reader);

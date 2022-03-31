@@ -45,8 +45,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	iswait = true;
 
 	//检查是不是有需要刷新的
-	PrintNameMap *pmap = GetPrintNameMap(print_name);
-	if (pmap->map->size() == 0) return;
+	auto *map = GetPrintNameMap(print_name)->map;
+	if (map->size() == 0) return;
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
@@ -69,7 +69,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
-		for (auto iter = pmap->map->begin(); iter != pmap->map->end();) {
+		for (auto iter = map->begin(); iter != map->end();) {
 			LOLayerData *data = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
@@ -77,15 +77,32 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			else if (level >= 3) isnow = true;
 			else isnow = false;
 
-			//
+			////////
 			if (isnow) {
-				iter = pmap->map->erase(iter);
+				//指向下一个
+				iter = map->erase(iter);
+
+				LOLayer *lyr = LOLayer::FindViewLayer(data->fullid);
+				if (data->isDelete()) {
+					if (lyr) delete lyr;
+				}
+				else {
+					//新建的图层所有的信息都设置好了
+					if (!lyr) lyr = new LOLayer(*data);
+					else {
+						//更新图层
+						if (data->flags & LOLayerData::FLAGS_UPDATA) ;
+
+					}
+				}
 
 			}
 			else iter++;
 
 		}
 	}
+
+	if (map->size() != 0) LOLog_e("ExportQuequ():the map not clear:%d", map->size());
 
 
 	LOLayer *layer, *temp;
