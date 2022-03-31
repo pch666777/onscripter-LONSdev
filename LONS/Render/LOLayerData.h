@@ -39,9 +39,9 @@ public:
 	double scaleY;	//y方向的缩放
 	double rotate;	//旋转，角度
 
+	uint8_t texType;  //data是哪一种类型的
 protected:
 	uint8_t showType;
-	uint8_t texType;  //data是哪一种类型的
 };
 
 class LOLayerData :public LOLayerDataBase{
@@ -98,8 +98,10 @@ public:
 	bool isShowRect() { return showType & SHOW_RECT; }
 	bool isVisiable() { return flags & FLAGS_VISIABLE; }
 	bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
+	bool isCache() { return flags & FLAGS_USECACHE; }
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
+	int GetCellCount();
 	void SetVisable(int v);
 	void SetShowRect(int x, int y, int w, int h);
 	void SetShowType(int show);
@@ -109,6 +111,9 @@ public:
 	void SetAlpha(int alp);
 	void SetCell(int ce);
 	void SetTextureType(int dt);
+
+	//将动画的初始信息同步到layerinfo上
+	void FirstSNC();
 
 	//添加敏感类事件时删除
 	void SetAction(LOShareAction &ac);

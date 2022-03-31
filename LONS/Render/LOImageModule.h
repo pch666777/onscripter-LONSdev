@@ -108,7 +108,7 @@ public:
 	LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 
-	LOtextureBase* GetUseTextrue(LOLayerInfo *info, void *data, bool addcount = true);
+	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
 	void RemoveBtn(int fullid);
 	//const char* NewSysBtndef();
@@ -119,6 +119,9 @@ public:
 
 	//新建一个图层数据
 	LOLayerData* CreateLayerData(int fullid, const char *printName);
+	//后台删除一个图层数据
+	void DeleteLayerData(int fullid, const char *printName);
+
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
@@ -266,7 +269,7 @@ private:
 	bool InitFps();
 	void ResetConfig();
 	void FreeFps();
-	LOtextureBase* TextureFromFile(LOLayerInfo *info);
+	void TextureFromFile(LOLayerData *info);
 	LOtextureBase* TextureFromColor(LOLayerInfo *info);
 	LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
 	LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);

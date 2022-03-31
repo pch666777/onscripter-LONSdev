@@ -62,6 +62,7 @@ public:
 	bool isInit;
 
 	//顶级图层不需要后台数据
+	LOLayer();
 	LOLayer(SysLayerType lyrType);
 
 	//普通图层显然是根据后台数据创建

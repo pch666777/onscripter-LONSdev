@@ -41,6 +41,7 @@ void LOImageModule::DoDelayEvent(double postime) {
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait) {
+	/*
 	//考虑到需要存档
 	iswait = true;
 	if (!HasPrintQue(print_name)) return READER_WAIT_NONE;
@@ -67,7 +68,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	LOLayer *layer, *temp;
 	std::vector<LOLayerInfoCacheIndex*> list = SortCacheList(&unorderlist);
 	for (int ii = 0; ii < list.size(); ii++) {
-		LOLayerInfoCacheIndex *minfo = (LOLayerInfoCacheIndex*)list.at(ii);
+		//LOLayerInfoCacheIndex *minfo = (LOLayerInfoCacheIndex*)list.at(ii);
 		if (!minfo->iswork || minfo->info.GetLayerControl() == LOLayerInfo::CON_NONE) continue;
 		//LONS::printError("id[0]:%d,%d,%x",idd[0],idd[1],info->fullid);
 		//图层被删除，或重新载入，应删除上一个按钮
@@ -92,15 +93,15 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			//}
 			layer = GetLayerOrNew(minfo->info.fullid);
 			if (!layer->parent) { //插入图层
-				layer->Root = GetRootLayer(minfo->info.fullid);
-				layer->SetFullID(minfo->info.fullid);
-				layer->Root->InserChild(layer);
+				//layer->Root = GetRootLayer(minfo->info.fullid);
+				//layer->SetFullID(minfo->info.fullid);
+				//layer->Root->InserChild(layer);
 			}
 			if (minfo->info.btnStr) exbtn_count++;     //exbtn count, count > 0 exbtn_d can use
-			layer->UseControl(&minfo->info, btnMap);
+			//layer->UseControl(&minfo->info, btnMap);
 		}
 	}
-	ClearCacheMap(&list);
+	//ClearCacheMap(&list);
 	//等待print完成才继续
 	LOEventHook *ep = NULL;
 	if (iswait) {
@@ -115,6 +116,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		//if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 	SDL_UnlockMutex(doQueMutex);
+	*/
 	return 0;
 }
 
@@ -281,8 +283,8 @@ void LOImageModule::ClearDialogText(char flag) {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
 	if (flag == '\\') {
 		dialogText.clear();
-		LOLayerInfo *info = GetInfoNewAndFreeOld(fullid, "_lons");
-		info->SetLayerDelete();
+		//LOLayerInfo *info = GetInfoNewAndFreeOld(fullid, "_lons");
+		//info->SetLayerDelete();
 	}
 }
 
@@ -292,11 +294,11 @@ void LOImageModule::CutDialogueAction() {
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	LOLayer *layer = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
 	if (layer) {
-		LOAnimation *aib = layer->GetAnimation(LOAnimation::ANIM_TEXT);
-		if (aib) {
-			LOAnimationText *ai = (LOAnimationText*)(aib);
-			layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
-		}
+		//LOAnimation *aib = layer->GetAnimation(LOAnimation::ANIM_TEXT);
+		//if (aib) {
+		//	LOAnimationText *ai = (LOAnimationText*)(aib);
+		//	layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
+		//}
 	}
 }
 
@@ -359,6 +361,7 @@ void LOImageModule::ScreenShotCountinue(LOEvent1 *e) {
 */
 
 void LOImageModule::RunExbtnStr(LOString *s) {
+	/*
 	const char *obuf, *buf;
 	obuf = buf = s->c_str();
 	int maxlen = s->length();
@@ -414,6 +417,7 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			return;
 		}
 	}
+	*/
 }
 
 
@@ -423,6 +427,7 @@ void LOImageModule::PrintError(LOString *err) {
 
 
 void LOImageModule::ResetMe() {
+	/*
 	ResetConfig();
 	int ids[] = { 0,-1,-1 };
 	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
@@ -438,5 +443,6 @@ void LOImageModule::ResetMe() {
 	//等待脚本模块重置
 	while (scriptModule->moduleState != MODULE_STATE_NOUSE) SDL_Delay(1);
 	moduleState = MODULE_STATE_RUNNING;
+	*/
 }
 

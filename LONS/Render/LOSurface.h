@@ -38,6 +38,6 @@ private:
 	bool ispng;    //只有从LOSurface(void *mem, int size)中生成的surface此变量才有效
 };
 
-
+typedef std::unique_ptr<LOSurface> LOUniqSurface;
 #endif // !__LOSURFACE_H__
 

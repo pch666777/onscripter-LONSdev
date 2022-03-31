@@ -3,6 +3,7 @@
 
 #include <string>
 #include <SDL.h>
+#include "LOLayerData.h"
 #include "LOLayerInfo.h"
 #include "../etc/LOString.h"
 
@@ -28,20 +29,20 @@ public:
 	double postime;  //已经运行的时间
 
 	void CopyFrom(LOEffect *ef);
-	bool RunEffect(SDL_Renderer*ren,LOLayerInfo *info,SDL_Texture *effectTex ,SDL_Texture *maskTex ,double pos);
+	bool RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex ,SDL_Texture *maskTex ,double pos);
 	void ReadyToRun() { postime = 0; }
 	SDL_Surface* Create8bitMask(SDL_Surface *su,bool isscale);
 	static SDL_Surface* ConverToGraySurface(SDL_Surface *su);
 	static void CreateGrayColor(SDL_Palette *pale);
 
 private:
-	void FadeOut(SDL_Renderer*ren, LOLayerInfo *info,double pos);
-	void MaskEffectCore(SDL_Renderer*ren, LOLayerInfo *info,  SDL_Texture *maskTex, double pos,bool isalpha);
-	void BlindsEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction);
-	void CurtainEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction);
-	void RollEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction);
-	void MosaicEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, bool isout);
-	void CreateSmallPic(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *effectTex);
+	void FadeOut(SDL_Renderer*ren, LOLayerData *info,double pos);
+	void MaskEffectCore(SDL_Renderer*ren, LOLayerData *info,  SDL_Texture *maskTex, double pos,bool isalpha);
+	void BlindsEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction);
+	void CurtainEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction);
+	void RollEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction);
+	void MosaicEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isout);
+	void CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex);
 };
 
 

@@ -73,7 +73,7 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 }
 
 //true为已经到达时间界限，图层被隐藏，false表示需要继续进行
-bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *effectTex, SDL_Texture *maskTex, double pos) {
+bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex, SDL_Texture *maskTex, double pos) {
 	//debug use
 	//pos = 10;
 	//time = 576*10;
@@ -86,7 +86,7 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *effec
 
 	postime += pos;
 	if (postime > time || postime < 0) {
-		info->visiable = 0;   //not
+		info->SetVisable(0);  //not
 		if (masksu) delete masksu;
 		masksu = NULL;
 		return true;
@@ -177,13 +177,13 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *effec
 	return false;
 }
 
-void LOEffect::FadeOut(SDL_Renderer*ren, LOLayerInfo *info, double pos) {
+void LOEffect::FadeOut(SDL_Renderer*ren, LOLayerData *info, double pos) {
 	int per = (time - postime) / time * 255;
 	if (per > 255) per = 255;
 	info->alpha = per;
 }
 
-void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, bool isalpha) {
+void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isalpha) {
 		//计算出每一个灰度色阶在当前时刻的实际透明度
 		unsigned char *gray = new unsigned char[256];
 		for (int ii = 0; ii < 256; ii++) {
@@ -238,7 +238,7 @@ void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *
 
 
 
-void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction) {
+void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
 	int hideCount = time / 16;
 	if (hideCount == 0) hideCount++;    //The minimum time is 1ms.
 	hideCount = (int)(postime / hideCount); //how much line be hide.
@@ -279,7 +279,7 @@ void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *ma
 }
 
 
-void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction) {
+void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
 	int blockSize = 24;
 	int w, h, pitch, max;
 	void *pixbuf;
@@ -334,7 +334,7 @@ void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *m
 }
 
 
-void LOEffect::RollEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, int direction) {
+void LOEffect::RollEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
 	int w, h, pitch, hideCount, max;
 	void *pixbuf;
 	SDL_QueryTexture(maskTex, NULL, NULL, &w, &h);
@@ -362,7 +362,7 @@ void LOEffect::RollEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *mask
 }
 
 
-void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *effectTex) {
+void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex) {
 	int w, h;
 	Uint32 iformat;
 	SDL_QueryTexture(effectTex, &iformat, NULL, &w, &h);
@@ -392,7 +392,7 @@ void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *
 	}
 }
 
-void LOEffect::MosaicEffect(SDL_Renderer*ren, LOLayerInfo *info, SDL_Texture *maskTex, double pos, bool isout) {
+void LOEffect::MosaicEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isout) {
 	//5 to 155  30 levels in total
 
 

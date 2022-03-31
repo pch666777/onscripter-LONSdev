@@ -37,6 +37,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::lsp2Command(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	LOString tag = reader->GetParamStr(1);
 	int alpha = -1;
@@ -76,7 +77,7 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 			SimpleError("LONS not support [lsp2sub], because some renderers do not support!\n");
 		}
 	}
-
+	*/
 	return RET_CONTINUE;
 }
 
@@ -117,6 +118,7 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 502) {
 	//	int debugbreak = 0;
 	//}
+	/*
 	LeveTextDisplayMode();
 
 	int ids[] = { 5,255,255 };
@@ -135,6 +137,9 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 	else {
 		return RET_CONTINUE;
 	}
+	*/
+
+	return RET_CONTINUE;
 }
 
 
@@ -152,6 +157,7 @@ int LOImageModule::cspCommand(FunctionInterface *reader) {
 }
 
 void LOImageModule::CspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name) {
+	/*
 	if (cid[0] < 0) {
 		//释放掉队列中的任务
 		std::vector<LOLayerInfoCacheIndex*> list = FilterCacheQue(print_name, sptype, -1, true);
@@ -187,13 +193,14 @@ void LOImageModule::CspCore(LOLayer::SysLayerType sptype, int *cid, const char *
 			info->SetLayerDelete();
 		}
 	}
+	*/
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 571) {
 	//	int debugbreak = 1;
 	//}
-
+	/*
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("msp2") || reader->isName("amsp2")) sptype = LOLayer::LAYER_SPRINTEX;
 	bool addmode = false;
@@ -252,16 +259,19 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 	}
 
 	if (info) delete info;
+	*/
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::cellCommand(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
 	if (info) {
 		info->SetCell(reader->GetParamInt(1));
 	}
+	*/
 	return RET_CONTINUE;
 }
 
@@ -278,6 +288,7 @@ int LOImageModule::humanzCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::strspCommand(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0), 255, 255 };
 	LOString tag = "*S;" + reader->GetParamStr(1);
 	LOFontWindow ww = winFont;
@@ -321,6 +332,7 @@ int LOImageModule::strspCommand(FunctionInterface *reader) {
 	}
 
 	if (cc) delete[] cc;
+	*/
 	return RET_CONTINUE;
 }
 
@@ -334,34 +346,6 @@ int LOImageModule::transmodeCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::bgcopyCommand(FunctionInterface *reader) {
-	//SDL_LockMutex(doQueMutex);
-	//LOEvent *e = new LOEvent(LOEvent::MSG_Prepare_Effect);
-	//e->saveParamInt(0, PARAM_BGCOPY);
-
-	//LonsEvent.PostEvent(e);
-	//e->waitEvent(1.0, -1.0);
-
-	int ids[] = { 5,255,255 };
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_BG, ids), "_lons");
-	LOLog_e("[bgcopy] this function is not finish!");
-	//info->texture = new LOtexture;
-	//info->texture->tx = (SDL_Texture*)e->movePtr(true, 0);  //这个纹理后续还要继续使用的
-	//info->texture->w = G_viewRect.w;
-	//info->texture->h = G_viewRect.h;
-	//info->fileName = new LOString;
-	//RandomFileName(info->fileName, 'c');
-	//LOString s = GetTextrueName(info->fileName, info->texFlag);
-	//SetNameTextrue(&s, info->texture);
-	//info->layerControl |= LOLayerInfo::CON_UPFILE;
-
-	//if (IsGameScale()) {
-	//	info->scaleX = 1.0 / G_gameScaleX;
-	//	info->scaleY = 1.0 / G_gameScaleY;
-	//	info->showType |= LOLayerInfo::SHOW_SCALE;
-	//}
-
-	ExportQuequ("_lons", NULL, true);
-	//SDL_UnlockMutex(doQueMutex);
 	return RET_CONTINUE;
 }
 
@@ -388,6 +372,7 @@ int LOImageModule::effectskipCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::getspmodeCommand(FunctionInterface *reader) {
+	/*
 	ONSVariableRef *v = reader->GetParamRef(0);
 	int ids[] = { reader->GetParamInt(1), 255, 255 };
 	int visiable = 0;
@@ -399,6 +384,7 @@ int LOImageModule::getspmodeCommand(FunctionInterface *reader) {
 	}
 
 	v->SetValue((double)visiable);
+	*/
 	return RET_CONTINUE;
 }
 
@@ -406,7 +392,7 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 423) {
 	//	int debugbreak = 1;
 	//}
-
+	/*
 	int ids[] = { reader->GetParamInt(0), 255, 255 };
 	ONSVariableRef *v1 = reader->GetParamRef(1);
 	ONSVariableRef *v2 = reader->GetParamRef(2);
@@ -425,11 +411,12 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	v1->SetValue((double)ww);
 	v2->SetValue((double)hh);
 	if (v3) v3->SetValue((double)cell);
-
+	*/
 	return RET_CONTINUE;
 }
 
 int LOImageModule::getspposCommand(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0), 255, 255 };
 	int xx, yy;
 	xx = yy = 0;
@@ -445,10 +432,12 @@ int LOImageModule::getspposCommand(FunctionInterface *reader) {
 
 	v1->SetValue((double)xx);
 	v2->SetValue((double)yy);
+	*/
 	return RET_CONTINUE;
 }
 
 int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0), 255, 255 };
 	double val = 0.0;
 	LOLayerInfo *info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
@@ -460,10 +449,12 @@ int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
 
 	ONSVariableRef *v = reader->GetParamRef(1);
 	v->SetValue(val);
+	*/
 	return RET_CONTINUE;
 }
 
 int LOImageModule::getspposexCommand(FunctionInterface *reader) {
+	/*
 	ONSVariableRef *v[5];
 	double val[5];
 	int ids[] = { reader->GetParamInt(0), 255,255 };
@@ -489,7 +480,7 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 	for (int ii = 0; ii < 5; ii++) {
 		if (v[ii]) v[ii]->SetValue(val[ii]);
 	}
-
+	*/
 	return RET_CONTINUE;
 }
 
@@ -505,14 +496,18 @@ int LOImageModule::vspCommand(FunctionInterface *reader) {
 }
 
 void LOImageModule::VspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name, int vals) {
+	/*
+	
 	LOLayerInfo *info = GetInfoLayerAvailable(GetFullID(sptype, cid), print_name);
 	if (info) {
 		info->SetVisable(vals);
 	}
+	*/
 }
 
 
 int LOImageModule::allspCommand(FunctionInterface *reader) {
+	/*
 	std::vector<int> *list_t = allSpList;
 	auto sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("allsp2hide") || reader->isName("allsp2resume")) {
@@ -551,6 +546,7 @@ int LOImageModule::allspCommand(FunctionInterface *reader) {
 	}
 
 	if(list_t->size() > 0 ) ExportQuequ(reader->GetPrintName(), NULL, true);
+	*/
 	return RET_CONTINUE;
 }
 
@@ -624,6 +620,7 @@ int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
 
 //btntime btntime2小心的用在多线程
 int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
+	/*
 
 	if (reader->isName("btnwait") || reader->isName("btnwait2")) LeveTextDisplayMode();
 
@@ -637,29 +634,13 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
-	/*
-	//参数
-	auto *param = new LOEventParamBtnRef;
-	param->ptr1 = SDL_GetTicks(); //时间戳
-	//btntime的设定只会在btndef时清除
-	if (btnOverTime > 0) param->ptr2 = btnOverTime;
-	else param->ptr2 = 0xfffffff;  //74小时
-	param->ref = new ONSVariableRef;
-	param->ref->CopyFrom(v1);
-
-	LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_CATCH_BTN, param);
-	e->enterEdit(); //lock it
-	//按钮需要响应按钮、脚本线程阻塞、声音播放完毕事件
-	if (btnUseSeOver) G_SendEventMulit(e, LOEvent1::EVENT_SEZERO_FINISH);
-	G_SendEvent(e);   //按钮队列
-	reader->blocksEvent.SendToSlot(e);  //线程阻塞
-	e->closeEdit();  //unlock
-	*/
+*/
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::spbtnCommand(FunctionInterface *reader) {
+	/*
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
 	if (info) {
@@ -668,6 +649,7 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 		}
 		else info->SetBtn(nullptr, reader->GetParamInt(1));
 	}
+	*/
 	return RET_CONTINUE;
 }
 
@@ -1064,6 +1046,7 @@ int LOImageModule::ispageCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::btnCommand(FunctionInterface *reader) {
+	/*
 	if (btndefStr.length() == 0) return RET_CONTINUE;
 
 	int ids[] = { LOLayer::IDEX_NSSYS_BTN, 0, 255 };
@@ -1095,6 +1078,7 @@ int LOImageModule::btnCommand(FunctionInterface *reader) {
 	else LOLog_e("[btn] command more than 255 buttons have been defined!");
 
 	delete bin;
+	*/
 	return RET_CONTINUE;
 }
 

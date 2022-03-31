@@ -21,6 +21,26 @@ extern void SimpleError(const char *format, ...);
 //我希望尽可能的缓存纹理，可以利用SDL的纹理特性对同一个纹理进行透明、混合模式、颜色叠加
 //以小写文件名作为key，此外还需要加入NS的透明模式，比如对JPG来说 :a 和 :c的结果是不同的
 //另外还需要应对超大纹理
+//从基础纹理上切割下来的小块纹理
+//注意，由surface初始化为texture必须在渲染线程进行
+class MiniTexture {
+public:
+	MiniTexture();
+	~MiniTexture();
+	bool equal(SDL_Rect *rect);
+	bool isRectAvailable();
+	//预期的在基础纹理的位置
+	SDL_Rect dst;
+	//实际在基础纹理上的位置
+	SDL_Rect srt;
+	SDL_Texture *tex;
+	LOSurface *su;
+	//是否引用，对应基础纹理小于最大允许的纹理尺寸来说，是引用
+	//对于超大纹理 texture和surface都是从纹理上切割下来的
+	bool isref;
+};
+
+//==============================================
 
 class LOtextureBase
 {
@@ -31,16 +51,14 @@ public:
 	LOtextureBase(SDL_Texture *tx);
 	~LOtextureBase();
 
-	int AddUseCount();
-	int SubUseCount();
-
 	SDL_Texture* GetTexture(SDL_Rect *re);
 	void SetSurface(LOSurface *s);
-	LOSurface *GetSurface() { return su; }
+	LOSurface *GetSurface() { return baseSurface; }
 	void SetName(LOString &s) { Name.assign(s); }
 	LOString GetName() { return Name; }
 	bool isBig() { return isbig; }
-	void AddSizeTexture(int x, int y, int w, int h, SDL_Texture *tx);
+
+	MiniTexture *GetMiniTexture(SDL_Rect *rect);
 
 	static uint16_t maxTextureW;
 	static uint16_t maxTextureH;
@@ -50,19 +68,20 @@ public:
 	int ww;
 	int hh;
 private:
+	//是否超大纹理
 	bool isbig;
+	LOSurface *baseSurface;
+	SDL_Texture *baseTexture;
 	LOString Name;
+	//小块纹理区域列表
+	std::vector<MiniTexture> texTureList;
 
-	LOSurface *su;  //超大纹理surface不会被释放
-	std::vector<intptr_t> texlist;
-	std::atomic_int usecount;
-
-	void Init();
-	void NewBase();
-	SDL_Texture *findTextureCache(SDL_Rect *rect);
+	void baseNew();
 };
+typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;
 
 
+//========================================
 //绑定一个LOtextureBase,可以设置不同的透明度，颜色叠加等
 class LOtexture
 {
@@ -91,7 +110,6 @@ public:
 		EFF_INVERT,
 	};
 	LOtexture();
-	LOtexture(LOtextureBase *base);
 	LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access);
 	~LOtexture();
 
@@ -110,29 +128,32 @@ public:
 	void SaveSurface(LOString *fname) ;  //debug use
 	SDL_Surface *getSurface();
 
-	SDL_Texture *GetTexture() { return tex; }
-	SDL_Rect *GetSrcRect() { return &srcRect; }
+	SDL_Texture *GetTexture();
+	//SDL_Rect *GetSrcRect() { return &srcRect; }
 
-	static std::unordered_map<std::string, LOtextureBase*> baseMap;
-	static LOtextureBase *findTextureBaseFromMap(LOString &fname, bool adduse);
-	static void addTextureBaseToMap(LOString &fname, LOtextureBase *base);
-	static void notUseTextureBase(LOtextureBase *base);
-	static LOtextureBase* addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
+	static LOShareBaseTexture& findTextureBaseFromMap(LOString &fname);
+	static LOShareBaseTexture& addTextureBaseToMap(LOString &fname, LOtextureBase *base);
+	static void notUseTextureBase(LOShareBaseTexture &base);
+	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
 	static bool CopySurfaceToTextureRGBA(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst);
 
 	int baseW();
 	int baseH();
-	int W() { return srcRect.w; }
-	int H() { return srcRect.h; }
+	int W();
+	int H();
 private:
 	void NewTexture();
+
+	static std::unordered_map<std::string, LOShareBaseTexture> baseMap;
 
 	int useflag;      //颜色叠加，混合模式，透明模式，低16位表面使用了那种效果，高16位表明具体的混合模式
 	SDL_BlendMode blendmodel;
 	SDL_Color color;  //RGB的值表示颜色叠加的值，A的值表示透明度
-	LOtextureBase *baseTexture;
-	SDL_Texture *tex;
-	SDL_Rect srcRect;  //显示的源目标
+
+	//基础纹理
+	LOShareBaseTexture baseTexture;
+	//当前纹理
+	MiniTexture *curTexture;
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;

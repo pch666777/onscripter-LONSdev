@@ -476,15 +476,14 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//简单来说就是创建一个动态遮片
 
 	LOString ntemp("_?_effect_?_");      //care trigraph or Digraph
-	LOtextureBase *base = LOtexture::addNewEditTexture(ntemp, G_viewRect.w, G_viewRect.h, G_Texture_format, SDL_TEXTUREACCESS_TARGET);
+	LOtexture::addNewEditTexture(ntemp, G_viewRect.w, G_viewRect.h, G_Texture_format, SDL_TEXTUREACCESS_TARGET);
 	//除效果10外，其他效果均需要特殊调制
 	if (ef->nseffID != 10) {
 		maskTex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_STREAMING, G_viewRect.w, G_viewRect.h);
 	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
-	LOLayerData *
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
+	LOLayerData *info = CreateLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
 	info->texture->activeTexture(nullptr); //至少加载一次，不然首次加载会失败
@@ -876,24 +875,17 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 	info->SetShowType(LOLayerInfo::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
-	LOtextureBase *base = GetUseTextrue(info, nullptr, true);
+	GetUseTextrue(info, nullptr, true);
 	//LOLog_i("base surface is %x",base->GetSurface()) ;
-
-	if (!base) { //没有纹理图层是没有存在的意义的
-		FreeLayerInfoData(info);
-		info->SetLayerDelete();
-		return false;
-	}
-	info->SetNewFile(new LOtexture(base));
+	//空纹理不参与下面的设置了，以免出现问题
+	if (!info->texture) return false ;
 	info->SetPosition(x, y);
 	if (!info->actions) {  //没有动画则使用默认的宽高
-		info->showWidth = base->ww;
-		info->showHeight = base->hh;
+		info->showWidth = info->texture->baseW();
+		info->showHeight = info->texture->baseH();
 	}
 	else {
-		for (int ii = 0; ii < info->actions->size(); ii++) {
-			info->FirstSNC(info->actions->at(ii));
-		}
+		info->FirstSNC();
 	}
 
 	info->SetAlpha(alpha);
@@ -905,58 +897,59 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 
 
 
-LOtextureBase* LOImageModule::GetUseTextrue(LOLayerInfo *info, void *data, bool addcount) {
+void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) {
 	//LOLog_i("info is %x",info) ;
-	if (!info->usecache) { //唯一性纹理
-		LOString *data = info->fileName;
-		info->fileName = new LOString;
-		*info->fileName = LOString("c;") + LOString::RandomStr(30);
+	if (!info->isCache()) {
+		//唯一性纹理
+		std::unique_ptr<LOString> data = std::move(info->fileTextName);
+		info->fileTextName.reset(new LOString(LOString("c;") + LOString::RandomStr(30)));
 
 		LOtextureBase *tx = nullptr;
-		if (info->loadType == LOtexture::TEX_ACTION_STR) {
+		if (info->texType == LOtexture::TEX_ACTION_STR) {
 			LOFontWindow ww = winFont;
-			tx = RenderText2(info, &ww, data, 0);
-			LOString::SetStr(info->textStr, data, false);
+			//tx = RenderText2(info, &ww, data, 0);
+			//LOString::SetStr(info->textStr, data, false);
 		}
-		else if (info->loadType == LOtexture::TEX_SIMPLE_STR) {
-			tx = TextureFromSimpleStr(info, data);
+		else if (info->texType == LOtexture::TEX_SIMPLE_STR) {
+			//tx = TextureFromSimpleStr(info, data);
 			//LOLog_i("TextureFromSimpleStr LOSurface is %x",tx->GetSurface()) ;
 		}
-		else if (info->loadType == LOtexture::TEX_MULITY_STR) {
-			tx = TextureFromSimpleStr(info, data);
+		else if (info->texType == LOtexture::TEX_MULITY_STR) {
+			//tx = TextureFromSimpleStr(info, data);
 		}
-		else if (info->loadType == LOtexture::TEX_NSSIMPLE_BTN) {
-			tx = TextureFromNSbtn(info, data);
+		else if (info->texType == LOtexture::TEX_NSSIMPLE_BTN) {
+			//tx = TextureFromNSbtn(info, data);
 		}
 		else {
-			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->loadType);
+			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
 			//LOLog_e("%s",errs.c_str());
 			SimpleError(errs.c_str());
 		}
-		delete data;
-		LOtexture::addTextureBaseToMap(*info->fileName, tx);
-		return tx;
+		//LOtexture::addTextureBaseToMap(*info->fileName, tx);
+		return ;
 	}
-	else { //非唯一性纹理
-		LOtextureBase *tx = LOtexture::findTextureBaseFromMap( *info->fileName, false);  // new LOTexture时会自动增加base
-		if (tx) return tx;
-		switch (info->loadType) {
+	else {
+		//缓存类纹理
+		info->texture = LOtexture::findTextureBaseFromMap( *info->fileTextName);  // new LOTexture时会自动增加base
+		//有效
+		if (info->texture) return ;
+		switch (info->texType) {
 		case LOtexture::TEX_IMG:
-			tx = TextureFromFile(info);
+			TextureFromFile(info);
 			break;
 		case LOtexture::TEX_COLOR_AREA:
-			tx = TextureFromColor(info);
+			//tx = TextureFromColor(info);
 			break;
 		case LOtexture::TEX_EMPTY:
-			tx = EmptyTexture(info->fileName); //workhere
+			//tx = EmptyTexture(info->fileName); //workhere
 			break;
 		default:
-			LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->loadType);
+			LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
 			break;
 		}
-		return tx;
+		return;
 	}
-	return nullptr;
+	return;
 }
 
 //单行文字
@@ -1067,19 +1060,16 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 }           
 
 
-LOtextureBase* LOImageModule::TextureFromFile(LOLayerInfo *info) {
+void LOImageModule::TextureFromFile(LOLayerData *info) {
 	bool ispng, useAlpha;
-	LOSurface *tmp = SurfaceFromFile(info->fileName, &ispng);
-	if (!tmp) return nullptr;
+	LOUniqSurface tmp(SurfaceFromFile(info->fileTextName.get(), &ispng));
+	if (!tmp) return ;
 	//转换透明格式 
 	if (info->alphaMode != LOLayerInfo::TRANS_COPY && !tmp->hasAlpha()) {
 		if (info->alphaMode == LOLayerInfo::TRANS_ALPHA && !ispng) {
-			LOSurface *tmp2 = tmp->ConverNSalpha(info->GetCellCount());
-			if (tmp2) {
-				delete tmp;
-				tmp = tmp2;
-			}
-			else SimpleError("Conver image alhpa faild: %s", info->fileName->c_str());
+			LOUniqSurface tmp2(tmp->ConverNSalpha(info->GetCellCount()));
+			if (tmp2) tmp = std::move(tmp);
+			else SimpleError("Conver image alhpa faild: %s", info->fileTextName->c_str());
 		}
 		else if (info->alphaMode == LOLayerInfo::TRANS_TOPLEFT) {
 			SDL_Color color = tmp->getPositionColor(0, 0);
@@ -1094,10 +1084,8 @@ LOtextureBase* LOImageModule::TextureFromFile(LOLayerInfo *info) {
 		}
 	}
 
-	LOtextureBase *base = new LOtextureBase(tmp);
-	LOString s = info->fileName->toLower() + "?" + std::to_string(info->alphaMode) + ";";
-	base->SetName(s);
-	return base;
+	LOString s = info->fileTextName->toLower() + "?" + std::to_string(info->alphaMode) + ";";
+	info->texture = LOtexture::addTextureBaseToMap(s, new LOtextureBase(tmp.get()));
 }
 
 LOSurface* LOImageModule::SurfaceFromFile(LOString *filename, bool *ispng) {
@@ -1131,172 +1119,6 @@ LOLayer* LOImageModule::GetLayerOrNew(int fullid) {
 	LOLayer *lyr = FindLayerInBase(type, ids);
 	//if (!lyr)lyr = new LOLayer(type, ids);
 	return lyr;
-}
-
-LOLayerInfo* LOImageModule::GetInfoLayerAvailable(int fullid, const char* cacheN) {
-	/*
-	//首先应该检查是否在队列组中
-	uint64_t key = GetIndexKey(fullid, cacheN);
-	LOLayerInfo *info = NULL;
-	SDL_LockMutex(poolMutex);
-	auto iter = queLayerinfoMap.find(key);
-	if (iter != queLayerinfoMap.end()) info = &iter->second->info;
-	else {
-		LOLayer *lyr = FindLayerInBase(fullid);
-		if (lyr) {
-			LOLayerInfoCacheIndex *minfo = GetCacheIndexFromPool(fullid, cacheN);
-			queLayerinfoMap[key] = minfo;
-			info = &minfo->info;
-			//一些关键信息我们想要知道
-			info->CopyConWordFrom(lyr->curInfo, LOLayerInfo::CON_UPPOS | LOLayerInfo::CON_UPPOS2 |
-				LOLayerInfo::CON_UPVISIABLE | LOLayerInfo::CON_UPAPLHA, false);
-		}
-	}
-	SDL_UnlockMutex(poolMutex);
-	*/
-	return nullptr;
-}
-
-
-//图层是否有效，依赖图层存在的操作才能决定是否执行，比如msp spbtn等
-LOLayerInfo* LOImageModule::GetInfoLayerAvailable(LOLayer::SysLayerType type, int *ids, const char* cacheN) {
-	int fullid = GetFullID(type, ids);
-	return GetInfoLayerAvailable(fullid, cacheN);
-}
-
-
-LOLayerInfo* LOImageModule::GetInfoUnLayerAvailable(int fullid, const char* cacheN) {
-	int stype;
-	int ids[] = { 0,0,0 };
-	GetTypeAndIds(&stype, ids,fullid);
-	return GetInfoUnLayerAvailable((LOLayer::SysLayerType)stype, ids, cacheN);
-}
-
-//图层不在队列中，且不在显示中时新建一个
-LOLayerInfo* LOImageModule::GetInfoUnLayerAvailable(LOLayer::SysLayerType type, int *ids, const char* cacheN) {
-	int fullid = GetFullID(type, ids);
-	uint64_t key = GetIndexKey(fullid, cacheN);
-	LOLayerInfo *info = NULL;
-
-	SDL_LockMutex(poolMutex);
-	auto iter = queLayerinfoMap.find(key);
-	if (iter != queLayerinfoMap.end()) info = &iter->second->info;
-	SDL_UnlockMutex(poolMutex);
-	if (info) return nullptr; //图层已经存在
-
-	LOLayer *lyr = G_baseLayer[type].FindChild(ids);
-	if (lyr) return nullptr;
-
-	return GetInfoNew(fullid, cacheN);
-}
-
-void LOImageModule::ClearAllLayerInfo() {
-	SDL_LockMutex(poolMutex);
-	queLayerinfoMap.clear();
-	for (int count = 0; count < poolData.size(); count++) {
-		LOLayerInfoCacheIndex *minfo = poolData.at(count);
-		if (minfo->iswork) {
-			NotUseInfo(minfo);
-		}
-	}
-	SDL_UnlockMutex(poolMutex);
-}
-
-LOLayerInfo* LOImageModule::LayerInfomation(LOLayer::SysLayerType type, int *ids, const char* cacheN) {
-	int fullid = GetFullID(type, ids);
-	return LayerInfomation(fullid, cacheN);
-}
-
-//获取图层信息，会叠加尚在队列中的数据，需要从自行释放数据
-LOLayerInfo* LOImageModule::LayerInfomation(int fullid, const char* cacheN) {
-	int index = -1;
-	LOLayerInfo *info = new LOLayerInfo;
-	uint64_t key = GetIndexKey(fullid, cacheN);
-
-	SDL_LockMutex(poolMutex);
-	//首先应该检查是否在队列组中
-	LOLayerInfoCacheIndex *minfo = NULL;
-	auto iter = queLayerinfoMap.find(key);
-	if (iter != queLayerinfoMap.end()) minfo = iter->second;
-	SDL_UnlockMutex(poolMutex);
-
-	//队列中是一个新的图层，直接返回信息就可以了
-	if (minfo &&  minfo->info.isNewLayer()) {
-		info->CopyConWordFrom(&minfo->info, -1, false);
-		//info->CopyActionFrom(minfo->info.actions, false);
-		return info;
-	}
-
-	SDL_LockMutex(layerQueMutex);
-	//有图层的复制图层信息
-	LOLayer *lyr = FindLayerInBase(fullid);
-	if (lyr) {
-
-		//info->CopyConWordFrom(lyr->curInfo, -1, false);
-		//info->CopyActionFrom(lyr->curInfo->actions, false);
-		//队列信息叠加进入
-		if (minfo) info->CopyConWordFrom( &minfo->info, minfo->info.GetLayerControl(), false);
-
-	}
-	else {
-		delete info;
-		info = NULL;
-	}
-	SDL_UnlockMutex(layerQueMutex);
-	return info;
-}
-
-//获取图层的使用情况，包括已经在队列中的和显示的，print_name null表示搜索全部队列
-//搜索区域的起点由ids中的值指定
-BinArray* LOImageModule::GetQueLayerUsedState(int sfullID, const char* print_name, int checkIndex) {
-	int max = 255;
-	if (checkIndex == IDS_LAYER_NORMAL) max = 1024;
-	int sids[] = { 0, 0, 0 };
-	int stype;
-	GetTypeAndIds(&stype, sids, sfullID);
-
-	BinArray *bin = new BinArray(max + 1);
-	bin->SetLength(max + 1);
-	SDL_LockMutex(poolMutex);
-	//搜索队列
-	for (int ii = 0; ii < prinNameList.size(); ii++) {
-		int hash = prinNameList.at(ii);
-		if (print_name) hash = LOString::HashStr(print_name);
-		//从队列的起始开始
-		uint64_t key = GetIndexKey(0, hash);
-		auto iter = queLayerinfoMap.find(key);
-		bool loop = true;
-		while (iter != queLayerinfoMap.end() && loop) {
-			int fullID = iter->first & 0xffffffff;
-			//除checkIndex外，其他几个应该相等
-			int kids[] = { 0,0,0 };
-			int ktype;
-			GetTypeAndIds(&ktype, kids, fullID);
-			if (ktype == stype) {
-				//判断是否需要的
-				bool isit = true;
-				for (int nn = 0; nn < 3; nn++) {
-					if (nn != checkIndex && kids[nn] != sids[nn]) isit = false;
-					else if (nn < checkIndex && kids[nn] > sids[nn]) { //超出范围
-						loop = false;
-						break;
-					}
-				}
-				//写标记
-				if (isit) bin->bin[kids[checkIndex]] = 1;
-
-			}
-			else if (ktype > stype) {//超出范围
-				loop = false;
-				break;
-			}
-
-			iter++;
-		}
-		if (print_name) break;
-	}
-	SDL_UnlockMutex(poolMutex);
-	return bin;
 }
 
 
@@ -1380,6 +1202,7 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 }
 
 bool LOImageModule::LoadDialogWin() {
+	/*
 	int ids[] = { LOLayer::IDEX_DIALOG_WINDOW,255,255 };
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
 	if (winstr.length() > 0) {
@@ -1398,11 +1221,13 @@ bool LOImageModule::LoadDialogWin() {
 		LOLayerInfo* info = GetInfoNewAndFreeOld(fullid, "_lons");
 		info->SetLayerDelete();
 	}
+	*/
 	return true;
 }
 
 //隐藏图层，0表示无需刷新状态，1表示需刷新状态
 int LOImageModule::HideLayer(int fullid, const char *printName) {
+	/*
 	int sstate;
 	LOLayerInfo *cinfo = LayerInfomation(fullid, printName);
 	if (cinfo && cinfo->visiable) {
@@ -1413,11 +1238,14 @@ int LOImageModule::HideLayer(int fullid, const char *printName) {
 	else sstate = 0;
 
 	if (cinfo)delete cinfo;
-	return sstate;
+	*/
+	//return sstate;
+	return 0;
 }
 
 //显示图层，0表示无需刷新状态，1表示需刷新状态，-1表示图层不存在
 int LOImageModule::ShowLayer(int fullid, const char *printName) {
+	/*
 	int sstate;
 	LOLayerInfo *cinfo = LayerInfomation(fullid, printName);
 	if (!cinfo || cinfo->visiable == 0) { //图层不存在或者隐藏的
@@ -1430,6 +1258,8 @@ int LOImageModule::ShowLayer(int fullid, const char *printName) {
 
 	if (cinfo)delete cinfo;
 	return sstate;
+	*/
+	return 0;
 }
 
 
@@ -1446,6 +1276,7 @@ void LOImageModule::DialogWindowPrint() {
 
 //文字显示进入队列
 bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
+	/*
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
 
@@ -1458,14 +1289,12 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 		lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
 		if (lyr) {
 			//确认下一行的开始位置
-			/*
-			LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
-			if (text) {
-				startline = text->lineInfo->size() - 1;
-				startpos = text->lineInfo->top()->sumx;
-				isAdd = true;
-			}
-			*/
+			//LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
+			//if (text) {
+			//	startline = text->lineInfo->size() - 1;
+			//	startpos = text->lineInfo->top()->sumx;
+			//	isAdd = true;
+			//}
 		}
 	}
 
@@ -1481,6 +1310,7 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 		}
 	}
 	dialogTextHasChange = true;
+	*/
 	return true;
 }
 
@@ -1497,10 +1327,21 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 	auto *ac = new LOLayerData();
 	ac->fullid = fullid;
 	//检查是否已经有对象，有的话释放掉原来的
-	auto iter = backLayersMap.find(fullid);
-	if (iter != backLayersMap.end()) delete iter->second;
-	backLayersMap[fullid] = ac;
+	auto *printMap = GetPrintNameMap(printName);
+	auto iter = printMap->map->find(fullid);
+	if (iter != printMap->map->end()) delete iter->second;
+	(*printMap->map)[fullid] = ac;
 	return ac;
+}
+
+
+void LOImageModule::DeleteLayerData(int fullid, const char *printName) {
+	auto *printMap = GetPrintNameMap(printName);
+	auto iter = printMap->map->find(fullid);
+	if (iter != printMap->map->end()) {
+		delete iter->second;
+		printMap->map->erase(iter);
+	}
 }
 
 

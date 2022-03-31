@@ -7,114 +7,106 @@
 uint16_t LOtextureBase::maxTextureW = 4096;
 uint16_t LOtextureBase::maxTextureH = 4096;
 SDL_Renderer *LOtextureBase::render = nullptr;  //一般来说只会有一个渲染器
-std::unordered_map<std::string, LOtextureBase*> LOtexture::baseMap;
+std::unordered_map<std::string, LOShareBaseTexture> LOtexture::baseMap;
 
 //============== class ============
+MiniTexture::MiniTexture() {
+	dst = { 0,0,0,0 };
+	srt = dst;
+	tex = nullptr;
+	su = nullptr;
+	isref = true;
+}
+
+MiniTexture::~MiniTexture() {
+	//非引用要释放数据
+	if (!isref) {
+		//涉及到释放需注意只能在渲染线程才能释放
+		if (tex) SDL_DestroyTexture(tex);
+		if (su) delete su;
+	}
+}
+
+bool MiniTexture::equal(SDL_Rect *rect) {
+	if (rect->x == dst.x && rect->y == dst.y && rect->w == dst.w && rect->h == dst.h) return true;
+	return false;
+}
+
+bool MiniTexture::isRectAvailable() {
+	if (srt.x < 0 || srt.y < 0 || srt.w < 1 || srt.h < 1) return false;
+	return true;
+}
+
 LOtextureBase::LOtextureBase() {
-	NewBase();
+	baseNew();
 }
 
 LOtextureBase::LOtextureBase(LOSurface *surface) {
-	NewBase();
+	baseNew();
 	SetSurface(surface);
 }
 
+
 LOtextureBase::LOtextureBase(SDL_Texture *tx) {
-	NewBase();
+	baseNew();
 	if (tx) {
 		SDL_QueryTexture(tx, NULL, NULL, &ww, &hh);
-		AddSizeTexture(0, 0, ww, hh, tx);
+		baseTexture = tx;
 	}
 }
 
-void LOtextureBase::NewBase() {
-	ww = 0;
-	hh = 0;
-	su = nullptr;
+
+void LOtextureBase::baseNew() {
+	ww = hh = 0;
 	isbig = false;
-	std::atomic_init(&usecount, 0);
+	baseTexture = nullptr;
+	baseSurface = nullptr;
 }
 
 LOtextureBase::~LOtextureBase() {
-	if (su) delete su;
-	su = nullptr;
-	for (int ii = 0; ii < texlist.size(); ii++) {
-		if (ii % 2 == 0) delete ((SDL_Rect*)texlist[ii]);
-		else {
-			DestroyTexture((SDL_Texture*)texlist[ii]);
-		}
+	//切割下来的纹理块应该自动释放
+	texTureList.clear();
+	if (baseSurface) delete baseSurface;
+	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
+	if (baseTexture) SDL_DestroyTexture(baseTexture);
+}
+
+MiniTexture *LOtextureBase::GetMiniTexture(SDL_Rect *rect) {
+	for (int ii = 0; ii < texTureList.size(); ii++) {
+		MiniTexture *tex = &texTureList.at(ii);
+		if (tex->equal(rect)) return tex;
 	}
-	texlist.clear();
-}
-
-int LOtextureBase::AddUseCount() {
-	usecount.fetch_add(1);
-	return usecount.load();
-}
-
-int LOtextureBase::SubUseCount() {
-	usecount.fetch_sub(1);
-	return usecount.load();
-}
-
-
-//初始化的时机很重要，必须在主线程上初始化
-void LOtextureBase::Init() {
-	SDL_Texture* tx = CreateTextureFromSurface(render, su->GetSurface());
-	AddSizeTexture(0, 0, su->W(), su->H(), tx);
-	delete su;
-	su = nullptr;
-}
-
-void LOtextureBase::AddSizeTexture(int x, int y, int w, int h, SDL_Texture *tx) {
-	SDL_Rect *rect = new SDL_Rect;
-	rect->x = x; rect->y = y;
-	rect->w = w; rect->h = h;
-	texlist.push_back((intptr_t)rect);
-	texlist.push_back((intptr_t)tx);
-}
-
-//========================================
-
-//注意，这个函数只能用在主线程，在子线程上可能会卡死
-//非超大型纹理使用跟普通纹理一样，超大型纹理只会返回rect对应的区域,src对于的范围应置为0和纹理的长宽
-SDL_Texture* LOtextureBase::GetTexture(SDL_Rect *re) {
-	if (texlist.size() == 0 && su && !isbig) Init();
-	//非超大纹理直接返回
-	if (!isbig) return (SDL_Texture*)texlist[1] ;
-
-	//超大纹理优先查找缓存
-	AvailableRect(ww, hh, re);
-	SDL_Texture *texture = findTextureCache(re);
-
-	//没有在缓存中则创建一个新的
-	if (!texture) {
-		LOSurface *tsu = su->ClipSurface(*re);
-		texture = CreateTextureFromSurface(render, tsu->GetSurface());
-		delete tsu;
-		AddSizeTexture(re->x, re->y, re->w, re->h, texture);
+	//没有找到，添加一个，添加失败则返回null
+	MiniTexture *tex = new MiniTexture;
+	tex->dst = *rect;
+	tex->srt = *rect;
+	AvailableRect(ww, hh, &tex->srt);
+	//不可用的基础纹理
+	if (!tex->isRectAvailable()) return nullptr;
+	//超大纹理不引用
+	tex->isref = !isbig;
+	if (tex->isref) {
+		if (baseTexture) tex->tex = baseTexture;
+		else if (baseSurface) tex->su = baseSurface;
+		else return nullptr;
 	}
-	return texture;
+	else {
+		//超大纹理只从基础纹理中切割出surface
+		tex->su = baseSurface->ClipSurface(tex->srt);
+	}
+	return tex;
 }
 
-//从缓存队列中查找
-SDL_Texture *LOtextureBase::findTextureCache(SDL_Rect *re) {
-	for (int ii = 0; ii < texlist.size(); ii += 2) {
-		SDL_Rect *rect = (SDL_Rect*)texlist[ii];
-		if (rect && re->x == rect->x && re->y == rect->y && re->w == rect->w && re->h == rect->h) {
-			return (SDL_Texture*)texlist[ii + 1];
-		}
-	}
-	return nullptr;
-}
+
 
 void LOtextureBase::SetSurface(LOSurface *s) {
-	if (su) delete su;
-	su = s;
+	texTureList.clear();
+	if (baseSurface) delete baseSurface;
+	baseSurface = s;
 	ww = 0; hh = 0; isbig = false;
-	if (su) {
-		ww = su->W();
-		hh = su->H();
+	if (baseSurface) {
+		ww = baseSurface->W();
+		hh = baseSurface->H();
 		if (ww > maxTextureW || hh > maxTextureH) isbig = true;
 	}
 }
@@ -134,54 +126,54 @@ void LOtextureBase::AvailableRect(int maxx, int maxy, SDL_Rect *rect) {
 }
 
 
-LOtextureBase *LOtexture::findTextureBaseFromMap(LOString &fname, bool adduse) {
+//=================================================
+
+LOShareBaseTexture &LOtexture::findTextureBaseFromMap(LOString &fname) {
 	LOString s = fname.toLower();
 	auto iter = baseMap.find(s);
 	if (iter != baseMap.end()) {
-		if (adduse) iter->second->AddUseCount();
 		return iter->second;
 	}
-	return nullptr;
+	LOShareBaseTexture bt;
+	return bt;
 }
 
 
-void LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
+LOShareBaseTexture& LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
 	LOString s = fname.toLower();
 	//auto iter = baseMap.find(s);
 	//if (iter != baseMap.end) delete iter->second;
 	base->SetName(s);
-	baseMap[s] = base;
+	LOShareBaseTexture bt(base);
+	baseMap[s] = bt;
+	return bt;
 }
 
 //只能运行在主线程
-LOtextureBase* LOtexture::addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access) {
+LOShareBaseTexture& LOtexture::addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access) {
 	LOString s = fname.toLower();
 	SDL_Texture *tx = CreateTexture(LOtextureBase::render, format, access, w, h);
-	LOtextureBase *base = new LOtextureBase(tx);
-	LOtexture::baseMap[s] = base;
-	return base;
+	return addTextureBaseToMap(s, new LOtextureBase(tx));
 }
 
 
-void LOtexture::notUseTextureBase(LOtextureBase *base) {
-	int count = base->SubUseCount();
-	if (count <= 0) {
+//这个函数有一个隐含的条件：触发函数说明脚本线程正在lsp或者csp中
+//而渲染线程只有在print才会调整图层，触发此函数，因此它是线程安全的
+void LOtexture::notUseTextureBase(LOShareBaseTexture &base) {
+	bool isdel = false;
+	//当前的base 1份，map中的base1份，所以2份就是清理的时机
+	if (base.use_count() == 2) isdel = true;
+	if (isdel) {
 		auto iter = baseMap.find(base->GetName());
-		//必须确认为同一个
-		if (iter != baseMap.end() && iter->second == base) baseMap.erase(base->GetName()); 
-		delete base;
+		if (iter != baseMap.end() && iter->second.get() == base.get()) baseMap.erase(iter);
 	}
+	//计数-1，如果要删除的，这里应该已经被释放了
+	base.reset();
 }
 
 
 LOtexture::LOtexture() {
 	NewTexture();
-}
-
-LOtexture::LOtexture(LOtextureBase *base) {
-	NewTexture();
-	SetBaseTexture(base);
-	baseTexture->AddUseCount();
 }
 
 LOtexture::LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access) {
@@ -193,18 +185,13 @@ LOtexture::LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access) {
 void LOtexture::NewTexture() {
 	useflag = 0;
 	baseTexture = nullptr;
-	tex = nullptr;
-	srcRect = { 0,0,0,0 };
+	curTexture = nullptr;
 }
 
 LOtexture::~LOtexture() {
 	if (baseTexture)notUseTextureBase(baseTexture);
 }
 
-void LOtexture::SetBaseTexture(LOtextureBase *base) {
-	if (baseTexture) notUseTextureBase(baseTexture);
-	baseTexture = base;
-}
 
 
 bool LOtexture::isBig() {
@@ -220,32 +207,14 @@ bool LOtexture::isAvailable() {
 
 
 bool LOtexture::activeTexture(SDL_Rect *src) {
-	tex = NULL;
-	srcRect.x = 0; srcRect.y = 0;
-	srcRect.w = 0; srcRect.h = 0;
 
-	if (!baseTexture) return false;
-
-	if (!src) {
-		srcRect.w = baseTexture->ww;
-		srcRect.h = baseTexture->hh;
-	}
-	else srcRect = *src;
-
-	//srcRect的值已经被改变
-	tex = baseTexture->GetTexture(&srcRect);
-
-	if (!tex) {
-		srcRect.x = 0; srcRect.y = 0;
-		srcRect.w = 0; srcRect.h = 0;
-	}
 	return true;
 }
 
 
 bool LOtexture::activeFlagControl() {
-	if (!tex) return false;
-
+	if (!curTexture) return false;
+	/*
 	if (useflag & USE_ALPHA_MOD) {
 		SDL_SetTextureAlphaMod(tex, color.a);
 		SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
@@ -262,6 +231,7 @@ bool LOtexture::activeFlagControl() {
 
 	if (useflag & USE_COLOR_MOD) SDL_SetTextureColorMod(tex, color.r, color.g, color.b);
 	else SDL_SetTextureColorMod(tex, 0xff, 0xff, 0xff);
+	*/
 	return true;
 }
 
@@ -321,7 +291,7 @@ bool LOtexture::activeActionTxtTexture() {
 	int h = su->H();
 	SDL_Texture *tx = CreateTexture(LOtextureBase::render, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
 	if (!tx) return false;
-	baseTexture->AddSizeTexture(0, 0, w, h, tx);
+	//baseTexture->AddSizeTexture(0, 0, w, h, tx);
 	//部分显卡的显存还留有上一次显示的数据，因此需要重新覆盖数据
 	void *pixdata;
 	int pitch;
@@ -336,10 +306,10 @@ bool LOtexture::activeActionTxtTexture() {
 //滚动从surface复制内容到纹理中
 bool LOtexture::rollTxtTexture(SDL_Rect *src, SDL_Rect *dst) {
 	LOSurface *su = baseTexture->GetSurface();
-	if (!tex) tex = baseTexture->GetTexture(NULL);
+	//if (!tex) tex = baseTexture->GetTexture(NULL);
 	LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, src);
 	LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, dst);
-	if(src->w > 0 && src->h > 0) CopySurfaceToTextureRGBA(su->GetSurface(), src, tex, dst);
+	//if(src->w > 0 && src->h > 0) CopySurfaceToTextureRGBA(su->GetSurface(), src, tex, dst);
 	return true;
 }
 
@@ -391,5 +361,18 @@ SDL_Surface *LOtexture::getSurface(){
 		else LOLog_i("LOSurface is NULL!") ;
 	}
 	else LOLog_i("baseTexture is NULL!") ;
+	return nullptr;
+}
+
+
+int LOtexture::W() {
+	return 0;
+}
+
+int LOtexture::H() {
+	return 0;
+}
+
+SDL_Texture *LOtexture::GetTexture() {
 	return nullptr;
 }

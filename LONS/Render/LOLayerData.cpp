@@ -50,7 +50,8 @@ void LOLayerData::GetSimpleSrc(SDL_Rect *src) {
 
 
 void LOLayerData::SetVisable(int v) {
-	flags |= FLAGS_VISIABLE;
+	if(v) flags |= FLAGS_VISIABLE;
+	else flags &= (~FLAGS_VISIABLE);
 }
 
 
@@ -129,6 +130,33 @@ void LOLayerData::SetAction(LOShareAction &ac) {
 	}
 	else actions.reset(new std::vector<LOShareAction>());
 	actions->push_back(ac);
+}
+
+int LOLayerData::GetCellCount() {
+	if (actions) {
+		for (int ii = 0; ii < actions->size(); ii++) {
+			LOShareAction ac = actions->at(ii);
+			if (ac->acType == LOAction::ANIM_NSANIM) return ((LOActionNS*)(ac.get()))->cellCount;
+		}
+	}
+	//默认是1格的
+	return 1;
+}
+
+
+void LOLayerData::FirstSNC() {
+	for (int ii = 0; ii < actions->size(); ii++) {
+		LOShareAction ac = actions->at(ii);
+		if (ac->acType == LOAction::ANIM_NSANIM) {
+			if (texture) {
+				LOActionNS *ai = (LOActionNS*)(ac.get());
+				showType |= SHOW_RECT;
+				cellNum = ai->cellCurrent;
+				showWidth = texture->baseW() / ai->cellCount;
+				showHeight = texture->baseH();
+			}
+		}
+	}
 }
 
 

@@ -15,6 +15,10 @@ void LOLayer::BaseNew(SysLayerType lyrType) {
 	rootLyr = &G_baseLayer[layerType];
 }
 
+LOLayer::LOLayer() {
+	BaseNew(LAYER_CC_USE);
+}
+
 LOLayer::LOLayer(SysLayerType lyrType) {
 	BaseNew(lyrType);
 }
@@ -152,6 +156,7 @@ bool LOLayer::isPositionInsideMe(int x, int y) {
 	}
 	else return false;
 	*/
+	return false;
 }
 
 
