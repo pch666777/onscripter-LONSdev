@@ -59,7 +59,6 @@ public:
 	LOLayer *rootLyr;
 
 	std::map<int, LOLayer*> *childs;
-	bool isInit;
 
 	//顶级图层不需要后台数据
 	LOLayer();

@@ -40,8 +40,8 @@ MiniTexture::~MiniTexture() {
 	//非引用要释放数据
 	if (!isref) {
 		//涉及到释放需注意只能在渲染线程才能释放
-		if (tex && *tex) SDL_DestroyTexture(*tex);
-		if (su && *su) SDL_FreeSurface(*su);
+		if (tex) DestroyTexture(tex);
+		if (su) FreeSurface(su);
 	}
 }
 
@@ -55,13 +55,6 @@ bool MiniTexture::isRectAvailable() {
 	return true;
 }
 
-void MiniTexture::converToGPUtex() {
-	//if (!tex && su) {
-	//	tex = CreateTextureFromSurface(LOtextureBase::render, su);
-	//	SDL_FreeSurface(su);
-	//	su = nullptr;
-	//}
-}
 
 ////================================================
 
@@ -104,9 +97,9 @@ void LOtextureBase::baseNew() {
 LOtextureBase::~LOtextureBase() {
 	//切割下来的纹理块应该自动释放
 	texTureList.clear();
-	if (baseSurface) SDL_FreeSurface(baseSurface);
+	if (baseSurface) FreeSurface(baseSurface);
 	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
-	if (baseTexture) SDL_DestroyTexture(baseTexture);
+	if (baseTexture) DestroyTexture(baseTexture);
 }
 
 MiniTexture *LOtextureBase::GetMiniTexture(SDL_Rect *rect) {
@@ -128,22 +121,34 @@ MiniTexture *LOtextureBase::GetMiniTexture(SDL_Rect *rect) {
 	//超大纹理不引用
 	tex->isref = !isbig;
 	if (tex->isref) {
-		if (baseTexture) tex->tex = &baseTexture;
-		else if (baseSurface) tex->su = &baseSurface;
+		if (baseTexture) tex->tex = baseTexture;
+		else if (baseSurface) tex->su = baseSurface;
 		else return nullptr;
 	}
 	else {
 		//超大纹理只从基础纹理中切割出surface
-		*(tex->su) = ClipSurface(baseSurface, tex->srt);
+		tex->su = ClipSurface(baseSurface, tex->srt);
 	}
 	return tex;
+}
+
+
+SDL_Texture *LOtextureBase::GetFullTexture() {
+	if (baseTexture) return baseTexture;
+	else if (baseSurface) {
+		baseTexture = CreateTextureFromSurface(render, baseSurface);
+		FreeSurface(baseSurface);
+		baseSurface = nullptr;
+		return baseTexture;
+	}
+	return nullptr;
 }
 
 
 
 void LOtextureBase::SetSurface(SDL_Surface *su) {
 	texTureList.clear();
-	if (baseSurface) SDL_FreeSurface(baseSurface);
+	if (baseSurface) FreeSurface(baseSurface);
 	baseSurface = su;
 	ww = 0; hh = 0; isbig = false;
 	if (baseSurface) {
@@ -158,6 +163,32 @@ bool LOtextureBase::hasAlpha() {
 	if (baseSurface) return baseSurface->format->Amask != 0;
 	else if (baseTexture) return true;
 	return false;
+}
+
+
+void LOtextureBase::converGPUtex(MiniTexture *mini) {
+	if (!mini->isref) {
+		if (!mini->tex && mini->su) {
+			mini->tex = CreateTextureFromSurface(LOtextureBase::render, mini->su);
+			//超大纹理保持surface不释放
+			//FreeSurface(mini->su);
+			//mini->su = nullptr;
+		}
+	}
+	else {
+		if (!baseTexture && baseSurface) {
+			baseTexture = CreateTextureFromSurface(LOtextureBase::render, baseSurface);
+			FreeSurface(baseSurface);
+			baseSurface = nullptr;
+			//更新整个列表
+			for (int ii = 0; ii < texTureList.size(); ii++) {
+				if (texTureList[ii].isref) {
+					texTureList[ii].tex = baseTexture;
+					texTureList[ii].su = baseSurface;
+				}
+			}
+		}
+	}
 }
 
 
@@ -325,18 +356,35 @@ bool LOtexture::isAvailable() {
 }
 
 
+//根据给定的范围框截取对象
 MiniTexture* LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 	if (!baseTexture || !baseTexture->isValid()) return nullptr;
+
+	//优先判断缓存
+	if (curTexture) {
+		//同一个，大部分都属于这个
+		if (curTexture->equal(src)) {
+			if (curTexture->tex) return curTexture;
+			//没有初始化的判断是否要初始化
+			if (toGPUtex && curTexture->su) baseTexture->converGPUtex(curTexture);
+			return curTexture;
+		}
+		else {
+			//不是同一个要看到是否超大纹理，超大纹理释放texture，节约显存
+			if (!curTexture->isref && curTexture->tex) {
+				DestroyTexture(curTexture->tex);
+				curTexture = nullptr;
+			}
+		}
+	}
+
+	//生成区块
 	SDL_Rect dst;
 	if (src) dst = *src;
 	else dst = { 0,0,baseTexture->ww,baseTexture->hh };
-	curTexture = baseTexture->GetMiniTexture(&dst);
 
-	if (curTexture && toGPUtex) {
-		if (!curTexture->tex && curTexture->su) {
-			//curte CreateTextureFromSurface(LOtextureBase::render, curTexture->su);
-		}
-	}
+	curTexture = baseTexture->GetMiniTexture(&dst);
+	if(!curTexture->tex && toGPUtex && curTexture->su) baseTexture->converGPUtex(curTexture);
 	return curTexture;
 }
 

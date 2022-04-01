@@ -554,7 +554,7 @@ void LOImageModule::ShowFPS(double postime) {
 
 		////LOLog_i("%d fps number!", ii) ;
 
-		//SDL_RenderCopy(render, fpstex[ii].GetTexture(NULL), NULL, &rect);
+		SDL_RenderCopy(render, fpstex[ii].GetFullTexture(), NULL, &rect);
 		rect.x -= rect.w;
 		fps = fps / 10;
 	}
@@ -583,7 +583,6 @@ bool LOImageModule::InitFps() {
 		//LOLog_i("fps surface is:%x",su) ;
 		if (su) {
 			fpstex[ii].SetSurface(su);
-			fpstex[ii].GetMiniTexture(nullptr);
 		}
 	}
 	fpsconfig.Closefont();

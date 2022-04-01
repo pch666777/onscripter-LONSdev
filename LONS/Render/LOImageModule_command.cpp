@@ -9,7 +9,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//	int debugbreak = 1;
 	//}
 	bool visiable = !reader->isName("lsph");
-	int ids[] = { 0,255,255 };
+	int ids[] = { reader->GetParamInt(0),255,255 };
 	int fixpos = 0;
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, ids);
 

@@ -32,15 +32,13 @@ public:
 	~MiniTexture();
 	bool equal(SDL_Rect *rect);
 	bool isRectAvailable();
-	void converToGPUtex();
 	//预期的在基础纹理的位置
 	SDL_Rect dst;
 	//实际在基础纹理上的位置
 	SDL_Rect srt;
 
-	//需要指向指针的指针。。。
-	SDL_Texture **tex;
-	SDL_Surface **su;
+	SDL_Texture *tex;
+	SDL_Surface *su;
 	//是否引用，对应基础纹理小于最大允许的纹理尺寸来说，是引用
 	//对于超大纹理 texture和surface都是从纹理上切割下来的
 	bool isref;
@@ -65,12 +63,14 @@ public:
 	LOString GetName() { return Name; }
 	bool isBig() { return isbig; }
 	bool isValid() { return baseSurface || baseTexture; }
+	SDL_Texture *GetFullTexture();
 
 	//只对surface有效
 	bool hasAlpha();
 	
 
 	MiniTexture *GetMiniTexture(SDL_Rect *rect);
+	void converGPUtex(MiniTexture *mini);
 
 	static uint16_t maxTextureW;
 	static uint16_t maxTextureH;

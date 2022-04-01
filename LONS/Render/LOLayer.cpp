@@ -24,12 +24,10 @@ LOLayer::LOLayer(SysLayerType lyrType) {
 }
 
 LOLayer::LOLayer(LOLayerData &data, bool islink) {
-	int lyrType;
-	GetTypeAndIds(&lyrType, id, data.fullid);
+	int lyrType = GetIDs(data.fullid, IDS_LAYER_TYPE);
 	BaseNew((SysLayerType)lyrType);
 	curInfo.reset(new LOLayerData(data));
-
-	rootLyr = &G_baseLayer[lyrType];
+	GetTypeAndIds(nullptr, id, curInfo->fullid);
 	//挂到父对象的层级
 	if (islink && !rootLyr->InserChild(this)) LOLog_e("new LOLayer() no father:%d,%d,%d", id[0], id[1], id[2]);
 }
@@ -247,7 +245,9 @@ void LOLayer::GetInheritOffset(float *ox, float *oy) {
 bool LOLayer::isFaterCopyEx() {
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		if (lyr->curInfo->isShowRotate() || lyr->curInfo->isShowScale())return true;
+		if (lyr->curInfo) {
+			if (lyr->curInfo->isShowRotate() || lyr->curInfo->isShowScale())return true;
+		}
 		lyr = lyr->parent;
 	}
 	return false;
@@ -323,10 +323,9 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	if (curInfo->isShowScale() || curInfo->isShowRotate()) is_ex = true;
 	if (isFaterCopyEx()) is_ex = true;
 
-	if (!isInit) {
-		curInfo->texture->activeTexture(&src, true);
-		isInit = true;
-	}
+	MiniTexture *mini = curInfo->texture->activeTexture(&src, true);
+	//不可渲染的错误
+	if (!mini || !mini->tex) return;
 
 	curInfo->texture->setForceAplha(curInfo->alpha);
 	curInfo->texture->activeFlagControl();
