@@ -1,5 +1,6 @@
 /*
 //纹理
+//统一surface和texture减少复杂性
 */
 
 #ifndef __LOTEXTURE_H__
@@ -7,14 +8,16 @@
 
 #include <SDL.h>
 #include <stdint.h>
-#include <atomic>
 #include <unordered_map>
 #include <vector>
 #include <memory>
 
 #include "../etc/LOString.h"
+#include "../etc/SDL_mem.h"
 #include "../Scripter/FuncInterface.h"
-#include "LOSurface.h"
+
+extern void GetFormatBit(SDL_PixelFormat *format, char *bit);
+extern void GetFormatBit(Uint32 format, char *bit);
 
 extern void SimpleError(const char *format, ...);
 
@@ -29,12 +32,15 @@ public:
 	~MiniTexture();
 	bool equal(SDL_Rect *rect);
 	bool isRectAvailable();
+	void converToGPUtex();
 	//预期的在基础纹理的位置
 	SDL_Rect dst;
 	//实际在基础纹理上的位置
 	SDL_Rect srt;
-	SDL_Texture *tex;
-	LOSurface *su;
+
+	//需要指向指针的指针。。。
+	SDL_Texture **tex;
+	SDL_Surface **su;
 	//是否引用，对应基础纹理小于最大允许的纹理尺寸来说，是引用
 	//对于超大纹理 texture和surface都是从纹理上切割下来的
 	bool isref;
@@ -47,16 +53,22 @@ class LOtextureBase
 public:
 
 	LOtextureBase();
-	LOtextureBase(LOSurface *surface);
+	LOtextureBase(void *mem, int size);
+	LOtextureBase(SDL_Surface *su);
 	LOtextureBase(SDL_Texture *tx);
 	~LOtextureBase();
 
 	//SDL_Texture* GetTexture(SDL_Rect *re);
-	void SetSurface(LOSurface *s);
-	LOSurface *GetSurface() { return baseSurface; }
+	void SetSurface(SDL_Surface *su);
+	SDL_Surface *GetSurface() { return baseSurface; }
 	void SetName(LOString &s) { Name.assign(s); }
 	LOString GetName() { return Name; }
 	bool isBig() { return isbig; }
+	bool isValid() { return baseSurface || baseTexture; }
+
+	//只对surface有效
+	bool hasAlpha();
+	
 
 	MiniTexture *GetMiniTexture(SDL_Rect *rect);
 
@@ -64,13 +76,20 @@ public:
 	static uint16_t maxTextureH;
 	static SDL_Renderer *render;
 	static void AvailableRect(int maxx, int maxy, SDL_Rect *re);
+	//裁剪surface
+	static SDL_Surface* ClipSurface(SDL_Surface *surface, SDL_Rect rect);
+
+	//转换ns特有的透明
+	static SDL_Surface* ConverNSalpha(SDL_Surface *surface, int cellCount);
 
 	int ww;
 	int hh;
+	//只有加载时这个参数才有效
+	bool ispng;
 private:
 	//是否超大纹理
 	bool isbig;
-	LOSurface *baseSurface;
+	SDL_Surface *baseSurface;
 	SDL_Texture *baseTexture;
 	LOString Name;
 	//小块纹理区域列表
@@ -79,7 +98,7 @@ private:
 	void baseNew();
 };
 typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;
-
+typedef std::unique_ptr<LOtextureBase> LOUniqBaseTexture;
 
 //========================================
 //绑定一个LOtextureBase,可以设置不同的透明度，颜色叠加等
@@ -118,8 +137,12 @@ public:
 	bool isNull() { return baseTexture == nullptr; }
 	bool isAvailable();
 	bool isBig();
-	bool activeTexture(SDL_Rect *src);
+
+	//激活某个纹理，并且如果是surface则转换成texture，所以只应该在渲染线程调用
+	MiniTexture* activeTexture(SDL_Rect *src, bool toGPUtex);
+
 	bool activeActionTxtTexture();
+
 	bool activeFlagControl();
 	void setBlendModel(SDL_BlendMode model);
 	void setColorModel(Uint8 r, Uint8 g, Uint8 b);
@@ -133,9 +156,10 @@ public:
 	//SDL_Rect *GetSrcRect() { return &srcRect; }
 
 	static LOShareBaseTexture findTextureBaseFromMap(LOString &fname);
-	static LOShareBaseTexture addTextureBaseToMap(LOString &fname, LOtextureBase *base);
+	static LOShareBaseTexture& addTextureBaseToMap(LOString &fname, LOtextureBase *base);
+	static void addTextureBaseToMap(LOString &fname, LOShareBaseTexture &base);
 	static void notUseTextureBase(LOShareBaseTexture &base);
-	static LOShareBaseTexture addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
+	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
 	static bool CopySurfaceToTextureRGBA(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst);
 
 	int baseW();
@@ -158,5 +182,7 @@ private:
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;
+
+
 
 #endif // !__LOTEXTURE_H__

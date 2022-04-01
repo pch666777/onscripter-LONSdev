@@ -46,7 +46,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 	//检查是不是有需要刷新的
 	auto *map = GetPrintNameMap(print_name)->map;
-	if (map->size() == 0) return;
+	if (map->size() == 0) return 0;
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
@@ -63,7 +63,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
-	SDL_LockMutex(btnQueMutex);
+	//SDL_LockMutex(btnQueMutex);
 
 	//现在关键是要比对出那些层是新增的，哪些是修改的，哪些是删除的
 
@@ -73,7 +73,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			LOLayerData *data = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
-			if (level < 3 && GetIDs(data->fullid, level)) isnow = true;
+			if (level < 3 && GetIDs(data->fullid, level) >= G_maxLayerCount[level]) isnow = true;
 			else if (level >= 3) isnow = true;
 			else isnow = false;
 
@@ -86,62 +86,26 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 				if (data->isDelete()) {
 					if (lyr) delete lyr;
 				}
+				else if (data->isNewFile()) {
+					//新建图层前直接删除原有的图层，这样更干净
+					if (lyr) delete lyr;
+					lyr = new LOLayer(*data, true);
+				}
 				else {
-					//新建的图层所有的信息都设置好了
-					if (!lyr) lyr = new LOLayer(*data);
-					else {
-						//更新图层
-						if (data->flags & LOLayerData::FLAGS_UPDATA) ;
-
+					//只更新信息的图层
+					if (lyr) {
+						if (data->isUpData()) lyr->upData(data);
+						if (data->isUpDataEx()) lyr->upDataEx(data);
 					}
 				}
-
 			}
 			else iter++;
 
 		}
 	}
 
-	if (map->size() != 0) LOLog_e("ExportQuequ():the map not clear:%d", map->size());
+	//======图层已经更新完成=======
 
-
-	LOLayer *layer, *temp;
-	std::vector<LOLayerInfoCacheIndex*> list = SortCacheList(&unorderlist);
-	for (int ii = 0; ii < list.size(); ii++) {
-		//LOLayerInfoCacheIndex *minfo = (LOLayerInfoCacheIndex*)list.at(ii);
-		if (!minfo->iswork || minfo->info.GetLayerControl() == LOLayerInfo::CON_NONE) continue;
-		//LONS::printError("id[0]:%d,%d,%x",idd[0],idd[1],info->fullid);
-		//图层被删除，或重新载入，应删除上一个按钮
-		//优先处理删除事件
-		if (minfo->info.GetLayerControl() & LOLayerInfo::CON_DELLAYER) {
-			LOLayer::SysLayerType ltype;
-			int ids[3];
-			GetTypeAndIds( (int*)(&ltype), ids, minfo->info.fullid);
-			LOLayer *layer = FindLayerInBase(ltype, ids);
-			if (layer) {
-				layer->Root->RemodeChild(layer->id[0]);
-				delete layer;
-			}
-			//删除按钮定义
-			RemoveBtn(minfo->info.fullid);
-		}
-		else {
-			//if (GetIDs(minfo->info.fullid, IDS_LAYER_TYPE) == LOLayer::LAYER_NSSYS &&
-			//	GetIDs(minfo->info.fullid, IDS_LAYER_NORMAL) == LOLayer::IDEX_NSSYS_EFFECT) {
-			//	SDL_Surface *su = minfo->info.texture->getSurface();
-			//	su = nullptr;
-			//}
-			layer = GetLayerOrNew(minfo->info.fullid);
-			if (!layer->parent) { //插入图层
-				//layer->Root = GetRootLayer(minfo->info.fullid);
-				//layer->SetFullID(minfo->info.fullid);
-				//layer->Root->InserChild(layer);
-			}
-			if (minfo->info.btnStr) exbtn_count++;     //exbtn count, count > 0 exbtn_d can use
-			//layer->UseControl(&minfo->info, btnMap);
-		}
-	}
-	//ClearCacheMap(&list);
 	//等待print完成才继续
 	LOEventHook *ep = NULL;
 	if (iswait) {
@@ -150,7 +114,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		ep->ResetMe();
 	}
 	SDL_UnlockMutex(layerQueMutex);
-	SDL_UnlockMutex(btnQueMutex);
+	//SDL_UnlockMutex(btnQueMutex);
 	if (ep) {
 		ep->waitEvent(1, -1);
 		//if (moduleState >= MODULE_STATE_EXIT) return 0;

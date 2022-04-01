@@ -9,7 +9,6 @@
 #include "LOTexture.h"
 #include "LOFontBase.h"
 #include "LOFontInfo.h"
-#include "LOSurface.h"
 #include "LOTexture.h"
 #include <SDL.h>
 
@@ -89,7 +88,7 @@ public:
 	LOEffect* winEffect;     //对话框显示、消失时候执行的效果
 
 	SDL_mutex* layerQueMutex;	//图层队列锁
-	SDL_mutex* btnQueMutex;     //按钮队列操作锁
+	//SDL_mutex* btnQueMutex;     //按钮队列操作锁
 	SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
 	SDL_mutex* doQueMutex;      //添加、展开队列时必须保证没有其他线程进入
 
@@ -131,7 +130,7 @@ public:
 
 	//LOSurface* ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect);
 	//void ScreenShotCountinue(LOEvent1 *e);
-	LOSurface* SurfaceFromFile(LOString *filename, bool *ispng = NULL);
+	LOtextureBase* SurfaceFromFile(LOString *filename);
 	int RefreshFrame(double postime);        //刷新帧显示
 
 	bool ContinueEffect(LOEffect *ef, double postime);
@@ -140,8 +139,8 @@ public:
 
 	bool ParseImgSP(LOLayerData *info, LOString *tag, const char *buf);
 
-	LOtextureBase* RenderText(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
-	LOtextureBase* RenderText2(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, int startx);
+	LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
+	LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
 
 	bool LoadDialogText(LOString *s, bool isAdd);
 	bool LoadDialogWin();
@@ -246,7 +245,7 @@ private:
 	int pageEndFlag;
 	int shaderList[20];
 	int mouseXY[2];
-	LOSurface *screenshotSu;       //屏幕截图
+	//LOSurface *screenshotSu;       //屏幕截图
 	//int debugEventCount;  //检查事件队列中的事件数量，以免忘记移除事件
 	
 	SDL_Window *window;
@@ -266,14 +265,13 @@ private:
 	void ResetConfig();
 	void FreeFps();
 	LOShareBaseTexture TextureFromFile(LOLayerData *info);
-	LOtextureBase* TextureFromColor(LOLayerInfo *info);
-	LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
-	LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
+	//LOtextureBase* TextureFromColor(LOLayerInfo *info);
+	//LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
+	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
-	void ScaleTextParam(LOLayerInfo *info, LOFontWindow *fontwin);
+	void ScaleTextParam(LOLayerData *info, LOFontWindow *fontwin);
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
-	void FreeLayerInfoData(LOLayerInfo *info);
 
 	LOLayer* GetLayerOrNew(int fullid);
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);

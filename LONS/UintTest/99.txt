@@ -2,6 +2,7 @@
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
 lsp 20,":a/4,0,3;data\four.png",0,100
+lsp 20,"321.png",0,100
 print 1
 ;lsp 333,
 ;btnwait %0

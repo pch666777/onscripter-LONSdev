@@ -87,8 +87,8 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effec
 	postime += pos;
 	if (postime > time || postime < 0) {
 		info->SetVisable(0);  //not
-		if (masksu) delete masksu;
-		masksu = NULL;
+		//if (masksu) delete masksu;
+		//masksu = NULL;
 		return true;
 	}
 	else {
@@ -208,8 +208,8 @@ void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 		}
 		
 		//
-		int minw = masksu->W();
-		int minh = masksu->H();
+		int minw =0;
+		int minh = 0;
 		if (w < minw) minw = w;
 		if (h < minh) minh = h;
 		
@@ -372,7 +372,7 @@ void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 		dst.w = w / 5;  dst.h = h / 5;
 
 		SDL_Surface *tsu = CreateRGBSurfaceWithFormat(0, dst.w, dst.h, 32, iformat);
-		masksu = new LOSurface(tsu);
+		//masksu = new LOSurface(tsu);
 
 		SDL_SetRenderTarget(ren, info->texture->GetTexture());
 		SDL_RenderClear(ren);  //must clear data

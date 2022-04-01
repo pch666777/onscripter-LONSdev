@@ -38,7 +38,7 @@ void LOFontManager::FreeAllGlyphs(LOStack<LineComposition> *lines) {
 	for (int count = 0; count < lines->size(); count++) lines->at(count)->cells.clear(true);
 }
 
-
+/*
 //生成空白素材
 LOSurface *LOFontManager::CreateSurface(LOStack<LineComposition> *lines, int cellcount) {
 	int w = 0;
@@ -90,6 +90,7 @@ void LOFontManager::RenderColor(LOSurface *tex, LOStack<LineComposition> *comlis
 	}
 	//SDL_SaveBMP(tex, "test.bmp");
 }
+*/
 
 //约束矩形
 void ConstrainedRect(SDL_Rect *rect, int w, int h) {
@@ -202,6 +203,7 @@ void LOFontManager::ToColor(SDL_Surface *su, SDL_Color *color) {
 	}
 }
 
+/*
 LOStack<LineComposition>* LOFontManager::RenderTextCore(LOSurface *&tex, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount, int startx) {
 	if (s->length() == 0) return NULL;
 	if (color == NULL) color = &fontwin->fontColor;
@@ -235,7 +237,7 @@ LOStack<LineComposition>* LOFontManager::RenderTextCore(LOSurface *&tex, LOFontW
 	fontwin->Closefont();
 	return lines;
 }
-
+*/
 //逐列扫描，确定左右两侧的边界
 void LOFontManager::GetBorder(SDL_Surface *su, int *minx, int *maxx) {
 	char *src;
@@ -348,7 +350,7 @@ LOStack<LineComposition> *LOFontManager::GetGlyphs(LOFontWindow *fontwin, LOStri
 			ele->miny = 0; ele->maxy = 0;
 		}
 		else {
-			ele->su = LTTF_RenderGlyph_Shaded(fontwin->font, ele->unicode, fontwin->fontColor, bgColor);
+			//ele->su = LTTF_RenderGlyph_Shaded(fontwin->font, ele->unicode, fontwin->fontColor, bgColor);
 
 			//miny maxy是相对于origin的，minx,maxx是相对于advance的，（不准确？所以需要自己检测左右边界）
 			//advance为从右往左n个像素为文字开始的位置,minx负数表示文字应该迁移n个像素，正数表示应该后移n个像素

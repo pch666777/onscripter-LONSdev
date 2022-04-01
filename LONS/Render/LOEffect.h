@@ -4,7 +4,6 @@
 #include <string>
 #include <SDL.h>
 #include "LOLayerData.h"
-#include "LOLayerInfo.h"
 #include "../etc/LOString.h"
 
 class LOEffect
@@ -24,7 +23,8 @@ public:
 	int nseffID;   //ns效果编号
 	int time;      //持续的时间
 	LOString mask; //遮片名称
-	LOSurface* masksu;  //遮片
+	
+	LOUniqBaseTexture masksu;  //遮片
 	char m_bit[4];
 	double postime;  //已经运行的时间
 

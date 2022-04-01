@@ -320,10 +320,10 @@ int LOImageModule::strspCommand(FunctionInterface *reader) {
 
 int LOImageModule::transmodeCommand(FunctionInterface *reader) {
 	LOString keyword = reader->GetParamStr(0).toLower();
-	if (keyword == "leftup") trans_mode = LOLayerInfo::TRANS_TOPLEFT;
-	else if (keyword == "copy") trans_mode = LOLayerInfo::TRANS_COPY;
-	else if (keyword == "alpha") trans_mode = LOLayerInfo::TRANS_ALPHA;
-	else if (keyword == "righttup")trans_mode = LOLayerInfo::TRANS_TOPRIGHT;
+	if (keyword == "leftup") trans_mode = LOLayerData::TRANS_TOPLEFT;
+	else if (keyword == "copy") trans_mode = LOLayerData::TRANS_COPY;
+	else if (keyword == "alpha") trans_mode = LOLayerData::TRANS_ALPHA;
+	else if (keyword == "righttup")trans_mode = LOLayerData::TRANS_TOPRIGHT;
 	return RET_CONTINUE;
 }
 
@@ -864,6 +864,7 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 	dst.w = src.w; dst.h = src.h;
 
 	ONSVariableRef *v = reader->GetParamRef(4);
+	/*
 	LOSurface *su = nullptr;
 		//ScreenShot(&src, &dst);
 	if (su && v && v->GetStr()) { //
@@ -889,6 +890,7 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 		LOString s("screenshot faild or param error!");
 		v->SetValue(&s);
 	}
+	*/
 	return RET_CONTINUE;
 }
 
@@ -936,7 +938,7 @@ int LOImageModule::getscreenshotCommand(FunctionInterface *reader) {
 	dst.w = reader->GetParamInt(0);
 	dst.h = reader->GetParamInt(1);
 
-	if (screenshotSu) delete screenshotSu;
+	//if (screenshotSu) delete screenshotSu;
 	//screenshotSu =  ScreenShot(&src, &dst);
 	//SDL_SaveBMP(su->GetSurface(), "test.bmp");
 	return RET_CONTINUE;
@@ -944,6 +946,7 @@ int LOImageModule::getscreenshotCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
+	/*
 	if (screenshotSu) {
 		bool delshot = true;
 		ONSVariableRef *v = NULL;
@@ -964,6 +967,7 @@ int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
 			screenshotSu = NULL;
 		}
 	}
+	*/
 	return RET_CONTINUE;
 }
 

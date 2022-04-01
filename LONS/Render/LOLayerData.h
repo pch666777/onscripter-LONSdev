@@ -13,6 +13,32 @@
 #include "LOTexture.h"
 #include "LOAction.h"
 
+extern char G_Bit[4];             //默认材质所只用的RGBA模式位置 0-A 1-R 2-G 3-B
+extern Uint32 G_Texture_format;   //默认编辑使用的材质格式
+extern SDL_Rect G_windowRect;    //整个窗口的位置和大小
+extern SDL_Rect G_viewRect;     //实际显示视口的位置和大小
+extern int G_gameWidth;         //游戏的实际宽度
+extern int G_gameHeight;         //游戏的实际高度
+extern float G_gameScaleX;     //游戏X方向的缩放
+extern float G_gameScaleY;     //游戏Y方向的缩放，鼠标事件时需要使用
+extern int G_gameRatioW;       //游戏比例，默认为1:1
+extern int G_gameRatioH;       //游戏比例，默认为1:1
+extern int G_fullScreen;       //全屏
+extern int G_destWidth;   //目标窗口宽度
+extern int G_destHeight;  //目标窗口高度
+extern int G_fpsnum;
+extern int G_textspeed;
+extern bool IsGameScale();
+extern int GetFullID(int t, int *ids);
+extern int GetFullID(int t, int father, int child, int grandson);
+
+#define IDS_LAYER_TYPE 3
+#define IDS_LAYER_NORMAL 0
+#define IDS_LAYER_CHILD 1
+#define IDS_LAYER_GRANDSON 2
+extern int GetIDs(int fullid, int pos);
+extern void GetTypeAndIds(int *type, int *ids, int fullid);
+
 //基本类型都放在一起，拷贝方便
 class LOLayerDataBase {
 public:
@@ -78,6 +104,26 @@ public:
 	};
 
 
+	//透明模式
+	enum {
+		//TRANS_ALPHA = 'a',
+		//TRANS_TOPLEFT = 'l',
+		//TRANS_COPY = 'c',
+		//TRANS_STRING = 's',
+		//TRANS_DIRECT = '#',
+		//TRANS_PALLETTE = '!',
+		//TRANS_TOPRIGHT = 'r',
+		//TRANS_MASK = 'm'
+		TRANS_ALPHA,
+		TRANS_TOPLEFT,
+		TRANS_COPY,
+		TRANS_STRING,
+		TRANS_DIRECT,
+		TRANS_PALLETTE,
+		TRANS_TOPRIGHT,
+		TRANS_MASK
+	};
+
 	/*
 	LOString *fileName;  //透明样式;文件名
 	LOString *maskName;
@@ -109,6 +155,8 @@ public:
 	bool isCache() { return flags & FLAGS_USECACHE; }
 	bool isDelete() { return flags & FLAGS_DELETE; }
 	bool isNewFile() { return flags & FLAGS_NEWFILE; }
+	bool isUpData() { return flags & FLAGS_UPDATA; }
+	bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();
@@ -126,6 +174,8 @@ public:
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();
+	//void upData(LOLayerData *data);
+	//void upDataEx(LOLayerData *data);
 
 	//添加敏感类事件时删除
 	void SetAction(LOShareAction &ac);

@@ -5,8 +5,6 @@
 #define _LOLAYER_H_
 
 #include "../Scripter/FuncInterface.h"
-#include "LOLayerInfo.h"
-#include "LOAnimation.h"
 #include "LOFontBase.h"
 #include "../etc/LOStack.h"
 #include "LOMatrix2d.h"
@@ -55,8 +53,10 @@ public:
 	int id[3];
 	std::unique_ptr<LOLayerData> curInfo;  //前台数据
 	SysLayerType layerType;     //图层所在的组，在new图层时已经把LAYER_SPRINT转换
-	LOLayer *parent;   //父对象
-	LOLayer *rootLyr;    //在准备阶段是属于哪一个根图层的
+	//父对象
+	LOLayer *parent;
+	//根图层的，根图层总是有效的
+	LOLayer *rootLyr;
 
 	std::map<int, LOLayer*> *childs;
 	bool isInit;
@@ -65,8 +65,8 @@ public:
 	LOLayer();
 	LOLayer(SysLayerType lyrType);
 
-	//普通图层显然是根据后台数据创建
-	LOLayer(LOLayerData &data);
+	//普通图层显然是根据后台数据创建,islink决定是否挂载都图层结构组上
+	LOLayer(LOLayerData &data, bool islink);
 	~LOLayer();
 
 	LOMatrix2d matrix;  //变换矩阵
@@ -74,8 +74,6 @@ public:
 	//插入一个子对象，如果子对象已经存在则失败
 	bool InserChild(LOLayer *layer);
 	bool InserChild(int cid, LOLayer *layer);
-	//是否所有的动画都不可用，用于准备删除动画对象
-	bool isAllUnable(LOAnimation *ai);
 
 	//坐标是否包含在图层内
 	bool isPositionInsideMe(int x, int y);
@@ -103,16 +101,21 @@ public:
 	void GetLayerUsedState(char *bin, int *ids);
 
 	void ShowMe(SDL_Renderer *render);
-	void DoAnimation(LOLayerInfo* info, Uint32 curTime);
-	void DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime);
-	void DoMoveAnima(LOLayerInfo *info, LOAnimationMove *ai, Uint32 curTime);
-	void DoScaleAnima(LOLayerInfo *info, LOAnimationScale *ai, Uint32 curTime);
-	void DoRotateAnima(LOLayerInfo *info, LOAnimationRotate *ai, Uint32 curTime);
-	void DoFadeAnima(LOLayerInfo *info, LOAnimationFade *ai, Uint32 curTime);
-	void DoNsAnima(LOLayerInfo *info, LOAnimationNS *ai, Uint32 curTime);
+	//void DoAnimation(LOLayerInfo* info, Uint32 curTime);
+	//void DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime);
+	//void DoMoveAnima(LOLayerInfo *info, LOAnimationMove *ai, Uint32 curTime);
+	//void DoScaleAnima(LOLayerInfo *info, LOAnimationScale *ai, Uint32 curTime);
+	//void DoRotateAnima(LOLayerInfo *info, LOAnimationRotate *ai, Uint32 curTime);
+	//void DoFadeAnima(LOLayerInfo *info, LOAnimationFade *ai, Uint32 curTime);
+	//void DoNsAnima(LOLayerInfo *info, LOAnimationNS *ai, Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
 	void Serialize(BinArray *sbin);
+
+	//将图层挂载到图层结构上
+	bool LinkLayer();
+	void upData(LOLayerData *data);
+	void upDataEx(LOLayerData *data);
 
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上
 	//只是根据ids预期父对象，识别返回null

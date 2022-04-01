@@ -23,18 +23,25 @@ LOLayer::LOLayer(SysLayerType lyrType) {
 	BaseNew(lyrType);
 }
 
-LOLayer::LOLayer(LOLayerData &data) {
+LOLayer::LOLayer(LOLayerData &data, bool islink) {
 	int lyrType;
 	GetTypeAndIds(&lyrType, id, data.fullid);
 	BaseNew((SysLayerType)lyrType);
 	curInfo.reset(new LOLayerData(data));
+
+	rootLyr = &G_baseLayer[lyrType];
 	//挂到父对象的层级
-	if (!rootLyr->InserChild(this)) LOLog_e("new LOLayer() no father:%d,%d,%d", id[0], id[1], id[2]);
+	if (islink && !rootLyr->InserChild(this)) LOLog_e("new LOLayer() no father:%d,%d,%d", id[0], id[1], id[2]);
 }
 
 LOLayer::~LOLayer() {
-	//FreeData();
-		//释放子对象
+	//跟图层有关的事件钩子不再有效了
+	if (curInfo && curInfo->eventHooks) {
+		for (int ii = 0; ii < curInfo->eventHooks->size(); ii++) {
+			curInfo->eventHooks->at(ii)->InvalidMe();
+		}
+	}
+	//释放子对象
 	if (childs) {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
 			LOLayer *layer = iter->second;
@@ -134,12 +141,6 @@ LOLayer *LOLayer::FindChild(int cid) {
 	return nullptr;
 }
 
-bool LOLayer::isAllUnable(LOAnimation *ai) {
-	//for (int ii = 0; ii < LOAnimation::ANIMAS_COUNT_PTR; ii++) {
-	//	if (ai->isEnble[ii]) return false;
-	//}
-	return true;
-}
 
 bool LOLayer::isPositionInsideMe(int x, int y) {
 	//LOAnimation *ai = curInfo->anim;
@@ -273,6 +274,39 @@ bool LOLayer::isChildVisible() {
 	return curInfo->isChildVisiable();
 }
 
+void LOLayer::upData(LOLayerData *data) {
+	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
+	LOLayerDataBase *src = (LOLayerDataBase*)data;
+	*dst = *src;
+}
+
+void LOLayer::upDataEx(LOLayerData *data) {
+	if (data->maskName) curInfo->maskName.reset(new LOString(*data->maskName));
+	else curInfo->maskName.reset();
+	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
+	else curInfo->actions.reset();
+	//要比对出哪些事件钩子已经不在队列中了
+	/*
+	if (curInfo->eventHooks) {
+		for (int ii = 0; ii < curInfo->eventHooks->size(); ii++) {
+			LOEventHook *e = curInfo->eventHooks->at(ii).get();
+			if (data->eventHooks) {
+				int kk = 0;
+				for (; kk < data->eventHooks->size(); kk++) {
+					if (e == data->eventHooks->at(kk).get()) break;
+				}
+				//事件钩子已经不在队列中了
+				if (kk >= data->eventHooks->size()) e->InvalidMe();
+			}
+			else e->InvalidMe();
+		}
+	}
+	*/
+	//重新复制事件钩子
+	if (data->eventHooks) curInfo->eventHooks.reset(new std::vector<LOShareEventHook>(*data->eventHooks));
+	else curInfo->eventHooks.reset();
+}
+
 void LOLayer::ShowMe(SDL_Renderer *render) {
 	/*bool debugbreak = false ;*/
 	//全透明或者不可见，不渲染对象
@@ -290,7 +324,7 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	if (isFaterCopyEx()) is_ex = true;
 
 	if (!isInit) {
-		curInfo->texture->activeTexture(&src);
+		curInfo->texture->activeTexture(&src, true);
 		isInit = true;
 	}
 
@@ -364,7 +398,7 @@ void LOLayer::Serialize(BinArray *sbin) {
 	*/
 }
 
-void LOLayer::DoAnimation(LOLayerInfo* info, Uint32 curTime) {
+//void LOLayer::DoAnimation(LOLayerInfo* info, Uint32 curTime) {
 	/*
 	if (!curInfo->actions) return;
 	for (auto iter = curInfo->actions->begin(); iter != curInfo->actions->end(); iter++) {
@@ -407,146 +441,8 @@ void LOLayer::DoAnimation(LOLayerInfo* info, Uint32 curTime) {
 		curInfo->actions = nullptr;
 	}
 	*/
-}
+//}
 
-void LOLayer::DoNsAnima(LOLayerInfo *info, LOAnimationNS *ai, Uint32 curTime) {
-	//延迟时间够了则执行
-	if (curTime - ai->lastTime > ai->perTime[ai->cellCurrent]) {
-		ai->lastTime = curTime;
-		//显示模式改变
-		info->SetShowType(LOLayerInfo::SHOW_RECT);
-		//定位指定格数对应的位置
-		int perx = info->texture->baseW() / ai->cellCount;
-		info->showSrcX = ai->cellCurrent * perx;
-		info->showSrcY = 0;
-		info->showWidth = perx;
-		info->showHeight = info->texture->baseH();
-		//执行之后检查循环模式
-		if (ai->loopMode == LOAnimation::LOOP_CIRCULAR) {  //从头到尾循环模式
-			ai->cellCurrent = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
-			//printf("cellCurrent:%d\n", ptr[LOAnimation::cellCurrent]);
-		}
-		else if (ai->loopMode == LOAnimation::LOOP_GOBACK) {  //往复循环模式
-			if (ai->cellCurrent >= ai->cellCount - 1) ai->cellForward = -1;
-			else if (ai->cellCurrent <= 0) ai->cellForward = 1;
-			ai->cellCurrent = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
-		}
-		else if (ai->loopMode == LOAnimation::LOOP_PTR) { //只运行一帧
-			ai->isEnble = false;
-		}
-		else if (ai->loopMode == LOAnimation::LOOP_ONSCE) { //只运行一次
-			if (ai->cellCurrent < ai->cellCount - 1) ai->cellCurrent = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
-			else ai->isEnble = false;
-		}
-
-	}
-
-	//信息往回覆盖
-	curInfo->cellNum = ai->cellCurrent;
-}
-
-//执行文字动画
-void LOLayer::DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime) {
-	SDL_Rect srcR;
-	LineComposition *line = ai->lineInfo->at(ai->currentLine);
-	//给与首次运行的初始帧
-	if (ai->lastTime == 0) {
-		ai->lastTime = curTime;
-		if(!ai->isadd) ai->currentPos = line->x;
-
-		info->texture->activeActionTxtTexture();
-
-		//bool hasfinish = false;
-		if (layerType == LAYER_DIALOG) {
-			//正常的对话文字对话事件是可以取到事件的，没有取到事件说明已经在单击事件中完成了
-			//直接跳过
-			//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
-			//if (e) e->closeEdit();
-			//else { //跳过，确保不会在首帧返回，而是继续执行
-			//	ai->lastTime = 1;
-			//	ai->currentLine = 0;
-			//	ai->currentPos = 0;
-			//	ai->isadd = true;
-			//}
-		}
-
-		if(!ai->isadd)return;  //普通模式的直接返回
-	}
-
-	int pos, sumpix;
-	bool allFinish = false;
-
-	if (!ai->isadd) {
-		pos = curTime - ai->lastTime;
-		sumpix = pos * ai->perpix;    //总共应该前进这么多
-		//sumpix = 5;
-		if (sumpix < 5) return;           //至少要有5个像素
-	}
-	else {
-		ai->isadd = false;
-		sumpix = 0;
-	}
-
-	
-	while (sumpix > 0) {
-		line = ai->lineInfo->at(ai->currentLine);
-		if (sumpix + ai->currentPos < line->sumx) {
-			ai->currentPos += sumpix;
-			break;
-		}
-		else if(ai->currentLine >= ai->lineInfo->size() - 1){  //已经到了最后一行
-			allFinish = true;
-			break;
-		}
-		else {
-			sumpix -= (line->sumx - ai->currentPos);
-			ai->currentLine++;
-			ai->currentPos = 0;
-		}
-	}
-	//计算出要复制的行
-	srcR.x = 0;
-	srcR.y = 0;
-	for (int ii = 0; ii < ai->lineInfo->size() ; ii++) {
-		line = ai->lineInfo->at(ii);
-		if (line->finish != LineComposition::LINE_FINISH_COPY) break;
-		srcR.y = line->y + line->height;
-	}
-	if (ai->currentLine > 0) {
-		line = ai->lineInfo->at(ai->currentLine);
-		srcR.w = info->texture->W();
-		srcR.h = line->y - srcR.y;
-		//LONS::printInfo("line must be show:%d \n",srcR.h);
-		if (srcR.h > 0) info->texture->rollTxtTexture(&srcR, &srcR);
-	}
-	//复制当前区域
-	line = ai->lineInfo->at(ai->currentLine);
-	srcR.x = 0; srcR.w = ai->currentPos;
-	srcR.y = line->y; srcR.h = line->height;
-	if (allFinish) srcR.w = info->texture->W();
-	if(srcR.w > 0) info->texture->rollTxtTexture(&srcR, &srcR);
-
-	//改写已经完成的行
-	for (int ii = 0; ii < ai->currentLine; ii++) {
-		ai->lineInfo->at(ii)->finish = LineComposition::LINE_FINISH_COPY;
-	}
-
-	if (allFinish) {
-		ai->lineInfo->at(ai->currentLine)->finish = LineComposition::LINE_FINISH_COPY;
-		ai->isEnble = false;
-		ai->finish = true;
-		if (layerType == LAYER_DIALOG) {
-			//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
-			////LOEvent1 *e = G_GetSelfEventIsParam(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
-			//if (e) {
-			//	e->FinishMe();
-			//	//printf("text finish!!\n");
-			//}
-		}
-	}
-
-	ai->lastTime = curTime;
-}
 
 ////只用于RGBA的复制
 //bool LOLayer::CopySurfaceToTexture(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst) {
@@ -566,141 +462,6 @@ void LOLayer::DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime
 //	SDL_UnlockTexture(tex);
 //	return true;
 //}
-
-
-//执行移动动画
-void LOLayer::DoMoveAnima(LOLayerInfo *info, LOAnimationMove *ai, Uint32 curTime) {
-	//给与首次运行的初始帧
-	if (ai->lastTime == 0) {
-		ai->lastTime = curTime;
-		info->offsetX = ai->fromx; info->offsetY = ai->fromy;
-		return;
-	}
-	double postime = curTime - ai->lastTime;
-	if (postime > ai->timer) {
-		info->offsetX = ai->destx; info->offsetY = ai->desty;
-		//运行到结尾根据循环模式确定下一步动作
-		if (ai->loopMode == LOAnimation::LOOP_CIRCULAR) ai->lastTime = 0;
-		else if (ai->loopMode == LOAnimation::LOOP_GOBACK) {
-			int tmp = ai->destx; ai->destx = ai->fromx; ai->fromx = tmp;
-			tmp = ai->desty; ai->desty = ai->fromy; ai->fromy = tmp;
-			ai->lastTime = curTime;
-		}
-		else {
-			ai->finish = true;
-			ai->isEnble = false;
-		}
-	}
-	else {
-		int dx = postime / ai->timer * (ai->destx - ai->fromx);
-		int dy = postime / ai->timer * (ai->desty - ai->fromy);
-		info->offsetX = ai->fromx + dx; info->offsetY = ai->fromy + dy;
-	}
-}
-
-//执行缩放动画
-void LOLayer::DoScaleAnima(LOLayerInfo *info, LOAnimationScale *ai, Uint32 curTime) {
-	//给与首次运行的初始帧
-	info->SetShowType(LOLayerInfo::SHOW_SCALE);
-	info->centerX = ai->centerX; info->centerY = ai->centerY;
-	if (ai->lastTime == 0) {
-		ai->lastTime = curTime;
-		info->scaleX = ai->startPerX; info->scaleY = ai->startPerY;
-		return;
-	}
-	//正常运行
-	double postime = curTime - ai->lastTime;
-
-	if (postime > ai->timer) {
-		info->scaleX = ai->endPerX;
-		info->scaleY = ai->endPerY;
-		//运行到结尾根据循环模式确定下一步动作
-		if (ai->loopMode == LOAnimation::LOOP_CIRCULAR) ai->lastTime = 0;
-		else if (ai->loopMode == LOAnimation::LOOP_GOBACK) {
-			double tmp = ai->endPerX; ai->endPerX = ai->startPerX; ai->startPerX = tmp;
-			tmp = ai->endPerY; ai->endPerY = ai->startPerY; ai->startPerY = tmp;
-			ai->lastTime = curTime;
-		}
-		else {
-			ai->finish = true;
-			ai->isEnble = false;
-		}
-	}
-	else {
-		double perx = (ai->endPerX - ai->startPerX) * postime / ai->timer;
-		double pery = (ai->endPerY - ai->startPerY) * postime / ai->timer;
-		info->scaleX = ai->startPerX + perx;
-		info->scaleY = ai->startPerY + pery;
-	}
-}
-
-//执行旋转动画
-void LOLayer::DoRotateAnima(LOLayerInfo *info, LOAnimationRotate *ai, Uint32 curTime) {
-	//给与首次运行的初始帧
-	info->SetShowType(LOLayerInfo::SHOW_ROTATE);
-	info->centerX = ai->centerX; info->centerY = ai->centerY;
-	if (ai->lastTime == 0) {
-		ai->lastTime = curTime;
-		info->rotate = ai->startRo;
-		return;
-	}
-	//正常运行
-	double postime = curTime - ai->lastTime;
-
-	if (postime > ai->timer) {
-		info->rotate = ai->endRo;
-		//运行到结尾根据循环模式确定下一步动作
-		if (ai->loopMode == LOAnimation::LOOP_CIRCULAR) {
-			//终点角度为360的时候，需要进行优化
-			if (ai->endRo == 360) {
-				while (postime > ai->timer) postime -= ai->timer;
-				double perRo = postime * (ai->endRo - ai->startRo) / ai->timer;
-				info->rotate = ai->startRo + perRo;
-			}
-			else ai->lastTime = 0;
-		}
-		else if (ai->loopMode == LOAnimation::LOOP_GOBACK) {
-			double tmp = ai->endRo; ai->endRo = ai->startRo; ai->startRo = tmp;
-			ai->lastTime = curTime;
-		}
-		else {
-			ai->finish = true;
-			ai->isEnble = false;
-		}
-	}
-	else {
-		double perRo = postime * (ai->endRo - ai->startRo) / ai->timer;
-		info->rotate = ai->startRo + perRo;
-	}
-}
-
-
-void LOLayer::DoFadeAnima(LOLayerInfo *info, LOAnimationFade *ai, Uint32 curTime) {
-	if (ai->lastTime == 0) { //首次
-		ai->lastTime = curTime;
-		info->alpha = ai->startAlpha;
-	}
-	else if(curTime - ai->lastTime > ai->timer){ //超时
-		info->alpha = ai->endAlpha;
-		//运行到结尾根据循环模式确定下一步动作
-		if (ai->loopMode == LOAnimation::LOOP_CIRCULAR) ai->lastTime = 0;
-		else if (ai->loopMode == LOAnimation::LOOP_GOBACK) {
-			int tmp = ai->endAlpha; ai->endAlpha = ai->startAlpha; ai->startAlpha = tmp;
-			ai->lastTime = curTime;
-		}
-		else {
-			ai->finish = true;
-			ai->isEnble = false;
-		}
-	}
-	else { //正常
-		double postime = curTime - ai->lastTime;
-		int perAlpha = postime * (ai->endAlpha - ai->startAlpha) / ai->timer;
-		info->alpha = ai->startAlpha + perAlpha;
-	}
-	if (info->alpha < 0) info->alpha = 0;
-	if (info->alpha > 255) info->alpha = 255;
-}
 
 
 bool LOLayer::GetTextEndPosition(int *xx, int *yy, int *lineH) {

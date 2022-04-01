@@ -21,13 +21,13 @@ LOImageModule::LOImageModule(){
 	fpstex = NULL;
 	isShowFps = true;
 	fpstex = NULL;
-	screenshotSu = NULL;
+	//screenshotSu = NULL;
 	winEffect = NULL ;
 
     ResetConfig();
 
 	layerQueMutex = SDL_CreateMutex();
-	btnQueMutex = SDL_CreateMutex();
+	//btnQueMutex = SDL_CreateMutex();
 	presentMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
 
@@ -37,7 +37,7 @@ LOImageModule::LOImageModule(){
 void LOImageModule::ResetConfig() {
 	tickTime = 0;
 	z_order = 499;
-	trans_mode = LOLayerInfo::TRANS_TOPLEFT;
+	trans_mode = LOLayerData::TRANS_TOPLEFT;
 	effectSkipFlag = false;
 	winbackMode = false;
 	textbtnFlag = true;
@@ -70,14 +70,14 @@ void LOImageModule::ResetConfig() {
 }
 
 LOImageModule::~LOImageModule(){
-	SDL_DestroyMutex(btnQueMutex);
+	//SDL_DestroyMutex(btnQueMutex);
 	SDL_DestroyMutex(layerQueMutex);
 	SDL_DestroyMutex(presentMutex);
 	SDL_DestroyMutex(doQueMutex);
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
-	if (screenshotSu) delete screenshotSu;
+	//if (screenshotSu) delete screenshotSu;
 }
 
 
@@ -486,7 +486,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	LOLayerData *info = CreateLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
-	info->texture->activeTexture(nullptr); //至少加载一次，不然首次加载会失败
+	//info->texture->activeTexture(nullptr); //至少加载一次，不然首次加载会失败
 	//缩放模式  
 	if (IsGameScale()) {
 		info->SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
@@ -494,12 +494,12 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 
 	//加载遮片
 	if (ef->nseffID == 15 || ef->nseffID == 18) {
-		LOSurface *su = SurfaceFromFile(&ef->mask);
+		LOtextureBase *su = SurfaceFromFile(&ef->mask);
 		//遮片不存在按渐变处理
 		if (!su) ef->nseffID = 10;
 		else {
 			SDL_Surface *tmp = ef->Create8bitMask(su->GetSurface(), true);
-			ef->masksu = new LOSurface(tmp);
+			ef->masksu.reset(new LOtextureBase(tmp));
 			delete su;
 		}
 	}
@@ -582,8 +582,8 @@ bool LOImageModule::InitFps() {
 		SDL_Surface *su = LTTF_RenderGlyph_Blended(fpsconfig.font, 0x30 + ii, cc);
 		//LOLog_i("fps surface is:%x",su) ;
 		if (su) {
-			fpstex[ii].SetSurface(new LOSurface(su));
-			//fpstex[ii].GetTexture(NULL);
+			fpstex[ii].SetSurface(su);
+			fpstex[ii].GetMiniTexture(nullptr);
 		}
 	}
 	fpsconfig.Closefont();
@@ -591,24 +591,23 @@ bool LOImageModule::InitFps() {
 }
 
 
-LOtextureBase* LOImageModule::RenderText(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount) {
-	LOSurface *su = nullptr;
-
+LOtextureBase* LOImageModule::RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount) {
 	//如果画面处于放大模式则缩放参数
 	if (G_gameScaleX > 1.0001 || G_gameScaleY > 1.0001) ScaleTextParam(info, fontwin);
 
-	LOStack<LineComposition> *lines = fontManager.RenderTextCore(su, fontwin, s, color, cellcount, 0);
+	//LOStack<LineComposition> *lines = fontManager.RenderTextCore(su, fontwin, s, color, cellcount, 0);
 
 	//LOString out = writeDir + "/test.bmp" ;
 	//SDL_SaveBMP(su->GetSurface(), out.c_str());
 	//if(su) LOLog_i("surface is:%x,%d,%d",su,su->W(),su->H()) ;
 	//else LOLog_i("surface is NULL!") ;
 
-	return new LOtextureBase(su);
+	return new LOtextureBase();
 }
 
-LOtextureBase* LOImageModule::RenderText2(LOLayerInfo *info, LOFontWindow *fontwin, LOString *s, int startx) {
+LOtextureBase* LOImageModule::RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx) {
 	//如果画面处于放大模式则缩放参数
+	/*
 	if (G_gameScaleX > 1.0001 || G_gameScaleY > 1.0001) {
 		ScaleTextParam(info, fontwin);
 		startx = (int)(G_gameScaleX * startx);
@@ -637,11 +636,11 @@ LOtextureBase* LOImageModule::RenderText2(LOLayerInfo *info, LOFontWindow *fontw
 		//更新控制信息
 		tai->control = LOAnimation::CON_REPLACE;
 	}
-
-	return base;
+	*/
+	return nullptr;
 }
 
-void LOImageModule::ScaleTextParam(LOLayerInfo *info, LOFontWindow *fontwin) {
+void LOImageModule::ScaleTextParam(LOLayerData *info, LOFontWindow *fontwin) {
 	fontwin->xsize = G_gameScaleX * fontwin->xsize;
 	fontwin->ysize = G_gameScaleX * fontwin->ysize;
 	fontwin->xspace = G_gameScaleX * fontwin->xspace;
@@ -660,7 +659,7 @@ bool LOImageModule::ParseTag(LOLayerData *info, LOString *tag) {
 	int alphaMode = trans_mode;
 	//LOLog_i("tag is %s",tag->c_str()) ;
 	buf = ParseTrans(&alphaMode, tag->c_str());
-	if (alphaMode == LOLayerInfo::TRANS_STRING) {
+	if (alphaMode == LOLayerData::TRANS_STRING) {
 		info->SetTextureType(LOtexture::TEX_SIMPLE_STR);
 		info->fileTextName.reset(new LOString(buf, tag->GetEncoder()));
 	}
@@ -678,21 +677,21 @@ bool LOImageModule::ParseTag(LOLayerData *info, LOString *tag) {
 			}
 			else if (buf[0] == 's') {
 				info->SetTextureType(LOtexture::TEX_ACTION_STR);
-				info->alphaMode = LOLayerInfo::TRANS_COPY;
+				info->alphaMode = LOLayerData::TRANS_COPY;
 			}
 			else if (buf[0] == 'S') {
 				info->SetTextureType(LOtexture::TEX_MULITY_STR);
-				info->alphaMode = LOLayerInfo::TRANS_COPY;
+				info->alphaMode = LOLayerData::TRANS_COPY;
 			}
 			else if (buf[0] == '>') {
 				info->SetTextureType(LOtexture::TEX_COLOR_AREA);
-				info->alphaMode = LOLayerInfo::TRANS_COPY;
+				info->alphaMode = LOLayerData::TRANS_COPY;
 				//LOLog_i("usecache is %c",info->usecache) ;
 			}
 			else if (buf[0] == 'b') {
 				//"*b;50,100,内容" ;绘制一个NS样式的按钮，通常模式时只显示文字，鼠标悬停时显示变色文字和有一定透明度的灰色
 				info->SetTextureType(LOtexture::TEX_NSSIMPLE_BTN);
-				info->alphaMode = LOLayerInfo::TRANS_COPY;
+				info->alphaMode = LOLayerData::TRANS_COPY;
 			}
 			else if (buf[0] == '*') {
 				//** 空纹理，基本上只是为了挂载子对象
@@ -719,33 +718,33 @@ const char* LOImageModule::ParseTrans(int *alphaMode, const char *buf) {
 		if (buf[0] == 'b')buf++;  //看起来LONS不需要支持
 		if (buf[0] == 'f')buf++;  //只加载某一区域
 		if (buf[0] == 'a') {
-			*alphaMode = LOLayerInfo::TRANS_ALPHA;
+			*alphaMode = LOLayerData::TRANS_ALPHA;
 			buf++;
 		}
 		else if (buf[0] == 'l') {  //左上角
-			*alphaMode = LOLayerInfo::TRANS_TOPLEFT;
+			*alphaMode = LOLayerData::TRANS_TOPLEFT;
 			buf++;
 		}
 		else if (buf[0] == 'r') {  //右上角
-			*alphaMode = LOLayerInfo::TRANS_TOPRIGHT;
+			*alphaMode = LOLayerData::TRANS_TOPRIGHT;
 			buf++;
 		}
 		else if (buf[0] == 'c') {  //不使用透明
-			*alphaMode = LOLayerInfo::TRANS_COPY;
+			*alphaMode = LOLayerData::TRANS_COPY;
 			buf++;
 		}
 		else if (buf[0] == 's') {  //string
-			*alphaMode = LOLayerInfo::TRANS_STRING;
+			*alphaMode = LOLayerData::TRANS_STRING;
 			buf++;
 		}
 		else if (buf[0] == 'm') {  //遮片
-			*alphaMode = LOLayerInfo::TRANS_MASK;
+			*alphaMode = LOLayerData::TRANS_MASK;
 		}
 		else if (buf[0] == '#') { //指定颜色
-			*alphaMode = LOLayerInfo::TRANS_DIRECT;
+			*alphaMode = LOLayerData::TRANS_DIRECT;
 		}
 		else if (buf[0] == '!') { //画板
-			*alphaMode = LOLayerInfo::TRANS_PALLETTE;
+			*alphaMode = LOLayerData::TRANS_PALLETTE;
 		}
 		if (buf[0] == ';') buf++;
 	}
@@ -819,20 +818,6 @@ bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf
 //	s->assign(tmp);
 //}
 
-void LOImageModule::FreeLayerInfoData(LOLayerInfo *info) {
-	if (info->texture) delete info->texture;
-	if (info->actions) LOAnimation::FreeAnimaList(&info->actions);
-	if (info->fileName) delete info->fileName;
-	if (info->maskName) delete info->maskName;
-	if (info->btnStr) delete info->btnStr;
-	if (info->textStr) delete info->textStr;
-	info->texture = nullptr;
-	info->actions = nullptr;
-	info->fileName = nullptr;
-	info->maskName = nullptr;
-	info->btnStr = nullptr;
-	info->textStr = nullptr;
-}
 
 LOLayer* LOImageModule::FindLayerInBase(LOLayer::SysLayerType type, const int *ids) {
 	return G_baseLayer[type].FindChild(ids);
@@ -872,7 +857,7 @@ bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, i
 }
 
 bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int y, int alpha, int eff) {
-	info->SetShowType(LOLayerInfo::SHOW_NORMAL); //简单模式
+	info->SetShowType(LOLayerData::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
 	LOShareBaseTexture base = GetUseTextrue(info, nullptr, true);
@@ -880,7 +865,7 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 	//空纹理不参与下面的设置了，以免出现问题
 	if (!base) return false ;
 
-	info->texture.reset(new LOtexture(base)) ;
+	info->SetNewFile(base);
 	info->SetPosition(x, y);
 	if (!info->actions) {  //没有动画则使用默认的宽高
 		info->showWidth = info->texture->baseW();
@@ -957,6 +942,7 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 }
 
 //单行文字
+/*
 LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerInfo*info, LOString *s) {
 	LOFontWindow *fontstyle = NULL;
 	SDL_Color *colors = NULL;
@@ -1062,53 +1048,46 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 	LOtextureBase *base = nullptr;
 	return base;
 }           
-
+*/
 
 LOShareBaseTexture LOImageModule::TextureFromFile(LOLayerData *info) {
-	bool ispng, useAlpha;
-	LOUniqSurface tmp(SurfaceFromFile(info->fileTextName.get(), &ispng));
-	LOShareBaseTexture base;
-	if (!tmp) return base;
+	bool useAlpha;
+	LOShareBaseTexture base(SurfaceFromFile(info->fileTextName.get()));
+	if (!base) return base;
 	//转换透明格式 
-	if (info->alphaMode != LOLayerInfo::TRANS_COPY && !tmp->hasAlpha()) {
-		if (info->alphaMode == LOLayerInfo::TRANS_ALPHA && !ispng) {
-			LOUniqSurface tmp2(tmp->ConverNSalpha(info->GetCellCount()));
-			if (tmp2) tmp = std::move(tmp);
-			else SimpleError("Conver image alhpa faild: %s", info->fileTextName->c_str());
+	if (info->alphaMode != LOLayerData::TRANS_COPY && !base->hasAlpha()) {
+		if (info->alphaMode == LOLayerData::TRANS_ALPHA && !base->ispng) {
+			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), info->GetCellCount()));
+			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", info->fileTextName->c_str());
 		}
-		else if (info->alphaMode == LOLayerInfo::TRANS_TOPLEFT) {
-			SDL_Color color = tmp->getPositionColor(0, 0);
-			tmp->setAlphaColor(color);
-		}
-		else if (info->alphaMode == LOLayerInfo::TRANS_TOPRIGHT) {
-			SDL_Color color = tmp->getPositionColor(tmp->W() - 1, 0);
-			tmp->setAlphaColor(color);
-		}
-		else if (info->alphaMode == LOLayerInfo::TRANS_DIRECT) {
-			LOLog_e("LOLayerInfo::TRANS_DIRECT is enmpty code!");
-		}
+		//else if (info->alphaMode == LOLayerData::TRANS_TOPLEFT) {
+		//	SDL_Color color = tmp->getPositionColor(0, 0);
+		//	tmp->setAlphaColor(color);
+		//}
+		//else if (info->alphaMode == LOLayerInfo::TRANS_TOPRIGHT) {
+		//	SDL_Color color = tmp->getPositionColor(tmp->W() - 1, 0);
+		//	tmp->setAlphaColor(color);
+		//}
+		//else if (info->alphaMode == LOLayerInfo::TRANS_DIRECT) {
+		//	LOLog_e("LOLayerInfo::TRANS_DIRECT is enmpty code!");
+		//}
 	}
 
 	LOString s = info->fileTextName->toLower() + "?" + std::to_string(info->alphaMode) + ";";
-	base = LOtexture::addTextureBaseToMap(s, new LOtextureBase(tmp.get()));
+	LOtexture::addTextureBaseToMap(s, base);
 	return base;
 }
 
-LOSurface* LOImageModule::SurfaceFromFile(LOString *filename, bool *ispng) {
-	BinArray *bin = FunctionInterface::fileModule->ReadFile(filename);
+LOtextureBase* LOImageModule::SurfaceFromFile(LOString *filename) {
+	std::unique_ptr<BinArray> bin(FunctionInterface::fileModule->ReadFile(filename));
 	if (!bin) return nullptr;
-
-	LOSurface *su = new LOSurface(bin->bin, bin->Length());
-	delete bin;
-
-	if (su->isNull()) {
-		delete su;
+	LOtextureBase *base = new LOtextureBase(bin->bin, bin->Length());
+	if (!base->isValid()) {
+		delete base;
 		SimpleError("LOImageModule::SurfaceFromFile() unsupported file format!");
 		return nullptr;
 	}
-
-	if(ispng) *ispng = su->isPng();
-	return su;
+	return base;
 }
 
 
@@ -1333,10 +1312,10 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 	auto *ac = new LOLayerData();
 	ac->fullid = fullid;
 	//检查是否已经有对象，有的话释放掉原来的
-	auto *printMap = GetPrintNameMap(printName);
-	auto iter = printMap->map->find(fullid);
-	if (iter != printMap->map->end()) delete iter->second;
-	(*printMap->map)[fullid] = ac;
+	auto *map = GetPrintNameMap(printName)->map;
+	auto iter = map->find(fullid);
+	if (iter != map->end()) iter->second->SetDelete();
+	(*map)[fullid] = ac;
 	return ac;
 }
 

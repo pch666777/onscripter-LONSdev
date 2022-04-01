@@ -3,7 +3,6 @@
 
 
 #include "LOFontBase.h"
-#include "LOSurface.h"
 #include "../etc/BinArray.h"
 #include "../etc/LOStack.h"
 #include "../etc/LOString.h"
@@ -77,9 +76,11 @@ public:
 	bool usehtml;   //{解释}
 
 	int GetRubyPreHeight();
+	/*
 	LOSurface *CreateSurface(LOStack<LineComposition> *lines, int cellcount);
 	void RenderColor(LOSurface *tex, LOStack<LineComposition> *comlist, SDL_Color *fg, int cellx,bool isshaded);
 	LOStack<LineComposition>* RenderTextCore(LOSurface *&tex,LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount, int startx);
+	*/
 	void FreeAllGlyphs(LOStack<LineComposition> *lines);
 	void ResetMe();
 private:
