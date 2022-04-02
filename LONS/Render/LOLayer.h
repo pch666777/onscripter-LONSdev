@@ -58,6 +58,12 @@ public:
 	//根图层的，根图层总是有效的
 	LOLayer *rootLyr;
 
+	//变换矩阵
+	LOMatrix2d matrix;
+
+	//是否已经初始化
+	bool isinit;
+
 	std::map<int, LOLayer*> *childs;
 
 	//顶级图层不需要后台数据
@@ -67,8 +73,6 @@ public:
 	//普通图层显然是根据后台数据创建,islink决定是否挂载都图层结构组上
 	LOLayer(LOLayerData &data, bool islink);
 	~LOLayer();
-
-	LOMatrix2d matrix;  //变换矩阵
 
 	//插入一个子对象，如果子对象已经存在则失败
 	bool InserChild(LOLayer *layer);

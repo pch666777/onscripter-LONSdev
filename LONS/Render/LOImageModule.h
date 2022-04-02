@@ -118,6 +118,7 @@ public:
 
 	//新建一个图层数据
 	LOLayerData* CreateLayerData(int fullid, const char *printName);
+	LOLayerData* GetLayerData(int fullid, const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
@@ -132,8 +133,6 @@ public:
 	//void ScreenShotCountinue(LOEvent1 *e);
 	LOtextureBase* SurfaceFromFile(LOString *filename);
 	int RefreshFrame(double postime);        //刷新帧显示
-
-	bool ContinueEffect(LOEffect *ef, double postime);
 
 	bool ParseTag(LOLayerData *info ,LOString *tag);
 
@@ -158,6 +157,8 @@ public:
 	void UpTest();
 	void WindowHasReset();
 	void PrepareEffect(LOEffect *ef, const char *printName);
+	bool ContinueEffect(LOEffect *ef, const char *printName, double postime);
+
 	intptr_t GetSDLRender() { return (intptr_t)render; }
 	void PrintError(LOString *err);
 	void ResetMe();
@@ -253,10 +254,15 @@ private:
 	int max_texture_width;
 	int max_texture_height;
 	LOString titleStr;
-	SDL_Texture *effectTex;
-	SDL_Texture *maskTex;      //遮片纹理
+
+	//抓取图像的遮片
+	LOUniqBaseTexture effectTex;
+	//遮片纹理
+	LOUniqBaseTexture maskTex;
 	Uint32 tickTime;
-	std::vector<LOEventHook*> preEventList;
+
+	//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
+	std::vector<LOShareEventHook> preEventList;
 
 	void ResetViewPort();
 	void CaleWindowSize(int scX, int scY, int srcW, int srcH, int dstW, int dstH, SDL_Rect *result);
@@ -273,7 +279,6 @@ private:
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
 
-	LOLayer* GetLayerOrNew(int fullid);
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
 	void DoDelayEvent(double postime);
 	void DoPreEvent(double postime);

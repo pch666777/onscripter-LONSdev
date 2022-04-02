@@ -18,31 +18,14 @@
 
 extern void GetFormatBit(SDL_PixelFormat *format, char *bit);
 extern void GetFormatBit(Uint32 format, char *bit);
+extern bool EqualRect(SDL_Rect *r1, SDL_Rect *r2);
 
 extern void SimpleError(const char *format, ...);
 
 //我希望尽可能的缓存纹理，可以利用SDL的纹理特性对同一个纹理进行透明、混合模式、颜色叠加
 //以小写文件名作为key，此外还需要加入NS的透明模式，比如对JPG来说 :a 和 :c的结果是不同的
-//另外还需要应对超大纹理
-//从基础纹理上切割下来的小块纹理
-//注意，由surface初始化为texture必须在渲染线程进行
-class MiniTexture {
-public:
-	MiniTexture();
-	~MiniTexture();
-	bool equal(SDL_Rect *rect);
-	bool isRectAvailable();
-	//预期的在基础纹理的位置
-	SDL_Rect dst;
-	//实际在基础纹理上的位置
-	SDL_Rect srt;
-
-	SDL_Texture *tex;
-	SDL_Surface *su;
-	//是否引用，对应基础纹理小于最大允许的纹理尺寸来说，是引用
-	//对于超大纹理 texture和surface都是从纹理上切割下来的
-	bool isref;
-};
+//LOtextureBase直接对应图像文件，LOtexture则是LOtextureBase要显示的范围，或者是对LOtextureBase
+//的切割
 
 //==============================================
 
@@ -56,21 +39,17 @@ public:
 	LOtextureBase(SDL_Texture *tx);
 	~LOtextureBase();
 
-	//SDL_Texture* GetTexture(SDL_Rect *re);
 	void SetSurface(SDL_Surface *su);
 	SDL_Surface *GetSurface() { return baseSurface; }
+	SDL_Texture *GetTexture() { return baseTexture; }
 	void SetName(LOString &s) { Name.assign(s); }
 	LOString GetName() { return Name; }
-	bool isBig() { return isbig; }
 	bool isValid() { return baseSurface || baseTexture; }
 	SDL_Texture *GetFullTexture();
+	void FreeData();
 
 	//只对surface有效
 	bool hasAlpha();
-	
-
-	MiniTexture *GetMiniTexture(SDL_Rect *rect);
-	void converGPUtex(MiniTexture *mini);
 
 	static uint16_t maxTextureW;
 	static uint16_t maxTextureH;
@@ -86,15 +65,12 @@ public:
 	int hh;
 	//只有加载时这个参数才有效
 	bool ispng;
-private:
-	//是否超大纹理
 	bool isbig;
+private:
+	LOString Name;
+	//是否超大纹理
 	SDL_Surface *baseSurface;
 	SDL_Texture *baseTexture;
-	LOString Name;
-	//小块纹理区域列表
-	std::vector<MiniTexture> texTureList;
-
 	void baseNew();
 };
 typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;
@@ -130,16 +106,16 @@ public:
 	};
 	LOtexture();
 	LOtexture(LOShareBaseTexture &base);
-	//LOtexture(int w, int h, Uint32 format, SDL_TextureAccess access);
 	~LOtexture();
 
 	void SetBaseTexture(LOShareBaseTexture &base);
-	bool isNull() { return baseTexture == nullptr; }
 	bool isAvailable();
-	bool isBig();
 
 	//激活某个纹理，并且如果是surface则转换成texture，所以只应该在渲染线程调用
-	MiniTexture* activeTexture(SDL_Rect *src, bool toGPUtex);
+	bool activeTexture(SDL_Rect *src, bool toGPUtex);
+
+	//某些在渲染线程使用的过程，必须直接获取一次纹理
+	bool activeFirstTexture();
 
 	bool activeActionTxtTexture();
 
@@ -150,10 +126,9 @@ public:
 	void setForceAplha(int alpha);
 	bool rollTxtTexture(SDL_Rect *src, SDL_Rect *dst);
 	void SaveSurface(LOString *fname) ;  //debug use
-	SDL_Surface *getSurface();
 
+	SDL_Surface *getSurface();
 	SDL_Texture *GetTexture();
-	//SDL_Rect *GetSrcRect() { return &srcRect; }
 
 	static LOShareBaseTexture findTextureBaseFromMap(LOString &fname);
 	static LOShareBaseTexture& addTextureBaseToMap(LOString &fname, LOtextureBase *base);
@@ -168,17 +143,28 @@ public:
 	int H();
 private:
 	void NewTexture();
+	void FreeRef();
+	void MakeGPUTexture();
 
 	static std::unordered_map<std::string, LOShareBaseTexture> baseMap;
 
+	//是否是对baseTexture的引用，如果不是删除的时候应该删除surface和texture
+	bool isRef;
 	int useflag;      //颜色叠加，混合模式，透明模式，低16位表面使用了那种效果，高16位表明具体的混合模式
-	SDL_BlendMode blendmodel;
 	SDL_Color color;  //RGB的值表示颜色叠加的值，A的值表示透明度
+	SDL_BlendMode blendmodel;
+
+	SDL_Texture *texturePtr;
+	SDL_Surface *surfacePtr;
+
+	//预期的显示位置和大小
+	SDL_Rect expectRect;
+
+	//实际纹理的位置和大小
+	SDL_Rect actualRect;
 
 	//基础纹理
 	LOShareBaseTexture baseTexture;
-	//当前纹理
-	MiniTexture *curTexture;
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;

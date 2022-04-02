@@ -12,11 +12,13 @@ void LOLayer::BaseNew(SysLayerType lyrType) {
 	parent = nullptr;   //父对象
 	childs = nullptr;
 	layerType = lyrType;
+	isinit = false;
 	rootLyr = &G_baseLayer[layerType];
 }
 
 LOLayer::LOLayer() {
 	BaseNew(LAYER_CC_USE);
+	curInfo.reset(new LOLayerData());
 }
 
 LOLayer::LOLayer(SysLayerType lyrType) {
@@ -245,9 +247,7 @@ void LOLayer::GetInheritOffset(float *ox, float *oy) {
 bool LOLayer::isFaterCopyEx() {
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		if (lyr->curInfo) {
-			if (lyr->curInfo->isShowRotate() || lyr->curInfo->isShowScale())return true;
-		}
+		if (lyr->curInfo->isShowRotate() || lyr->curInfo->isShowScale())return true;
 		lyr = lyr->parent;
 	}
 	return false;
@@ -320,12 +320,16 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 	matrix.Clear();
 	GetShowSrc(&src);
+
+	if (!isinit) {
+		curInfo->texture->activeTexture(&src, true);
+		isinit = true;
+	}
+	//不可渲染的错误
+	if (!curInfo->texture->GetTexture()) return;
+
 	if (curInfo->isShowScale() || curInfo->isShowRotate()) is_ex = true;
 	if (isFaterCopyEx()) is_ex = true;
-
-	MiniTexture *mini = curInfo->texture->activeTexture(&src, true);
-	//不可渲染的错误
-	if (!mini || !mini->tex) return;
 
 	curInfo->texture->setForceAplha(curInfo->alpha);
 	curInfo->texture->activeFlagControl();

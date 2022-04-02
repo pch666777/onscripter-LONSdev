@@ -7,7 +7,7 @@
 //在正式处理事件前必须处理帧刷新时遗留的事件
 void LOImageModule::DoPreEvent(double postime) {
 	for (int ii = 0; ii < preEventList.size(); ii++){
-		LOEventHook *e = preEventList[ii];
+		LOShareEventHook e = preEventList[ii];
 
 		if (e->catchFlag == PRE_EVENT_PREPRINTOK) {  //print准备完成
 			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
@@ -17,8 +17,10 @@ void LOImageModule::DoPreEvent(double postime) {
 		}
 		else if (e->catchFlag == PRE_EVENT_EFFECTCONTIUE) { //继续运行
 			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
-			if (ContinueEffect(ef, postime)) e->FinishMe();
+			const char *printName = e->paramList[1]->GetChars(nullptr);
+			if (ContinueEffect(ef, printName , postime)) e->FinishMe();
 			else e->closeEdit();
+			e->closeEdit();
 		}
 	}
 
@@ -51,21 +53,17 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
 	//非print1则要求抓取当前显示的图像，下一帧在继续执行
-	//这里有一个坑，抓取的图形在进行 if(ef)后才会进入 queLayerMap中，所以要在这步以后才FilterCacheQue
 	if (ef) {
-		LOEventHook::CreatePrintPreHook(&printPreHook, ef, print_name);
-		printPreHook.ResetMe();
+		LOEventHook::CreatePrintPreHook(printPreHook.get(), ef, print_name);
+		printPreHook->ResetMe();
 		//提交到等待位置
-		printPreHook.waitEvent(1, -1);
+		printPreHook->waitEvent(1, -1);
 		//遇到程序退出
 		if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
 
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
-	//SDL_LockMutex(btnQueMutex);
-
-	//现在关键是要比对出那些层是新增的，哪些是修改的，哪些是删除的
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -109,12 +107,11 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//等待print完成才继续
 	LOEventHook *ep = NULL;
 	if (iswait) {
-		ep = LOEventHook::CreatePrintPreHook(&printHook, ef, print_name);
+		ep = LOEventHook::CreatePrintPreHook(printHook.get(), ef, print_name);
 		//提交到等待位置
 		ep->ResetMe();
 	}
 	SDL_UnlockMutex(layerQueMutex);
-	//SDL_UnlockMutex(btnQueMutex);
 	if (ep) {
 		ep->waitEvent(1, -1);
 		//if (moduleState >= MODULE_STATE_EXIT) return 0;

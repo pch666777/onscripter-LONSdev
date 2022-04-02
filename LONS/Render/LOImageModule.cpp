@@ -220,9 +220,9 @@ void LOImageModule::ResetViewPort() {
 		G_viewRect.y = (int)(G_gameScaleY * winView.y); //? is right?
 	}
 
-	if (effectTex) DestroyTexture(effectTex);
-	effectTex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
-
+	auto *temp = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
+	effectTex.reset(new LOtextureBase(temp));
+	maskTex.reset(new LOtextureBase());
 	//FreeFps();
 }
 
@@ -271,8 +271,8 @@ int LOImageModule::MainLoop() {
 	moduleState = MODULE_STATE_RUNNING;
 
 	//第一帧要锁住print信号
-	printHook.FinishMe();
-	printPreHook.FinishMe();
+	printHook->FinishMe();
+	printPreHook->FinishMe();
 
 	while (loopflag) {
 		hightTimeNow = SDL_GetPerformanceCounter();
@@ -282,7 +282,8 @@ int LOImageModule::MainLoop() {
 			if (RefreshFrame(posTime) == 0) {
 				//LOLog_i("frame ok!") ;
 				//now do the delay event.like send finish signed.
-				DoDelayEvent(posTime);
+				DoPreEvent(posTime);
+				//DoDelayEvent(posTime);
 				lastTime = hightTimeNow;
 				if(moduleState >= MODULE_STATE_EXIT) break;
 				else if (moduleState & MODULE_STATE_RESET) {
@@ -363,7 +364,7 @@ int LOImageModule::RefreshFrame(double postime) {
 		//(second frame):enter effecting ->(if cut) -> send finish signed.
 
 		//收到请求后，本帧会刷新到effct层上
-		if (printPreHook.enterEdit()) {
+		if (printPreHook->enterEdit()) {
 			//if (premsg->loadParamInt(0) == PARAM_BGCOPY) {
 			//	SDL_Texture *bgtex = SDL_CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
 			//	premsg->savePtr_t(true, bgtex, 0, LOEvent::VALUE_SDLTEXTURE_PTR);
@@ -371,14 +372,16 @@ int LOImageModule::RefreshFrame(double postime) {
 			//}
 			//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
 
-			if (SDL_SetRenderTarget(render, effectTex) < 0) LOLog_e("SDL_SetRenderTarget(effectTexture) faild!");
+			if (SDL_SetRenderTarget(render, effectTex->GetFullTexture()) < 0) LOLog_e("SDL_SetRenderTarget(effectTexture) faild!");
 			SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
 			SDL_RenderClear(render);
 			UpDisplay(postime);
 			SDL_SetRenderTarget(render, NULL);
-			SDL_RenderCopy(render, effectTex, NULL, NULL);
+			SDL_RenderCopy(render, effectTex->GetFullTexture(), NULL, NULL);
 			//LOLog_i("prepare ok!") ;
 			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
+			printPreHook->catchFlag = PRE_EVENT_PREPRINTOK;
+			preEventList.push_back(printPreHook);
 			//LOEventHook *ev = new LOEventHook;
 			//ev->catchFlag = PRE_EVENT_PREPRINTOK;
 			//preEventList.push_back(ev);
@@ -396,10 +399,9 @@ int LOImageModule::RefreshFrame(double postime) {
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
-		if (printHook.enterEdit()) {
-			//LOEventHook ev(new LOEventHook_t());
-			//ev->catchFlag = PRE_EVENT_EFFECTCONTIUE;
-			//preEventList.push_back(ev);
+		if (printHook->enterEdit()) {
+			printHook->catchFlag = PRE_EVENT_EFFECTCONTIUE;
+			preEventList.push_back(printHook);
 		}
 		return 0;
 	}
@@ -474,19 +476,24 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//Target的纹理是不能编辑的，但是专门构造一个特殊纹理，让effect纹理与特殊纹理叠加产生特殊效果
 	//SDL_BLENDMODE_MOD  dstRGB = srcRGB * dstRGB dstA = dstA
 	//简单来说就是创建一个动态遮片
+	//首先需要抓取图像，抓取的图像存储在effectTex中，其次需要一张保存最终结果的纹理，_?_effect_?_
+	//还需要一个可编辑的遮片 maskTex
 
 	LOString ntemp("_?_effect_?_");      //care trigraph or Digraph
 	LOtexture::addNewEditTexture(ntemp, G_viewRect.w, G_viewRect.h, G_Texture_format, SDL_TEXTUREACCESS_TARGET);
 	//除效果10外，其他效果均需要特殊调制
 	if (ef->nseffID != 10) {
-		maskTex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_STREAMING, G_viewRect.w, G_viewRect.h);
+		auto *editEff = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_STREAMING, G_viewRect.w, G_viewRect.h);
+		maskTex.reset(new LOtextureBase(editEff));
 	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
 	LOLayerData *info = CreateLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
-	//info->texture->activeTexture(nullptr); //至少加载一次，不然首次加载会失败
+	info->SetVisable(1);
+	//至少加载一次，不然首次加载会失败
+	info->texture->activeFirstTexture(); 
 	//缩放模式  
 	if (IsGameScale()) {
 		info->SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
@@ -505,29 +512,31 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	}
 	ef->ReadyToRun();
 	//准备好第一帧的运行
-	ef->RunEffect(render, info, effectTex, maskTex, 0);
+	ef->RunEffect(render, info, effectTex->GetFullTexture(), maskTex->GetFullTexture(), 0);
 }
 
 //完成了返回true, 否则返回false
-bool LOImageModule::ContinueEffect(LOEffect *ef, double postime) {
-	/*
+bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double postime) {
 	if (ef) { //print 2-8
 		int ids[] = { LOLayer::IDEX_NSSYS_EFFECT,255,255 };
-		LOLayer *elyr = FindLayerInBase(LOLayer::LAYER_NSSYS, ids);
+		int fullid = GetFullID(LOLayer::LAYER_NSSYS, ids);
+		
+		LOLayer *elyr = FindLayerInBase(fullid);
 		if (elyr) {
-			if (ef->RunEffect(render, elyr->curInfo, effectTex, maskTex, postime)) {
-				elyr->FreeData();
-				if (maskTex) {
-					DestroyTexture(maskTex);
-					maskTex = nullptr;
-				}
+			if (ef->RunEffect(render, elyr->curInfo.get(), effectTex->GetFullTexture(), maskTex->GetFullTexture(), postime)) {
+				//前台后台数据都重置
+				LOLayerData *data = GetLayerData(fullid, printName);
+				if (data) data->SetDelete();
+				elyr->curInfo->SetDelete();
+				maskTex->FreeData();
+				//effectTex经常要使用，所以不释放
 				return true;
 			}
 			else return false;  //we will have next frame.
 		}
 		else return true; //maybe has some error!
 	}
-	*/
+
 	return true; //print 1
 }
 
@@ -1096,14 +1105,6 @@ LOtextureBase* LOImageModule::EmptyTexture(LOString *fn) {
 	return tx;
 }
 
-LOLayer* LOImageModule::GetLayerOrNew(int fullid) {
-	int ids[3];
-	LOLayer::SysLayerType type;
-	GetTypeAndIds( (int*)(&type), ids, fullid);
-	LOLayer *lyr = FindLayerInBase(type, ids);
-	//if (!lyr)lyr = new LOLayer(type, ids);
-	return lyr;
-}
 
 
 LOEffect* LOImageModule::GetEffect(int id) {
@@ -1316,6 +1317,13 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 	if (iter != map->end()) iter->second->SetDelete();
 	(*map)[fullid] = ac;
 	return ac;
+}
+
+LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
+	auto *map = GetPrintNameMap(printName)->map;
+	auto iter = map->find(fullid);
+	if (iter != map->end()) return iter->second;
+	return nullptr;
 }
 
 

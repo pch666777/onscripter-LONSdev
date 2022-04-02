@@ -27,32 +27,13 @@ void GetFormatBit(Uint32 format, char *bit) {
 	SDL_FreeFormat(fm);
 }
 
-//============== class ============
-MiniTexture::MiniTexture() {
-	dst = { 0,0,0,0 };
-	srt = dst;
-	tex = nullptr;
-	su = nullptr;
-	isref = true;
-}
 
-MiniTexture::~MiniTexture() {
-	//非引用要释放数据
-	if (!isref) {
-		//涉及到释放需注意只能在渲染线程才能释放
-		if (tex) DestroyTexture(tex);
-		if (su) FreeSurface(su);
-	}
-}
-
-bool MiniTexture::equal(SDL_Rect *rect) {
-	if (rect->x == dst.x && rect->y == dst.y && rect->w == dst.w && rect->h == dst.h) return true;
-	return false;
-}
-
-bool MiniTexture::isRectAvailable() {
-	if (srt.x < 0 || srt.y < 0 || srt.w < 1 || srt.h < 1) return false;
-	return true;
+bool EqualRect(SDL_Rect *r1, SDL_Rect *r2) {
+	//都是空，其中一个为空
+	if (!r1 && !r2) return true;
+	else if (!r1 || !r2) return false;
+	else if (r1->x == r2->x && r1->y == r2->y && r1->w == r2->w && r1->h == r2->h) return true;
+	else return false;
 }
 
 
@@ -70,9 +51,9 @@ LOtextureBase::LOtextureBase(SDL_Surface *su) {
 
 LOtextureBase::LOtextureBase(void *mem, int size) {
 	SDL_RWops *src = SDL_RWFromMem(mem, size);
+	ispng = IMG_isPNG(src);
 	SDL_Surface *su = LIMG_Load_RW(src, 0);
 	SetSurface(su);
-	ispng = IMG_isPNG(src);
 	SDL_RWclose(src);
 }
 
@@ -96,40 +77,11 @@ void LOtextureBase::baseNew() {
 
 LOtextureBase::~LOtextureBase() {
 	//切割下来的纹理块应该自动释放
-	texTureList.clear();
 	if (baseSurface) FreeSurface(baseSurface);
 	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
 	if (baseTexture) DestroyTexture(baseTexture);
-}
-
-MiniTexture *LOtextureBase::GetMiniTexture(SDL_Rect *rect) {
-	SDL_Rect temp;
-	if (rect) temp = *rect;
-	else temp = { 0,0,ww,hh };
-
-	for (int ii = 0; ii < texTureList.size(); ii++) {
-		MiniTexture *tex = &texTureList.at(ii);
-		if (tex->equal(&temp)) return tex;
-	}
-	//没有找到，添加一个，添加失败则返回null
-	MiniTexture *tex = new MiniTexture;
-	tex->dst = temp;
-	tex->srt = temp;
-	AvailableRect(ww, hh, &tex->srt);
-	//不可用的基础纹理
-	if (!tex->isRectAvailable()) return nullptr;
-	//超大纹理不引用
-	tex->isref = !isbig;
-	if (tex->isref) {
-		if (baseTexture) tex->tex = baseTexture;
-		else if (baseSurface) tex->su = baseSurface;
-		else return nullptr;
-	}
-	else {
-		//超大纹理只从基础纹理中切割出surface
-		tex->su = ClipSurface(baseSurface, tex->srt);
-	}
-	return tex;
+	baseSurface = nullptr;
+	baseTexture = nullptr;
 }
 
 
@@ -144,10 +96,16 @@ SDL_Texture *LOtextureBase::GetFullTexture() {
 	return nullptr;
 }
 
+void LOtextureBase::FreeData() {
+	if (baseSurface)FreeSurface(baseSurface);
+	if (baseTexture) DestroyTexture(baseTexture);
+	baseSurface = nullptr;
+	baseTexture = nullptr;
+}
+
 
 
 void LOtextureBase::SetSurface(SDL_Surface *su) {
-	texTureList.clear();
 	if (baseSurface) FreeSurface(baseSurface);
 	baseSurface = su;
 	ww = 0; hh = 0; isbig = false;
@@ -164,34 +122,6 @@ bool LOtextureBase::hasAlpha() {
 	else if (baseTexture) return true;
 	return false;
 }
-
-
-void LOtextureBase::converGPUtex(MiniTexture *mini) {
-	if (!mini->isref) {
-		if (!mini->tex && mini->su) {
-			mini->tex = CreateTextureFromSurface(LOtextureBase::render, mini->su);
-			//超大纹理保持surface不释放
-			//FreeSurface(mini->su);
-			//mini->su = nullptr;
-		}
-	}
-	else {
-		if (!baseTexture && baseSurface) {
-			baseTexture = CreateTextureFromSurface(LOtextureBase::render, baseSurface);
-			FreeSurface(baseSurface);
-			baseSurface = nullptr;
-			//更新整个列表
-			for (int ii = 0; ii < texTureList.size(); ii++) {
-				if (texTureList[ii].isref) {
-					texTureList[ii].tex = baseTexture;
-					texTureList[ii].su = baseSurface;
-				}
-			}
-		}
-	}
-}
-
-
 
 
 void LOtextureBase::AvailableRect(int maxx, int maxy, SDL_Rect *rect) {
@@ -286,6 +216,7 @@ void LOtexture::addTextureBaseToMap(LOString &fname, LOShareBaseTexture &base) {
 LOShareBaseTexture& LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
 	LOShareBaseTexture bt(base);
 	addTextureBaseToMap(fname, bt);
+	//变量已经添加到map里了，返回引用是安全的
 	return bt;
 }
 
@@ -323,6 +254,9 @@ LOtexture::LOtexture(LOShareBaseTexture &base) {
 }
 
 void LOtexture::SetBaseTexture(LOShareBaseTexture &base) {
+	//重新设置基础纹理，则原来绑定的信息要失效
+	//引用型的不用处理，基础纹理会自动处理，这里要处理非引用型的
+	if (!isRef) FreeRef();
 	baseTexture = base;
 }
 
@@ -334,20 +268,45 @@ void LOtexture::SetBaseTexture(LOShareBaseTexture &base) {
 
 void LOtexture::NewTexture() {
 	useflag = 0;
-	baseTexture = nullptr;
-	curTexture = nullptr;
+	texturePtr = nullptr;
+	surfacePtr = nullptr;
+}
+
+void LOtexture::FreeRef() {
+	if (isRef) {
+		//删除切割下来的资源和 新建的引用指针
+		if (texturePtr) DestroyTexture(texturePtr);
+		if (surfacePtr) FreeSurface(surfacePtr);
+		texturePtr = nullptr;
+		surfacePtr = nullptr;
+	}
+	else {
+		texturePtr = nullptr;
+		surfacePtr = nullptr;
+	}
+}
+
+void LOtexture::MakeGPUTexture() {
+	if (isRef) {
+		texturePtr = baseTexture->GetFullTexture();
+		surfacePtr = baseTexture->GetSurface();
+	}
+	else {
+		if (!texturePtr && surfacePtr) {
+			texturePtr = CreateTextureFromSurface(LOtextureBase::render, surfacePtr);
+			FreeSurface(surfacePtr);
+			surfacePtr = nullptr;
+		}
+	}
 }
 
 LOtexture::~LOtexture() {
 	if (baseTexture)notUseTextureBase(baseTexture);
+	FreeRef();
+	delete texturePtr;
+	delete surfacePtr;
 }
 
-
-
-bool LOtexture::isBig() {
-	if (baseTexture) return baseTexture->isBig();
-	else return false;
-}
 
 //有可用的basetexture且basetext是可以用的
 bool LOtexture::isAvailable() {
@@ -357,58 +316,61 @@ bool LOtexture::isAvailable() {
 
 
 //根据给定的范围框截取对象
-MiniTexture* LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
-	if (!baseTexture || !baseTexture->isValid()) return nullptr;
+bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
+	if (!baseTexture || !baseTexture->isValid()) return false;
 
-	//优先判断缓存
-	if (curTexture) {
-		//同一个，大部分都属于这个
-		if (curTexture->equal(src)) {
-			if (curTexture->tex) return curTexture;
-			//没有初始化的判断是否要初始化
-			if (toGPUtex && curTexture->su) baseTexture->converGPUtex(curTexture);
-			return curTexture;
-		}
-		else {
-			//不是同一个要看到是否超大纹理，超大纹理释放texture，节约显存
-			if (!curTexture->isref && curTexture->tex) {
-				DestroyTexture(curTexture->tex);
-				curTexture = nullptr;
-			}
-		}
+	//判断显示范围和当前是否一致
+	if (texturePtr && EqualRect(src, &expectRect)) {
+		if (toGPUtex) MakeGPUTexture();
+		return true;
 	}
 
-	//生成区块
-	SDL_Rect dst;
-	if (src) dst = *src;
-	else dst = { 0,0,baseTexture->ww,baseTexture->hh };
+	//根据基础纹理生成一个新的
+	//生成前先释放旧的
+	FreeRef();
+	isRef = !baseTexture->isbig;
+	expectRect = *src;
+	actualRect = expectRect;
+	LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, &actualRect);
+	if (isRef) {
+		texturePtr = baseTexture->GetTexture();
+		surfacePtr = baseTexture->GetSurface();
+	}
+	else {
+		surfacePtr = LOtextureBase::ClipSurface(baseTexture->GetSurface(), actualRect);
+	}
 
-	curTexture = baseTexture->GetMiniTexture(&dst);
-	if(!curTexture->tex && toGPUtex && curTexture->su) baseTexture->converGPUtex(curTexture);
-	return curTexture;
+	if (toGPUtex) MakeGPUTexture();
+	return true;
+}
+
+
+bool LOtexture::activeFirstTexture() {
+	if (!baseTexture)return false;
+	texturePtr = baseTexture->GetFullTexture();
 }
 
 
 bool LOtexture::activeFlagControl() {
-	if (!curTexture) return false;
-	/*
+	if (!texturePtr) return false;
+	
 	if (useflag & USE_ALPHA_MOD) {
-		SDL_SetTextureAlphaMod(tex, color.a);
-		SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+		SDL_SetTextureAlphaMod(texturePtr, color.a);
+		SDL_SetTextureBlendMode(texturePtr, SDL_BLENDMODE_BLEND);
 	}
-	else SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_NONE);
+	else SDL_SetTextureBlendMode(texturePtr, SDL_BLENDMODE_NONE);
 
 	if (useflag & USE_BLEND_MOD) {
-		int iii = SDL_SetTextureBlendMode(tex, blendmodel);
-		//auto it = SDL_GetError();
-		//iii = 0;
-		//auto itt = (SDL_BlendMode)((useflag >> 16));
-		//itt = SDL_BLENDMODE_NONE;
+		int iii = SDL_SetTextureBlendMode(texturePtr, blendmodel);
+		auto it = SDL_GetError();
+		iii = 0;
+		auto itt = (SDL_BlendMode)((useflag >> 16));
+		itt = SDL_BLENDMODE_NONE;
 	}
 
-	if (useflag & USE_COLOR_MOD) SDL_SetTextureColorMod(tex, color.r, color.g, color.b);
-	else SDL_SetTextureColorMod(tex, 0xff, 0xff, 0xff);
-	*/
+	if (useflag & USE_COLOR_MOD) SDL_SetTextureColorMod(texturePtr, color.r, color.g, color.b);
+	else SDL_SetTextureColorMod(texturePtr, 0xff, 0xff, 0xff);
+	
 	return true;
 }
 
@@ -559,5 +521,5 @@ int LOtexture::H() {
 }
 
 SDL_Texture *LOtexture::GetTexture() {
-	return nullptr;
+	return texturePtr;
 }

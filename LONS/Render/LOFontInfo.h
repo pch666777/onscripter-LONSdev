@@ -1,6 +1,8 @@
 #ifndef __LOFONTINFO_H__
 #define __LOFONTINFO_H__
 
+//2022年4月，重构
+
 
 #include "LOFontBase.h"
 #include "../etc/BinArray.h"

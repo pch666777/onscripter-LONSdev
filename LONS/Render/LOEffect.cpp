@@ -87,8 +87,8 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effec
 	postime += pos;
 	if (postime > time || postime < 0) {
 		info->SetVisable(0);  //not
-		//if (masksu) delete masksu;
-		//masksu = NULL;
+		//释放15和18特效的遮片，如果有的话
+		masksu.reset();
 		return true;
 	}
 	else {
