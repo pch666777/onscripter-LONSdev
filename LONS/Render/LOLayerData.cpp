@@ -88,7 +88,6 @@ LOLayerData::LOLayerData(const LOLayerData &obj)
 	if (obj.maskName) maskName.reset(new LOString(*obj.maskName));
 	texture = obj.texture;
 	if (obj.actions) actions.reset(new std::vector<LOShareAction>(*obj.actions));
-	if (obj.eventHooks) eventHooks.reset(new std::vector<LOShareEventHook>(*obj.eventHooks));
 }
 
 LOLayerData::~LOLayerData() {
@@ -168,8 +167,21 @@ void LOLayerData::SetAlpha(int alp) {
 
 
 void LOLayerData::SetCell(int ce) {
-	cellNum = ce;
 	flags |= FLAGS_UPDATA;
+	//如果有active，那么应该设置action的值
+	if (actions) {
+		for (int ii = 0; ii < actions->size(); ii++) {
+			LOShareAction &acb = actions->at(ii);
+			if (acb->acType == LOAction::ANIM_NSANIM) {
+				LOActionNS *ac = (LOActionNS*)acb.get();
+				if (ce < ac->cellCount) {
+					ac->cellCurrent = ce;
+					cellNum = ce;
+				}
+			}
+		}
+	}
+	else cellNum = 0;
 }
 
 void LOLayerData::SetTextureType(int dt) {
@@ -206,14 +218,13 @@ void LOLayerData::SetDelete() {
 	maskName.reset();
 	texture.reset();
 	if (actions) actions->clear();
-	//事件钩子可能还在别的地方，直接失效
-	if (eventHooks) {
-		for (int ii = 0; ii < eventHooks->size(); ii++) {
-			LOShareEventHook e = eventHooks->at(ii);
-			e->InvalidMe();
-		}
-		eventHooks->clear();
-	}
+}
+
+
+void LOLayerData::SetBtndef(LOString *s, int val) {
+	if (s)btnStr.reset(new LOString(*s));
+	btnval = val;
+	flags |= FLAGS_UPDATA;
 }
 
 
@@ -238,6 +249,7 @@ void LOLayerData::SetAction(LOShareAction &ac) {
 	actions->push_back(ac);
 	flags |= FLAGS_UPDATAEX;
 }
+
 
 
 void LOLayerData::FirstSNC() {

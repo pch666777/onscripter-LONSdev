@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <atomic>
 
-//LOEventManager G_hookManager;
+//LOEventQue G_hookQue;
 
 
 //==================== LOEvent1 ===================
@@ -12,8 +12,8 @@ std::atomic_int LOEventHook::exitFlag{};
 
 
 LOEventHook::LOEventHook() {
-	callMod = MOD_SCRIPTER;
-	callFun = FUN_ENMPTY;
+	param1 = 0;
+	param2 = 0;
 }
 
 
@@ -91,13 +91,14 @@ bool LOEventHook::waitEvent(int sleepT, int overT) {
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
 	e->timeStamp = SDL_GetTicks();
+	e->evType = EVENT_NONE;
 	return e;
 }
 
 LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNext) {
 	auto *e = CreateHookBase();
-	e->callMod = MOD_SCRIPTER;
-	e->callFun = FUN_TIMER_CHECK;
+	e->param1 = MOD_SCRIPTER;
+	e->param2 = FUN_TIMER_CHECK;
 	e->paramList.push_back(new LOVariant(scripter));
 	e->paramList.push_back(new LOVariant((int)isclickNext));
 	return e;
@@ -108,6 +109,25 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 	e->timeStamp = SDL_GetTicks();
 	e->paramList.push_back(new LOVariant(ef));
 	e->paramList.push_back(new LOVariant(printName, strlen(printName)));
+	return e;
+}
+
+
+
+
+//响应左键、右键,waitse指定等待哪一个通道完成播放，-1表示不等待
+LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_LEFTCLICK | ANSWER_RIGHTCLICK;
+	if (waitse) e->catchFlag |= ANSWER_SEPLAYOVER;
+	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
+	e->param1 = MOD_SCRIPTER;
+	e->param2 = FUN_BTNFINISH;
+	//最大的等待时间
+	e->paramList.push_back(new LOVariant(onsType));
+	e->paramList.push_back(new LOVariant(onsID));
+	e->paramList.push_back(new LOVariant(waittime));
+	e->paramList.push_back(new LOVariant(waitse));
 	return e;
 }
 
@@ -133,81 +153,78 @@ void G_PrecisionDelay(double t) {
 
 
 //===========================================//
-/*
-LOEventManager::LOEventManager() {
-	lowStart = normalStart = highStart = 0;
+
+LOEventQue::LOEventQue() {
+	
 }
 
-LOEventManager::~LOEventManager() {
+LOEventQue::~LOEventQue() {
 
 }
 
-void LOEventManager::AddEvent(LOEventHook *e, int level) {
-	int count;
-	intptr_t zerobase;
-
+//要保证添加时绝对不删除文件
+void LOEventQue::push_back(LOShareEventHook &e, int level) {
 	auto *list = GetList(level);
-	int *startpos;
-	if (level < 0)startpos = &lowStart;
-	else if (level > 0) startpos = &highStart;
-	else startpos = &normalStart;
+	_mutex.lock();
+	list->push_back(e);
+	_mutex.unlock();
+}
 
-	while (true) {
-		count = 0;
-		//一直到成功为止
-		while (count < list->size()) {
-			//轮了一圈了
-			if (*startpos >= list->size()) *startpos = 0;
-			zerobase = 0;
-			if ((*list)[*startpos]->compare_exchange_strong(zerobase, (intptr_t)e)) return;
-			count++;
-			(*startpos)++;
+LOShareEventHook LOEventQue::GetEventHook(int &index, int level, bool isenter) {
+	auto *list = GetList(level);
+	LOShareEventHook ret;
+	_mutex.lock();
+	while (index >= 0 && index < list->size()) {
+		//注意，不判断有消息
+		LOShareEventHook ev = list->at(index);
+		if (ev) {
+			if (isenter) {
+				if (ev->enterEdit()) {
+					ret = ev;
+					break;
+				}
+			}
+			else {
+				ret = ev;
+				break;
+			}
 		}
-		IncList(list);
+		index++;
 	}
+	_mutex.unlock();
+
+	index++;
+	return ret;
 }
 
 
-void LOEventManager::IncList(std::vector<std::atomic_intptr_t*>* list) {
+void LOEventQue::push_header(LOShareEventHook &e, int level) {
+	auto *list = GetList(level);
 	_mutex.lock();
-	for (int ii = 0; ii < 10; ii++) {
-		auto ptr = new std::atomic_intptr_t();
-		ptr->store(0);
-		list->push_back(ptr);
-	}
+	auto iter = list->begin();
+	list->insert(iter, e);
 	_mutex.unlock();
 }
 
 
-LOEventHook* LOEventManager::GetNextEvent(int *listindex, int *index) {
-	while (true) {
-		auto *list = GetList(*listindex);
-		//历遍当前的队列
-		while (*index < list->size()) {
-			auto e = (LOEventHook*)((*list)[*index]->load());
-			(*index)++;  //指向下一个
-			if (e) {
-				if (e->isActive()) return e;
-				else if (e->isInvalid()) {
-					(*list)[*index - 1]->store(0);
-					delete e;
-				}
-			}
-		}
-		//由hight切换到low
-		if (*listindex < 0) return nullptr;
-		else if (*listindex > 0) listindex = 0;  //hight --> normal
-		else *listindex = -1;  //normal --> low
+std::vector<LOShareEventHook>* LOEventQue::GetList(int level) {
+	if (level == LEVEL_HIGH) {
+		return &highList;
 	}
-
-	return nullptr;
+	else {
+		return &normalList;
+	}
 }
 
 
-std::vector<std::atomic_intptr_t*> *LOEventManager::GetList(int listindex) {
-	if (listindex < 0) return &lowList;
-	else if (listindex > 0) return &highList;
-	else return &normalList;
+void LOEventQue::arrangeList() {
+	_mutex.lock();
+	for (int level = 0; level < 2; level++) {
+		auto *list = GetList(level);
+		for (auto iter = list->begin(); iter != list->end(); ) {
+			if ((*iter)->isInvalid()) iter = list->erase(iter);
+			else iter++;
+		}
+	}
+	_mutex.unlock();
 }
-*/
-

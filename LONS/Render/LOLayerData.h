@@ -47,6 +47,7 @@ public:
 
 	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
 	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
+	int btnval;    //btn的值
 	int16_t offsetX;    //显示目标左上角位置
 	int16_t offsetY;    //显示目标左上角位置
 	int16_t alpha;      //透明度
@@ -101,6 +102,10 @@ public:
 		FLAGS_NEWFILE = 32,
 		//更新了事件钩子和动作
 		FLAGS_UPDATAEX = 64,
+		//该图层被设置btn
+		FLAGS_BTNDEF = 128,
+		//图层正处于鼠标悬停激活状态
+		FLAGS_ACTIVE = 256,
 	};
 
 
@@ -135,6 +140,8 @@ public:
 	std::unique_ptr<LOString> fileTextName;
 	//遮片名称
 	std::unique_ptr<LOString> maskName;
+	//按钮字符串
+	std::unique_ptr<LOString> btnStr;
 
 	//纹理使用引用计数
 	LOShareTexture texture;
@@ -143,9 +150,6 @@ public:
 	//所有的action和eventHook都只有在print时才同步
 	//动作组
 	std::unique_ptr<std::vector<LOShareAction>> actions; 
-	//事件组
-	std::unique_ptr<std::vector<LOShareEventHook>> eventHooks;
-
 
 	bool isShowScale() { return showType & SHOW_SCALE; }
 	bool isShowRotate() { return showType & SHOW_ROTATE; }
@@ -157,6 +161,8 @@ public:
 	bool isNewFile() { return flags & FLAGS_NEWFILE; }
 	bool isUpData() { return flags & FLAGS_UPDATA; }
 	bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
+	bool isBtndef() { return flags & FLAGS_BTNDEF; }
+	bool isActive() { return flags & FLAGS_ACTIVE; }
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();
@@ -171,6 +177,7 @@ public:
 	void SetTextureType(int dt);
 	void SetNewFile(LOShareBaseTexture &base);
 	void SetDelete();
+	void SetBtndef(LOString *s, int val);
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();

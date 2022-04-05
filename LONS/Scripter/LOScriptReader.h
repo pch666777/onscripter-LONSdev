@@ -281,7 +281,7 @@ private:
 	LOString TagString;  //显示文字前的tag
 	std::vector<LOString> cselList;
 	int gloableMax;
-	LOEventHook *blockingEvent;
+	
 	
 	LOScriptPoint* GetScriptPoint(LOString lname);
 	int ContinueRun();

@@ -158,6 +158,7 @@ public:
 
 	LOStack<ONSVariableRef> paramStack;
 	int moduleState;
+	LOEventQue waitEventQue;
 
 	FuncLUT* GetFunction(LOString &func);
 	ONSVariableRef *GetParamRef(int index);

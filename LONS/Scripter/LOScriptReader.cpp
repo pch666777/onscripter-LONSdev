@@ -120,7 +120,6 @@ LOScriptReader::LOScriptReader()
 	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
 	subStack = new LOStack<LOScriptPoint>;
 	loopStack = new LOStack<LogicPointer>;
-	blockingEvent = nullptr;
 	ResetBaseConfig();
 }
 
@@ -131,7 +130,6 @@ LOScriptReader::~LOScriptReader()
 	delete nslogic;
 	if(subStack) delete subStack;
 	if(loopStack) delete loopStack;
-	if (blockingEvent) delete blockingEvent;
 }
 
 int LOScriptReader::MainTreadRunning() {
@@ -433,24 +431,31 @@ int LOScriptReader::ReturnEvent(int ret, const char *&buf, int &line) {
 
 int LOScriptReader::ContinueRun() {
 	//LOString cmd;
-	int ret;
+	int ret = RET_CONTINUE;
 	int callby = 0;
 	LOString sss;
 
-	ret = ContinueEvent();
-	if (ret != RET_VIRTUAL) return ret;
-	ret = RET_CONTINUE;
+	//遇到一些空行直接就跳过去了，不需要检查event
+	int nextType = IdentifyLine(currentLable->c_buf);
 
-	switch (IdentifyLine(currentLable->c_buf))
-	{
+	switch (nextType) {
 	case LINE_NOTES:case LINE_LABEL:case LINE_END:
 		currentLable->c_buf = scriptbuf->NextLine(currentLable->c_buf);
 		//if (isAddLine) currentLable->c_line++;
 		currentLable->c_line++;
-		break;
+		return ret;
 	case LINE_CONNECT:
 		currentLable->c_buf++;
-		break;
+		return ret;
+	}
+
+	//正式有效的命令前，先执行阻塞事件
+	ret = ContinueEvent();
+	if (ret != RET_VIRTUAL) return ret;
+	ret = RET_CONTINUE;
+
+	switch (nextType)
+	{
 	case LINE_TEXT:
 		//这个过程看起来有点奇怪，显示文本前我们必须进入 pretextgosub ，等到从pretextgosub返回时再进入到文字显示
 		//文字显示后进入 textgosub，预先准备好tagstring
@@ -482,81 +487,38 @@ int LOScriptReader::ContinueRun() {
 
 //因为采用了轮询来模拟多线程脚本，所以部分需等待的命令是通过事件存储的
 int LOScriptReader::ContinueEvent() {
-	//if (this->GetCurrentLine() == 903) {
-	//	int safdsfasf =1;
-	//}
-	/*
-	LOEvent1 *e = blocksEvent.GetHeaderEvent();
-	LOEventParamBtnRef *param;
+	int level = LOEventQue::LEVEL_NORMAL;
+	int index = 0;
 	bool isfinish = false;
-	bool issleep = true;
-	bool isloop = true;  //部分延时触发事件在不满足条件下，会优先处理下一个事件
+	bool hasEvent = false;
+	bool isloop = true;
 
-	while (isloop && e) {
+	while (isloop) {
 		isloop = false;
 
-		switch (e->eventID) {
-		case SCRIPTER_EVENT_DALAY:
-			//如果事件已经在left click完成，那么计算超时不会影响结果
-			if (e->isFinish() || DelayTimeCheck(e)) {
-				//延时事件没有后续操作，事件可以直接失效
-				e->InvalidMe(); isfinish = true;
-			}
-			break;
-		case LOEvent1::EVENT_CATCH_BTN:  //按钮捕获
-			//按钮是否超时
-			if (!e->isFinish() && DelayTimeCheck(e)) {
-				e->value = -2; e->FinishMe();
-			}
-			if (e->isFinish()) { //按钮事件完成，赋值，同时线程阻塞失效
-				BtnCatchFinish(e);
-				e->InvalidMe();
-			}
-			break;
-		case SCRIPTER_EVENT_LEFTCLICK:case SCRIPTER_EVENT_CLICK:
-			if (e->isFinish()) {
-				e->InvalidMe(); isfinish = true;
-			}
-			break;
-		case SCRIPTER_BGMLOOP_NEXT:
-			FunctionInterface::audioModule->PlayAfter();  //bgmloop的时候，播放下一首
-			e->InvalidMe();
-			break;
-		case LOEvent1::EVENT_TEXT_ACTION:
-			if (e->isFinish()) {
-				if ((e->value & 0xff) != '/') ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
-				e->InvalidMe();
-			}
-			break;
-		case SCRIPTER_DELAY_GOSUB:
-			if (e->isFinish() || DelayTimeCheck(e)) {
-				param = (LOEventParamBtnRef *)e->param;
-				NewThreadGosub(param->ref->GetStr(), "");
-				e->InvalidMe();
-			}
-			else isloop = true;
-			break;
-		case SCRIPTER_RUN_SPSTR:   //运行 spstr，注意btnstr是直接在img线程运行的，不在这里
-			if (e->isFinish()) {  //阻塞状态，完成才会继续
-				e->InvalidMe();
-			}
-			break;
-		default:
-			break;
-		}
+		LOShareEventHook ev = waitEventQue.GetEventHook(index, level, false);
+		if (!ev) break;
 
-		if (isloop) e = blocksEvent.GetHeaderEvent(e);  //需要循环的进入下一个循环事件
-		else {
-			//事件处理结果
-			if (isfinish) return RET_CONTINUE;     //事件完成，进入下一个轮询（阻塞当前脚本）
-			else {  //事件没有得到处理，脚本继续等待
-				//单线程脚本时防止CPU占用率过高.
-				if (sctype == SCRIPT_TYPE::SCRIPT_TYPE_MAIN && !nextReader && issleep) SDL_Delay(1);
-				return RET_CONTINUE;    //事件没有完成，进入下一个轮询（阻塞当前脚本）
-			}
-		}
+		hasEvent = true;
+
+		if (ev->isInvalid()) isfinish = true;
+		
 	}
-	*/
+
+	//返回continue将会阻塞线程
+	if (isfinish) {
+		waitEventQue.arrangeList();
+		return RET_CONTINUE;
+	}
+
+	//事件没完成根据有无事件做处理
+	if (hasEvent) {
+		//有事件，但是是单线程脚本，延迟一下
+		//多线程脚本应该马上去执行下一个
+		if (sctype == SCRIPT_TYPE::SCRIPT_TYPE_MAIN && !nextReader) SDL_Delay(1);
+		//阻塞的
+		return RET_CONTINUE;
+	}
 	return RET_VIRTUAL;   //没有阻塞事件，进入下一个命令
 }
 
@@ -1468,9 +1430,6 @@ void LOScriptReader::ResetBaseConfig() {
 	st_globalon = false;
 	st_errorsave = false;
 	st_labellog = false;
-
-	if (blockingEvent) delete blockingEvent;
-	blockingEvent = nullptr;
 }
 
 //重置脚本模块，注意只应该从主脚本调用这个函数

@@ -35,12 +35,6 @@ LOLayer::LOLayer(LOLayerData &data, bool islink) {
 }
 
 LOLayer::~LOLayer() {
-	//跟图层有关的事件钩子不再有效了
-	if (curInfo && curInfo->eventHooks) {
-		for (int ii = 0; ii < curInfo->eventHooks->size(); ii++) {
-			curInfo->eventHooks->at(ii)->InvalidMe();
-		}
-	}
 	//释放子对象
 	if (childs) {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
@@ -143,20 +137,17 @@ LOLayer *LOLayer::FindChild(int cid) {
 
 
 bool LOLayer::isPositionInsideMe(int x, int y) {
-	//LOAnimation *ai = curInfo->anim;
-	//经测试，隐藏的按钮也会被激活
-	//if (layerType != LAYER_NSSYS && !isVisible()) return false;  //不可见的通常按钮不被显示
-	/*
+	//隐藏的按钮会激活为显示
 	int left = curInfo->offsetX;
 	int top = curInfo->offsetY;
 	int right = left + curInfo->showWidth;
 	int bottom = top + curInfo->showHeight;
 	if (x >= left && x <= right && y >= top && y <= bottom) {
-		curInfo->visiable |= 1;
+		curInfo->SetVisable(1);
 		return true;
 	}
 	else return false;
-	*/
+
 	return false;
 }
 
@@ -278,6 +269,7 @@ void LOLayer::upData(LOLayerData *data) {
 	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
 	LOLayerDataBase *src = (LOLayerDataBase*)data;
 	*dst = *src;
+	if (data->btnStr) curInfo->btnStr.reset(new LOString(*(data->btnStr.get())));
 }
 
 void LOLayer::upDataEx(LOLayerData *data) {
@@ -285,26 +277,6 @@ void LOLayer::upDataEx(LOLayerData *data) {
 	else curInfo->maskName.reset();
 	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
 	else curInfo->actions.reset();
-	//要比对出哪些事件钩子已经不在队列中了
-	/*
-	if (curInfo->eventHooks) {
-		for (int ii = 0; ii < curInfo->eventHooks->size(); ii++) {
-			LOEventHook *e = curInfo->eventHooks->at(ii).get();
-			if (data->eventHooks) {
-				int kk = 0;
-				for (; kk < data->eventHooks->size(); kk++) {
-					if (e == data->eventHooks->at(kk).get()) break;
-				}
-				//事件钩子已经不在队列中了
-				if (kk >= data->eventHooks->size()) e->InvalidMe();
-			}
-			else e->InvalidMe();
-		}
-	}
-	*/
-	//重新复制事件钩子
-	if (data->eventHooks) curInfo->eventHooks.reset(new std::vector<LOShareEventHook>(*data->eventHooks));
-	else curInfo->eventHooks.reset();
 }
 
 void LOLayer::ShowMe(SDL_Renderer *render) {
@@ -517,3 +489,45 @@ LOLayer* LOLayer::FindViewLayer(int fullid) {
 	return G_baseLayer[lyrType].FindChild(ids);
 }
 
+
+//外部要相应的主要是鼠标进入图层和离开图层
+bool LOLayer::SendEvent(LOEventHook *e, LOEventQue *aswerQue) {
+	int xx = e->paramList[0]->GetInt();
+	int yy = e->paramList[1]->GetInt();
+
+
+	return false;
+}
+
+
+int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
+	int ret = SENDRET_NONE;
+	//子层在父层上方，因此先检查子层
+	if (childs) ret = checkBtnActive(e, aswerQue);
+	if (ret < SENDRET_END) {
+		//取消激活
+		if (e->evType == LOEventHook::SEND_UNACTIVE && curInfo->isActive()) {
+			//去除激活状态
+			curInfo->flags &= (~LOLayerData::FLAGS_ACTIVE);
+			curInfo->SetCell(0);
+			ret = SENDRET_END;
+		}
+		//激活事件，只有被定义为按钮的才相应
+		//鼠标移动和点击
+		else if(curInfo->isBtndef()){
+			if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
+				//传递出响应的值
+				e->paramList.push_back(new LOVariant(curInfo->btnval));
+				e->evType = LOEventHook::SEND_UNACTIVE;
+				ret = SENDRET_CHANGE;
+			}
+		}
+	}
+	return ret;
+}
+
+
+////只有被改变才返回真
+//bool LOLayer::setActive(bool isactive) {
+//
+//}

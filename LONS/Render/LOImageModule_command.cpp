@@ -602,36 +602,34 @@ int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
 
 //btntime btntime2小心的用在多线程
 int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
-	/*
 
 	if (reader->isName("btnwait") || reader->isName("btnwait2")) LeveTextDisplayMode();
 
 	if (textbtnFlag && reader->isName("textbtnwait")) { //注册文字按钮
-		int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-		LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_DIALOG, ids, reader->GetPrintName());
-		if (info) {
-			info->SetBtn(nullptr, textbtnValue);
-		}
+		//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
+		//LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_DIALOG, ids, reader->GetPrintName());
+		//if (info) {
+		//	info->SetBtn(nullptr, textbtnValue);
+		//}
 	}
-
+	//print1
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
-*/
+	LOEventHook *e = LOEventHook::CreateBtnwaitHook(v1->vtype, v1->nsvId, 0, -1);
+	LOShareEventHook ev(e);
+	
+	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::spbtnCommand(FunctionInterface *reader) {
-	/*
-	int ids[] = { reader->GetParamInt(0),255,255 };
-	LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	if (info) {
-		if (reader->isName("exbtn")) {
-			info->SetBtn(&reader->GetParamStr(2), reader->GetParamInt(1));
-		}
-		else info->SetBtn(nullptr, reader->GetParamInt(1));
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
+	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
+	if (data) {
+		data->SetBtndef(nullptr, reader->GetParamInt(1));
 	}
-	*/
 	return RET_CONTINUE;
 }
 
@@ -776,11 +774,12 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	//btndef会清除上一次的btndef定义和btn定义
 	LOString tag = reader->GetParamStr(0);
 
-	RemoveBtn(-1);  //所有的按钮定义都会被清除
+	//所有的按钮定义都会被清除
+	RemoveBtn(-1);
 
 	//无论如何btn的系统层都将被清除
-	int ids[] = { LOLayer::IDEX_NSSYS_BTN,255,255 };
-	//CspCore(LOLayer::LAYER_NSSYS, ids, "_lons");
+	int fullid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255);
+	CspCore(fullid, "_lons");
 	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();

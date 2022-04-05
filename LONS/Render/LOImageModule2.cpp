@@ -127,12 +127,47 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 void LOImageModule::CaptureEvents(SDL_Event *event) {
 	//时间戳，历遍事件时一起传递
 	Uint32 timeSnape = SDL_GetTicks();
+	LOUniqEventHook ev(new LOEventHook());
 
+	//包装事件
 	switch (event->type){
 	case SDL_MOUSEMOTION:
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
+		ev->evType = LOEventHook::SEND_MOUSEMOVE;
+		ev->paramList.push_back(new LOVariant(mouseXY[0]));
+		ev->paramList.push_back(new LOVariant(mouseXY[1]));
 	}
+
+	//响应事件
+	if (ev->evType == LOEventHook::SEND_MOUSEMOVE || ev->evType == LOEventHook::SEND_MOUSECLICK) {
+		int ret = LOLayer::SENDRET_NONE;
+		//发往图层，看图层是否响应
+		for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT && ret == LOLayer::SENDRET_NONE; ii++) {
+			ret = G_baseLayer[ii].checkBtnActive(ev.get(), nullptr);
+		}
+
+		if (ret != LOLayer::SENDRET_NONE) {
+			//按钮事件获得了相应，如果是鼠标点击，那么应该
+			if (event->type == SDL_MOUSEBUTTONUP) {
+
+			}
+		}
+		else {
+			//没有响应，要考虑激活exbtn_d
+		}
+
+	}
+
+
+	//首先发往所有的图层，看是否有图层接受
+	//while (true) {
+	//	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+
+	//	}
+	//}
+
+
 	/*
 	LOEvent1 *catMsg = NULL;
 	LOEventParamBtnRef *param;

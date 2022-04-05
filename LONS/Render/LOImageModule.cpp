@@ -846,8 +846,10 @@ LOLayer* LOImageModule::GetRootLayer(int fullid) {
 }
 
 
-//移除按钮定义，-1移除所有，-2移除btn定义的
+//移除按钮定义
 void LOImageModule::RemoveBtn(int fullid) {
+
+
 
 }
 

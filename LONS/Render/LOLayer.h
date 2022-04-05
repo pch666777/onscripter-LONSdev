@@ -49,6 +49,15 @@ public:
 		IDEX_NSSYS_RMENU = 20,
 	};
 
+	enum {
+		//传递的事件没有被处理
+		SENDRET_NONE,
+		//传递的事件已经被相应，但需要被继续传递
+		SENDRET_CHANGE,
+		//传递的事件已经结束
+		SENDRET_END
+	};
+
 	//成员///////////
 	int id[3];
 	std::unique_ptr<LOLayerData> curInfo;  //前台数据
@@ -63,6 +72,8 @@ public:
 
 	//是否已经初始化
 	bool isinit;
+	//是否已经激活悬停
+
 
 	std::map<int, LOLayer*> *childs;
 
@@ -116,9 +127,16 @@ public:
 	void Serialize(BinArray *sbin);
 
 	//将图层挂载到图层结构上
-	bool LinkLayer();
 	void upData(LOLayerData *data);
 	void upDataEx(LOLayerData *data);
+
+	//切换图层的悬停激活状态
+	//bool setActive(bool isactive);
+
+	//返回真表示事件已经被终止
+	bool SendEvent(LOEventHook *e, LOEventQue *aswerQue);
+	//检查鼠标移动或者单击是否位于图层上
+	int checkBtnActive(LOEventHook *e, LOEventQue *aswerQue);
 
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上
 	//只是根据ids预期父对象，识别返回null

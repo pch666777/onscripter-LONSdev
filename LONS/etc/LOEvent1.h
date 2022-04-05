@@ -23,22 +23,11 @@ public:
 	};
 
 	enum TYPE_EVENT{  //envents
+		//没有必要了解类型的
 		EVENT_NONE,
-		EVENT_PREPARE_EFFECT,  //收到此信号后，图像会刷新到指定纹理上，以便进行effect运算
-		EVENT_WAIT_PRINT,      //标识print任务是否已经完成
-		EVENT_IMGMODULE_AFTER, //图像模块延迟处理事件
-//		EVENT_TIMER_WAIT,      //需要计时的事件，优先度非常高，由脚本线程维护
-		                       //需要计时的事件通常都会加入不止一个事件槽中，如果是在复数的事件槽中，那么你要小心避免多次删除
-		//EVENT_LEFT_CLICK,      //左键、右键都归入到catch btn事件中
-		//EVENT_RIGHT_CLICK,     //
-		EVENT_CATCH_BTN,       //捕获按钮
-		EVENT_TEXT_ACTION,     //对话文字显示事件
-		EVENT_SEZERO_FINISH,   //0通道声音播放完毕
-		//EVENT_TEXT_GOSUB,
-		//EVENT_TEXTACTION_FINISH,
-
-
-		EVENT_ALL_COUNT
+		//定义的按钮
+		EVENT_BTNDEF,
+		EVENT_BTNWAIT,
 	};
 
 	enum {
@@ -48,6 +37,16 @@ public:
 		ANSWER_SEPLAYOVER = 8
 	};
 
+	//发送的事件
+	enum {
+		SEND_MOUSEMOVE,
+		SEND_MOUSECLICK,
+		//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
+		//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
+		SEND_UNACTIVE,
+	};
+
+
 	enum {
 		MOD_RENDER = 1,
 		MOD_SCRIPTER,
@@ -55,6 +54,11 @@ public:
 
 		FUN_ENMPTY,
 		FUN_TIMER_CHECK,
+
+		//按钮处理函数
+		FUN_BTNRUN,
+		//按钮事件已经完成的函数
+		FUN_BTNFINISH,
 	};
 
 	LOEventHook();
@@ -75,13 +79,16 @@ public:
 	void ResetMe();
 
 	//要求捕获的事件
-	int64_t catchFlag;
+	int32_t catchFlag;
+	//事件的类型
+	int32_t evType;
+
 	//时间戳
 	Uint32 timeStamp;
-	//模块
-	int16_t callMod;
-	//函数
-	uint16_t callFun;
+	//参数1，不同的处理函数有不同的意义
+	int16_t param1;
+	//参数2，不同的处理函数有不同的意义
+	uint16_t param2;
 	//参数表
 	std::vector<LOVariant*> paramList;
 
@@ -89,6 +96,9 @@ public:
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
 	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
+	//创建一个btnwait事件
+	static LOEventHook* CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse);
+
 private:
 	bool upState(int sa);
 	std::atomic_int state;
@@ -98,42 +108,47 @@ private:
 };
 
 typedef std::shared_ptr<LOEventHook> LOShareEventHook;
-typedef std::vector<LOShareEventHook> LOShareEventHookVec;
+typedef std::unique_ptr<LOEventHook> LOUniqEventHook;
 
 //=============================
-/*
-class LOEventManager {
+
+class LOEventQue {
 public:
-	LOEventManager();
-	~LOEventManager();
-	void AddEvent(LOEventHook *e, int level);
+	LOEventQue();
+	~LOEventQue();
+
+	enum {
+		LEVEL_NORMAL,
+		LEVEL_HIGH,
+	};
+
+	void push_back(LOShareEventHook &e, int level);
+	void push_header(LOShareEventHook &e, int level);
+	LOShareEventHook GetEventHook(int &index, int level, bool isenter);
+
+	//整理队列，注意调用的时机
+	void arrangeList();
 
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
-	LOEventHook* GetNextEvent(int *listindex, int *index);
+	//LOEventHook* GetNextEvent(int *listindex, int *index);
+	
 private:
-	//事件列表
-	std::vector<std::atomic_intptr_t*> lowList;
-	std::vector<std::atomic_intptr_t*> normalList;
-	std::vector<std::atomic_intptr_t*> highList;
+	//普通事件列表
+	std::vector<LOShareEventHook> normalList;
+	//优先事件列表
+	std::vector<LOShareEventHook> highList;
 
-	std::vector<std::atomic_intptr_t*> *GetList(int listindex);
-	void IncList(std::vector<std::atomic_intptr_t*>* list);
-
-	//添加事件时开始的索引
-	int lowStart;
-	int normalStart;
-	int highStart;
-
-	//GetNextEvent的保存位置
-	//int nextIndex;
-
-
-	//增长队列时锁定
+	//添加、删除时锁定
 	std::mutex _mutex;
+
+	//空的
+	//LOShareEventHook emptyHook;
+
+	std::vector<LOShareEventHook>* GetList(int level);
 };
-extern LOEventManager G_hookManager;
-*/
+
+//extern LOEventQue G_hookQue;
+
 
 extern void G_PrecisionDelay(double t);
-extern void G_ClearAllEventSlots();
 #endif // !__LOEVENT1_H__

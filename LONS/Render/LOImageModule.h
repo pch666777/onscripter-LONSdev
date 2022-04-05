@@ -92,11 +92,6 @@ public:
 	SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
 	SDL_mutex* doQueMutex;      //添加、展开队列时必须保证没有其他线程进入
 
-	LOLayer *nssysLayer;      //直接的image按钮位于的图层，包括默认的NS系统
-	LOLayer *dialogLayer;     //对话框，系统默认用地立绘
-	LOLayer *lsp2Layer;        //lsp2所使用的图层组
-	LOLayer *lspLayer;		   //lsp所用的图层组
-	LOLayer *bgLayer;          //背景层
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
 	std::map<int, LOLayer*> btnMap;
 	std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
