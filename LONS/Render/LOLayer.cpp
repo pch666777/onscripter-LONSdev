@@ -516,8 +516,9 @@ int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
 		//鼠标移动和点击
 		else if(curInfo->isBtndef()){
 			if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
-				//传递出响应的值
-				e->paramList.push_back(new LOVariant(curInfo->btnval));
+				LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), curInfo->btnval, 0));
+				aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+				//转换当前事件的状态
 				e->evType = LOEventHook::SEND_UNACTIVE;
 				ret = SENDRET_CHANGE;
 			}

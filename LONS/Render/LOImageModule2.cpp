@@ -122,6 +122,20 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 }
 
 
+void LOImageModule::SendEventToLayer(LOEventHook *e) {
+	//发往图层，看图层是否响应
+	int ret = LOLayer::SENDRET_NONE;
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT && ret == LOLayer::SENDRET_NONE; ii++) {
+		ret = G_baseLayer[ii].checkBtnActive(e, &waitEventQue);
+	}
+}
+
+
+void LOImageModule::SendEventToHooks(LOEventHook *e) {
+
+}
+
+
 
 //捕获SDL事件，将对指定的事件进行处理
 void LOImageModule::CaptureEvents(SDL_Event *event) {
@@ -137,35 +151,19 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		ev->evType = LOEventHook::SEND_MOUSEMOVE;
 		ev->paramList.push_back(new LOVariant(mouseXY[0]));
 		ev->paramList.push_back(new LOVariant(mouseXY[1]));
+		SendEventToLayer(ev.get());
 	}
 
-	//响应事件
-	if (ev->evType == LOEventHook::SEND_MOUSEMOVE || ev->evType == LOEventHook::SEND_MOUSECLICK) {
-		int ret = LOLayer::SENDRET_NONE;
-		//发往图层，看图层是否响应
-		for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT && ret == LOLayer::SENDRET_NONE; ii++) {
-			ret = G_baseLayer[ii].checkBtnActive(ev.get(), nullptr);
-		}
-
-		if (ret != LOLayer::SENDRET_NONE) {
-			//按钮事件获得了相应，如果是鼠标点击，那么应该
-			if (event->type == SDL_MOUSEBUTTONUP) {
-
-			}
-		}
-		else {
-			//没有响应，要考虑激活exbtn_d
-		}
-
+	//检查是否已经响应了事件
+	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+		int index = 0;
+		//LOShareEventHook esk = g_e.GetEventHook(index, level, true);
+		//if (esk && ) {
+		//	if (esk->param1 == LOEventHook::MOD_SCRIPTER) scriptModule->RunFunc(esk.get());
+		//	else if(esk->param1)
+		//	esk->closeEdit();
+		//}
 	}
-
-
-	//首先发往所有的图层，看是否有图层接受
-	//while (true) {
-	//	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-
-	//	}
-	//}
 
 
 	/*

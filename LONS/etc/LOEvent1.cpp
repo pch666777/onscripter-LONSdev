@@ -131,6 +131,15 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime
 	return e;
 }
 
+LOEventHook* LOEventHook::CreateBtnClickHook(int fullid, int btnval, int islong) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_BTNCLICK;
+	e->paramList.push_back(new LOVariant(fullid));
+	e->paramList.push_back(new LOVariant(btnval));
+	e->paramList.push_back(new LOVariant(islong));
+	return e;
+}
+
 
 //高精度延迟，阻塞线程，CPU维持在高使用率
 void G_PrecisionDelay(double t) {

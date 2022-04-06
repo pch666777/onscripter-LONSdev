@@ -278,6 +278,8 @@ private:
 	void DoDelayEvent(double postime);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
+	void SendEventToLayer(LOEventHook *e);
+	void SendEventToHooks(LOEventHook *e);
 	bool TranzMousePos(int xx, int yy);
 	void CutDialogueAction();
 };

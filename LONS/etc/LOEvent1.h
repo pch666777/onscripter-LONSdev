@@ -30,17 +30,23 @@ public:
 		EVENT_BTNWAIT,
 	};
 
+	//要响应的事件
 	enum {
 		ANSWER_TIMER = 1 ,
 		ANSWER_LEFTCLICK = 2,
 		ANSWER_RIGHTCLICK = 4,
-		ANSWER_SEPLAYOVER = 8
+		ANSWER_SEPLAYOVER = 8,
+		//长按
+		ANSWER_LONGLEFTCLICK = 16,
+		ANSWER_BTNCLICK = 32,
 	};
 
-	//发送的事件
+	//给图层发送的事件
 	enum {
 		SEND_MOUSEMOVE,
-		SEND_MOUSECLICK,
+		SEND_LEFTCLICK,
+		SEND_RIGHTCLICK,
+		SEND_LONGCLICK,
 		//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
 		//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
 		SEND_UNACTIVE,
@@ -98,6 +104,8 @@ public:
 	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
 	//创建一个btnwait事件
 	static LOEventHook* CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse);
+	//创建一个按钮被点击事件
+	static LOEventHook* CreateBtnClickHook(int fullid, int btnval, int islong);
 
 private:
 	bool upState(int sa);
