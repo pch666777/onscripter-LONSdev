@@ -166,23 +166,26 @@ void LOLayerData::SetAlpha(int alp) {
 }
 
 
-void LOLayerData::SetCell(int ce) {
+bool LOLayerData::SetCell(LOActionNS *ac, int ce) {
 	flags |= FLAGS_UPDATA;
 	//如果有active，那么应该设置action的值
-	if (actions) {
-		for (int ii = 0; ii < actions->size(); ii++) {
-			LOShareAction &acb = actions->at(ii);
-			if (acb->acType == LOAction::ANIM_NSANIM) {
-				LOActionNS *ac = (LOActionNS*)acb.get();
-				if (ce < ac->cellCount) {
-					ac->cellCurrent = ce;
-					cellNum = ce;
-				}
-			}
-		}
+	if(!ac) ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
+	if (ac && texture && ce < ac->cellCount) {
+		SetShowType(SHOW_RECT);
+		int perx = texture->baseW() / ac->cellCount;
+		ac->cellCurrent = ce;
+		showSrcX = ac->cellCurrent * perx;
+		showSrcY = 0;
+		showWidth = perx;
+		showHeight = texture->baseH();
+		return true;
 	}
-	else cellNum = 0;
+	else {
+		cellNum = 0;
+		return false;
+	}
 }
+
 
 void LOLayerData::SetTextureType(int dt) {
 	texType = dt & 0xff;
@@ -224,6 +227,7 @@ void LOLayerData::SetDelete() {
 void LOLayerData::SetBtndef(LOString *s, int val) {
 	if (s)btnStr.reset(new LOString(*s));
 	btnval = val;
+	flags |= FLAGS_BTNDEF;
 	flags |= FLAGS_UPDATA;
 }
 
@@ -248,6 +252,16 @@ void LOLayerData::SetAction(LOShareAction &ac) {
 	else actions.reset(new std::vector<LOShareAction>());
 	actions->push_back(ac);
 	flags |= FLAGS_UPDATAEX;
+}
+
+
+LOAction *LOLayerData::GetAction(LOAction::AnimaType acType) {
+	if (actions) {
+		for(int ii = 0; ii < actions->size(); ii++){
+			if (actions->at(ii)->acType == acType) return actions->at(ii).get();
+		}
+	}
+	return nullptr;
 }
 
 

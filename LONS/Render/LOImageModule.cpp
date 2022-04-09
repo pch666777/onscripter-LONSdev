@@ -283,6 +283,8 @@ int LOImageModule::MainLoop() {
 				//LOLog_i("frame ok!") ;
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
+				//在进入事件处理之前，先整理一下钩子队列
+				G_hookQue.arrangeList();
 				//DoDelayEvent(posTime);
 				lastTime = hightTimeNow;
 				if(moduleState >= MODULE_STATE_EXIT) break;
@@ -451,11 +453,9 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 		//在下方的对象先渲染，渲染父对象
 		if (lyr->curInfo->texture) {
 			//运行图层的action
-			/*
 			if (lyr->curInfo->actions) {
-				lyr->DoAnimation(lyr->curInfo, curTime);
+				lyr->DoAction(lyr->curInfo.get(), curTime);
 			}
-			*/
 			//if (!lyr->curInfo->texture->isNull()) {
 			if (lyr->curInfo->texture->isAvailable()) {
 				lyr->ShowMe(render);
@@ -862,6 +862,7 @@ void LOImageModule::RemoveBtn(int fullid) {
 //"*s;$499" 对话框文字sp，特效跟随setwindow的值
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
+//"**;_?_empty_?_"  空的纹理
 bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha) {
 	return loadSpCoreWith(info, tag, x, y, alpha,0);
 }
@@ -940,7 +941,7 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 			//tx = TextureFromColor(info);
 			break;
 		case LOtexture::TEX_EMPTY:
-			//tx = EmptyTexture(info->fileName); //workhere
+			base = TextureFromEmpty(info);
 			break;
 		default:
 			LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
@@ -1060,6 +1061,14 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 }           
 */
 
+LOShareBaseTexture LOImageModule::TextureFromEmpty(LOLayerData *info) {
+	LOShareBaseTexture base(new LOtextureBase());
+	base->ww = G_gameWidth;
+	base->hh = G_gameHeight;
+	LOtexture::addTextureBaseToMap( *(info->fileTextName.get()) , base);
+	return base;
+}
+
 LOShareBaseTexture LOImageModule::TextureFromFile(LOLayerData *info) {
 	bool useAlpha;
 	LOShareBaseTexture base(SurfaceFromFile(info->fileTextName.get()));
@@ -1087,6 +1096,7 @@ LOShareBaseTexture LOImageModule::TextureFromFile(LOLayerData *info) {
 	LOtexture::addTextureBaseToMap(s, base);
 	return base;
 }
+
 
 LOtextureBase* LOImageModule::SurfaceFromFile(LOString *filename) {
 	std::unique_ptr<BinArray> bin(FunctionInterface::fileModule->ReadFile(filename));
@@ -1326,6 +1336,13 @@ LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 	auto iter = map->find(fullid);
 	if (iter != map->end()) return iter->second;
 	return nullptr;
+}
+
+
+LOLayerData* LOImageModule::GetOrCreateLayerData(int fullid, const char *printName) {
+	LOLayerData *data = GetLayerData(fullid, printName);
+	if (!data) data = CreateLayerData(fullid, printName);
+	return data;
 }
 
 

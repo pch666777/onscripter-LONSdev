@@ -173,7 +173,7 @@ public:
 	void SetPosition2(int cx, int cy, double sx, double sy);
 	void SetRotate(double ro);
 	void SetAlpha(int alp);
-	void SetCell(int ce);
+	bool SetCell(LOActionNS *ac, int ce);
 	void SetTextureType(int dt);
 	void SetNewFile(LOShareBaseTexture &base);
 	void SetDelete();
@@ -187,6 +187,7 @@ public:
 	//添加敏感类事件时删除
 	void SetAction(LOShareAction &ac);
 	void SetAction(LOAction *ac);
+	LOAction *GetAction(LOAction::AnimaType acType);
 private:
 	bool isinit;
 	//void lockMe();

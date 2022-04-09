@@ -274,13 +274,14 @@ void LOtexture::NewTexture() {
 
 void LOtexture::FreeRef() {
 	if (isRef) {
-		//删除切割下来的资源和 新建的引用指针
-		if (texturePtr) DestroyTexture(texturePtr);
-		if (surfacePtr) FreeSurface(surfacePtr);
+		//引用的不需要释放
 		texturePtr = nullptr;
 		surfacePtr = nullptr;
 	}
 	else {
+		//删除切割下来的资源和 新建的引用指针
+		if (texturePtr) DestroyTexture(texturePtr);
+		if (surfacePtr) FreeSurface(surfacePtr);
 		texturePtr = nullptr;
 		surfacePtr = nullptr;
 	}

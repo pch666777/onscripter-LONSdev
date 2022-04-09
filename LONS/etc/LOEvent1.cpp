@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <atomic>
 
-//LOEventQue G_hookQue;
+LOEventQue G_hookQue;
 
 
 //==================== LOEvent1 ===================
@@ -118,10 +118,10 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 //响应左键、右键,waitse指定等待哪一个通道完成播放，-1表示不等待
 LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_LEFTCLICK | ANSWER_RIGHTCLICK;
+	e->catchFlag = ANSWER_BTNCLICK;
 	if (waitse) e->catchFlag |= ANSWER_SEPLAYOVER;
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
-	e->param1 = MOD_SCRIPTER;
+	e->param1 = MOD_RENDER;
 	e->param2 = FUN_BTNFINISH;
 	//最大的等待时间
 	e->paramList.push_back(new LOVariant(onsType));

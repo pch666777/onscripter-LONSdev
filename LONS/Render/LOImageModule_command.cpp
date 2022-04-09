@@ -612,13 +612,21 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 		//	info->SetBtn(nullptr, textbtnValue);
 		//}
 	}
+	//btnwait对右键和没有点击任何按钮均有反应，因此准备一个空白图层位于底部，以便进行反应
+	//exbtn_d实际上就设置这空白层的btnstr
+	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
+	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
+	LOString s("**;_?_empty_?_");
+	loadSpCore(data, s, 0, 0, 255);
+	data->SetBtndef(nullptr, 0);
+	//data->SetShowRect(0, 0, G_gameWidth, G_gameHeight);
 	//print1
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	LOEventHook *e = LOEventHook::CreateBtnwaitHook(v1->vtype, v1->nsvId, 0, -1);
 	LOShareEventHook ev(e);
 	
-	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	return RET_CONTINUE;
 }

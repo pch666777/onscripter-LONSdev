@@ -33,8 +33,8 @@ public:
 	//要响应的事件
 	enum {
 		ANSWER_TIMER = 1 ,
-		ANSWER_LEFTCLICK = 2,
-		ANSWER_RIGHTCLICK = 4,
+		//ANSWER_LEFTCLICK = 2,
+		//ANSWER_RIGHTCLICK = 4,
 		ANSWER_SEPLAYOVER = 8,
 		//长按
 		ANSWER_LONGLEFTCLICK = 16,
@@ -43,15 +43,21 @@ public:
 
 	//给图层发送的事件
 	enum {
-		SEND_MOUSEMOVE,
-		SEND_LEFTCLICK,
-		SEND_RIGHTCLICK,
-		SEND_LONGCLICK,
+		SEND_LEFTCLICK = 1,
+		SEND_RIGHTCLICK = 2,
+		SEND_LONGCLICK = 4,
+		SEND_MOUSEMOVE = 8,
 		//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
 		//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
-		SEND_UNACTIVE,
+		SEND_UNACTIVE = 16,
 	};
 
+	//RunFunc的返回值
+	enum {
+		RUNFUNC_FINISH,
+
+		RUNFUNC_CONTINUE,
+	};
 
 	enum {
 		MOD_RENDER = 1,
@@ -60,9 +66,6 @@ public:
 
 		FUN_ENMPTY,
 		FUN_TIMER_CHECK,
-
-		//按钮处理函数
-		FUN_BTNRUN,
 		//按钮事件已经完成的函数
 		FUN_BTNFINISH,
 	};
@@ -155,7 +158,7 @@ private:
 	std::vector<LOShareEventHook>* GetList(int level);
 };
 
-//extern LOEventQue G_hookQue;
+extern LOEventQue G_hookQue;
 
 
 extern void G_PrecisionDelay(double t);

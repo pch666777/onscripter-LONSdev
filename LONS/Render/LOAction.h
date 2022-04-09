@@ -41,8 +41,11 @@ public:
 
 	AnimaType acType;
 	AnimaLoop loopMode;
+	Uint32 lastTime;
 	//加速度
 	int gVal;
+	bool isEnble() { return flags & FLAGS_ENBLE; }
+	void setEnble(bool enble);
 private:
 	int flags;
 };

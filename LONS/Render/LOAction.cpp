@@ -6,10 +6,16 @@
 LOAction::LOAction() {
 	flags = FLAGS_ENBLE;
 	acType = ANIM_NONE;
+	lastTime = 0;
 }
 
 LOAction::~LOAction() {
 
+}
+
+void LOAction::setEnble(bool enble) {
+	if (enble) flags |= FLAGS_ENBLE;
+	else flags &= (~FLAGS_ENBLE);
 }
 
 //=========================

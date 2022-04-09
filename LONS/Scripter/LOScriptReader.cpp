@@ -1482,16 +1482,34 @@ LOString LOScriptReader::GetReport() {
 
 
 void LOScriptReader::PrintError(const char *fmt, ...) {
-	std::unique_ptr<char> uptr(new char[1024]);
+	std::unique_ptr<BinArray> uptr(new BinArray(1024));
 	memset(uptr.get(), 0, 1024);
 	va_list argptr;
 	va_start(argptr, fmt);
-	vsnprintf(uptr.get(), 1024, fmt, argptr);
+	vsnprintf(uptr->bin, 1024, fmt, argptr);
 	va_end(argptr);
 
 	LOString tmp = GetReport();
-	tmp.append(uptr.get());
+	tmp.append(uptr->bin);
 	PrintErrorStatic(&tmp);
+}
+
+//一些事件的处理
+int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
+	if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
+
+	return LOEventHook::RUNFUNC_CONTINUE;
+}
+
+
+//按钮事件
+int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));
+	if (e->paramList[1]->IsType(LOVariant::TYPE_INT)) {
+		ref->SetValue((double)e->paramList[1]->GetInt());
+	}
+	hook->InvalidMe();
+	return LOEventHook::RUNFUNC_FINISH;
 }
 
 

@@ -188,7 +188,7 @@ public:
 	virtual void ResetMe() { return; };
 	virtual void ResetMeFinish() { return; };
 	virtual void PrintError(LOString *err) { return; };
-	virtual int RunFunc(LOEventHook *e) { return 0; }
+	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	void PrintErrorStatic(LOString *err);
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);

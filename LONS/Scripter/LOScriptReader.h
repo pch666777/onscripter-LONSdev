@@ -87,13 +87,8 @@ public:
 	SCRIPT_TYPE sctype;
 	LOScriptReader *nextReader;
 
-	//从指定位置开始运行，到达end，或者最后一个retrun后返回
-	int RunScript(LOScriptPoint *lable);
-
 	//是否运行到RunScript应该返回的位置
 	bool isEndSub();
-
-	
 
 	int IdentifyLine(const char *&buf);  //识别出从指定位置的语句类型
 	int RunCommand(const char *&buf);
@@ -189,6 +184,8 @@ public:
 	void UpdataGlobleVariable();
 	void SaveGlobleVariable();
 	void Serialize(BinArray *bin);
+
+	int RunFunc(LOEventHook *hook, LOEventHook *e);
 
 	//添加新的脚本到缓冲区
 	static LOScripFile* AddScript(const char *buf, int length, const char* filename);
@@ -297,9 +294,8 @@ private:
 	int GetAliasRef(LOString &s, bool isstr, bool &isok);
 	int ReturnEvent(int ret,const char *&buf, int &line);
 	LOString GetCurrentFile();
-	//bool DelayTimeCheck(LOEvent1 *e);
-	//void BtnCatchFinish(LOEvent1 *e);
 	void NewThreadGosub(LOString *pname, LOString threadName);
+	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
 	void CalculatRPNstack(LOStack<ONSVariableRef> *stack);

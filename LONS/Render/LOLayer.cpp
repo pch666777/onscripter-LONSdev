@@ -373,6 +373,55 @@ void LOLayer::Serialize(BinArray *sbin) {
 	*/
 }
 
+
+void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
+	if (!data->actions) return;
+	for (int ii = 0; ii < data->actions->size(); ii++) {
+		LOShareAction acb = data->actions->at(ii);
+		if (acb->isEnble()) {
+			switch (acb->acType) {
+			case LOAction::ANIM_NSANIM:
+				DoNsAction(data, (LOActionNS*)acb.get(), curTime);
+				break;
+			case LOAction::ANIM_TEXT:
+				break;
+			default:
+				break;
+			}
+		}
+	}
+}
+
+
+void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
+	if (curTime - ai->lastTime > ai->cellTimes[ai->cellCurrent]) {
+		ai->lastTime = curTime;
+		int cell = ai->cellCurrent;
+		//确定下一格
+		//从头到尾循环模式
+		if (ai->loopMode == LOAction::LOOP_CIRCULAR) {
+			cell = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
+		}
+		else if (ai->loopMode == LOAction::LOOP_GOBACK) {
+			//往复循环模式
+			if (ai->cellCurrent >= ai->cellCount - 1) ai->cellForward = -1;
+			else if (ai->cellCurrent <= 0) ai->cellForward = 1;
+			cell = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
+		}
+		else if (ai->loopMode == LOAction::LOOP_CELL) {
+			//只运行一帧
+			ai->setEnble(false);
+		}
+		else if (ai->loopMode == LOAction::LOOP_ONSCE) {
+			//只运行一次
+			if (ai->cellCurrent < ai->cellCount - 1) cell = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
+			else ai->setEnble(false);
+		}
+
+		curInfo->SetCell(ai, cell);
+	}
+}
+
 //void LOLayer::DoAnimation(LOLayerInfo* info, Uint32 curTime) {
 	/*
 	if (!curInfo->actions) return;
@@ -503,30 +552,64 @@ bool LOLayer::SendEvent(LOEventHook *e, LOEventQue *aswerQue) {
 int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
 	int ret = SENDRET_NONE;
 	//子层在父层上方，因此先检查子层
-	if (childs) ret = checkBtnActive(e, aswerQue);
-	if (ret < SENDRET_END) {
-		//取消激活
-		if (e->evType == LOEventHook::SEND_UNACTIVE && curInfo->isActive()) {
-			//去除激活状态
-			curInfo->flags &= (~LOLayerData::FLAGS_ACTIVE);
-			curInfo->SetCell(0);
-			ret = SENDRET_END;
-		}
-		//激活事件，只有被定义为按钮的才相应
-		//鼠标移动和点击
-		else if(curInfo->isBtndef()){
-			if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
-				LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), curInfo->btnval, 0));
-				aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
-				//转换当前事件的状态
-				e->evType = LOEventHook::SEND_UNACTIVE;
-				ret = SENDRET_CHANGE;
-			}
+	if (childs) {
+		for (auto iter = childs->begin(); iter != childs->end() && ret != SENDRET_END; iter++) {
+			ret = iter->second->checkBtnActive(e, aswerQue);
 		}
 	}
+
+	//对按钮来说，总是需要响应鼠标进入对象和离开对象两件事
+	if (ret != SENDRET_END && curInfo->isBtndef()) {
+		if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
+			setBtnShow(true);
+			//已经处理了active
+			e->param1 |= 2;
+
+			int val = 0x80000000;
+			//点击类事件会产生新的事件
+			if (e->evType == LOEventHook::SEND_MOUSEMOVE);
+			else if (e->evType == LOEventHook::SEND_LEFTCLICK) val = curInfo->btnval;
+			else if (e->evType == LOEventHook::SEND_RIGHTCLICK) val = -1;
+			else if (e->evType == LOEventHook::SEND_LONGCLICK) val = 0x80000001;
+			//产生新的要处理的事件
+			if (val != 0x80000000) {
+				LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), val, 0));
+				aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+			}
+		}
+		else if (curInfo->isActive()) {
+			//鼠标已经离开对象
+			setBtnShow(false);
+			//已经处理了unactive
+			e->param1 |= 1;
+		}
+
+		//激活和非激活都已经处理了
+		if (e->param1 & 3) ret = SENDRET_END;
+	}
+
 	return ret;
 }
 
+
+void LOLayer::setBtnShow(bool isshow) {
+	if (isshow) {
+		setActiveCell(1);
+		curInfo->SetVisable(1);
+		curInfo->flags |= LOLayerData::FLAGS_ACTIVE;
+	}
+	else {
+		if (!setActiveCell(0))curInfo->SetVisable(0);
+		curInfo->flags &= (~LOLayerData::FLAGS_ACTIVE);
+	}
+}
+
+bool LOLayer::setActiveCell(int cell) {
+	bool ret = curInfo->SetCell(nullptr, cell);
+	//下次刷新图层时自动更新
+	if (ret) isinit = false;
+	return ret;
+}
 
 ////只有被改变才返回真
 //bool LOLayer::setActive(bool isactive) {

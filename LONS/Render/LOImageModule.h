@@ -113,6 +113,7 @@ public:
 
 	//新建一个图层数据
 	LOLayerData* CreateLayerData(int fullid, const char *printName);
+	LOLayerData* GetOrCreateLayerData(int fullid, const char *printName);
 	LOLayerData* GetLayerData(int fullid, const char *printName);
 
 	//获取printName对应的map
@@ -147,6 +148,7 @@ public:
 	void LeveTextDisplayMode(bool force = false);
 	void ClearDialogText(char flag);
 	void RunExbtnStr(LOString *s);
+	int RunFunc(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
 	void UpTest();
@@ -266,6 +268,7 @@ private:
 	void ResetConfig();
 	void FreeFps();
 	LOShareBaseTexture TextureFromFile(LOLayerData *info);
+	LOShareBaseTexture TextureFromEmpty(LOLayerData *info);
 	//LOtextureBase* TextureFromColor(LOLayerInfo *info);
 	//LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);

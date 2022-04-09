@@ -139,8 +139,6 @@ void LOImageModule::SendEventToHooks(LOEventHook *e) {
 
 //捕获SDL事件，将对指定的事件进行处理
 void LOImageModule::CaptureEvents(SDL_Event *event) {
-	//时间戳，历遍事件时一起传递
-	Uint32 timeSnape = SDL_GetTicks();
 	LOUniqEventHook ev(new LOEventHook());
 
 	//包装事件
@@ -152,20 +150,42 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		ev->paramList.push_back(new LOVariant(mouseXY[0]));
 		ev->paramList.push_back(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
+	case SDL_MOUSEBUTTONUP:
+		//鼠标进行了点击
+		if (!TranzMousePos(event->button.x, event->button.y))break;
+		if (event->button.button == SDL_BUTTON_LEFT) ev->evType = LOEventHook::SEND_LEFTCLICK;
+		else if(event->button.button == SDL_BUTTON_RIGHT) ev->evType = LOEventHook::SEND_RIGHTCLICK;
+		if (ev->evType) {
+			ev->paramList.push_back(new LOVariant(mouseXY[0]));
+			ev->paramList.push_back(new LOVariant(mouseXY[1]));
+			SendEventToLayer(ev.get());
+		}
 	}
 
 	//检查是否已经响应了事件
-	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
-		int index = 0;
-		//LOShareEventHook esk = g_e.GetEventHook(index, level, true);
-		//if (esk && ) {
-		//	if (esk->param1 == LOEventHook::MOD_SCRIPTER) scriptModule->RunFunc(esk.get());
-		//	else if(esk->param1)
-		//	esk->closeEdit();
-		//}
+	int index = 0;
+	while (true) {
+		LOShareEventHook ese = waitEventQue.GetEventHook(index, LOEventQue::LEVEL_NORMAL, false);
+		if (!ese) break;
+		//往钩子队列里传递信息
+		for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+			int kindex = 0;
+			LOShareEventHook hook = G_hookQue.GetEventHook(kindex, level, true);
+			if (!hook) continue;
+			//满足条件的调用指定函数
+			int vret = LOEventHook::RUNFUNC_CONTINUE;
+			if (hook->catchFlag & ese->catchFlag) {
+				if (hook->param1 == LOEventHook::MOD_RENDER) vret = imgeModule->RunFunc(hook.get(), ese.get());
+				else if (hook->param1 == LOEventHook::MOD_SCRIPTER)vret = scriptModule->RunFunc(hook.get(), ese.get());
+				else if (hook->param1 == LOEventHook::MOD_AUDIO)vret = audioModule->RunFunc(hook.get(), ese.get());
+			}
+
+			//事件已经完成
+			if (vret == LOEventHook::RUNFUNC_FINISH) break;
+			else hook->closeEdit();
+		}
+
 	}
-
-
 	/*
 	LOEvent1 *catMsg = NULL;
 	LOEventParamBtnRef *param;
@@ -334,6 +354,12 @@ void LOImageModule::CutDialogueAction() {
 		//	layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
 		//}
 	}
+}
+
+
+int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
+
+	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
 

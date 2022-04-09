@@ -47,6 +47,7 @@ public:
 		IDEX_NSSYS_BTN = 6,    //btn定义的按钮，在LAYER_NSSYS层
 		IDEX_NSSYS_CUR = 7,    //Cursor在的层，在LAYER_NSSYS层
 		IDEX_NSSYS_RMENU = 20,
+		IDEX_BG_BTNEND = 1022,
 	};
 
 	enum {
@@ -97,9 +98,9 @@ public:
 	bool isMaxBorder(int index,int val);
 
 	//显示指定格树的NS动画
-	void ShowNSanima(int cell);
-	void ShowBtnMe();
-	void HideBtnMe();
+	void setBtnShow(bool isshow);
+	//设置对象显示在某一格NS动画，并且active纹理
+	bool setActiveCell(int cell);
 
 	//查找子对象
 	LOLayer *FindChild(const int *cids);
@@ -115,13 +116,13 @@ public:
 	void GetLayerUsedState(char *bin, int *ids);
 
 	void ShowMe(SDL_Renderer *render);
-	//void DoAnimation(LOLayerInfo* info, Uint32 curTime);
+	void DoAction(LOLayerData *data, Uint32 curTime);
 	//void DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime);
 	//void DoMoveAnima(LOLayerInfo *info, LOAnimationMove *ai, Uint32 curTime);
 	//void DoScaleAnima(LOLayerInfo *info, LOAnimationScale *ai, Uint32 curTime);
 	//void DoRotateAnima(LOLayerInfo *info, LOAnimationRotate *ai, Uint32 curTime);
 	//void DoFadeAnima(LOLayerInfo *info, LOAnimationFade *ai, Uint32 curTime);
-	//void DoNsAnima(LOLayerInfo *info, LOAnimationNS *ai, Uint32 curTime);
+	void DoNsAction(LOLayerData *data, LOActionNS *ai,  Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
 	void Serialize(BinArray *sbin);

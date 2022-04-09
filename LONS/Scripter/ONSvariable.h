@@ -141,6 +141,7 @@ private:
 	void BaseInit();
 	LOString *IntToStr(int v);
 };
+typedef std::unique_ptr<ONSVariableRef> LOUniqVariableRef;
 
 
 //放在全局变量，省得在类里面传来传去
