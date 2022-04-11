@@ -636,14 +636,17 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
 	if (data) {
-		data->SetBtndef(nullptr, reader->GetParamInt(1));
+		if(reader->GetParamCount() > 2) data->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1));
+		else data->SetBtndef(nullptr, reader->GetParamInt(1));
 	}
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
-	exbtn_dStr = reader->GetParamStr(0);
+	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
+	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
+	data->SetBtndef(&reader->GetParamStr(0), 0);
 	return RET_CONTINUE;
 }
 
@@ -791,7 +794,6 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();
-	exbtn_dStr.clear();
 	BtndefCount = 0;
 	exbtn_count = 0;
 	btnOverTime = 0;

@@ -161,6 +161,11 @@ int main(int argc, char **argv) {
 			//初始化渲染模块
 			if (imagemodule->InitImageModule()) {
 				LOLog_i("image module init ok.");
+
+				//注册spstr事件
+				LOShareEventHook ev(LOEventHook::CreateSpstrHook());
+				G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+
 				//初始化音频模块
 				audiomodule = new LOAudioModule;
 				if (audiomodule->InitAudioModule()) {

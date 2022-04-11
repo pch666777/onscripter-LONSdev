@@ -149,6 +149,7 @@ public:
 	void ClearDialogText(char flag);
 	void RunExbtnStr(LOString *s);
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
+	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
 	void UpTest();
@@ -225,7 +226,7 @@ private:
 	LOtextureBase *fpstex;
 
 	LOString btndefStr;     //btndef定义的按钮文件名
-	LOString exbtn_dStr;
+	//LOString exbtn_dStr;
 	int BtndefCount;
 	int exbtn_count;
 	int btnOverTime;

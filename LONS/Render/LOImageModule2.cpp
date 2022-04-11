@@ -150,6 +150,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		ev->paramList.push_back(new LOVariant(mouseXY[0]));
 		ev->paramList.push_back(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
+		break;
 	case SDL_MOUSEBUTTONUP:
 		//鼠标进行了点击
 		if (!TranzMousePos(event->button.x, event->button.y))break;
@@ -160,6 +161,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			ev->paramList.push_back(new LOVariant(mouseXY[1]));
 			SendEventToLayer(ev.get());
 		}
+		break;
 	}
 
 	//检查是否已经响应了事件
@@ -186,6 +188,8 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		}
 
 	}
+	waitEventQue.clear();
+
 	/*
 	LOEvent1 *catMsg = NULL;
 	LOEventParamBtnRef *param;
@@ -358,7 +362,7 @@ void LOImageModule::CutDialogueAction() {
 
 
 int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
-
+	if (hook->param2 == LOEventHook::FUN_SPSTR) return RunFuncSpstr(hook, e);
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
@@ -420,8 +424,18 @@ void LOImageModule::ScreenShotCountinue(LOEvent1 *e) {
 }
 */
 
+
+
+int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
+	LOString btnstr = e->paramList[1]->GetLOString();
+	RunExbtnStr(&btnstr);
+	//这个钩子长期有效
+	hook->closeEdit();
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
 void LOImageModule::RunExbtnStr(LOString *s) {
-	/*
+
 	const char *obuf, *buf;
 	obuf = buf = s->c_str();
 	int maxlen = s->length();
@@ -433,17 +447,18 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			buf++;
 			int ids[] = {s->GetInt(buf) ,255,255 };
 			LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
-			if (lyr)  lyr->curInfo->visiable = 0;
+			if (lyr)  lyr->curInfo->SetVisable(0);
 		}
 		else if (cc == 'P') {   //显示
 			buf++;
 			int ids[] = { s->GetInt(buf) ,255,255 };
 			LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
-			if (lyr) lyr->curInfo->visiable = 1; //只是显示
+			if (lyr) lyr->curInfo->SetVisable(1); //只是显示
 			if (buf[0] == ',') {  //显示指定cell
 				buf++;
 				int cell = s->GetInt(buf);
-				if (lyr) lyr->ShowNSanima(cell);
+				if (lyr) lyr->setActiveCell(cell);
+					//lyr->ShowNSanima(cell);
 			}
 		}
 		else if (cc == 'S') {  //播放音乐
@@ -477,7 +492,6 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			return;
 		}
 	}
-	*/
 }
 
 

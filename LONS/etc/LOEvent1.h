@@ -33,8 +33,7 @@ public:
 	//要响应的事件
 	enum {
 		ANSWER_TIMER = 1 ,
-		//ANSWER_LEFTCLICK = 2,
-		//ANSWER_RIGHTCLICK = 4,
+		ANSWER_BTNSTR = 2,
 		ANSWER_SEPLAYOVER = 8,
 		//长按
 		ANSWER_LONGLEFTCLICK = 16,
@@ -59,6 +58,15 @@ public:
 		RUNFUNC_CONTINUE,
 	};
 
+	//按钮的状态
+	enum {
+		//鼠标事件向图层发送的过程中，如果被符合条件的图层相应，那么设置 BTN_STATE_ACTIVED 符号
+		//如果鼠标不在图层范围内，并且图层处于active状态，检测到BTN_STATE_ACTIVED，那么设置 BTN_STATE_UNACTIVED
+		//鼠标事件停止传递
+		BTN_STATE_ACTIVED = 1,
+		BTN_STATE_UNACTIVED = 2,
+	};
+
 	enum {
 		MOD_RENDER = 1,
 		MOD_SCRIPTER,
@@ -68,6 +76,7 @@ public:
 		FUN_TIMER_CHECK,
 		//按钮事件已经完成的函数
 		FUN_BTNFINISH,
+		FUN_SPSTR,
 	};
 
 	LOEventHook();
@@ -109,7 +118,10 @@ public:
 	static LOEventHook* CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse);
 	//创建一个按钮被点击事件
 	static LOEventHook* CreateBtnClickHook(int fullid, int btnval, int islong);
-
+	//创建一个btnstr事件
+	static LOEventHook* CreateBtnStr(int fullid, LOString *btnstr);
+	//创建一个spstr运行
+	static LOEventHook* CreateSpstrHook();
 private:
 	bool upState(int sa);
 	std::atomic_int state;
@@ -139,6 +151,7 @@ public:
 
 	//整理队列，注意调用的时机
 	void arrangeList();
+	void clear();
 
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
 	//LOEventHook* GetNextEvent(int *listindex, int *index);

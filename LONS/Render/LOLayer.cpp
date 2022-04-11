@@ -559,33 +559,50 @@ int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
 	}
 
 	//对按钮来说，总是需要响应鼠标进入对象和离开对象两件事
+	//因为同时只能激活一个对象，因此这里有比较复杂的逻辑问题
 	if (ret != SENDRET_END && curInfo->isBtndef()) {
+		//即使鼠标位置位于图层上，如果已经有图层相应了active事件，那么已经active的图层也只能unactive
 		if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
-			setBtnShow(true);
-			//已经处理了active
-			e->param1 |= 2;
+			if (e->param1 & LOEventHook::BTN_STATE_ACTIVED) {
+				//鼠标已经离开对象
+				setBtnShow(false);
+				e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
+			}
+			else {
+				//已经激活的图层不会再次激活
+				if (!curInfo->isActive()) {
+					setBtnShow(true);
+					//产生btnstr事件
+					if (curInfo->btnStr) {
+						LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), curInfo->btnStr.get()));
+						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+					}
+				}
 
-			int val = 0x80000000;
-			//点击类事件会产生新的事件
-			if (e->evType == LOEventHook::SEND_MOUSEMOVE);
-			else if (e->evType == LOEventHook::SEND_LEFTCLICK) val = curInfo->btnval;
-			else if (e->evType == LOEventHook::SEND_RIGHTCLICK) val = -1;
-			else if (e->evType == LOEventHook::SEND_LONGCLICK) val = 0x80000001;
-			//产生新的要处理的事件
-			if (val != 0x80000000) {
-				LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), val, 0));
-				aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+				//已经处理active事件
+				e->param1 |= LOEventHook::BTN_STATE_ACTIVED;
+
+				int val = 0x80000000;
+				//点击类事件会产生新的事件
+				if (e->evType == LOEventHook::SEND_MOUSEMOVE);
+				else if (e->evType == LOEventHook::SEND_LEFTCLICK) val = curInfo->btnval;
+				else if (e->evType == LOEventHook::SEND_RIGHTCLICK) val = -1;
+				else if (e->evType == LOEventHook::SEND_LONGCLICK) val = 0x80000001;
+				//产生新的要处理的事件
+				if (val != 0x80000000) {
+					LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), val, 0));
+					aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+				}
 			}
 		}
 		else if (curInfo->isActive()) {
 			//鼠标已经离开对象
 			setBtnShow(false);
-			//已经处理了unactive
-			e->param1 |= 1;
+			e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
 		}
 
 		//激活和非激活都已经处理了
-		if (e->param1 & 3) ret = SENDRET_END;
+		if (e->param1 == (LOEventHook::BTN_STATE_UNACTIVED | LOEventHook::BTN_STATE_ACTIVED)) ret = SENDRET_END;
 	}
 
 	return ret;

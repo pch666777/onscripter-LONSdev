@@ -141,6 +141,24 @@ LOEventHook* LOEventHook::CreateBtnClickHook(int fullid, int btnval, int islong)
 }
 
 
+LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_BTNSTR;
+	e->paramList.push_back(new LOVariant(fullid));
+	e->paramList.push_back(new LOVariant(btnstr));
+	return e;
+}
+
+
+LOEventHook* LOEventHook::CreateSpstrHook() {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_BTNSTR;
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_SPSTR;
+	return e;
+}
+
+
 //高精度延迟，阻塞线程，CPU维持在高使用率
 void G_PrecisionDelay(double t) {
 	Uint64 hightTimeNow, perHtickTime = SDL_GetPerformanceFrequency() / 1000;
@@ -235,5 +253,13 @@ void LOEventQue::arrangeList() {
 			else iter++;
 		}
 	}
+	_mutex.unlock();
+}
+
+
+void LOEventQue::clear() {
+	_mutex.lock();
+	normalList.clear();
+	highList.clear();
 	_mutex.unlock();
 }

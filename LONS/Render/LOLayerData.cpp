@@ -86,6 +86,7 @@ LOLayerData::LOLayerData(const LOLayerData &obj)
 	//接着特殊处理一下
 	if (obj.fileTextName) fileTextName.reset(new LOString(*obj.fileTextName));
 	if (obj.maskName) maskName.reset(new LOString(*obj.maskName));
+	if (obj.btnStr) btnStr.reset(new LOString(*obj.btnStr));
 	texture = obj.texture;
 	if (obj.actions) actions.reset(new std::vector<LOShareAction>(*obj.actions));
 }

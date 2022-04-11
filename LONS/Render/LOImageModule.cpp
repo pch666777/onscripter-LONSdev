@@ -32,6 +32,7 @@ LOImageModule::LOImageModule(){
 	doQueMutex = SDL_CreateMutex();
 
 	memset(shaderList, 0, sizeof(int) * 20);
+
 }
 
 void LOImageModule::ResetConfig() {
