@@ -112,7 +112,10 @@ public:
 	void DimArray();
 	void SetArrayIndex(int val,int index);
 	int  GetArrayIndex(int index);
+	int  GetTypeRefid();
+
 	static int  GetTypeAllow(const char *param);
+	static ONSVariableRef* GetRefFromTypeRefid(int refid);
 	LOString *GetStr();
 	double GetReal();
 

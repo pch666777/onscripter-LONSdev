@@ -623,6 +623,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	//print1
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
+	//凡是有时间要求的事件，第一个参数都是超时时间
 	LOEventHook *e = LOEventHook::CreateBtnwaitHook(v1->vtype, v1->nsvId, 0, -1);
 	LOShareEventHook ev(e);
 	
@@ -786,7 +787,7 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	LOString tag = reader->GetParamStr(0);
 
 	//所有的按钮定义都会被清除
-	RemoveBtn(-1);
+	imgeModule->ClearBtndef(reader->GetPrintName());
 
 	//无论如何btn的系统层都将被清除
 	int fullid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255);
@@ -794,11 +795,8 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();
-	BtndefCount = 0;
-	exbtn_count = 0;
 	btnOverTime = 0;
 	btnUseSeOver = false;
-	exbtn_d_hasrun = false;
 
 	if (tag.toLower().compare("clear") != 0) {
 		if (tag[0] != ':') btndefStr = ":c;" + tag;

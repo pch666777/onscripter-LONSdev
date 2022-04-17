@@ -232,6 +232,10 @@ void LOLayerData::SetBtndef(LOString *s, int val) {
 	flags |= FLAGS_UPDATA;
 }
 
+void LOLayerData::unSetBtndef() {
+	flags &= (~FLAGS_BTNDEF);
+}
+
 
 void LOLayerData::SetAction(LOAction *ac) {
 	LOShareAction acs(ac);

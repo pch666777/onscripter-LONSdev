@@ -88,8 +88,10 @@ public:
 	LOEffect* winEffect;     //对话框显示、消失时候执行的效果
 
 	SDL_mutex* layerQueMutex;	//图层队列锁
+	//需要对后台layerdata操作时，要先锁定
+	SDL_mutex* layerDataMutex;
 	//SDL_mutex* btnQueMutex;     //按钮队列操作锁
-	SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
+	//SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
 	SDL_mutex* doQueMutex;      //添加、展开队列时必须保证没有其他线程进入
 
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
@@ -104,7 +106,7 @@ public:
 
 	LOShareBaseTexture GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
-	void RemoveBtn(int fullid);
+	void ClearBtndef(const char *printName);
 	//const char* NewSysBtndef();
 
 	LOLayer* FindLayerInBtnQuePosition(int x, int y);
@@ -227,11 +229,11 @@ private:
 
 	LOString btndefStr;     //btndef定义的按钮文件名
 	//LOString exbtn_dStr;
-	int BtndefCount;
-	int exbtn_count;
+	//int BtndefCount;
+	//int exbtn_count;
 	int btnOverTime;
 	bool btnUseSeOver;
-	bool exbtn_d_hasrun;
+	//bool exbtn_d_hasrun;
 
 	int dialogDisplayMode;
 	bool effectSkipFlag;    //是否允许跳过效果（单击时）

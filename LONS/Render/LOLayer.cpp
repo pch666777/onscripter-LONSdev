@@ -628,6 +628,14 @@ bool LOLayer::setActiveCell(int cell) {
 	return ret;
 }
 
+
+void LOLayer::unSetBtndefAll() {
+	curInfo->unSetBtndef();
+	if (childs) {
+		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->unSetBtndefAll();
+	}
+}
+
 ////只有被改变才返回真
 //bool LOLayer::setActive(bool isactive) {
 //

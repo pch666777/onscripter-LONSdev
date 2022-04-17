@@ -28,7 +28,8 @@ LOImageModule::LOImageModule(){
 
 	layerQueMutex = SDL_CreateMutex();
 	//btnQueMutex = SDL_CreateMutex();
-	presentMutex = SDL_CreateMutex();
+	//presentMutex = SDL_CreateMutex();
+	layerDataMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
 
 	memset(shaderList, 0, sizeof(int) * 20);
@@ -43,7 +44,6 @@ void LOImageModule::ResetConfig() {
 	winbackMode = false;
 	textbtnFlag = true;
 	texecFlag = false;
-	exbtn_d_hasrun = false;
 	st_filelog = false;
 
 	winFont.Reset();
@@ -57,8 +57,6 @@ void LOImageModule::ResetConfig() {
 	winoff = { 0,0,0,0 };
 
 	btndefStr.clear();
-	BtndefCount = 0;
-	exbtn_count = 0;
 	btnOverTime = 0;
 	btnUseSeOver = false;
 
@@ -71,14 +69,12 @@ void LOImageModule::ResetConfig() {
 }
 
 LOImageModule::~LOImageModule(){
-	//SDL_DestroyMutex(btnQueMutex);
 	SDL_DestroyMutex(layerQueMutex);
-	SDL_DestroyMutex(presentMutex);
+	SDL_DestroyMutex(layerDataMutex);
 	SDL_DestroyMutex(doQueMutex);
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
-	//if (screenshotSu) delete screenshotSu;
 }
 
 
@@ -848,10 +844,20 @@ LOLayer* LOImageModule::GetRootLayer(int fullid) {
 
 
 //移除按钮定义
-void LOImageModule::RemoveBtn(int fullid) {
-
-
-
+void LOImageModule::ClearBtndef(const char *printName) {
+	auto *list = GetPrintNameMap(printName)->map;
+	SDL_LockMutex(layerDataMutex);
+	for (auto iter = list->begin(); iter != list->end(); iter++) {
+		//去除按钮定义
+		iter->second->unSetBtndef();
+	}
+	SDL_UnlockMutex(layerDataMutex);
+	//移去当前图层内的按钮定义
+	SDL_LockMutex(layerQueMutex);
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		G_baseLayer[ii].unSetBtndefAll();
+	}
+	SDL_UnlockMutex(layerQueMutex);
 }
 
 
@@ -1328,7 +1334,9 @@ LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
 	auto *map = GetPrintNameMap(printName)->map;
 	auto iter = map->find(fullid);
 	if (iter != map->end()) iter->second->SetDelete();
+	SDL_LockMutex(layerDataMutex);
 	(*map)[fullid] = ac;
+	SDL_UnlockMutex(layerDataMutex);
 	return ac;
 }
 

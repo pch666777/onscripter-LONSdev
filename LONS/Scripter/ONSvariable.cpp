@@ -649,6 +649,18 @@ bool ONSVariableRef::SetArryVals(int *v, int count) {
 	return true;
 }
 
+
+//获取type和操作ID的组合数
+int  ONSVariableRef::GetTypeRefid() {
+	return ((int)vtype << 16) | nsvId;
+}
+
+ONSVariableRef* ONSVariableRef::GetRefFromTypeRefid(int refid) {
+	int t = (refid >> 16) & 0xffff;
+	int id = refid & 0xffff;
+	return new ONSVariableRef( (ONSVariableRef::ONSVAR_TYPE)t, id);
+}
+
 //R-ref, I-realref, S-strref, N-normal word, L-label, A-arrayref, C-color
 //r-any, i-real, s-string, *-repeat, #-repeat last
 int  ONSVariableRef::GetTypeAllow(const char *param) {

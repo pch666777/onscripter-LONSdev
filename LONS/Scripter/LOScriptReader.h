@@ -264,6 +264,7 @@ private:
 	static std::vector<LOString> strAliasList;  //字符串别名
 	static std::vector<LOString> workDirs;      //脚本、打开的文件支持的搜索路径
 	static std::unordered_map<std::string, LOScriptPoint*> defsubMap; //defsub定义的函数
+
 	static int sectionState; //脚本当前是否处于定义区
 	static bool st_globalon; //是否使用全局变量
 	static bool st_labellog; //是否使用标签变量

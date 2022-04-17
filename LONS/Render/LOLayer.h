@@ -112,6 +112,9 @@ public:
 
 	void GetShowSrc(SDL_Rect *srcR);
 
+	//清理自身及子层的按钮定义
+	void unSetBtndefAll();
+
 	//获取本层中子图层的使用情况
 	void GetLayerUsedState(char *bin, int *ids);
 

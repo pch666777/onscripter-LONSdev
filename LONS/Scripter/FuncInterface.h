@@ -189,10 +189,12 @@ public:
 	virtual void ResetMeFinish() { return; };
 	virtual void PrintError(LOString *err) { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
+	virtual void ClearBtndef(const char *printName) { return; }
 	void PrintErrorStatic(LOString *err);
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
 	void WriteLog(int logt);
+
 	
 
 	//===== scripter virtual  ========
