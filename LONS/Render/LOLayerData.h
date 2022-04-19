@@ -106,6 +106,14 @@ public:
 		FLAGS_BTNDEF = 128,
 		//图层正处于鼠标悬停激活状态
 		FLAGS_ACTIVE = 256,
+		//响应左键
+		FLAGS_LEFTCLICK = 0x200,
+		//响应右键
+		FLAGS_RIGHTCLICK = 0x400,
+		//响应长按
+		FLAGS_LONGCLICK = 0x800,
+		//响应悬停
+		FLAGS_MOUSEMOVE = 0x1000,
 	};
 
 

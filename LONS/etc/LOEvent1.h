@@ -35,9 +35,11 @@ public:
 		ANSWER_TIMER = 1 ,
 		ANSWER_BTNSTR = 2,
 		ANSWER_SEPLAYOVER = 8,
-		//长按
-		ANSWER_LONGLEFTCLICK = 16,
-		ANSWER_BTNCLICK = 32,
+
+		ANSWER_LEFTCLICK = 64,
+		ANSWER_RIGHTCLICK = 128,
+		ANSWER_LONGCLICK = 256, //0x100
+		ANSWER_MOUSEMOVE = 0x200,
 	};
 
 	//给图层发送的事件
@@ -77,6 +79,7 @@ public:
 		//按钮事件已经完成的函数
 		FUN_BTNFINISH,
 		FUN_SPSTR,
+		FUN_LAYERANSWER,
 	};
 
 	LOEventHook();
@@ -122,6 +125,9 @@ public:
 	static LOEventHook* CreateBtnStr(int fullid, LOString *btnstr);
 	//创建一个spstr运行
 	static LOEventHook* CreateSpstrHook();
+
+	//创建一个图层相应事件
+	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 private:
 	bool upState(int sa);
 	std::atomic_int state;
