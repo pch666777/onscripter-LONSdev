@@ -35,23 +35,23 @@ public:
 		ANSWER_TIMER = 1 ,
 		ANSWER_BTNSTR = 2,
 		ANSWER_SEPLAYOVER = 8,
-
-		ANSWER_LEFTCLICK = 64,
-		ANSWER_RIGHTCLICK = 128,
-		ANSWER_LONGCLICK = 256, //0x100
-		ANSWER_MOUSEMOVE = 0x200,
+		ANSWER_BTNCLICK = 16,
+		//ANSWER_LEFTCLICK = 64,
+		//ANSWER_RIGHTCLICK = 128,
+		//ANSWER_LONGCLICK = 256, //0x100
+		//ANSWER_MOUSEMOVE = 0x200,
 	};
 
-	//给图层发送的事件
-	enum {
-		SEND_LEFTCLICK = 1,
-		SEND_RIGHTCLICK = 2,
-		SEND_LONGCLICK = 4,
-		SEND_MOUSEMOVE = 8,
-		//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
-		//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
-		SEND_UNACTIVE = 16,
-	};
+	////给图层发送的事件
+	//enum {
+	//	SEND_LEFTCLICK = 1,
+	//	SEND_RIGHTCLICK = 2,
+	//	SEND_LONGCLICK = 4,
+	//	SEND_MOUSEMOVE = 8,
+	//	//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
+	//	//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
+	//	SEND_UNACTIVE = 16,
+	//};
 
 	//RunFunc的返回值
 	enum {

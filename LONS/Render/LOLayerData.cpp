@@ -225,15 +225,18 @@ void LOLayerData::SetDelete() {
 }
 
 
-void LOLayerData::SetBtndef(LOString *s, int val) {
+void LOLayerData::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
 	if (s)btnStr.reset(new LOString(*s));
 	btnval = val;
 	flags |= FLAGS_BTNDEF;
+	flags |= FLAGS_MOUSEMOVE;
+	if (isleft) flags |= FLAGS_LEFTCLICK;
+	if (isright) flags |= FLAGS_RIGHTCLICK;
 	flags |= FLAGS_UPDATA;
 }
 
 void LOLayerData::unSetBtndef() {
-	flags &= (~FLAGS_BTNDEF);
+	flags &= (~(FLAGS_BTNDEF| FLAGS_LEFTCLICK| FLAGS_RIGHTCLICK| FLAGS_MOUSEMOVE));
 }
 
 

@@ -139,8 +139,6 @@ public:
 
 	//返回真表示事件已经被终止
 	bool SendEvent(LOEventHook *e, LOEventQue *aswerQue);
-	//检查鼠标移动或者单击是否位于图层上
-	int checkBtnActive(LOEventHook *e, LOEventQue *aswerQue);
 	int checkEvent(LOEventHook *e, LOEventQue *aswerQue);
 
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上

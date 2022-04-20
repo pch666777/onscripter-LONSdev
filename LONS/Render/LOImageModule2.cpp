@@ -126,7 +126,7 @@ void LOImageModule::SendEventToLayer(LOEventHook *e) {
 	//发往图层，看图层是否响应
 	int ret = LOLayer::SENDRET_NONE;
 	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT && ret == LOLayer::SENDRET_NONE; ii++) {
-		ret = G_baseLayer[ii].checkBtnActive(e, &waitEventQue);
+		ret = G_baseLayer[ii].checkEvent(e, &waitEventQue);
 	}
 }
 
@@ -146,7 +146,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
-		ev->evType = LOEventHook::SEND_MOUSEMOVE;
+		ev->catchFlag = LOLayerData::FLAGS_MOUSEMOVE;
 		ev->paramList.push_back(new LOVariant(mouseXY[0]));
 		ev->paramList.push_back(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
@@ -154,9 +154,9 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEBUTTONUP:
 		//鼠标进行了点击
 		if (!TranzMousePos(event->button.x, event->button.y))break;
-		if (event->button.button == SDL_BUTTON_LEFT) ev->evType = LOEventHook::SEND_LEFTCLICK;
-		else if(event->button.button == SDL_BUTTON_RIGHT) ev->evType = LOEventHook::SEND_RIGHTCLICK;
-		if (ev->evType) {
+		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerData::FLAGS_LEFTCLICK;
+		else if(event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerData::FLAGS_RIGHTCLICK;
+		if (ev->catchFlag) {
 			ev->paramList.push_back(new LOVariant(mouseXY[0]));
 			ev->paramList.push_back(new LOVariant(mouseXY[1]));
 			SendEventToLayer(ev.get());

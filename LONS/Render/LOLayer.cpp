@@ -563,7 +563,9 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	if (!(e->catchFlag & curInfo->flags)) return ret;
 	//左键、右键、长按、悬停
 	if (e->catchFlag & LOLayerData::FLAGS_RIGHTCLICK) {
-
+		//只有按钮才相应右键事件
+		LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), -1, 0));
+		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 	}
 	else {
 		//左键、长按、悬停，如果是按钮均会触发按钮类操作
@@ -573,6 +575,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 				//鼠标已经离开对象
 				if (e->param1 & LOEventHook::BTN_STATE_ACTIVED) {
 					setBtnShow(false);
+					//LOLog_i("is:%d", id[0]);
 					e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
 				}
 				else {
@@ -591,72 +594,22 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 
 					//左键和长按会进一步产生按钮响应点击事件
 					if (e->catchFlag & (LOLayerData::FLAGS_LONGCLICK | LOLayerData::FLAGS_LEFTCLICK)) {
-						LOShareEventHook ev(LOEventHook::CreateLayerAnswer(e->catchFlag, this));
+						LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), curInfo->btnval, 0));
 						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 					}
 				}
 			}
 			else {
-				//非按钮产生原样的事件
+				//非按钮产生图层响应事件
 			}
 		}
 		else {
 			//按钮处理
-		}
-	}
-}
-
-
-int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
-	int ret = SENDRET_NONE;
-	//子层在父层上方，因此先检查子层
-	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end() && ret != SENDRET_END; iter++) {
-			ret = iter->second->checkBtnActive(e, aswerQue);
-		}
-	}
-
-	//对按钮来说，总是需要响应鼠标进入对象和离开对象两件事
-	//因为同时只能激活一个对象，因此这里有比较复杂的逻辑问题
-	if (ret != SENDRET_END && curInfo->isBtndef()) {
-		//即使鼠标位置位于图层上，如果已经有图层相应了active事件，那么已经active的图层也只能unactive
-		if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
-			if (e->param1 & LOEventHook::BTN_STATE_ACTIVED) {
+			if (curInfo->isBtndef() && curInfo->isActive()) {
 				//鼠标已经离开对象
 				setBtnShow(false);
 				e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
 			}
-			else {
-				//已经激活的图层不会再次激活
-				if (!curInfo->isActive()) {
-					setBtnShow(true);
-					//产生btnstr事件
-					if (curInfo->btnStr) {
-						LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), curInfo->btnStr.get()));
-						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
-					}
-				}
-
-				//已经处理active事件
-				e->param1 |= LOEventHook::BTN_STATE_ACTIVED;
-
-				int val = 0x80000000;
-				//点击类事件会产生新的事件
-				if (e->evType == LOEventHook::SEND_MOUSEMOVE);
-				else if (e->evType == LOEventHook::SEND_LEFTCLICK) val = curInfo->btnval;
-				else if (e->evType == LOEventHook::SEND_RIGHTCLICK) val = -1;
-				else if (e->evType == LOEventHook::SEND_LONGCLICK) val = 0x80000001;
-				//产生新的要处理的事件
-				if (val != 0x80000000) {
-					LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), val, 0));
-					aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
-				}
-			}
-		}
-		else if (curInfo->isActive()) {
-			//鼠标已经离开对象
-			setBtnShow(false);
-			e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
 		}
 
 		//激活和非激活都已经处理了
@@ -665,6 +618,7 @@ int LOLayer::checkBtnActive(LOEventHook *e, LOEventQue *aswerQue) {
 
 	return ret;
 }
+
 
 
 void LOLayer::setBtnShow(bool isshow) {

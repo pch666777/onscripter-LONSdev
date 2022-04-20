@@ -618,7 +618,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
-	data->SetBtndef(nullptr, 0);
+	data->SetBtndef(nullptr, 0, true, true);
 	//data->SetShowRect(0, 0, G_gameWidth, G_gameHeight);
 	//print1
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
@@ -637,8 +637,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
 	if (data) {
-		if(reader->GetParamCount() > 2) data->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1));
-		else data->SetBtndef(nullptr, reader->GetParamInt(1));
+		if(reader->GetParamCount() > 2) data->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
+		else data->SetBtndef(nullptr, reader->GetParamInt(1), true, false);
 	}
 	return RET_CONTINUE;
 }
@@ -647,7 +647,7 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
-	data->SetBtndef(&reader->GetParamStr(0), 0);
+	data->SetBtndef(&reader->GetParamStr(0), 0, true, true);
 	return RET_CONTINUE;
 }
 

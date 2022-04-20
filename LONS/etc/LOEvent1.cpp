@@ -118,7 +118,7 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 //响应左键、右键,waitse指定等待哪一个通道完成播放，-1表示不等待
 LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse) {
 	auto *e = CreateHookBase();
-	//e->catchFlag = ANSWER_BTNCLICK;
+	e->catchFlag = ANSWER_BTNCLICK;
 	if (waitse) e->catchFlag |= ANSWER_SEPLAYOVER;
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
 	e->param1 = MOD_RENDER;
@@ -133,7 +133,7 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime
 
 LOEventHook* LOEventHook::CreateBtnClickHook(int fullid, int btnval, int islong) {
 	auto *e = CreateHookBase();
-	//e->catchFlag = ANSWER_BTNCLICK;
+	e->catchFlag = ANSWER_BTNCLICK;
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnval));
 	e->paramList.push_back(new LOVariant(islong));

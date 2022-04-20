@@ -185,7 +185,7 @@ public:
 	void SetTextureType(int dt);
 	void SetNewFile(LOShareBaseTexture &base);
 	void SetDelete();
-	void SetBtndef(LOString *s, int val);
+	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
 
 	//将动画的初始信息同步到layerinfo上
