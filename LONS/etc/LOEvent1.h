@@ -113,12 +113,14 @@ public:
 	//参数表
 	std::vector<LOVariant*> paramList;
 
+	void paramListMoveTo(std::vector<LOVariant*> &list);
+
 	//创建一个等待事件
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
 	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
 	//创建一个btnwait事件
-	static LOEventHook* CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse);
+	static LOEventHook* CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd);
 	//创建一个按钮被点击事件
 	static LOEventHook* CreateBtnClickHook(int fullid, int btnval, int islong);
 	//创建一个btnstr事件

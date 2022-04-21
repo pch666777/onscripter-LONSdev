@@ -296,7 +296,7 @@ private:
 	int ReturnEvent(int ret,const char *&buf, int &line);
 	LOString GetCurrentFile();
 	void NewThreadGosub(LOString *pname, LOString threadName);
-	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
+	//int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
 	void CalculatRPNstack(LOStack<ONSVariableRef> *stack);

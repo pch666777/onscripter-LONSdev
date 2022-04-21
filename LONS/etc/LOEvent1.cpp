@@ -88,6 +88,15 @@ bool LOEventHook::waitEvent(int sleepT, int overT) {
 }
 
 
+//参数列表转移到目标尾部
+void LOEventHook::paramListMoveTo(std::vector<LOVariant*> &list) {
+	for (int ii = 0; ii < paramList.size(); ii++) {
+		list.push_back(paramList.at(ii));
+	}
+	paramList.clear();
+}
+
+
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
 	e->timeStamp = SDL_GetTicks();
@@ -115,19 +124,21 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 
 
 
-//响应左键、右键,waitse指定等待哪一个通道完成播放，-1表示不等待
-LOEventHook* LOEventHook::CreateBtnwaitHook(int onsType, int onsID, int waittime, int waitse) {
+//响应按钮事件,waittime <= 0 表示不超时，printName = nullptr表示不清除按钮定义，否则则 > 0 时清除按钮定义
+//channel < 0 表示不关联语音播放，>= 0表示关联哪一个通道，最后一个参数表示按钮调用的命令
+LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd) {
 	auto *e = CreateHookBase();
 	e->catchFlag = ANSWER_BTNCLICK;
-	if (waitse) e->catchFlag |= ANSWER_SEPLAYOVER;
+	if (channel >= 0) e->catchFlag |= ANSWER_SEPLAYOVER;
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_BTNFINISH;
 	//最大的等待时间
-	e->paramList.push_back(new LOVariant(onsType));
-	e->paramList.push_back(new LOVariant(onsID));
 	e->paramList.push_back(new LOVariant(waittime));
-	e->paramList.push_back(new LOVariant(waitse));
+	e->paramList.push_back(new LOVariant(refid));
+	e->paramList.push_back(new LOVariant(printName, strlen(printName)));
+	e->paramList.push_back(new LOVariant(channel));
+	e->paramList.push_back(new LOVariant(cmd, strlen(cmd)));
 	return e;
 }
 

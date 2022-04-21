@@ -152,6 +152,7 @@ public:
 	void RunExbtnStr(LOString *s);
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
+	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
 	void UpTest();
@@ -284,6 +285,7 @@ private:
 	void DoDelayEvent(double postime);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
+	void HandlingEvents();
 	void SendEventToLayer(LOEventHook *e);
 	void SendEventToHooks(LOEventHook *e);
 	bool TranzMousePos(int xx, int yy);

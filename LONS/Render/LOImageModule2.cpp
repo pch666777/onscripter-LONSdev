@@ -131,13 +131,8 @@ void LOImageModule::SendEventToLayer(LOEventHook *e) {
 }
 
 
-void LOImageModule::SendEventToHooks(LOEventHook *e) {
 
-}
-
-
-
-//捕获SDL事件，将对指定的事件进行处理
+//捕获SDL事件，封装成指定的事件
 void LOImageModule::CaptureEvents(SDL_Event *event) {
 	LOUniqEventHook ev(new LOEventHook());
 
@@ -163,158 +158,49 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		}
 		break;
 	}
+}
 
-	//检查是否已经响应了事件
+
+void LOImageModule::HandlingEvents() {
+	//首先取出事件
 	int index = 0;
-	while (true) {
-		LOShareEventHook ese = waitEventQue.GetEventHook(index, LOEventQue::LEVEL_NORMAL, false);
-		if (!ese) break;
-		//往钩子队列里传递信息
-		for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
-			int kindex = 0;
-			LOShareEventHook hook = G_hookQue.GetEventHook(kindex, level, true);
-			if (!hook) continue;
-			//满足条件的调用指定函数
-			int vret = LOEventHook::RUNFUNC_CONTINUE;
-			if (hook->catchFlag & ese->catchFlag) {
-				if (hook->param1 == LOEventHook::MOD_RENDER) vret = imgeModule->RunFunc(hook.get(), ese.get());
-				else if (hook->param1 == LOEventHook::MOD_SCRIPTER)vret = scriptModule->RunFunc(hook.get(), ese.get());
-				else if (hook->param1 == LOEventHook::MOD_AUDIO)vret = audioModule->RunFunc(hook.get(), ese.get());
+	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+		LOShareEventHook ev = waitEventQue.GetEventHook(index, level, false);
+		if (!ev) {
+			index = 0;
+			continue;
+		}
+		else {
+			//将事件传递给钩子列表处理
+			SendEventToHooks(ev.get());
+		}
+	}
+	waitEventQue.clear();
+}
+
+void LOImageModule::SendEventToHooks(LOEventHook *e) {
+	int index = 0;
+	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+		LOShareEventHook hook = G_hookQue.GetEventHook(index, level, true);
+		if (!hook) {
+			index = 0;
+			continue;
+		}
+		else {
+			int ret = LOEventHook::RUNFUNC_CONTINUE;
+			if (hook->catchFlag & e->catchFlag) {
+				if (hook->param1 == LOEventHook::MOD_RENDER) ret = imgeModule->RunFunc(hook.get(), e);
+				else if (hook->param1 == LOEventHook::MOD_SCRIPTER)ret = scriptModule->RunFunc(hook.get(), e);
+				else if (hook->param1 == LOEventHook::MOD_AUDIO)ret = audioModule->RunFunc(hook.get(), e);
 			}
 
 			//事件已经完成
-			if (vret == LOEventHook::RUNFUNC_FINISH) break;
+			if (ret == LOEventHook::RUNFUNC_FINISH) break;
 			else hook->closeEdit();
 		}
-
 	}
-	waitEventQue.clear();
-
-	/*
-	LOEvent1 *catMsg = NULL;
-	LOEventParamBtnRef *param;
-	LOLayer *layer;
-	bool clickf = false;
-
-	switch (event->type)
-	{
-	case SDL_MOUSEMOTION:
-		//更新鼠标位置
-		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
-		//鼠标在窗口内移动事件，将在这里检查按钮
-		//只选择纯正的按钮事件
-		catMsg = G_GetEvent(LOEvent1::EVENT_CATCH_BTN, LOEvent1::EVENT_CATCH_BTN);
-
-		if (catMsg) catMsg->closeEdit(); //这里只是确认有按钮事件，按钮不在这里编辑
-		if (catMsg && SDL_TryLockMutex(btnQueMutex) == 0) {
-			LOLayer *layer = FindLayerInBtnQuePosition(mouseXY[0], mouseXY[1]);
-			//当前激活的按钮不是同一个，或者没有激活按钮，重置上一次激活的按钮状态
-			if (lastActiveLayer) {
-				lastActiveLayer->HideBtnMe();
-				if (lastActiveLayer->isExbtn()) {
-					//上一个按钮是复合按钮，并且本次按钮不是复合按钮，重置区域外符合按钮的状态
-					if (!layer || !layer->isExbtn())exbtn_d_hasrun = false;
-					//当前的复合按钮不同于上一个的复合按钮，重置上一个复合按钮的状态
-					if (lastActiveLayer != layer) 
-						lastActiveLayer->exbtnHasRun = false;
-				}
-				lastActiveLayer = NULL;
-			}
-			if (layer) {
-				layer->ShowBtnMe();         //按钮自身的动作
-				if (layer->isExbtn() && !layer->exbtnHasRun) { //当前按钮是复合按钮，那么区域外复合按钮的状态就被激活了
-					RunExbtnStr(layer->curInfo->btnStr);
-					exbtn_d_hasrun = false;
-				}
-				layer->exbtnHasRun = true;
-				lastActiveLayer = layer;
-			}
-
-			//没有在按钮上，或者当前的按钮不是复合按钮
-			if ((!layer || !layer->isExbtn()) && !exbtn_d_hasrun && exbtn_count > 0) {
-				exbtn_d_hasrun = true;
-				RunExbtnStr(&exbtn_dStr);
-			}
-
-			SDL_UnlockMutex(btnQueMutex);
-		}
-
-		break;
-
-		//鼠标点击完成
-	case SDL_MOUSEBUTTONUP:
-		//更新鼠标位置
-		if (!TranzMousePos(event->button.x, event->button.y))break;
-
-		//鼠标左点击
-		if (event->button.button == SDL_BUTTON_LEFT) {
-			//响应的是文字显示事件，则完成整个显示，同时忽略点击的其他作用
-			//catMsg = G_GetSelfEventIsParam(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
-			catMsg = G_GetEvent(LOEvent1::EVENT_TEXT_ACTION);
-			if (catMsg) {
-				catMsg->closeEdit();
-				CutDialogueAction();
-				clickf = true;
-			}
-
-			//响应的是print事件，print的等待事件后续都转移到EVENT_IMGMODULE_AFTER槽中了
-			catMsg = G_GetEvent(LOEvent1::EVENT_IMGMODULE_AFTER, LOEvent1::EVENT_WAIT_PRINT);
-			if (catMsg) {
-				param = (LOEventParamBtnRef*)catMsg->param;
-				ContinueEffect((LOEffect *)param->ptr1, 1000.0 * 1000.0);
-				catMsg->FinishMe();
-				clickf = true;
-			}
-
-			if (clickf) break;
-
-			//左键事件
-			catMsg = G_GetEvent(LOEvent1::EVENT_CATCH_BTN);
-			if (catMsg) {
-				switch (catMsg->eventID){
-				case SCRIPTER_EVENT_DALAY:
-					catMsg->InvalidMe();  //延迟事件直接失效，脚本不再阻塞
-					break;
-				case SCRIPTER_EVENT_LEFTCLICK: case SCRIPTER_EVENT_CLICK:
-					catMsg->InvalidMe(); //无需获取具体按钮的，比如click lrclick直接无效事件
-					break;
-				case LOEvent1::EVENT_CATCH_BTN:
-					layer = FindLayerInBtnQuePosition(mouseXY[0], mouseXY[1]);
-					if (layer) catMsg->value = layer->curInfo->btnValue;
-					else catMsg->value = 0; //没有点中任何按钮
-					LeaveCatchBtn(catMsg);
-					break;
-				default:
-					LOLog_e("unkown left click event %d!\n", catMsg->eventID);
-				}
-			}
-		}
-		else { //鼠标右点击
-			LOEvent1 *catMsg = G_GetEvent(LOEvent1::EVENT_CATCH_BTN);
-			if (catMsg) {
-				switch (catMsg->eventID)
-				{
-				case LOEvent1::EVENT_CATCH_BTN:
-					catMsg->value = -1;
-					LeaveCatchBtn(catMsg);
-					break;
-				case SCRIPTER_EVENT_LEFTCLICK:
-					catMsg->closeEdit();
-					break;  //右键不响应左键信息
-				default:
-					catMsg->InvalidMe();
-					break;
-				}
-			}
-		}
-		break;
-	case SDL_MOUSEBUTTONDOWN:
-		break;
-	default:
-		break;
-	}
-	*/
 }
+
 
 //转换鼠标位置，超出视口位置等于事件没有发生
 bool LOImageModule::TranzMousePos(int xx, int yy) {

@@ -314,7 +314,10 @@ int LOImageModule::MainLoop() {
 				}
 				break;
 			default:
+				//封装事件
 				CaptureEvents(&ev);
+				//处理事件
+				HandlingEvents();
 				break;
 			}
 		}

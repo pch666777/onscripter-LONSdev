@@ -624,7 +624,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	//凡是有时间要求的事件，第一个参数都是超时时间
-	LOEventHook *e = LOEventHook::CreateBtnwaitHook(v1->vtype, v1->nsvId, 0, -1);
+	LOEventHook *e = LOEventHook::CreateBtnwaitHook(0,v1->GetTypeRefid(), reader->GetPrintName(), -1, reader->GetCmdChar());
 	LOShareEventHook ev(e);
 	
 	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);

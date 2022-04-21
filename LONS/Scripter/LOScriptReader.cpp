@@ -501,7 +501,13 @@ int LOScriptReader::ContinueEvent() {
 
 		hasEvent = true;
 
-		if (ev->isInvalid()) isfinish = true;
+		//这里有个小技巧，如果hook是 finish状态，表示需要由脚本线程处理余下的过程
+		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
+		if (ev->isFinish()) {
+
+			isfinish = true;
+		}
+		else if (ev->isInvalid()) isfinish = true;
 		
 	}
 
@@ -1496,21 +1502,21 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
+	//if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
 
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
 
 //按钮事件
-int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
-	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));
-	if (e->paramList[1]->IsType(LOVariant::TYPE_INT)) {
-		ref->SetValue((double)e->paramList[1]->GetInt());
-	}
-	hook->InvalidMe();
-	return LOEventHook::RUNFUNC_FINISH;
-}
+//int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+//	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));
+//	if (e->paramList[1]->IsType(LOVariant::TYPE_INT)) {
+//		ref->SetValue((double)e->paramList[1]->GetInt());
+//	}
+//	hook->InvalidMe();
+//	return LOEventHook::RUNFUNC_FINISH;
+//}
 
 
 void LOScriptReader::Serialize(BinArray *bin) {
