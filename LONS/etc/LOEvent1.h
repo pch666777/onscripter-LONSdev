@@ -42,16 +42,13 @@ public:
 		//ANSWER_MOUSEMOVE = 0x200,
 	};
 
-	////给图层发送的事件
-	//enum {
-	//	SEND_LEFTCLICK = 1,
-	//	SEND_RIGHTCLICK = 2,
-	//	SEND_LONGCLICK = 4,
-	//	SEND_MOUSEMOVE = 8,
-	//	//SEND_MOUSEMOVE或者SEND_MOUSECLICK传递后，如果已经被某个图层相应，
-	//	//那么事件会转为SEND_UNACTIVE恢复已经激活的图层
-	//	SEND_UNACTIVE = 16,
-	//};
+	//一些参数的位置
+	enum {
+		PINDS_REFID = 1,
+		PINDS_PRINTNAME = 2,
+		PINDS_SE_CHANNEL = 3,
+		PINDS_CMD = 4,
+	};
 
 	//RunFunc的返回值
 	enum {

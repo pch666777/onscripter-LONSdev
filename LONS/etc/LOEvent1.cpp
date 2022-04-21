@@ -131,7 +131,7 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char 
 	e->catchFlag = ANSWER_BTNCLICK;
 	if (channel >= 0) e->catchFlag |= ANSWER_SEPLAYOVER;
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
-	e->param1 = MOD_RENDER;
+	e->param1 = MOD_SCRIPTER;
 	e->param2 = FUN_BTNFINISH;
 	//最大的等待时间
 	e->paramList.push_back(new LOVariant(waittime));

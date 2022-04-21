@@ -186,6 +186,7 @@ public:
 	void Serialize(BinArray *bin);
 
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
+	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	//添加新的脚本到缓冲区
 	static LOScripFile* AddScript(const char *buf, int length, const char* filename);

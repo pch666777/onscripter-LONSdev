@@ -1,4 +1,5 @@
 #include "LOScriptReader.h"
+//#include "../Render/LOLayerData.h"
 #include "Buil_in_script.h"
 #include <stdarg.h>
 //#include <SDL.h>
@@ -1502,12 +1503,31 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	//if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
-
+	if (hook->param2 == LOEventHook::FUN_BTNFINISH) {
+		e->paramListMoveTo(hook->paramList);
+		//转移到脚本线程执行
+		hook->FinishMe();
+		return LOEventHook::RUNFUNC_FINISH;
+	}
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
-
+//按钮完成事件
+int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
+		//没有满足要求
+		if (e->param1 != hook->paramList[LOEventHook::PINDS_SE_CHANNEL]->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
+	}
+	//要确定是否清除btndef
+	if (strcmp(hook->paramList[LOEventHook::PINDS_CMD]->GetChars(nullptr), "btnwait2") != 0) {
+		if (e->paramList[1]->GetInt() > 0) 
+			imgeModule->ClearBtndef(hook->paramList[LOEventHook::PINDS_PRINTNAME]->GetChars(nullptr));
+	}
+	//确定是否要设置变量的值，变量设置要转移到脚本线程中
+	if (hook->paramList[LOEventHook::PINDS_REFID] > 0) hook->FinishMe();
+	else hook->InvalidMe();
+	return LOEventHook::RUNFUNC_FINISH;
+}
 //按钮事件
 //int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 //	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));

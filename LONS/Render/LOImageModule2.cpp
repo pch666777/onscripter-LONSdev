@@ -249,7 +249,12 @@ void LOImageModule::CutDialogueAction() {
 
 int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	if (hook->param2 == LOEventHook::FUN_SPSTR) return RunFuncSpstr(hook, e);
+
 	return LOEventHook::RUNFUNC_CONTINUE;
+}
+
+int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+
 }
 
 
