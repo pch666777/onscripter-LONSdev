@@ -564,7 +564,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	//左键、右键、长按、悬停
 	if (e->catchFlag & LOLayerData::FLAGS_RIGHTCLICK) {
 		//只有按钮才相应右键事件
-		LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), -1, 0));
+		LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), -1, 0));
 		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 	}
 	else {
@@ -594,7 +594,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 
 					//左键和长按会进一步产生按钮响应点击事件
 					if (e->catchFlag & (LOLayerData::FLAGS_LONGCLICK | LOLayerData::FLAGS_LEFTCLICK)) {
-						LOShareEventHook ev(LOEventHook::CreateBtnClickHook(GetFullID(layerType, id), curInfo->btnval, 0));
+						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), curInfo->btnval, 0));
 						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 					}
 				}

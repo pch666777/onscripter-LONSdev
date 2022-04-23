@@ -33,7 +33,6 @@ LOImageModule::LOImageModule(){
 	doQueMutex = SDL_CreateMutex();
 
 	memset(shaderList, 0, sizeof(int) * 20);
-
 }
 
 void LOImageModule::ResetConfig() {
@@ -263,7 +262,8 @@ int LOImageModule::MainLoop() {
 	double fpstime = 1000.01 / G_fpsnum;
 	double posTime;   //从上一帧后，当前帧花费的时间
 	SDL_Event ev;
-	Uint64 lastTime = 0;
+	Uint64 lastTime = SDL_GetPerformanceCounter();
+	//Uint64 lastTime = 0;
 	bool minisize = false;
 	moduleState = MODULE_STATE_RUNNING;
 
@@ -277,20 +277,23 @@ int LOImageModule::MainLoop() {
 
 		if (!minisize && posTime + 0.1 > fpstime) {
 			if (RefreshFrame(posTime) == 0) {
-				//LOLog_i("frame ok!") ;
+				//LOLog_i("frame time:%f", ((double)(SDL_GetPerformanceCounter() - hightTimeNow)) / perHtickTime) ;
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
 				//在进入事件处理之前，先整理一下钩子队列
 				G_hookQue.arrangeList();
-				//DoDelayEvent(posTime);
+				DoDelayEvent(posTime);
 				lastTime = hightTimeNow;
 				if(moduleState >= MODULE_STATE_EXIT) break;
 				else if (moduleState & MODULE_STATE_RESET) {
 					ResetMe();
 				}
 			}
+			else {
+				LOLog_i("RefreshFrame faild!");
+			}
 		}
-
+		
 		//处理事件
 		if (SDL_PollEvent(&ev)) {
 			switch (ev.type) {
@@ -321,7 +324,7 @@ int LOImageModule::MainLoop() {
 				break;
 			}
 		}
-
+		
 		//降低CPU的使用率
 		if (posTime < fpstime - 1.5) SDL_Delay(1);
 		else if (minisize) SDL_Delay(1);
@@ -333,6 +336,7 @@ int LOImageModule::MainLoop() {
 				else sum += 2;
 			}
 		}
+		
 	}
 	
 	moduleState = MODULE_STATE_NOUSE;
@@ -357,7 +361,10 @@ int LOImageModule::MainLoop() {
 
 int LOImageModule::RefreshFrame(double postime) {
 
-	int lockfalg = SDL_TryLockMutex(layerQueMutex);
+	int lockfalg = 0;
+	SDL_LockMutex(layerQueMutex);
+	//layerTestMute.lock();
+	//printf("main refresh:%d\n", SDL_GetTicks());
 	if (lockfalg == 0) {
 		//必须小心处理渲染逻辑，不然很容导致程序崩溃，关键是正确处理 print 1 以外的多线程同步问题
 		//print 1: UpDisplay
@@ -390,25 +397,33 @@ int LOImageModule::RefreshFrame(double postime) {
 			//LOLog_i("prepare event change!") ;
 		}
 		else {
+			//printf("main refresh1-1:%d\n", SDL_GetTicks());
 			SDL_RenderClear(render);
 			UpDisplay(postime);
+			//printf("main refresh1-2:%d\n", SDL_GetTicks());
 		}
+		//注意计时的时候，第一帧会需要初始化，需要几十毫秒
 		if(isShowFps) ShowFPS(postime);
+		//printf("main refresh1-3:%d\n", SDL_GetTicks());
 		SDL_RenderPresent(render);
 
+		//printf("main refresh2:%d\n", SDL_GetTicks());
 		SDL_UnlockMutex(layerQueMutex);
+		//printf("main refresh3:%d\n", SDL_GetTicks());
+		//layerTestMute.unlock();
 
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (printHook->enterEdit()) {
+			//printf("main thread:%d\n", SDL_GetTicks());
 			printHook->catchFlag = PRE_EVENT_EFFECTCONTIUE;
 			preEventList.push_back(printHook);
 		}
 		return 0;
 	}
 	else if (lockfalg == -1) {
-		SDL_Log("fps lock layer faild:%s", SDL_GetError());
+		LOLog_i("fps lock layer faild:%s", SDL_GetError());
 	}
 	return -1;
 }
@@ -848,19 +863,29 @@ LOLayer* LOImageModule::GetRootLayer(int fullid) {
 
 //移除按钮定义
 void LOImageModule::ClearBtndef(const char *printName) {
+	//前台处理
+	//移去当前图层内的按钮定义
+	SDL_LockMutex(layerQueMutex);
+	//删除btn的按钮层
+	LOLayer *lyr = G_baseLayer[LOLayer::LAYER_NSSYS].RemodeChild(LOLayer::IDEX_NSSYS_BTN);
+	if (lyr) delete lyr;
+	//所有定义的按钮无效化
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		G_baseLayer[ii].unSetBtndefAll();
+	}
+	SDL_UnlockMutex(layerQueMutex);
+
+	//后台处理
 	auto *list = GetPrintNameMap(printName)->map;
 	SDL_LockMutex(layerDataMutex);
+	//删除btn的按钮层
+	CspCore(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, LOLayer::IDEX_NSSYS_BTN, printName);
 	for (auto iter = list->begin(); iter != list->end(); iter++) {
 		//去除按钮定义
 		iter->second->unSetBtndef();
 	}
 	SDL_UnlockMutex(layerDataMutex);
-	//移去当前图层内的按钮定义
-	SDL_LockMutex(layerQueMutex);
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		G_baseLayer[ii].unSetBtndefAll();
-	}
-	SDL_UnlockMutex(layerQueMutex);
+
 }
 
 
@@ -1356,6 +1381,7 @@ LOLayerData* LOImageModule::GetOrCreateLayerData(int fullid, const char *printNa
 	if (!data) data = CreateLayerData(fullid, printName);
 	return data;
 }
+
 
 
 LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {

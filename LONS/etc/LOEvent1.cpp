@@ -12,6 +12,7 @@ std::atomic_int LOEventHook::exitFlag{};
 
 
 LOEventHook::LOEventHook() {
+	catchFlag = 0;
 	param1 = 0;
 	param2 = 0;
 }
@@ -96,6 +97,14 @@ void LOEventHook::paramListMoveTo(std::vector<LOVariant*> &list) {
 	paramList.clear();
 }
 
+//删除多余的参数
+void LOEventHook::paramListCut(int maxsize) {
+	while (paramList.size() > maxsize) {
+		delete paramList[paramList.size() - 1];
+		paramList.pop_back();
+	}
+}
+
 
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
@@ -142,12 +151,22 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char 
 	return e;
 }
 
-LOEventHook* LOEventHook::CreateBtnClickHook(int fullid, int btnval, int islong) {
+LOEventHook* LOEventHook::CreateBtnClickEvent(int fullid, int btnval, int islong) {
 	auto *e = CreateHookBase();
 	e->catchFlag = ANSWER_BTNCLICK;
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnval));
 	e->paramList.push_back(new LOVariant(islong));
+	return e;
+}
+
+
+LOEventHook* LOEventHook::CreateClickHook(bool isleft, bool isright) {
+	auto *e = CreateHookBase();
+	if (isleft) e->catchFlag |= ANSWER_LEFTCLICK;
+	if (isright) e->catchFlag |= ANSWER_RIGHTCLICK;
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_INVILIDE;
 	return e;
 }
 
@@ -166,6 +185,17 @@ LOEventHook* LOEventHook::CreateSpstrHook() {
 	e->catchFlag = ANSWER_BTNSTR;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_SPSTR;
+	return e;
+}
+
+
+LOEventHook* LOEventHook::CreateTimerHook(int outtime, bool isleft) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_TIMER;
+	if (isleft) e->catchFlag |= ANSWER_LEFTCLICK;
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_INVILIDE;
+	e->paramList.push_back(new LOVariant(outtime));
 	return e;
 }
 

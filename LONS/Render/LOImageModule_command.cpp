@@ -149,32 +149,27 @@ int LOImageModule::cspCommand(FunctionInterface *reader) {
 	//}
 
 	LeveTextDisplayMode();
-
-	if (reader->GetParamInt(0) < 0) CspCore(-1, reader->GetPrintName());
+	int layerType = LOLayer::LAYER_SPRINT;
+	if (reader->isName("csp2")) layerType = LOLayer::LAYER_SPRINTEX;
+	if (reader->GetParamInt(0) < 0) {
+		CspCore(layerType, 0, 1023, reader->GetPrintName());
+	}
 	else {
-		int fullid = GetFullID(LOLayer::LAYER_SPRINTEX, reader->GetParamInt(0), 255, 255);
-		CspCore(fullid, reader->GetPrintName());
+		CspCore(layerType, reader->GetParamInt(0), reader->GetParamInt(0), reader->GetPrintName());
 	}
 	return RET_CONTINUE;
 }
 
 //fullid为-1时清除全部print_name队列
-void LOImageModule::CspCore(int fullid, const char *print_name) {
+void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *print_name) {
 	auto *map = GetPrintNameMap(print_name)->map;
 	if (map->size() == 0) return;
-	if (fullid < 0) {
-		//清除所有对象
-		for (auto iter = map->begin(); iter != map->end(); iter++) {
-			iter->second->SetDelete();
-		}
-	}
-	else {
-		//清除某个对象
+
+	for (int ii = fromid; ii <= endid; ii++) {
+		int fullid = GetFullID(layerType, ii, 255, 255);
 		auto iter = map->find(fullid);
-		if (iter != map->end()) {
-			//layerdata在print同步时才删除
-			iter->second->SetDelete();
-		}
+		//layerdata在print同步时才删除
+		if (iter != map->end()) iter->second->SetDelete();
 	}
 }
 
@@ -602,9 +597,9 @@ int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
 
 //btntime btntime2小心的用在多线程
 int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
+	Uint32 pos, timesnap = SDL_GetTicks();
 
 	if (reader->isName("btnwait") || reader->isName("btnwait2")) LeveTextDisplayMode();
-
 	if (textbtnFlag && reader->isName("textbtnwait")) { //注册文字按钮
 		//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 		//LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_DIALOG, ids, reader->GetPrintName());
@@ -621,12 +616,19 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	data->SetBtndef(nullptr, 0, true, true);
 	//data->SetShowRect(0, 0, G_gameWidth, G_gameHeight);
 	//print1
+	pos = SDL_GetTicks() - timesnap;
+	LOLog_i("%d", pos);
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
+
+	pos = SDL_GetTicks() - timesnap;
+	LOLog_i("%d", pos);
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	//凡是有时间要求的事件，第一个参数都是超时时间
-	LOEventHook *e = LOEventHook::CreateBtnwaitHook(0,v1->GetTypeRefid(), reader->GetPrintName(), -1, reader->GetCmdChar());
+	LOEventHook *e = LOEventHook::CreateBtnwaitHook(btnOverTime,v1->GetTypeRefid(), reader->GetPrintName(), -1, reader->GetCmdChar());
 	LOShareEventHook ev(e);
 	
+	//每次btnwait都需要设置btnovetime
+	btnOverTime = 0;
 	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	return RET_CONTINUE;
@@ -754,17 +756,10 @@ int LOImageModule::setwindow2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::clickCommand(FunctionInterface *reader) {
-	/*
-	LOEvent1 *e ;
-	if (reader->isName("lrclick")) e = new LOEvent1(FunctionInterface::SCRIPTER_EVENT_LEFTCLICK, (int64_t)0);
-	else e = new LOEvent1(FunctionInterface::SCRIPTER_EVENT_CLICK, (int64_t)0);  //左键右键都可以
-	
-	e->enterEdit();
-	G_SendEventMulit(e, LOEvent1::EVENT_CATCH_BTN);
-	reader->blocksEvent.SendToSlot(e);
-	e->closeEdit();
-	*/
-	//reader->AddNextEvent((intptr_t)e);
+	//click只等待左键，lrclick左键和右键都可以
+	LOShareEventHook ev(LOEventHook::CreateClickHook(true, reader->isName("lrclick")));
+	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	return RET_CONTINUE;
 }
 
@@ -787,11 +782,8 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	LOString tag = reader->GetParamStr(0);
 
 	//所有的按钮定义都会被清除
-	imgeModule->ClearBtndef(reader->GetPrintName());
-
 	//无论如何btn的系统层都将被清除
-	int fullid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255);
-	CspCore(fullid, "_lons");
+	imgeModule->ClearBtndef(reader->GetPrintName());
 	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();

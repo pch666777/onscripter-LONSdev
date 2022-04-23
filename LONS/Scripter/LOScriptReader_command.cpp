@@ -154,28 +154,12 @@ int LOScriptReader::gameCommand(FunctionInterface *reader) {
 
 int LOScriptReader::delayCommand(FunctionInterface *reader) {
 	int val = reader->GetParamInt(0);
-	if (val > 10) {
-		//delay事件会同时响应 left click 和 超时
-		//需要发送到两个事件槽
-		/*
-		auto *param = new LOEventParamBtnRef;
-		param->ptr1 = SDL_GetTicks();
-		param->ptr2 = val;
-		LOEvent1 *e = new LOEvent1(SCRIPTER_EVENT_DALAY, param);  //携带时间戳
-		
-		e->enterEdit(); //lock it
-		G_SendEventMulit(e, LOEvent1::EVENT_CATCH_BTN);
-		reader->blocksEvent.SendToSlot(e);
-		e->closeEdit(); //unlock it
-		*/
-	}
-	else if (val > 1) { //2-10毫秒的延时没有必要再发送到事件中，直接暂停，影响不大,1毫秒命令花的时间都有了
-		int timecut = SDL_GetTicks();
-		do {
-			G_PrecisionDelay(0.5);
-		} while (SDL_GetTicks() - timecut < val - 1);
-		//很容易受系统线程调度的影响，在性能差的机器上准确度不高
-		//G_PrecisionDelay(val - 1);
+	if (val > 0) {
+		//创建一个时间阻塞事件
+		//除waittimer外，delay和wait均可以左键跳过
+		LOShareEventHook ev(LOEventHook::CreateTimerHook(val, !reader->isName("waittimer")));
+		G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+		reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 	}
 	return RET_CONTINUE;
 }

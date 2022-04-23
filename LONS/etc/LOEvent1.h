@@ -32,14 +32,12 @@ public:
 
 	//要响应的事件
 	enum {
-		ANSWER_TIMER = 1 ,
+		ANSWER_TIMER = 1,
 		ANSWER_BTNSTR = 2,
 		ANSWER_SEPLAYOVER = 8,
 		ANSWER_BTNCLICK = 16,
-		//ANSWER_LEFTCLICK = 64,
-		//ANSWER_RIGHTCLICK = 128,
-		//ANSWER_LONGCLICK = 256, //0x100
-		//ANSWER_MOUSEMOVE = 0x200,
+		ANSWER_LEFTCLICK = 32,
+		ANSWER_RIGHTCLICK = 64,
 	};
 
 	//一些参数的位置
@@ -48,6 +46,7 @@ public:
 		PINDS_PRINTNAME = 2,
 		PINDS_SE_CHANNEL = 3,
 		PINDS_CMD = 4,
+		PINDS_BTNVAL = 1,
 	};
 
 	//RunFunc的返回值
@@ -77,6 +76,8 @@ public:
 		FUN_BTNFINISH,
 		FUN_SPSTR,
 		FUN_LAYERANSWER,
+		//直接hook失效
+		FUN_INVILIDE,
 	};
 
 	LOEventHook();
@@ -111,6 +112,7 @@ public:
 	std::vector<LOVariant*> paramList;
 
 	void paramListMoveTo(std::vector<LOVariant*> &list);
+	void paramListCut(int maxsize);
 
 	//创建一个等待事件
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
@@ -119,11 +121,15 @@ public:
 	//创建一个btnwait事件
 	static LOEventHook* CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd);
 	//创建一个按钮被点击事件
-	static LOEventHook* CreateBtnClickHook(int fullid, int btnval, int islong);
+	static LOEventHook* CreateBtnClickEvent(int fullid, int btnval, int islong);
+	//创建一个鼠标左键或右键钩子
+	static LOEventHook* CreateClickHook(bool isleft, bool isright);
 	//创建一个btnstr事件
 	static LOEventHook* CreateBtnStr(int fullid, LOString *btnstr);
 	//创建一个spstr运行
 	static LOEventHook* CreateSpstrHook();
+	//创建一个时间阻塞钩子，参数可设置是否响应左键
+	static LOEventHook* CreateTimerHook(int outtime, bool isleft);
 
 	//创建一个图层相应事件
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);

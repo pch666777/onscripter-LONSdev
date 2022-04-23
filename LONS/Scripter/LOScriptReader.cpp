@@ -502,10 +502,15 @@ int LOScriptReader::ContinueEvent() {
 
 		hasEvent = true;
 
+		//如果ev带有timer则验证是否超时
+		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
+			if (CheckTimer(ev.get(), 5)) RunFuncBase(ev.get(), nullptr);
+		}
+
 		//这里有个小技巧，如果hook是 finish状态，表示需要由脚本线程处理余下的过程
 		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
 		if (ev->isFinish()) {
-
+			if (ev->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(ev.get());
 			isfinish = true;
 		}
 		else if (ev->isInvalid()) isfinish = true;
@@ -1503,17 +1508,23 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	if (hook->param2 == LOEventHook::FUN_BTNFINISH) {
-		e->paramListMoveTo(hook->paramList);
-		//转移到脚本线程执行
-		hook->FinishMe();
-		return LOEventHook::RUNFUNC_FINISH;
-	}
+	if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
+
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
 //按钮完成事件
 int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+	//来自超时的事件
+	LOUniqEventHook ev;
+	if (!e) {
+		ev.reset(new LOEventHook());
+		e = ev.get();
+		e->paramList.push_back(new LOVariant(-1));
+		//btnval的超时值为-2
+		e->paramList.push_back(new LOVariant(-2));
+	}
+
 	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
 		//没有满足要求
 		if (e->param1 != hook->paramList[LOEventHook::PINDS_SE_CHANNEL]->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
@@ -1524,10 +1535,37 @@ int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 			imgeModule->ClearBtndef(hook->paramList[LOEventHook::PINDS_PRINTNAME]->GetChars(nullptr));
 	}
 	//确定是否要设置变量的值，变量设置要转移到脚本线程中
-	if (hook->paramList[LOEventHook::PINDS_REFID] > 0) hook->FinishMe();
+	if (hook->paramList[LOEventHook::PINDS_REFID] > 0) {
+		e->paramListMoveTo(hook->paramList);
+		hook->FinishMe();
+	}
 	else hook->InvalidMe();
 	return LOEventHook::RUNFUNC_FINISH;
 }
+
+//变量赋值事件，这个函数应该从脚本线程执行
+int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
+	//跟btnwaithook的原始参数个数有关
+	int fix = 5;
+	int refid = hook->paramList[LOEventHook::PINDS_REFID]->GetInt();
+	LOUniqVariableRef ref(ONSVariableRef::GetRefFromTypeRefid(refid));
+	LOVariant *var = hook->paramList[LOEventHook::PINDS_BTNVAL + fix];
+	if (var->IsType(LOVariant::TYPE_INT)) {
+		LOLog_i("btnwait is:%d", var->GetInt());
+		ref->SetValue((double)var->GetInt());
+	}
+	else {
+		//似乎有字符串版本的命令？
+	}
+	//切除多余的参数
+	hook->paramListCut(fix);
+	hook->InvalidMe();
+	return 0;
+}
+
+
+
+
 //按钮事件
 //int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 //	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));

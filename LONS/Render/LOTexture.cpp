@@ -304,8 +304,6 @@ void LOtexture::MakeGPUTexture() {
 LOtexture::~LOtexture() {
 	if (baseTexture)notUseTextureBase(baseTexture);
 	FreeRef();
-	delete texturePtr;
-	delete surfacePtr;
 }
 
 

@@ -168,6 +168,8 @@ public:
 	int GetParamInt(int index);
 	double GetParamDoublePer(int index);
 	int GetParamCount();
+	bool CheckTimer(LOEventHook *e, int waittmer);
+	
 
 	void InitSaveStream(BinArray *bin);
 	static LOString StringFormat(int max, const char *format, ...);
@@ -189,6 +191,7 @@ public:
 	virtual void ResetMeFinish() { return; };
 	virtual void PrintError(LOString *err) { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
+	int RunFuncBase(LOEventHook *hook, LOEventHook *e);
 	virtual void ClearBtndef(const char *printName) { return; }
 	void PrintErrorStatic(LOString *err);
 	void SetExitFlag(int flag);

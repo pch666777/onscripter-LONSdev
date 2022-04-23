@@ -549,3 +549,33 @@ void FunctionInterface::WriteLog(int logt) {
 		fclose(f);
 	}
 }
+
+
+bool FunctionInterface::CheckTimer(LOEventHook *e, int waittmer) {
+	Uint32 postime = SDL_GetTicks() - e->timeStamp;
+	int maxtime = e->paramList[0]->GetInt();
+	if (postime >= maxtime) return true;
+	else if (postime + waittmer >= maxtime) {
+		//进入等待，直到满足时间要求
+		while (postime < maxtime) {
+			//cpu干点活
+			int sum = rand();
+			for (int ii = 0; ii < 2000; ii++) {
+				sum ^= ii;
+				if (ii % 2) sum++;
+				else sum += 2;
+			}
+			postime = SDL_GetTicks() - e->timeStamp;
+		}
+		return true;
+	}
+	return false;
+}
+
+//向各模块分发事件
+int FunctionInterface::RunFuncBase(LOEventHook *hook, LOEventHook *e) {
+	if (hook->param1 == LOEventHook::MOD_RENDER) return imgeModule->RunFunc(hook, e);
+	else if (hook->param1 == LOEventHook::MOD_SCRIPTER)return scriptModule->RunFunc(hook, e);
+	else if (hook->param1 == LOEventHook::MOD_AUDIO)return audioModule->RunFunc(hook, e);
+	return LOEventHook::RUNFUNC_CONTINUE;
+}

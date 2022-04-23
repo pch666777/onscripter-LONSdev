@@ -88,6 +88,7 @@ public:
 	LOEffect* winEffect;     //对话框显示、消失时候执行的效果
 
 	SDL_mutex* layerQueMutex;	//图层队列锁
+	//std::mutex layerTestMute;
 	//需要对后台layerdata操作时，要先锁定
 	SDL_mutex* layerDataMutex;
 	//SDL_mutex* btnQueMutex;     //按钮队列操作锁
@@ -170,7 +171,7 @@ public:
 	int printStack(FunctionInterface *reader, int fix);
 	int bgCommand(FunctionInterface *reader);
 	int cspCommand(FunctionInterface *reader);
-	void CspCore(int fullid, const char *print_name);
+	void CspCore(int layerType, int fromid, int endid, const char *print_name);
 	int mspCommand(FunctionInterface *reader);
 	int cellCommand(FunctionInterface *reader);
 	int humanzCommand(FunctionInterface *reader);
@@ -286,8 +287,8 @@ private:
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	void HandlingEvents();
-	void SendEventToLayer(LOEventHook *e);
-	void SendEventToHooks(LOEventHook *e);
+	int SendEventToLayer(LOEventHook *e);
+	int SendEventToHooks(LOEventHook *e);
 	bool TranzMousePos(int xx, int yy);
 	void CutDialogueAction();
 };
