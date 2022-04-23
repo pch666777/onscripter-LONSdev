@@ -86,7 +86,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 				//指向下一个
 				iter = map->erase(iter);
 
-				LOLayer *lyr = LOLayer::FindViewLayer(data->fullid);
+				LOLayer *lyr = LOLayer::FindViewLayer(data->fullid, data->isDelete() || data->isNewFile());
+
 				if (data->isDelete()) {
 					if (lyr) delete lyr;
 				}

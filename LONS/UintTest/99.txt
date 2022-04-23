@@ -2,15 +2,14 @@
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
 
-delay 100
-
-btntime 1000
-resettimer
-btnwait %2
-gettimer %1
-debuglog %1
-nsa
-gosub *btnwait_test
+;delay 100
+;btntime 1000
+;resettimer
+;btnwait %2
+;gettimer %1
+;debuglog %1
+;nsa
+;gosub *btnwait_test
 
 
 ;lsp 333,

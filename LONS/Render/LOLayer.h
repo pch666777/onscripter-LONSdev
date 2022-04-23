@@ -95,7 +95,7 @@ public:
 
 	bool isVisible();
 	bool isChildVisible();
-	bool isMaxBorder(int index,int val);
+	static bool isMaxBorder(int index,int val);
 
 	//显示指定格树的NS动画
 	void setBtnShow(bool isshow);
@@ -144,14 +144,14 @@ public:
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上
 	//只是根据ids预期父对象，识别返回null
 	//static LOLayer* GetExpectFather(int lyrType, int *ids);
-	static LOLayer* FindViewLayer(int fullid);
+	static LOLayer* FindViewLayer(int fullid, bool isRemove);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 
 	void GetInheritScale(double *sx, double *sy);
 	void GetInheritOffset(float *ox, float *oy);
 	bool isFaterCopyEx();
-	LOLayer* DescentFather(LOLayer *father, int *index,const int *ids);
+	static LOLayer* DescentFather(LOLayer *father, int *index,const int *ids);
 	void BaseNew(SysLayerType lyrType);
 };
 

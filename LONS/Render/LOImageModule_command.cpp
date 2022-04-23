@@ -369,8 +369,8 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 423) {
 	//	int debugbreak = 1;
 	//}
-	/*
-	int ids[] = { reader->GetParamInt(0), 255, 255 };
+	
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	ONSVariableRef *v1 = reader->GetParamRef(1);
 	ONSVariableRef *v2 = reader->GetParamRef(2);
 	ONSVariableRef *v3 = NULL;
@@ -379,16 +379,16 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	int ww, hh, cell;
 	ww = hh = 0;
 	cell = 0;
-	LOLayerInfo *info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	if (info) {
-		info->GetSize(ww, hh, cell);
-		delete info;
-	}
+	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
+	if (data) {
+		if (data->texture) {
 
+		}
+	}
 	v1->SetValue((double)ww);
 	v2->SetValue((double)hh);
 	if (v3) v3->SetValue((double)cell);
-	*/
+	
 	return RET_CONTINUE;
 }
 
@@ -614,14 +614,15 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
 	data->SetBtndef(nullptr, 0, true, true);
-	//data->SetShowRect(0, 0, G_gameWidth, G_gameHeight);
-	//print1
-	pos = SDL_GetTicks() - timesnap;
-	LOLog_i("%d", pos);
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 
+	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
 	pos = SDL_GetTicks() - timesnap;
-	LOLog_i("%d", pos);
+	if (btnOverTime > 0) {
+		btnOverTime -= pos;
+		if (btnOverTime <= 0) btnOverTime = 1;
+	}
+
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	//凡是有时间要求的事件，第一个参数都是超时时间
 	LOEventHook *e = LOEventHook::CreateBtnwaitHook(btnOverTime,v1->GetTypeRefid(), reader->GetPrintName(), -1, reader->GetCmdChar());

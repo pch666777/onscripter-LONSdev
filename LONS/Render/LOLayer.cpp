@@ -120,6 +120,7 @@ LOLayer* LOLayer::RemodeChild(int cid) {
 	return nullptr;
 }
 
+
 //这个方法只应该从根对象调用
 LOLayer *LOLayer::FindChild(const int *cids) {
 	int index;
@@ -127,6 +128,8 @@ LOLayer *LOLayer::FindChild(const int *cids) {
 	if (!father) return nullptr;
 	return father->FindChild(cids[index]);
 }
+
+
 
 LOLayer *LOLayer::FindChild(int cid) {
 	if (!childs) return nullptr;
@@ -531,11 +534,21 @@ void LOLayer::GetLayerUsedState(char *bin, int *ids) {
 }
 
 //根据提供的id，在前台图层组中搜索图层
-LOLayer* LOLayer::FindViewLayer(int fullid) {
+LOLayer* LOLayer::FindViewLayer(int fullid, bool isRemove) {
 	int lyrType;
 	int ids[3];
 	GetTypeAndIds(&lyrType, ids, fullid);
-	return G_baseLayer[lyrType].FindChild(ids);
+
+	int index = 0;
+	LOLayer *father = DescentFather(&G_baseLayer[lyrType], &index, ids);
+	if (father && father->childs) {
+		auto iter = father->childs->find(ids[index]);
+		if (iter == father->childs->end()) return nullptr;
+		LOLayer *lyr = iter->second;
+		if (isRemove) father->childs->erase(iter);
+		return lyr;
+	}
+	return nullptr;
 }
 
 
@@ -647,6 +660,8 @@ void LOLayer::unSetBtndefAll() {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->unSetBtndefAll();
 	}
 }
+
+
 
 ////只有被改变才返回真
 //bool LOLayer::setActive(bool isactive) {

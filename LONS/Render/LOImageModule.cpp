@@ -262,7 +262,7 @@ int LOImageModule::MainLoop() {
 	double fpstime = 1000.01 / G_fpsnum;
 	double posTime;   //从上一帧后，当前帧花费的时间
 	SDL_Event ev;
-	Uint64 lastTime = SDL_GetPerformanceCounter();
+	Uint64 lastTime = 0;
 	//Uint64 lastTime = 0;
 	bool minisize = false;
 	moduleState = MODULE_STATE_RUNNING;
