@@ -61,8 +61,11 @@ public:
 
 	//成员///////////
 	int id[3];
-	std::unique_ptr<LOLayerData> curInfo;  //前台数据
 	SysLayerType layerType;     //图层所在的组，在new图层时已经把LAYER_SPRINT转换
+	//前台数据
+	std::unique_ptr<LOLayerData> curInfo;
+	//后台数据
+	std::unique_ptr<LOLayerData> bakInfo;
 	//父对象
 	LOLayer *parent;
 	//根图层的，根图层总是有效的
@@ -81,6 +84,7 @@ public:
 	//顶级图层不需要后台数据
 	LOLayer();
 	LOLayer(SysLayerType lyrType);
+	LOLayer(int fullid);
 
 	//普通图层显然是根据后台数据创建,islink决定是否挂载都图层结构组上
 	LOLayer(LOLayerData &data, bool islink);
@@ -89,6 +93,9 @@ public:
 	//插入一个子对象，如果子对象已经存在则失败
 	bool InserChild(LOLayer *layer);
 	bool InserChild(int cid, LOLayer *layer);
+
+	void releaseForce();
+	void releaseBack();
 
 	//坐标是否包含在图层内
 	bool isPositionInsideMe(int x, int y);
@@ -145,6 +152,7 @@ public:
 	//只是根据ids预期父对象，识别返回null
 	//static LOLayer* GetExpectFather(int lyrType, int *ids);
 	static LOLayer* FindViewLayer(int fullid, bool isRemove);
+	static void NoUseLayer(LOLayer *lyr);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 

@@ -60,10 +60,10 @@ void GetTypeAndIds(int *type, int *ids, int fullid) {
 
 //=================================
 LOLayerDataBase::LOLayerDataBase() {
-	resetMe();
+	resetBase();
 }
 
-void LOLayerDataBase::resetMe() {
+void LOLayerDataBase::resetBase() {
 	fullid = -1;
 	flags = 0;
 	offsetX = offsetY = centerX = centerY = 0;
@@ -217,7 +217,7 @@ void LOLayerData::SetNewFile(LOShareBaseTexture &base) {
 //释放图层数据并打上delete标记
 void LOLayerData::SetDelete() {
 	flags |= FLAGS_DELETE;
-	resetMe();
+	resetBase();
 	fileTextName.reset();
 	maskName.reset();
 	texture.reset();

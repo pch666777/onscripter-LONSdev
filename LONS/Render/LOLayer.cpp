@@ -25,6 +25,18 @@ LOLayer::LOLayer(SysLayerType lyrType) {
 	BaseNew(lyrType);
 }
 
+LOLayer::LOLayer(int fullid) {
+	int lyrType;
+	int ids[3];
+	GetTypeAndIds(&lyrType, ids, fullid);
+	BaseNew((SysLayerType)lyrType);
+	memcpy(id, ids, 3 * 4);
+	curInfo.reset(new LOLayerData());
+	bakInfo.reset(new LOLayerData());
+	curInfo->fullid = fullid;
+	bakInfo->fullid = fullid;
+}
+
 LOLayer::LOLayer(LOLayerData &data, bool islink) {
 	int lyrType = GetIDs(data.fullid, IDS_LAYER_TYPE);
 	BaseNew((SysLayerType)lyrType);
@@ -43,6 +55,17 @@ LOLayer::~LOLayer() {
 		}
 		childs->clear();
 	}
+}
+
+void LOLayer::releaseForce() {
+	curInfo->SetDelete();
+	if (bakInfo->isDelete()) NoUseLayer(this);
+	//int vv = sizeof(LOLayerData);
+}
+
+void LOLayer::releaseBack() {
+	bakInfo->SetDelete();
+	if (curInfo->isDelete()) NoUseLayer(this);
 }
 
 /*
@@ -659,6 +682,12 @@ void LOLayer::unSetBtndefAll() {
 	if (childs) {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->unSetBtndefAll();
 	}
+}
+
+
+//删除图层，这里留了一个接口
+void LOLayer::NoUseLayer(LOLayer *lyr) {
+	delete lyr;
 }
 
 

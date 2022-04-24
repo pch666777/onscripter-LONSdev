@@ -43,7 +43,7 @@ extern void GetTypeAndIds(int *type, int *ids, int fullid);
 class LOLayerDataBase {
 public:
 	LOLayerDataBase();
-	void resetMe();
+	void resetBase();
 
 	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
 	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
@@ -114,6 +114,11 @@ public:
 		FLAGS_LONGCLICK = 0x800,
 		//响应悬停
 		FLAGS_MOUSEMOVE = 0x1000,
+		//释放时，只有前台和后台同时处于不适用状态才会删除
+		//是否处于前台
+		//FLAGS_ISFORCE = 0x2000,
+		//是否处于后台
+		//FLAGS_ISBACK = 0x4000,
 	};
 
 

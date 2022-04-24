@@ -65,10 +65,10 @@ public:
 	class PrintNameMap{
 	public:
 		std::string *mapName = nullptr;
-		std::map<int, LOLayerData*> *map = nullptr;
+		std::map<int, LOLayer*> *map = nullptr;
 		PrintNameMap(const char *fn) {
 			mapName = new std::string(fn);
-			map = new std::map<int, LOLayerData*>;
+			map = new std::map<int, LOLayer*>;
 		}
 		~PrintNameMap() {
 			delete mapName;
