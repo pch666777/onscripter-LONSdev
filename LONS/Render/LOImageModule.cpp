@@ -1376,6 +1376,19 @@ LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 }
 
 
+//读信息时使用
+LOLayerData* LOImageModule::GetInfoLayerData(int fullid, const char *printName) {
+	LOLayerData *data = GetLayerData(fullid, printName);
+	if (data && !data->isNewFile()) {
+		LOLayer *lyr = LOLayer::FindViewLayer(fullid, false);
+		//按理说有后台肯定有前台
+		if (!lyr) return nullptr;
+		else return lyr->curInfo.get();
+	}
+	return data;
+}
+
+
 LOLayerData* LOImageModule::GetOrCreateLayerData(int fullid, const char *printName) {
 	LOLayerData *data = GetLayerData(fullid, printName);
 	if (!data) data = CreateLayerData(fullid, printName);

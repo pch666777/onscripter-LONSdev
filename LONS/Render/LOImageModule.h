@@ -118,6 +118,8 @@ public:
 	LOLayerData* CreateLayerData(int fullid, const char *printName);
 	LOLayerData* GetOrCreateLayerData(int fullid, const char *printName);
 	LOLayerData* GetLayerData(int fullid, const char *printName);
+	//要读取数据，因此获取图层信息时，没有新文件则取前台，否则取后台
+	LOLayerData* GetInfoLayerData(int fullid, const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
@@ -184,7 +186,7 @@ public:
 	int getspsizeCommand(FunctionInterface *reader);
 	int getspposCommand(FunctionInterface *reader);
 	int vspCommand(FunctionInterface *reader);
-	void VspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name, int vals);
+	void VspCore(int fullid, const char *print_name, int vals);
 	int allspCommand(FunctionInterface *reader);
 	int windowbackCommand(FunctionInterface *reader);
 	int lsp2Command(FunctionInterface *reader);

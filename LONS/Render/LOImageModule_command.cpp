@@ -379,12 +379,8 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	int ww, hh, cell;
 	ww = hh = 0;
 	cell = 0;
-	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
-	if (data) {
-		if (data->texture) {
-
-		}
-	}
+	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	if (data) data->GetSize(&ww, &hh, &cell);
 	v1->SetValue((double)ww);
 	v2->SetValue((double)hh);
 	if (v3) v3->SetValue((double)cell);
@@ -393,93 +389,80 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::getspposCommand(FunctionInterface *reader) {
-	/*
-	int ids[] = { reader->GetParamInt(0), 255, 255 };
-	int xx, yy;
-	xx = yy = 0;
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
+	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	int xx = 0;
+	int yy = 0;
 	ONSVariableRef *v1 = reader->GetParamRef(1);
 	ONSVariableRef *v2 = reader->GetParamRef(2);
-	LOLayerInfo *info = NULL;
-	info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	if (info) {
-		xx = info->offsetX;
-		yy = info->offsetY;
-		delete info;
+	if (data) {
+		v1->SetValue((double)data->offsetX);
+		v2->SetValue((double)data->offsetY);
 	}
-
-	v1->SetValue((double)xx);
-	v2->SetValue((double)yy);
-	*/
+	else {
+		v1->SetValue(0.0);
+		v2->SetValue(0.0);
+	}
 	return RET_CONTINUE;
 }
 
 int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
-	/*
-	int ids[] = { reader->GetParamInt(0), 255, 255 };
-	double val = 0.0;
-	LOLayerInfo *info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	if (info) {
-		val = info->alpha;
-		if (val < 0 || val > 255) val = 255;
-		delete info;
-	}
-
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
+	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
 	ONSVariableRef *v = reader->GetParamRef(1);
+	double val = 0.0;
+	if (data) {
+		val = data->alpha;
+		if (val < 0.0 || val > 255.0) val = 255.0;
+	}
 	v->SetValue(val);
-	*/
 	return RET_CONTINUE;
 }
 
 int LOImageModule::getspposexCommand(FunctionInterface *reader) {
-	/*
+
 	ONSVariableRef *v[5];
 	double val[5];
-	int ids[] = { reader->GetParamInt(0), 255,255 };
 	for (int ii = 0; ii < 5; ii++) {
 		if (ii < reader->GetParamCount()) v[ii] = reader->GetParamRef(ii + 1);
 		else v[ii] = NULL;
 		val[ii] = 0.0;
 	}
-
 	val[2] = val[3] = 100.0;
-	LOLayerInfo *info = NULL;
-	if(reader->isName("getspposex")) info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	else info = LayerInfomation(LOLayer::LAYER_SPRINTEX, ids, reader->GetPrintName());
 
-	if (info) {
-		val[0] = info->offsetX;
-		val[1] = info->offsetY;
-		val[2] = info->scaleX * 100;
-		val[3] = info->scaleY * 100;
-		val[4] = info->rotate;
+	int lyrType = LOLayer::LAYER_SPRINT;
+	if (reader->isName("getspposex2")) lyrType = LOLayer::LAYER_SPRINTEX;
+	int fullid = GetFullID(lyrType, reader->GetParamInt(0), 255, 255);
+	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+
+	if (data) {
+		val[0] = data->offsetX;
+		val[1] = data->offsetY;
+		val[2] = data->scaleX * 100;
+		val[3] = data->scaleY * 100;
+		val[4] = data->rotate;
 	}
 
 	for (int ii = 0; ii < 5; ii++) {
 		if (v[ii]) v[ii]->SetValue(val[ii]);
 	}
-	*/
+
 	return RET_CONTINUE;
 }
 
 int LOImageModule::vspCommand(FunctionInterface *reader) {
-	int ids[] = { reader->GetParamInt(0), 255,255 };
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("vsp2")) sptype = LOLayer::LAYER_SPRINTEX;
 
 	LeveTextDisplayMode();
 
-	VspCore(sptype, ids, reader->GetPrintName(), reader->GetParamInt(1));
+	VspCore(GetFullID(sptype, reader->GetParamInt(0), 255,255), reader->GetPrintName(), reader->GetParamInt(1));
 	return RET_CONTINUE;
 }
 
-void LOImageModule::VspCore(LOLayer::SysLayerType sptype, int *cid, const char *print_name, int vals) {
-	/*
-	
-	LOLayerInfo *info = GetInfoLayerAvailable(GetFullID(sptype, cid), print_name);
-	if (info) {
-		info->SetVisable(vals);
-	}
-	*/
+void LOImageModule::VspCore(int fullid, const char *print_name, int vals) {
+	LOLayerData *data = GetLayerData(fullid, print_name);
+	if (data) data->SetVisable(vals);
 }
 
 

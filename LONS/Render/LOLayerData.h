@@ -187,6 +187,7 @@ public:
 	void SetDelete();
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
+	void GetSize(int *xx, int *yy, int *cell);
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();

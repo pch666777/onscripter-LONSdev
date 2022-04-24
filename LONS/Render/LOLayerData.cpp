@@ -290,6 +290,30 @@ void LOLayerData::FirstSNC() {
 }
 
 
+void LOLayerData::GetSize(int *xx, int *yy, int *cell) {
+	if (showType & SHOW_RECT) {
+		if (xx) *xx = showWidth;
+		if (yy) *yy = showHeight;
+	}
+	else if (texture) {
+		if (xx) *xx = texture->baseW();
+		if (yy) *yy = texture->baseH();
+	}
+	else {
+		if (xx) *xx = 0;
+		if (yy) *yy = 0;
+	}
+
+	if (cell) {
+		*cell = 1;
+		LOActionNS *ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
+		if (ac) {
+			*cell = ac->cellCount;
+		}
+	}
+}
+
+
 //void LOLayerData::upData(LOLayerData *data) {
 //	LOLayerDataBase *dst = (LOLayerDataBase*)this;
 //	LOLayerDataBase *src = (LOLayerDataBase*)data;

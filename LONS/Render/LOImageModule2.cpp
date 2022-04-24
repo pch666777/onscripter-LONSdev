@@ -90,11 +90,15 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 				if (data->isDelete()) {
 					if (lyr) delete lyr;
+					//后台数据同时删除
+					delete data;
 				}
 				else if (data->isNewFile()) {
 					//新建图层前直接删除原有的图层，这样更干净
 					if (lyr) delete lyr;
 					lyr = new LOLayer(*data, true);
+					//去除新文件标记，这样之后就能通过此标记确定是否已经重新lsp了
+					data->flags &= (~LOLayerData::FLAGS_NEWFILE);
 				}
 				else {
 					//只更新信息的图层
