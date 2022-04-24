@@ -116,9 +116,7 @@ public:
 		FLAGS_MOUSEMOVE = 0x1000,
 		//释放时，只有前台和后台同时处于不适用状态才会删除
 		//是否处于前台
-		//FLAGS_ISFORCE = 0x2000,
-		//是否处于后台
-		//FLAGS_ISBACK = 0x4000,
+		FLAGS_ISFORCE = 0x2000,
 	};
 
 
@@ -164,18 +162,19 @@ public:
 	//动作组
 	std::unique_ptr<std::vector<LOShareAction>> actions; 
 
-	bool isShowScale() { return showType & SHOW_SCALE; }
-	bool isShowRotate() { return showType & SHOW_ROTATE; }
-	bool isShowRect() { return showType & SHOW_RECT; }
-	bool isVisiable() { return flags & FLAGS_VISIABLE; }
-	bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
-	bool isCache() { return flags & FLAGS_USECACHE; }
-	bool isDelete() { return flags & FLAGS_DELETE; }
-	bool isNewFile() { return flags & FLAGS_NEWFILE; }
-	bool isUpData() { return flags & FLAGS_UPDATA; }
-	bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
-	bool isBtndef() { return flags & FLAGS_BTNDEF; }
-	bool isActive() { return flags & FLAGS_ACTIVE; }
+	inline bool isShowScale() { return showType & SHOW_SCALE; }
+	inline bool isShowRotate() { return showType & SHOW_ROTATE; }
+	inline bool isShowRect() { return showType & SHOW_RECT; }
+	inline bool isVisiable() { return flags & FLAGS_VISIABLE; }
+	inline bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
+	inline bool isCache() { return flags & FLAGS_USECACHE; }
+	inline bool isDelete() { return flags & FLAGS_DELETE; }
+	inline bool isNewFile() { return flags & FLAGS_NEWFILE; }
+	inline bool isUpData() { return flags & FLAGS_UPDATA; }
+	inline bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
+	inline bool isBtndef() { return flags & FLAGS_BTNDEF; }
+	inline bool isActive() { return flags & FLAGS_ACTIVE; }
+	inline bool isForce() { return flags & FLAGS_ISFORCE; }
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();

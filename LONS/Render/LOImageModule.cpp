@@ -882,7 +882,7 @@ void LOImageModule::ClearBtndef(const char *printName) {
 	CspCore(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, LOLayer::IDEX_NSSYS_BTN, printName);
 	for (auto iter = list->begin(); iter != list->end(); iter++) {
 		//去除按钮定义
-		iter->second->unSetBtndef();
+		//iter->second->unSetBtndef();
 	}
 	SDL_UnlockMutex(layerDataMutex);
 
@@ -973,7 +973,7 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 			base = TextureFromFile(info);
 			break;
 		case LOtexture::TEX_COLOR_AREA:
-			//tx = TextureFromColor(info);
+			base = TextureFromColor(info);
 			break;
 		case LOtexture::TEX_EMPTY:
 			base = TextureFromEmpty(info);
@@ -1066,9 +1066,10 @@ LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerInfo*info, LOString *s
 	}
 	return base;
 }
-
+*/
 //从标记中生成色块
-LOtextureBase* LOImageModule::TextureFromColor(LOLayerInfo *info) {
+LOShareBaseTexture LOImageModule::TextureFromColor(LOLayerData *info) {
+	/*
 	LOString *s = info->fileName;
 	const char *buf = s->SkipSpace(s->c_str());
 
@@ -1086,10 +1087,10 @@ LOtextureBase* LOImageModule::TextureFromColor(LOLayerInfo *info) {
 	cc->r = (color >> 16) & 0xff;
 	cc->g = (color >> 8) & 0xff;
 	cc->b = color & 0xff;
-
-	return new LOtextureBase(surface);
+	*/
+	return ;
 }
-
+/*
 LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 	LOtextureBase *base = nullptr;
 	return base;
@@ -1354,24 +1355,27 @@ LOLayer* LOImageModule::FindLayerInBtnQuePosition(int x, int y) {
 	return nullptr;
 }
 
-
+//决定图层是否删除只在 exportque ，因此函数是安全的
 LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
-	auto *ac = new LOLayerData();
-	ac->fullid = fullid;
+	LOLayer *lyr = nullptr;
 	//检查是否已经有对象，有的话释放掉原来的
 	auto *map = GetPrintNameMap(printName)->map;
 	auto iter = map->find(fullid);
-	if (iter != map->end()) iter->second->SetDelete();
-	SDL_LockMutex(layerDataMutex);
-	(*map)[fullid] = ac;
-	SDL_UnlockMutex(layerDataMutex);
-	return ac;
+	if (iter != map->end()) lyr = iter->second;
+	else lyr = LOLayer::CreateLayer(fullid);
+	lyr->bakInfo->SetDelete();
+
+	//SDL_LockMutex(layerDataMutex);
+	//(*map)[fullid] = ac;
+	//SDL_UnlockMutex(layerDataMutex);
+	(*map)[fullid] = lyr;
+	return lyr->bakInfo.get();
 }
 
 LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 	auto *map = GetPrintNameMap(printName)->map;
 	auto iter = map->find(fullid);
-	if (iter != map->end()) return iter->second;
+	if (iter != map->end()) return iter->second->bakInfo.get();
 	return nullptr;
 }
 
@@ -1379,13 +1383,10 @@ LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 //读信息时使用
 LOLayerData* LOImageModule::GetInfoLayerData(int fullid, const char *printName) {
 	LOLayerData *data = GetLayerData(fullid, printName);
-	if (data && !data->isNewFile()) {
-		LOLayer *lyr = LOLayer::FindViewLayer(fullid, false);
-		//按理说有后台肯定有前台
-		if (!lyr) return nullptr;
-		else return lyr->curInfo.get();
-	}
-	return data;
+	if (data && data->isNewFile()) return data;
+	LOLayer *lyr = LOLayer::FindViewLayer(fullid, false);
+	if (lyr) return lyr->curInfo.get();
+	return nullptr;
 }
 
 

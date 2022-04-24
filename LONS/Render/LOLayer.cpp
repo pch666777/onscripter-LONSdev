@@ -1,9 +1,10 @@
 #include "LOLayer.h"
 
 LOLayer G_baseLayer[LOLayer::LAYER_BASE_COUNT];
-
-
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
+
+//所有的图层都存储在这
+std::map<int, LOLayer*> layerCenter;
 
 void LOLayer::BaseNew(SysLayerType lyrType) {
 	id[0] = -1;
@@ -176,6 +177,9 @@ bool LOLayer::isPositionInsideMe(int x, int y) {
 
 	return false;
 }
+
+
+
 
 
 
@@ -687,7 +691,23 @@ void LOLayer::unSetBtndefAll() {
 
 //删除图层，这里留了一个接口
 void LOLayer::NoUseLayer(LOLayer *lyr) {
+	int fullid = GetFullID(lyr->layerType, lyr->id);
+	layerCenter.erase(fullid);
 	delete lyr;
+}
+
+LOLayer* LOLayer::CreateLayer(int fullid) {
+	auto iter = layerCenter.find(fullid);
+	if (iter != layerCenter.end()) return iter->second;
+	LOLayer *lyr = new LOLayer(fullid);
+	layerCenter[fullid] = lyr;
+	return lyr;
+}
+
+LOLayer* LOLayer::GetLayer(int fullid) {
+	auto iter = layerCenter.find(fullid);
+	if (iter != layerCenter.end()) return iter->second;
+	return nullptr;
 }
 
 

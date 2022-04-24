@@ -5,7 +5,7 @@
 #include "LOImageModule.h"
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 184968) {
+	//if (reader->GetCurrentLine() == 389) {
 	//	int debugbreak = 1;
 	//}
 	bool visiable = !reader->isName("lsph");
@@ -162,15 +162,27 @@ int LOImageModule::cspCommand(FunctionInterface *reader) {
 
 //fullid为-1时清除全部print_name队列
 void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *print_name) {
-	auto *map = GetPrintNameMap(print_name)->map;
-	if (map->size() == 0) return;
+	//生成fullid列表
+	int *list = new int[endid - fromid + 1];
+	for (int ii = fromid; ii <= endid; ii++) list[ii] = GetFullID(layerType, ii, 255, 255);
 
+	//删除后台
+	auto *map = GetPrintNameMap(print_name)->map;
 	for (int ii = fromid; ii <= endid; ii++) {
-		int fullid = GetFullID(layerType, ii, 255, 255);
-		auto iter = map->find(fullid);
-		//layerdata在print同步时才删除
-		if (iter != map->end()) iter->second->SetDelete();
+		auto iter = map->find(list[ii]);
+		if (iter != map->end()) iter->second->bakInfo->SetDelete();
 	}
+
+	//删除前台
+	for (int ii = fromid; ii <= endid; ii++) {
+		LOLayer *lyr = LOLayer::GetLayer(list[ii]);
+		if (lyr && lyr->curInfo->isForce()) {
+			lyr->bakInfo->SetDelete();
+			(*map)[list[ii]] = lyr;
+		}
+	}
+	//统一的释放layer在print同步
+	delete[] list;
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
@@ -369,7 +381,6 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 423) {
 	//	int debugbreak = 1;
 	//}
-	
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	ONSVariableRef *v1 = reader->GetParamRef(1);
 	ONSVariableRef *v2 = reader->GetParamRef(2);

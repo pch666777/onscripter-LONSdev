@@ -276,7 +276,7 @@ private:
 	void FreeFps();
 	LOShareBaseTexture TextureFromFile(LOLayerData *info);
 	LOShareBaseTexture TextureFromEmpty(LOLayerData *info);
-	//LOtextureBase* TextureFromColor(LOLayerInfo *info);
+	LOShareBaseTexture TextureFromColor(LOLayerData *info);
 	//LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 

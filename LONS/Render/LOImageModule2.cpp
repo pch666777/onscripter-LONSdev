@@ -74,7 +74,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
 		for (auto iter = map->begin(); iter != map->end();) {
-			LOLayerData *data = iter->second;
+			LOLayerData *data = iter->second->bakInfo.get();
 			//检查是不是现在要处理的
 			bool isnow = false;
 			if (level < 3 && GetIDs(data->fullid, level) >= G_maxLayerCount[level]) isnow = true;
@@ -83,8 +83,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 			////////
 			if (isnow) {
-				//指向下一个
-				iter = map->erase(iter);
 
 				LOLayer *lyr = LOLayer::FindViewLayer(data->fullid, data->isDelete() || data->isNewFile());
 
@@ -107,6 +105,10 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 						if (data->isUpDataEx()) lyr->upDataEx(data);
 					}
 				}
+
+				//指向下一个
+				delete iter->second;
+				iter = map->erase(iter);
 			}
 			else iter++;
 

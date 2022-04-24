@@ -153,6 +153,8 @@ public:
 	//static LOLayer* GetExpectFather(int lyrType, int *ids);
 	static LOLayer* FindViewLayer(int fullid, bool isRemove);
 	static void NoUseLayer(LOLayer *lyr);
+	static LOLayer* CreateLayer(int fullid);
+	static LOLayer* GetLayer(int fullid);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 
