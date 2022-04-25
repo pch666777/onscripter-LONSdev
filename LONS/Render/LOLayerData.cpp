@@ -206,7 +206,7 @@ void LOLayerData::SetTextureType(int dt) {
 }
 
 void LOLayerData::SetNewFile(LOShareBaseTexture &base) {
-	texture.reset(new LOtexture(base));
+	if(base) texture.reset(new LOtexture(base));
 	flags |= FLAGS_NEWFILE;
 	flags |= FLAGS_UPDATA;
 	flags |= FLAGS_UPDATAEX;
@@ -216,12 +216,12 @@ void LOLayerData::SetNewFile(LOShareBaseTexture &base) {
 
 //释放图层数据并打上delete标记
 void LOLayerData::SetDelete() {
-	flags |= FLAGS_DELETE;
 	resetBase();
 	fileTextName.reset();
 	maskName.reset();
 	texture.reset();
 	if (actions) actions->clear();
+	flags |= FLAGS_DELETE;
 }
 
 

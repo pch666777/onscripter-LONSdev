@@ -38,36 +38,35 @@ LOLayer::LOLayer(int fullid) {
 	bakInfo->fullid = fullid;
 }
 
-LOLayer::LOLayer(LOLayerData &data, bool islink) {
-	int lyrType = GetIDs(data.fullid, IDS_LAYER_TYPE);
-	BaseNew((SysLayerType)lyrType);
-	curInfo.reset(new LOLayerData(data));
-	GetTypeAndIds(nullptr, id, curInfo->fullid);
-	//挂到父对象的层级
-	if (islink && !rootLyr->InserChild(this)) LOLog_e("new LOLayer() no father:%d,%d,%d", id[0], id[1], id[2]);
-}
 
 LOLayer::~LOLayer() {
-	//释放子对象
+	if(curInfo) curInfo->SetDelete();
+	if(bakInfo) bakInfo->SetDelete();
+	//与parent解除关系
+	if (parent && parent->childs) parent->RemodeChild(GetSelfChildID());
+	//与子对象解除关系
 	if (childs) {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
 			LOLayer *layer = iter->second;
-			delete layer;
+			layer->parent = nullptr;
+			//如果子图层不是新的对象，那么直接移除
+			if (!layer->bakInfo->isNewFile()) NoUseLayer(layer);
 		}
 		childs->clear();
 	}
 }
 
-void LOLayer::releaseForce() {
-	curInfo->SetDelete();
-	if (bakInfo->isDelete()) NoUseLayer(this);
-	//int vv = sizeof(LOLayerData);
-}
 
-void LOLayer::releaseBack() {
-	bakInfo->SetDelete();
-	if (curInfo->isDelete()) NoUseLayer(this);
-}
+//void LOLayer::releaseForce() {
+//	curInfo->SetDelete();
+//	if (bakInfo->isDelete()) NoUseLayer(this);
+//	//int vv = sizeof(LOLayerData);
+//}
+//
+//void LOLayer::releaseBack() {
+//	bakInfo->SetDelete();
+//	if (curInfo->isDelete()) NoUseLayer(this);
+//}
 
 /*
 LOLayer* LOLayer::GetExpectFather(int lyrType, int *ids) {
@@ -88,21 +87,25 @@ bool LOLayer::isMaxBorder(int index, int val) {
 }
 
 //注意这个函数只应该 layer->Root->InserChild()这样调用
-bool LOLayer::InserChild(LOLayer *layer) {
-	int ids[3];
-	int index;
-
-	GetTypeAndIds(nullptr, ids, layer->curInfo->fullid);
-	LOLayer *father = DescentFather(this, &index, ids);
-	if (!father) return false;
-	return father->InserChild(ids[index], layer);
-}
+//bool LOLayer::InserChild(LOLayer *layer) {
+//	int ids[3];
+//	int index;
+//
+//	GetTypeAndIds(nullptr, ids, layer->curInfo->fullid);
+//	LOLayer *father = DescentFather(this, &index, ids);
+//	if (!father) return false;
+//	return father->InserChild(ids[index], layer);
+//}
 
 //插入子对象，注意，直接根据id插入
 bool LOLayer::InserChild(int cid, LOLayer *layer) {
 	if(!childs) childs = new std::map<int, LOLayer*>();
 	auto iter = childs->find(cid);
-	if (iter != childs->end()) return false;
+	if (iter != childs->end()) {
+		//不是同一个对象
+		if (layer != iter->second) return false;
+		layer->parent = this;
+	}
 	(*childs)[cid] = layer;
 	layer->parent = this;
 	return true;
@@ -125,12 +128,12 @@ LOLayer* LOLayer::DescentFather(LOLayer *father, int *index, const int *ids) {
 }
 
 //删除不在这里，这个方法只应该从 layer->Root调用
-LOLayer* LOLayer::RemodeChild(int *cids) {
-	int index;
-	LOLayer *father = DescentFather(this, &index, cids);
-	if (father && father->childs) return RemodeChild(cids[index]);
-	return nullptr;
-}
+//LOLayer* LOLayer::RemodeChild(int *cids) {
+//	int index;
+//	LOLayer *father = DescentFather(this, &index, cids);
+//	if (father && father->childs) return RemodeChild(cids[index]);
+//	return nullptr;
+//}
 
 LOLayer* LOLayer::RemodeChild(int cid) {
 	if (childs) {
@@ -146,12 +149,12 @@ LOLayer* LOLayer::RemodeChild(int cid) {
 
 
 //这个方法只应该从根对象调用
-LOLayer *LOLayer::FindChild(const int *cids) {
-	int index;
-	LOLayer *father = DescentFather(this, &index, cids);
-	if (!father) return nullptr;
-	return father->FindChild(cids[index]);
-}
+//LOLayer *LOLayer::FindChild(const int *cids) {
+//	int index;
+//	LOLayer *father = DescentFather(this, &index, cids);
+//	if (!father) return nullptr;
+//	return father->FindChild(cids[index]);
+//}
 
 
 
@@ -295,7 +298,7 @@ bool LOLayer::isChildVisible() {
 	return curInfo->isChildVisiable();
 }
 
-void LOLayer::upData(LOLayerData *data) {
+void LOLayer::upDataBase(LOLayerData *data) {
 	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
 	LOLayerDataBase *src = (LOLayerDataBase*)data;
 	*dst = *src;
@@ -307,6 +310,30 @@ void LOLayer::upDataEx(LOLayerData *data) {
 	else curInfo->maskName.reset();
 	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
 	else curInfo->actions.reset();
+}
+
+
+void LOLayer::upDataNewFile() {
+	curInfo->SetDelete();
+	upDataBase(bakInfo.get());
+	upDataEx(bakInfo.get());
+	//有部分需要手动的
+	curInfo->fileTextName.reset(new LOString(*bakInfo->fileTextName.get()));
+	curInfo->texture = bakInfo->texture;
+
+	//在前台显示了
+	curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
+	//后台数据要去掉newfile
+	bakInfo->flags &= (~LOLayerData::FLAGS_NEWFILE);
+	LOLayer::LinkLayerLeve(this);
+}
+
+void LOLayer::upData() {
+	if (bakInfo->isUpData()) upDataBase(bakInfo.get());
+	if (bakInfo->isUpDataEx()) upDataEx(bakInfo.get());
+	//在前台显示了
+	curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
+	//LOLayer::LinkLayerLeve(this);
 }
 
 void LOLayer::ShowMe(SDL_Renderer *render) {
@@ -697,11 +724,17 @@ void LOLayer::NoUseLayer(LOLayer *lyr) {
 }
 
 LOLayer* LOLayer::CreateLayer(int fullid) {
-	auto iter = layerCenter.find(fullid);
-	if (iter != layerCenter.end()) return iter->second;
-	LOLayer *lyr = new LOLayer(fullid);
+	LOLayer *lyr = FindLayerInCenter(fullid);
+	if (lyr) return lyr;
+	lyr = new LOLayer(fullid);
 	layerCenter[fullid] = lyr;
 	return lyr;
+}
+
+LOLayer* LOLayer::FindLayerInCenter(int fullid) {
+	auto iter = layerCenter.find(fullid);
+	if (iter != layerCenter.end()) return iter->second;
+	return nullptr;
 }
 
 LOLayer* LOLayer::GetLayer(int fullid) {
@@ -710,6 +743,29 @@ LOLayer* LOLayer::GetLayer(int fullid) {
 	return nullptr;
 }
 
+//将图层挂载到图层组上
+LOLayer* LOLayer::LinkLayerLeve(LOLayer *lyr) {
+	int fullid = GetFullID(lyr->layerType, lyr->id);
+	int index = 0;
+	LOLayer *father = DescentFather(lyr->rootLyr, &index, lyr->id);
+	if (!father) {
+		LOLog_e("LOLayer::LinkLayerLeve() faild! no father!");
+		return nullptr;
+	}
+	if (!father->InserChild(lyr->id[index], lyr)) {
+		LOLog_e("LOLayer::InserChild() faild! There is already another object:%d", lyr->id[index]);
+		return nullptr;
+	}
+	return father;
+}
+
+
+//获取自身相对于parent的ID值
+int LOLayer::GetSelfChildID() {
+	if (id[1] == G_maxLayerCount[1]) return id[0];
+	if (id[2] == G_maxLayerCount[1]) return id[1];
+	return id[2];
+}
 
 
 ////只有被改变才返回真

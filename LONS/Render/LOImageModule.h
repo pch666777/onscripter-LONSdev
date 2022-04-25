@@ -110,16 +110,21 @@ public:
 	void ClearBtndef(const char *printName);
 	//const char* NewSysBtndef();
 
-	LOLayer* FindLayerInBtnQuePosition(int x, int y);
-	LOLayer* FindLayerInBase(LOLayer::SysLayerType type, const int *ids);
-	LOLayer* FindLayerInBase(int fullid);
+	//LOLayer* FindLayerInBtnQuePosition(int x, int y);
+	//LOLayer* FindLayerInBase(LOLayer::SysLayerType type, const int *ids);
+	//LOLayer* FindLayerInBase(int fullid);
+	
 
 	//新建一个图层数据
-	LOLayerData* CreateLayerData(int fullid, const char *printName);
-	LOLayerData* GetOrCreateLayerData(int fullid, const char *printName);
-	LOLayerData* GetLayerData(int fullid, const char *printName);
-	//要读取数据，因此获取图层信息时，没有新文件则取前台，否则取后台
-	LOLayerData* GetInfoLayerData(int fullid, const char *printName);
+	//LOLayerData* CreateLayerData(int fullid, const char *printName);
+	//LOLayerData* GetOrCreateLayerData(int fullid, const char *printName);
+	//LOLayerData* GetLayerData(int fullid, const char *printName);
+	////要读取数据，因此获取图层信息时，没有新文件则取前台，否则取后台
+	//LOLayerData* GetInfoLayerData(int fullid, const char *printName);
+
+	LOLayerData* CreateNewLayerData(int fullid, const char *printName);
+	LOLayerData* CreateLayerBakData(int fullid, const char *printName);
+	LOLayerData* GetLayerInfoData(int fullid, const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);

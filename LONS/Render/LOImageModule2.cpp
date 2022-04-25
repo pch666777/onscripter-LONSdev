@@ -74,40 +74,27 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
 		for (auto iter = map->begin(); iter != map->end();) {
-			LOLayerData *data = iter->second->bakInfo.get();
+			LOLayer *lyr = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
-			if (level < 3 && GetIDs(data->fullid, level) >= G_maxLayerCount[level]) isnow = true;
+			if (level < 3 && lyr->id[level] >= G_maxLayerCount[level]) isnow = true;
 			else if (level >= 3) isnow = true;
 			else isnow = false;
 
 			////////
 			if (isnow) {
-
-				LOLayer *lyr = LOLayer::FindViewLayer(data->fullid, data->isDelete() || data->isNewFile());
-
-				if (data->isDelete()) {
-					if (lyr) delete lyr;
-					//后台数据同时删除
-					delete data;
+				if (lyr->bakInfo->isDelete()) {
+					LOLayer::NoUseLayer(lyr);
 				}
-				else if (data->isNewFile()) {
-					//新建图层前直接删除原有的图层，这样更干净
-					if (lyr) delete lyr;
-					lyr = new LOLayer(*data, true);
-					//去除新文件标记，这样之后就能通过此标记确定是否已经重新lsp了
-					data->flags &= (~LOLayerData::FLAGS_NEWFILE);
+				else if (lyr->bakInfo->isNewFile()) {
+					lyr->upDataNewFile();
 				}
 				else {
 					//只更新信息的图层
-					if (lyr) {
-						if (data->isUpData()) lyr->upData(data);
-						if (data->isUpDataEx()) lyr->upDataEx(data);
-					}
+					lyr->upData();
 				}
 
 				//指向下一个
-				delete iter->second;
 				iter = map->erase(iter);
 			}
 			else iter++;
@@ -256,14 +243,14 @@ void LOImageModule::ClearDialogText(char flag) {
 //立即完成对话文字
 void LOImageModule::CutDialogueAction() {
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	LOLayer *layer = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
-	if (layer) {
-		//LOAnimation *aib = layer->GetAnimation(LOAnimation::ANIM_TEXT);
-		//if (aib) {
-		//	LOAnimationText *ai = (LOAnimationText*)(aib);
-		//	layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
-		//}
-	}
+	//LOLayer *layer = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
+	//if (layer) {
+	//	//LOAnimation *aib = layer->GetAnimation(LOAnimation::ANIM_TEXT);
+	//	//if (aib) {
+	//	//	LOAnimationText *ai = (LOAnimationText*)(aib);
+	//	//	layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
+	//	//}
+	//}
 }
 
 
@@ -349,8 +336,9 @@ int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
 	return LOEventHook::RUNFUNC_FINISH;
 }
 
-void LOImageModule::RunExbtnStr(LOString *s) {
 
+void LOImageModule::RunExbtnStr(LOString *s) {
+	/*
 	const char *obuf, *buf;
 	obuf = buf = s->c_str();
 	int maxlen = s->length();
@@ -361,8 +349,8 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 		if (cc == 'C') {  //隐藏
 			buf++;
 			int ids[] = {s->GetInt(buf) ,255,255 };
-			LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
-			if (lyr)  lyr->curInfo->SetVisable(0);
+			//LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
+			//if (lyr)  lyr->curInfo->SetVisable(0);
 		}
 		else if (cc == 'P') {   //显示
 			buf++;
@@ -407,6 +395,7 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			return;
 		}
 	}
+	*/
 }
 
 

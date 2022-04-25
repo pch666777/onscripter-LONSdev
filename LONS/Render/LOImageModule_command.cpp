@@ -5,9 +5,9 @@
 #include "LOImageModule.h"
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 389) {
-	//	int debugbreak = 1;
-	//}
+	if (reader->GetCurrentLine() == 386) {
+		int debugbreak = 1;
+	}
 	bool visiable = !reader->isName("lsph");
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	int fixpos = 0;
@@ -30,7 +30,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 
 	//已经在队列里的需要释放
 	//
-	LOLayerData* info = CreateLayerData(fullid, reader->GetPrintName());
+	LOLayerData* info = CreateNewLayerData(fullid, reader->GetPrintName());
 	loadSpCore(info, tag, xx, yy, alpha);
 	info->SetVisable(visiable);
 	return RET_CONTINUE;
@@ -162,27 +162,11 @@ int LOImageModule::cspCommand(FunctionInterface *reader) {
 
 //fullid为-1时清除全部print_name队列
 void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *print_name) {
-	//生成fullid列表
-	int *list = new int[endid - fromid + 1];
-	for (int ii = fromid; ii <= endid; ii++) list[ii] = GetFullID(layerType, ii, 255, 255);
-
-	//删除后台
-	auto *map = GetPrintNameMap(print_name)->map;
 	for (int ii = fromid; ii <= endid; ii++) {
-		auto iter = map->find(list[ii]);
-		if (iter != map->end()) iter->second->bakInfo->SetDelete();
+		int fullid = GetFullID(layerType, ii, 255, 255);
+		LOLayerData *data = CreateLayerBakData(fullid, print_name);
+		if (data) data->SetDelete();
 	}
-
-	//删除前台
-	for (int ii = fromid; ii <= endid; ii++) {
-		LOLayer *lyr = LOLayer::GetLayer(list[ii]);
-		if (lyr && lyr->curInfo->isForce()) {
-			lyr->bakInfo->SetDelete();
-			(*map)[list[ii]] = lyr;
-		}
-	}
-	//统一的释放layer在print同步
-	delete[] list;
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
@@ -390,7 +374,7 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	int ww, hh, cell;
 	ww = hh = 0;
 	cell = 0;
-	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
 	if (data) data->GetSize(&ww, &hh, &cell);
 	v1->SetValue((double)ww);
 	v2->SetValue((double)hh);
@@ -401,7 +385,7 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 
 int LOImageModule::getspposCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
 	int xx = 0;
 	int yy = 0;
 	ONSVariableRef *v1 = reader->GetParamRef(1);
@@ -419,7 +403,7 @@ int LOImageModule::getspposCommand(FunctionInterface *reader) {
 
 int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
 	ONSVariableRef *v = reader->GetParamRef(1);
 	double val = 0.0;
 	if (data) {
@@ -444,7 +428,7 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 	int lyrType = LOLayer::LAYER_SPRINT;
 	if (reader->isName("getspposex2")) lyrType = LOLayer::LAYER_SPRINTEX;
 	int fullid = GetFullID(lyrType, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetInfoLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
 
 	if (data) {
 		val[0] = data->offsetX;
@@ -472,7 +456,7 @@ int LOImageModule::vspCommand(FunctionInterface *reader) {
 }
 
 void LOImageModule::VspCore(int fullid, const char *print_name, int vals) {
-	LOLayerData *data = GetLayerData(fullid, print_name);
+	LOLayerData *data = CreateLayerBakData(fullid, print_name);
 	if (data) data->SetVisable(vals);
 }
 
@@ -604,7 +588,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	//btnwait对右键和没有点击任何按钮均有反应，因此准备一个空白图层位于底部，以便进行反应
 	//exbtn_d实际上就设置这空白层的btnstr
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
-	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
 	data->SetBtndef(nullptr, 0, true, true);
@@ -632,7 +616,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 
 int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (data) {
 		if(reader->GetParamCount() > 2) data->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
 		else data->SetBtndef(nullptr, reader->GetParamInt(1), true, false);
@@ -643,7 +627,7 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
-	LOLayerData *data = GetOrCreateLayerData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
 	data->SetBtndef(&reader->GetParamStr(0), 0, true, true);
 	return RET_CONTINUE;
 }
@@ -989,6 +973,7 @@ int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 	int xx, yy, hh;
 	xx = yy = hh = 0;
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
+	/*
 	LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
 	if (lyr) {
 		lyr->GetTextEndPosition(&xx, &yy, &hh);  //Relative position of text
@@ -1013,6 +998,7 @@ int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 
 	v1->SetValue((double)xx);
 	v2->SetValue((double)yy);
+	*/
 	return RET_CONTINUE;
 }
 

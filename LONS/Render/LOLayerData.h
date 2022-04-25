@@ -122,22 +122,22 @@ public:
 
 	//透明模式
 	enum {
-		//TRANS_ALPHA = 'a',
-		//TRANS_TOPLEFT = 'l',
-		//TRANS_COPY = 'c',
-		//TRANS_STRING = 's',
-		//TRANS_DIRECT = '#',
-		//TRANS_PALLETTE = '!',
-		//TRANS_TOPRIGHT = 'r',
-		//TRANS_MASK = 'm'
-		TRANS_ALPHA,
-		TRANS_TOPLEFT,
-		TRANS_COPY,
-		TRANS_STRING,
-		TRANS_DIRECT,
-		TRANS_PALLETTE,
-		TRANS_TOPRIGHT,
-		TRANS_MASK
+		TRANS_ALPHA = 'a',
+		TRANS_TOPLEFT = 'l',
+		TRANS_COPY = 'c',
+		TRANS_STRING = 's',
+		TRANS_DIRECT = '#',
+		TRANS_PALLETTE = '!',
+		TRANS_TOPRIGHT = 'r',
+		TRANS_MASK = 'm'
+		//TRANS_ALPHA,
+		//TRANS_TOPLEFT,
+		//TRANS_COPY,
+		//TRANS_STRING,
+		//TRANS_DIRECT,
+		//TRANS_PALLETTE,
+		//TRANS_TOPRIGHT,
+		//TRANS_MASK
 	};
 
 	/*

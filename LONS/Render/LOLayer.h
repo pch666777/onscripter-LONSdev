@@ -86,16 +86,13 @@ public:
 	LOLayer(SysLayerType lyrType);
 	LOLayer(int fullid);
 
-	//普通图层显然是根据后台数据创建,islink决定是否挂载都图层结构组上
-	LOLayer(LOLayerData &data, bool islink);
 	~LOLayer();
 
 	//插入一个子对象，如果子对象已经存在则失败
-	bool InserChild(LOLayer *layer);
+	//bool InserChild(LOLayer *layer);
 	bool InserChild(int cid, LOLayer *layer);
-
-	void releaseForce();
-	void releaseBack();
+	//void releaseForce();
+	//void releaseBack();
 
 	//坐标是否包含在图层内
 	bool isPositionInsideMe(int x, int y);
@@ -109,18 +106,16 @@ public:
 	//设置对象显示在某一格NS动画，并且active纹理
 	bool setActiveCell(int cell);
 
-	//查找子对象
-	LOLayer *FindChild(const int *cids);
 	LOLayer *FindChild(int cid);
-
-	//从子对象队列中移除，同时返回图层（如果有的话），自行决定是否delete
-	LOLayer* RemodeChild(int *cids);
 	LOLayer* RemodeChild(int cid);
 
 	void GetShowSrc(SDL_Rect *srcR);
 
 	//清理自身及子层的按钮定义
 	void unSetBtndefAll();
+
+	//获取自身相对于parent的ID值
+	int GetSelfChildID();
 
 	//获取本层中子图层的使用情况
 	void GetLayerUsedState(char *bin, int *ids);
@@ -138,8 +133,10 @@ public:
 	void Serialize(BinArray *sbin);
 
 	//将图层挂载到图层结构上
-	void upData(LOLayerData *data);
+	void upDataBase(LOLayerData *data);
 	void upDataEx(LOLayerData *data);
+	void upDataNewFile();
+	void upData();
 
 	//切换图层的悬停激活状态
 	//bool setActive(bool isactive);
@@ -154,7 +151,9 @@ public:
 	static LOLayer* FindViewLayer(int fullid, bool isRemove);
 	static void NoUseLayer(LOLayer *lyr);
 	static LOLayer* CreateLayer(int fullid);
+	static LOLayer* FindLayerInCenter(int fullid);
 	static LOLayer* GetLayer(int fullid);
+	static LOLayer* LinkLayerLeve(LOLayer *lyr);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 

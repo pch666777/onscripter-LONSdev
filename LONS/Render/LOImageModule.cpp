@@ -503,7 +503,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
-	LOLayerData *info = CreateLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
+	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
 	info->SetVisable(1);
@@ -536,6 +536,7 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 		int ids[] = { LOLayer::IDEX_NSSYS_EFFECT,255,255 };
 		int fullid = GetFullID(LOLayer::LAYER_NSSYS, ids);
 		
+		/*
 		LOLayer *elyr = FindLayerInBase(fullid);
 		if (elyr) {
 			if (ef->RunEffect(render, elyr->curInfo.get(), effectTex->GetFullTexture(), maskTex->GetFullTexture(), postime)) {
@@ -550,6 +551,7 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 			else return false;  //we will have next frame.
 		}
 		else return true; //maybe has some error!
+		*/
 	}
 
 	return true; //print 1
@@ -842,16 +844,16 @@ bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf
 //}
 
 
-LOLayer* LOImageModule::FindLayerInBase(LOLayer::SysLayerType type, const int *ids) {
-	return G_baseLayer[type].FindChild(ids);
-}
-
-LOLayer* LOImageModule::FindLayerInBase(int fullid) {
-	LOLayer::SysLayerType type;
-	int ids[] = { -1,-1,-1 };
-	GetTypeAndIds( (int*)(&type), ids, fullid);
-	return G_baseLayer[type].FindChild(ids);
-}
+//LOLayer* LOImageModule::FindLayerInBase(LOLayer::SysLayerType type, const int *ids) {
+//	return G_baseLayer[type].FindChild(ids);
+//}
+//
+//LOLayer* LOImageModule::FindLayerInBase(int fullid) {
+//	LOLayer::SysLayerType type;
+//	int ids[] = { -1,-1,-1 };
+//	GetTypeAndIds( (int*)(&type), ids, fullid);
+//	return G_baseLayer[type].FindChild(ids);
+//}
 
 LOLayer* LOImageModule::GetRootLayer(int fullid) {
 	int ids[3];
@@ -909,9 +911,9 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 	LOShareBaseTexture base = GetUseTextrue(info, nullptr, true);
 	//LOLog_i("base surface is %x",base->GetSurface()) ;
 	//空纹理不参与下面的设置了，以免出现问题
-	if (!base) return false ;
-
 	info->SetNewFile(base);
+	if (!base) return false;
+
 	info->SetPosition(x, y);
 	if (!info->actions) {  //没有动画则使用默认的宽高
 		info->showWidth = info->texture->baseW();
@@ -933,10 +935,8 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) {
 	//LOLog_i("info is %x",info) ;
 	LOShareBaseTexture base;
-
 	if (!info->isCache()) {
 		//唯一性纹理
-		std::unique_ptr<LOString> data = std::move(info->fileTextName);
 		info->fileTextName.reset(new LOString(LOString("c;") + LOString::RandomStr(30)));
 
 		LOtextureBase *tx = nullptr;
@@ -964,8 +964,11 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 		return base;
 	}
 	else {
-		//缓存类纹理
-		base = LOtexture::findTextureBaseFromMap( *info->fileTextName);  // new LOTexture时会自动增加base
+		//透明模式对纹理是有影响的，要将这个考虑在内
+		char cc[3] = {info->alphaMode , ';', 0};
+		std::unique_ptr<LOString> tstr(new LOString(cc));
+		tstr->append(*info->fileTextName);
+		base = LOtexture::findTextureBaseFromMap( *tstr );  // new LOTexture时会自动增加base
 		//有效
 		if (base) return base;
 		switch (info->texType) {
@@ -982,6 +985,9 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 			LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
 			break;
 		}
+
+		info->fileTextName = std::move(tstr);
+		if(base) LOtexture::addTextureBaseToMap(*info->fileTextName, base);
 		return base;
 	}
 	return base;
@@ -1088,7 +1094,8 @@ LOShareBaseTexture LOImageModule::TextureFromColor(LOLayerData *info) {
 	cc->g = (color >> 8) & 0xff;
 	cc->b = color & 0xff;
 	*/
-	return ;
+	LOShareBaseTexture bt;
+	return bt;
 }
 /*
 LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
@@ -1347,54 +1354,35 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 	return true;
 }
 
-//检索按钮
-LOLayer* LOImageModule::FindLayerInBtnQuePosition(int x, int y) {
-	for (auto iter = btnMap.begin(); iter != btnMap.end(); iter++) {
-		if (iter->second->isPositionInsideMe(x, y)) return iter->second;
-	}
-	return nullptr;
-}
 
-//决定图层是否删除只在 exportque ，因此函数是安全的
-LOLayerData* LOImageModule::CreateLayerData(int fullid, const char *printName) {
-	LOLayer *lyr = nullptr;
-	//检查是否已经有对象，有的话释放掉原来的
-	auto *map = GetPrintNameMap(printName)->map;
-	auto iter = map->find(fullid);
-	if (iter != map->end()) lyr = iter->second;
-	else lyr = LOLayer::CreateLayer(fullid);
+//创建新图层，会释放原来的老的数据，lsp使用
+LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
+	LOLayer *lyr = LOLayer::CreateLayer(fullid);
 	lyr->bakInfo->SetDelete();
-
-	//SDL_LockMutex(layerDataMutex);
-	//(*map)[fullid] = ac;
-	//SDL_UnlockMutex(layerDataMutex);
+	auto *map = GetPrintNameMap(printName)->map;
 	(*map)[fullid] = lyr;
 	return lyr->bakInfo.get();
 }
 
-LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
+//对已经存在的对象获取后台数据，后台为delete返回空，不可能操作已经删除的对象
+//其他如果layer存在则返回layer的后台，通常是为操作图层使用
+LOLayerData* LOImageModule::CreateLayerBakData(int fullid, const char *printName) {
+	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+	if (!lyr || lyr->bakInfo->isDelete()) return nullptr;
 	auto *map = GetPrintNameMap(printName)->map;
-	auto iter = map->find(fullid);
-	if (iter != map->end()) return iter->second->bakInfo.get();
-	return nullptr;
+	(*map)[fullid] = lyr;
+	return lyr->bakInfo.get();
 }
 
-
-//读信息时使用
-LOLayerData* LOImageModule::GetInfoLayerData(int fullid, const char *printName) {
-	LOLayerData *data = GetLayerData(fullid, printName);
-	if (data && data->isNewFile()) return data;
-	LOLayer *lyr = LOLayer::FindViewLayer(fullid, false);
-	if (lyr) return lyr->curInfo.get();
-	return nullptr;
+//对已经存在的对象获取前台数据，后台为delete返回空，不可能读取已删除对象的数据
+//其他如果后台为newfile则返回后台，否则返回存在对象的前台，通常是为读取图层信息
+LOLayerData* LOImageModule::GetLayerInfoData(int fullid, const char *printName) {
+	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+	if (!lyr || lyr->bakInfo->isDelete()) return nullptr;
+	if (lyr->bakInfo->isNewFile()) return lyr->bakInfo.get();
+	else return lyr->curInfo.get();
 }
 
-
-LOLayerData* LOImageModule::GetOrCreateLayerData(int fullid, const char *printName) {
-	LOLayerData *data = GetLayerData(fullid, printName);
-	if (!data) data = CreateLayerData(fullid, printName);
-	return data;
-}
 
 
 
