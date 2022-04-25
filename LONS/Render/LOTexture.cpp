@@ -50,7 +50,7 @@ LOtextureBase::LOtextureBase(SDL_Surface *su) {
 
 
 LOtextureBase::LOtextureBase(void *mem, int size) {
-	printf("size is %d\n", size);
+	//printf("size is %d\n", size);
 	SDL_RWops *src = SDL_RWFromMem(mem, size);
 	ispng = IMG_isPNG(src);
 	SDL_Surface *su = LIMG_Load_RW(src, 0);

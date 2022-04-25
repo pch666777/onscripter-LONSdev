@@ -136,7 +136,7 @@ int LOImageModule::SendEventToLayer(LOEventHook *e) {
 	//发往图层，看图层是否响应
 	int ret = LOLayer::SENDRET_NONE;
 	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT && ret == LOLayer::SENDRET_NONE; ii++) {
-		ret = G_baseLayer[ii].checkEvent(e, &waitEventQue);
+		ret = G_baseLayer[ii]->checkEvent(e, &waitEventQue);
 	}
 	return ret;
 }

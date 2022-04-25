@@ -129,7 +129,6 @@ public:
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
-	LOLayer* GetRootLayer(int fullid);
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha);
 	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);
 

@@ -431,25 +431,25 @@ int LOImageModule::RefreshFrame(double postime) {
 void LOImageModule::UpDisplay(double postime) {
 	tickTime += (int)postime;
 	//位于底部的要先渲染
-	UpDataLayer(&G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
-	UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, z_order + 1, 0);
-	UpDataLayer(&G_baseLayer[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
+	UpDataLayer(G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
+	UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, z_order + 1, 0);
+	UpDataLayer(G_baseLayer[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
 	if (winbackMode) {
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
 	}
 	else {
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
-		UpDataLayer(&G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
 	}
 	//UpDataLayer(lonsLayers[LOLayer::LAYER_BUTTON], tickTime, 1023, 0);
-	UpDataLayer(&G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
+	UpDataLayer(G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
 }
 
 void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int dest, int level) {
@@ -855,16 +855,10 @@ bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf
 //	return G_baseLayer[type].FindChild(ids);
 //}
 
-LOLayer* LOImageModule::GetRootLayer(int fullid) {
-	int ids[3];
-	LOLayer::SysLayerType type;
-	GetTypeAndIds((int*)(&type), ids, fullid);
-	return &G_baseLayer[type];
-}
-
 
 //移除按钮定义
 void LOImageModule::ClearBtndef(const char *printName) {
+	/*
 	//前台处理
 	//移去当前图层内的按钮定义
 	SDL_LockMutex(layerQueMutex);
@@ -887,7 +881,7 @@ void LOImageModule::ClearBtndef(const char *printName) {
 		//iter->second->unSetBtndef();
 	}
 	SDL_UnlockMutex(layerDataMutex);
-
+	*/
 }
 
 
@@ -1075,8 +1069,9 @@ LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerInfo*info, LOString *s
 */
 //从标记中生成色块
 LOShareBaseTexture LOImageModule::TextureFromColor(LOLayerData *info) {
-	/*
-	LOString *s = info->fileName;
+	LOShareBaseTexture base;
+
+	LOString *s = info->fileTextName.get();
 	const char *buf = s->SkipSpace(s->c_str());
 
 	int w = s->GetInt(buf);
@@ -1084,18 +1079,18 @@ LOShareBaseTexture LOImageModule::TextureFromColor(LOLayerData *info) {
 	int h = s->GetInt(buf);
 
 	while (buf[0] != '#' && buf[0] != '\0') buf++;
-	if (buf[0] != '#') return nullptr;
+	if (buf[0] != '#') return base;
 	buf++;
 	int color = s->GetHexInt(buf, 6);
-	LOSurface *surface = new LOSurface(w, h, 8, SDL_PIXELFORMAT_INDEX8 );
-	SDL_Palette *pale = surface->GetSurface()->format->palette;
+
+	base.reset(new LOtextureBase(CreateRGBSurfaceWithFormat(0, w, h, 8, SDL_PIXELFORMAT_INDEX8)));
+	SDL_Palette *pale = base->GetSurface()->format->palette;
 	SDL_Color *cc = pale->colors;
 	cc->r = (color >> 16) & 0xff;
 	cc->g = (color >> 8) & 0xff;
 	cc->b = color & 0xff;
-	*/
-	LOShareBaseTexture bt;
-	return bt;
+
+	return base;
 }
 /*
 LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {

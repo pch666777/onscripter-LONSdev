@@ -66,6 +66,26 @@ void ReadConfig() {
 	//delete[] line;
 }
 
+
+//必要的变量初始化
+void GlobalInit() {
+	//初始化根图层
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		int fullid = GetFullID(LOLayer::LAYER_CC_USE, ii, 255, 255);
+		G_baseLayer[ii] = LOLayer::CreateLayer(fullid);
+	}
+}
+
+
+//释放初始化的变量
+void GlobalFree() {
+	//释放根图层
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		delete G_baseLayer[ii];
+	}
+}
+
+
 void FreeModules(LOFileModule *&filemodule, LOScriptReader *&reader, LOImageModule *&imagemodule, LOAudioModule *&audiomodule) {
 	if (filemodule) delete filemodule;
 	filemodule = NULL;
@@ -141,6 +161,8 @@ int main(int argc, char **argv) {
 	//	count++;
 	//}
 
+	GlobalInit();
+
 
 	while (exitflag == -1) {
 		//reset的时候直接整个重来
@@ -189,6 +211,8 @@ int main(int argc, char **argv) {
 
 	FreeModules(filemodule, reader, imagemodule, audiomodule);
 	//G_DestroySlots();  //释放线程同步信号槽
+
+	GlobalFree();
 
 	if (exitflag == -1) exitflag = 0;
 	return exitflag;

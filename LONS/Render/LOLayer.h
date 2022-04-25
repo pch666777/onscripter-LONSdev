@@ -165,7 +165,7 @@ private:
 };
 
 //根层直接定义
-extern LOLayer G_baseLayer[LOLayer::LAYER_BASE_COUNT];
+extern LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 
 //每个层级的最大层数量
 extern int G_maxLayerCount[3];

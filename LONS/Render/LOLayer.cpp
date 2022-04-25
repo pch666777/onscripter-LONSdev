@@ -1,6 +1,6 @@
 #include "LOLayer.h"
 
-LOLayer G_baseLayer[LOLayer::LAYER_BASE_COUNT];
+LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
 
 //所有的图层都存储在这
@@ -14,7 +14,7 @@ void LOLayer::BaseNew(SysLayerType lyrType) {
 	childs = nullptr;
 	layerType = lyrType;
 	isinit = false;
-	rootLyr = &G_baseLayer[layerType];
+	rootLyr = G_baseLayer[layerType];
 }
 
 LOLayer::LOLayer() {
@@ -594,7 +594,7 @@ LOLayer* LOLayer::FindViewLayer(int fullid, bool isRemove) {
 	GetTypeAndIds(&lyrType, ids, fullid);
 
 	int index = 0;
-	LOLayer *father = DescentFather(&G_baseLayer[lyrType], &index, ids);
+	LOLayer *father = DescentFather(G_baseLayer[lyrType], &index, ids);
 	if (father && father->childs) {
 		auto iter = father->childs->find(ids[index]);
 		if (iter == father->childs->end()) return nullptr;
