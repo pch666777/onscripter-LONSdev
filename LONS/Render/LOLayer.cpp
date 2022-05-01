@@ -326,6 +326,7 @@ void LOLayer::upDataNewFile() {
 	//后台数据要去掉newfile
 	bakInfo->flags &= (~LOLayerData::FLAGS_NEWFILE);
 	LOLayer::LinkLayerLeve(this);
+	isinit = false;
 }
 
 void LOLayer::upData() {

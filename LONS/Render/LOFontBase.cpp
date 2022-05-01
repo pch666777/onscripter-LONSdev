@@ -37,6 +37,7 @@ void LOFontWindow::Reset() {
 bool LOFontWindow::Openfont() {
 	Closefont();
 	if (fontName != "*#?") {
+		/*
 		if(fontFullname.length() == 0){
 			fontFullname = FunctionInterface::GetReadPath(fontName.c_str()) ;
 			//LOLog_i("%s",fontFullname.c_str()) ;
@@ -44,6 +45,7 @@ bool LOFontWindow::Openfont() {
 		if (fontFullname.length() > 0) {
 			font = TTF_OpenFont(fontFullname.c_str(), xsize);
 		}
+		*/
 	}
 
 	if (!font) {

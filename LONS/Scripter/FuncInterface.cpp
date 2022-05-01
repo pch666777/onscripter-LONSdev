@@ -3,6 +3,7 @@
 //运行时优先尝试脚本类-->图像类-->音频类
 */
 #include "FuncInterface.h"
+#include "../etc/LOIO.h"
 #include <stdarg.h>
 
 std::unordered_map<std::string, FunctionInterface::FuncLUT*> FunctionInterface::baseFuncMap;
@@ -10,10 +11,6 @@ FunctionInterface *FunctionInterface::imgeModule = NULL;
 FunctionInterface *FunctionInterface::audioModule = NULL;
 FunctionInterface *FunctionInterface::scriptModule = NULL;
 FunctionInterface *FunctionInterface::fileModule = NULL;    //文件系统
-//std::vector<LOString> FunctionInterface::workDirs;
-LOString FunctionInterface::readDir ;
-LOString FunctionInterface::writeDir;
-LOString FunctionInterface::saveDir;
 BinArray *FunctionInterface::GloVariableFS = new BinArray(1024, true);
 BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 std::atomic_int FunctionInterface::flagPrepareEffect{};
@@ -355,80 +352,25 @@ LOString FunctionInterface::StringFormat(int max, const char *format, ...) {
 	return rets;
 }
 
-/*
-void FunctionInterface::AddWorkDir(LOString dir) {
-	workDirs.push_back(dir);
-}
-*/
 
-FILE* FunctionInterface::OpenFileForRead(const char *name, const char *rb) {
-	LOString dir ;
-	if(readDir.length() > 0) dir = readDir + "/" + name ;
-	else dir = name ;
-	FILE *f = fopen(dir.c_str(), rb);
-	/*
-	if (!f && name[0] != '/' && name[1] != ':') {  //不是一个绝对路径，尝试搜索所有的路径
-		for (int ii = 0; ii < workDirs.size() && !f; ii++) {
-			LOString dir = workDirs.at(ii);
-			dir.append("/");
-			dir.append(name);
-			f = fopen(dir.c_str(), rb);
-		}
-	}
-	 */
-	return f;
-}
-
-FILE* FunctionInterface::OpenFileForWrite(const char *name, const char *rb){
-	LOString dir ;
-	if(writeDir.length() > 0) dir = writeDir + "/" + name ;
-	else dir = name ;
-	FILE *f = fopen(dir.c_str(), rb);
-	return f;
-}
-
-LOString FunctionInterface::GetReadPath(const char *name){
-	if(!name) return LOString();
-	if(readDir.length() > 0) return readDir + "/" + name ;
-	else return LOString(name) ;
-}
-
-/*
-char* FunctionInterface::ReadFileOnce(const char *name, int *len) {
-	FILE *f = OpenFile(name, "rb");
-	if (f) {
-		fseek(f, 0, SEEK_END);
-		*len = ftell(f);
-		char *buf = new char[*len];
-		memset(buf, 0, *len);
-		fseek(f, 0, SEEK_SET);
-		fread(buf, 1, *len, f);
-		fclose(f);
-		return buf;
-	}
-	else {
-		*len = 0;
-		return NULL;
-	}
-}
-*/
-
-
-//应由文件系统实现
-BinArray *FunctionInterface::ReadFile(const char *fileName, bool err) {
-	if (fileModule) {
-		LOString s(fileName);
-		return fileModule->ReadFile(&s, err);
-	}
-	else return NULL;
-}
 
 //应由文件系统实现
 BinArray *FunctionInterface::ReadFile(LOString *fileName, bool err) {
 	if (fileModule) {
 		return fileModule->ReadFile(fileName, err);
 	}
-	else return NULL;
+	else {
+		return LOIO::ReadAllBytes(*fileName);
+	}
+}
+
+BinArray* LonsReadFile(LOString &fn) {
+	if (FunctionInterface::fileModule) {
+		return FunctionInterface::fileModule->ReadFile(&fn, false);
+	}
+	else {
+		return LOIO::ReadAllBytes(fn);
+	}
 }
 
 
@@ -478,6 +420,7 @@ void FunctionInterface::ReadLog(int logt) {
 	}
 	else return;
 
+	/*
 	FILE *f = OpenFileForRead(fn, "rb");
 	if (f) {
 		std::unique_ptr<BinArray> ptr(BinArray::ReadFile(f, 0, 0x7fffffff));
@@ -505,6 +448,7 @@ void FunctionInterface::ReadLog(int logt) {
 		}
 		fclose(f);
 	}
+	*/
 }
 
 
@@ -542,12 +486,14 @@ void FunctionInterface::WriteLog(int logt) {
 		ptr->Append(ubuf.get(), (*iter).length() + 2);
 	}
 
+	/*
 	FILE *f = OpenFileForWrite(fn, "wb");
 	if (f) {
 		fwrite(ptr->bin, 1, ptr->Length(), f);
 		fflush(f);
 		fclose(f);
 	}
+	*/
 }
 
 

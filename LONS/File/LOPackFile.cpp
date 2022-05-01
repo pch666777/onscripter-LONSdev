@@ -4,8 +4,7 @@
 
 #include "LOPackFile.h"
 #include "../etc/BinArray.h"
-
-
+#include "../etc/LOIO.h"
 
 LOPackFile::LOPackFile() {
 	filePtr = NULL;

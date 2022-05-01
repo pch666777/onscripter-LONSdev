@@ -2,8 +2,6 @@
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
 
-;lsp 333,
-;btnwait %0
 globalon
 filelog
 labellog

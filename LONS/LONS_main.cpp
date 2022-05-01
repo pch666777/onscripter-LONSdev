@@ -16,6 +16,8 @@
 #include <SDL.h>
 #include <chrono>
 
+#include "Render/LOFont.h"
+
 #ifdef ANDROID
 #include <android/log.h>
 #include <unistd.h>
@@ -169,6 +171,12 @@ int main(int argc, char **argv) {
 		FreeModules(filemodule, reader, imagemodule,audiomodule);
 		//初始化IO，必须优先进行IO，因为后面要读文件
 		filemodule = new LOFileModule;
+
+
+		LOString s = "default.ttf";
+		LOFont *font = LOFont::CreateFont(s);
+
+
 
 		//初始化脚本模块
 		reader = LOScriptReader::EnterScriptReader(MAINSCRIPTER_NAME);

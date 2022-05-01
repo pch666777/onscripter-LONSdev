@@ -811,6 +811,7 @@ int LOScriptReader::delaygosubCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
+	/*
 	ONSVariableRef *v = reader->GetParamRef(0);
 	LOString fn = StringFormat(64, "save%d.datl",reader->GetParamInt(1));
 	FILE *f = OpenFileForRead(fn.c_str(), "rb");
@@ -819,6 +820,7 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 		v->SetValue(1.0);
 	}
 	else v->SetValue(0.0);
+	*/
 	return RET_CONTINUE;
 }
 
@@ -845,6 +847,7 @@ void LOScriptReader::UpdataGlobleVariable() {
 }
 
 void LOScriptReader::SaveGlobleVariable() {
+	/*
 	if (!st_globalon) return;  //没有启用全局变量
 	FILE *f = OpenFileForWrite("gloval.savl", "wb");
 	if (f) {
@@ -852,6 +855,7 @@ void LOScriptReader::SaveGlobleVariable() {
 		fflush(f);
 		fclose(f);
 	}
+	*/
 }
 
 
@@ -875,6 +879,7 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::savedirCommand(FunctionInterface *reader) {
+	/*
 	saveDir = reader->GetParamStr(0);
 	LOString s;
 	if (writeDir.length() > 0) s = writeDir + "/" + saveDir;
@@ -883,6 +888,7 @@ int LOScriptReader::savedirCommand(FunctionInterface *reader) {
 	#ifdef WIN32
 		CreateDirectoryA(saveDir.c_str(), NULL);
 	#endif
+	*/
 	return RET_CONTINUE;
 }
 

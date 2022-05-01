@@ -67,7 +67,7 @@ public:
 	int WriteFillEmpty(int len, int *pos = NULL);
 	bool WriteToFile(const char *name);
 
-	static BinArray* ReadFromFile(const char* name);
+	//static BinArray* ReadFromFile(const char* name);
 	static BinArray* ReadFile(FILE *f,int pos,int len);
 
 	char *bin;

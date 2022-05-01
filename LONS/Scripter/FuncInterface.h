@@ -180,7 +180,6 @@ public:
 	static FunctionInterface *fileModule;    //文件系统
 
 	int RunCommand(FuncBase it);
-	BinArray *ReadFile(const char *fileName, bool err = true);
 	virtual BinArray *ReadFile(LOString *fileName, bool err = true);
 	virtual BinArray *GetBuiltMem(int type) { return NULL; }
 
@@ -340,9 +339,6 @@ public:
 	virtual int nsadirCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int nsaCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
-	static FILE* OpenFileForRead(const char *name, const char *rb);
-	static FILE* OpenFileForWrite(const char *name, const char *rb);
-	static LOString GetReadPath(const char *name);
 	//static std::vector<LOString> workDirs;        //搜索目录，因为接口类到处都在使用，干脆把io部分挪到这里来
 	static std::atomic_int flagPrepareEffect;        //print时要求截取当前画面
 	static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
@@ -350,10 +346,6 @@ public:
 	static LOShareEventHook printHook;       //要求等待print完成
 
 	static LOString userGoSubName[3];
-	//在某些系统上，只能从指定程序读取文件而不能写入文件，因此分为两个部分
-	static LOString readDir ;
-	static LOString writeDir;
-	static LOString saveDir;
 	//存储流
 	static BinArray *GloVariableFS;
 	static BinArray *GloSaveFS;

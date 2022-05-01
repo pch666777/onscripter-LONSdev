@@ -549,3 +549,27 @@ int LOString::HashStr(const char* buf) {
 	}
 	return hash;
 }
+
+
+//转换路径分隔符风格
+LOString LOString::PathTypeTo(PATH_TYPE ptype) {
+	int len = length();
+	char *temp = new char[len + 1];
+	memcpy(temp, c_str(), len + 1);
+
+	char a, b;
+	if (ptype == PATH_WINDOWS) {
+		a = '/'; b = '\\';
+	}
+	else {
+		a = '\\'; b = '/';
+	}
+
+	for (int ii = 0; ii < len; ii += ThisCharLen(temp + ii)) {
+		if (temp[ii] == a) temp[ii] = b;
+	}
+	LOString s(temp);
+	s.SetEncoder(GetEncoder());
+	delete[] temp;
+	return s;
+}

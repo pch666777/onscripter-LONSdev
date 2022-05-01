@@ -25,6 +25,11 @@ public:
 		CHARACTER_ZERO = 64     //0
 	};
 
+	enum PATH_TYPE {
+		PATH_WINDOWS,
+		PATH_LINUX,
+	};
+
 	LOString();
 	LOString(const char *ptr);
 	LOString(const char *ptr, LOCodePage *enc);
@@ -82,6 +87,8 @@ public:
 	LOString substr(const char*buf, int len);
 	LOString substrWord(int start, int len);
 	LOString Itoa2(int number);
+	LOString PathTypeTo(PATH_TYPE ptype);
+
 	const char* e_buf() { return c_str() + length(); }
 
 	static void SetStr(LOString *&s1, LOString *&s2, bool ismove);

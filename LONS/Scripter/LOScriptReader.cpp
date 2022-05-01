@@ -1290,7 +1290,7 @@ int LOScriptReader::DefaultStep() {
 	LOString fn ;
 	BinArray *bin;
 
-	LOLog_i("read dir is:%s",readDir.c_str()) ;
+	//LOLog_i("read dir is:%s",readDir.c_str()) ;
 
 	//优先考虑00.txt-99.txt
 	for (int ii = 0; ii < 100; ii++) {

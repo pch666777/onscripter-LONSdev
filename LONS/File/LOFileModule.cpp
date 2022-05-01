@@ -4,6 +4,7 @@
 #include "SiYuanCN.h"
 #include "LOCompressInfo.h"
 #include "LOFileModule.h"
+#include "../etc/LOIO.h"
 
 
 BinArray *LOFileModule::built_in_font = NULL;
@@ -31,40 +32,17 @@ LOFileModule::~LOFileModule() {
 
 BinArray *LOFileModule::ReadFile(LOString *fileName, bool err) {
 	BinArray *temp = ReadFileFromRecord(fileName);
-	if (!temp)temp = ReadFileFromFileSys(fileName->c_str());
+	if (!temp)temp = ReadFileFromFileSys(fileName);
 	if (!temp && err) SDL_Log("*** LONS not find file:%s   ***\n", fileName->c_str());
 	return temp;
 }
 
 
-BinArray *LOFileModule::ReadFileFromFileSys(const char *fileName) {
-	LOString tstr(fileName);
-	for (int ii = 0; ii < tstr.length(); ii++) {
-		if (tstr[ii] == '\\') tstr[ii] = '/';
-	}
-
-	if(readDir.length() > 0) tstr = readDir + "/" + tstr ;
-	//SDL_Log("read file is:%s",tstr.c_str()) ;
-	BinArray *bin = BinArray::ReadFromFile(tstr.c_str());
-	/*
-	if (!bin && fileName[0] != '/' && fileName[1] != ':') {  //非绝对路径尝试更多
-		for (int ii = 0; ii < workDirs.size() && !bin; ii++) {
-			tstr = workDirs.at(ii) + "/" + fileName;
-			bin = BinArray::ReadFromFile(tstr.c_str());
-		}
-	}
-	 */
+BinArray *LOFileModule::ReadFileFromFileSys(LOString *fn) {
+	LOString truePath = fn->PathTypeTo(LOString::PATH_LINUX);
+	BinArray *bin = LOIO::ReadAllBytes(truePath);
 	return bin;
 }
-
-LOString LOFileModule::ReplacePathSymbol(LOString *fn) {
-	LOString tstr(*fn);
-	for (int ii = 0; ii < tstr.length(); ii++) {
-		if (tstr[ii] == '\\') tstr[ii] = '/';
-	}
-	return tstr;
-}
-
 
 BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 	LOString fnl = fn->toLower();
@@ -78,7 +56,8 @@ BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 	if (index.length == 0) return NULL;
 
 	FILE *f = file->GetHandle();
-	BinArray *bin = BinArray::ReadFile(f, index.adress, index.length);
+	BinArray *bin = nullptr;
+	LOIO::ReadBytes(bin, f, index.adress, index.length);
 
 	if (!bin) return bin;
 	else if (index.flag == NO_COMPRESSION) return bin;
@@ -141,10 +120,10 @@ int LOFileModule::nsaCommand(FunctionInterface *reader) {
 			else s = std::to_string(ii) + ".ns2";
 		}
 		//try open it
-		FILE *f = OpenFileForRead(s.c_str(), "rb");
+		FILE *f = LOIO::GetReadHandle(s, "rb");
 		if (!f && nsaDir.length() > 0) {
 			s = nsaDir + "/" + s;
-			f = OpenFileForRead(s.c_str(), "rb");
+			f = LOIO::GetReadHandle(s, "rb");
 		}
 		if (!f) break;
 		//get file index
@@ -169,8 +148,8 @@ int LOFileModule::fileexistCommand(FunctionInterface *reader) {
 	}
 
 	if (index.length == 0) { //check file sys
-		fnl = ReplacePathSymbol(&fn);
-		FILE *f = OpenFileForRead(fnl.c_str(),"rb");
+		fnl = fn.PathTypeTo(LOString::PATH_LINUX);
+		FILE *f = LOIO::GetReadHandle(fnl,"rb");
 		if (f) {
 			index.length = 1;
 			fclose(f);
@@ -201,4 +180,22 @@ int LOFileModule::readfileCommand(FunctionInterface *reader) {
 		delete bin;
 	}
 	return RET_CONTINUE;
+}
+
+
+BinArray* LonsReadFileFromPack(LOString &fn) {
+	if (FunctionInterface::fileModule) {
+		auto *it = (LOFileModule*)FunctionInterface::fileModule;
+		return it->ReadFileFromRecord(&fn);
+	}
+	else return nullptr;
+}
+
+
+BinArray* LonsGetBuiltMem(int type) {
+	if (FunctionInterface::fileModule) {
+		auto *it = (LOFileModule*)FunctionInterface::fileModule;
+		return it->GetBuiltMem(type);
+	}
+	else return nullptr;
 }

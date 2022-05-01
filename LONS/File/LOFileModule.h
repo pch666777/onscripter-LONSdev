@@ -27,22 +27,17 @@ public:
 	BinArray *ReadFile(LOString *fileName, bool err = true);
 	BinArray *GetBuiltMem(int type);
 	void ResetMe();
+	BinArray *ReadFileFromFileSys(LOString *fn);
+	BinArray* ReadFileFromRecord(LOString *fn);
 
 	int nsadirCommand(FunctionInterface *reader);
 	int nsaCommand(FunctionInterface *reader);
 	int fileexistCommand(FunctionInterface *reader);
 	int readfileCommand(FunctionInterface *reader);
-
 private:
 	static BinArray *built_in_font;
 	LOString nsaDir;
 	bool nsaHasRead;
-
-
-	BinArray *ReadFileFromFileSys(const char *fileName);
-	BinArray* ReadFileFromRecord(LOString *fn);
-	LOString ReplacePathSymbol(LOString *fn);
-
 	std::vector<intptr_t> packFiles;   //不直接使用指针，不然vector可能会有一些奇葩问题
 };
 #endif // !__LOFILEMODULE_H__

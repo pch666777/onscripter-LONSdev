@@ -120,5 +120,14 @@
     <ClCompile Include="Render\LOAction.cpp">
       <Filter>源文件\Render</Filter>
     </ClCompile>
+    <ClCompile Include="Render\LOTextDescribe.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="Render\LOFont.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="etc\LOIO.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -324,6 +324,8 @@ int BinArray::WriteLOString(LOString *v, int *pos) {
 	return len;
 }
 
+
+/*
 BinArray* BinArray::ReadFromFile(const char* name) {
 	FILE *f = fopen(name, "rb");
 	if (!f) return NULL;
@@ -339,7 +341,7 @@ BinArray* BinArray::ReadFromFile(const char* name) {
 	sbin->realLen = len;
 	return sbin;
 }
-
+*/
 BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
 	//长度不因大于文件的长度
 	fseek(f, 0, SEEK_END);

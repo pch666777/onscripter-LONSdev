@@ -159,6 +159,7 @@
     <ClCompile Include="etc\BinArray.cpp" />
     <ClCompile Include="etc\LOCodePage.cpp" />
     <ClCompile Include="etc\LOEvent1.cpp" />
+    <ClCompile Include="etc\LOIO.cpp" />
     <ClCompile Include="etc\LOLog.cpp" />
     <ClCompile Include="etc\LOString.cpp" />
     <ClCompile Include="etc\LOVariant.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="LONS_main.cpp" />
     <ClCompile Include="Render\LOAction.cpp" />
     <ClCompile Include="Render\LOEffect.cpp" />
+    <ClCompile Include="Render\LOFont.cpp" />
     <ClCompile Include="Render\LOFontBase.cpp" />
     <ClCompile Include="Render\LOFontInfo.cpp" />
     <ClCompile Include="Render\LOImageModule.cpp" />
@@ -178,6 +180,7 @@
     <ClCompile Include="Render\LOLayer.cpp" />
     <ClCompile Include="Render\LOLayerData.cpp" />
     <ClCompile Include="Render\LOMatrix2d.cpp" />
+    <ClCompile Include="Render\LOTextDescribe.cpp" />
     <ClCompile Include="Render\LOTexture.cpp" />
     <ClCompile Include="Scripter\FuncInterface.cpp" />
     <ClCompile Include="Scripter\LOScriptPoint.cpp" />
