@@ -35,7 +35,7 @@ public:
 	int fileexistCommand(FunctionInterface *reader);
 	int readfileCommand(FunctionInterface *reader);
 private:
-	static BinArray *built_in_font;
+	//static BinArray *built_in_font;
 	LOString nsaDir;
 	bool nsaHasRead;
 	std::vector<intptr_t> packFiles;   //不直接使用指针，不然vector可能会有一些奇葩问题

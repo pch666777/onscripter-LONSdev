@@ -16,7 +16,7 @@
 #include <SDL.h>
 #include <chrono>
 
-#include "Render/LOFont.h"
+#include "Render/LOTextDescribe.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -81,6 +81,8 @@ void GlobalInit() {
 
 //释放初始化的变量
 void GlobalFree() {
+	//清理字体
+	LOFont::FreeAllFont();
 	//释放根图层
 	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
 		delete G_baseLayer[ii];
@@ -172,12 +174,6 @@ int main(int argc, char **argv) {
 		//初始化IO，必须优先进行IO，因为后面要读文件
 		filemodule = new LOFileModule;
 
-
-		LOString s = "default.ttf";
-		LOFont *font = LOFont::CreateFont(s);
-
-
-
 		//初始化脚本模块
 		reader = LOScriptReader::EnterScriptReader(MAINSCRIPTER_NAME);
 		imagemodule = new LOImageModule;
@@ -191,6 +187,15 @@ int main(int argc, char **argv) {
 			//初始化渲染模块
 			if (imagemodule->InitImageModule()) {
 				LOLog_i("image module init ok.");
+
+				char data[] = { 0xCE,0XD2,0XCA,0XC7,0XD2,0XBB, 0XB8, 0XF6, 0XB2, 0XE2, 0XCA,0XD4,0XA1,0XA3, 0 };
+				LOString s = "default.ttf";
+				LOString str(data);
+				str.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_GBK));
+
+				LOTextStyle style;
+				LOTextTexture tex;
+				tex.CreateTextDescribe(&str, &style, &s);
 
 				//注册spstr事件
 				LOShareEventHook ev(LOEventHook::CreateSpstrHook());

@@ -7,7 +7,7 @@
 #include "../etc/LOIO.h"
 
 
-BinArray *LOFileModule::built_in_font = NULL;
+//BinArray *LOFileModule::built_in_font = NULL;
 
 LOFileModule::LOFileModule() {
 	FunctionInterface::fileModule = this;
@@ -15,8 +15,6 @@ LOFileModule::LOFileModule() {
 }
 
 LOFileModule::~LOFileModule() {
-	delete built_in_font;
-	built_in_font = NULL;
 	for (int ii = 0; ii < packFiles.size(); ii++) {
 		LOPackFile *file = (LOPackFile*)packFiles.at(ii);
 		delete file;
@@ -77,13 +75,14 @@ BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 
 BinArray *LOFileModule::GetBuiltMem(int type) {
 	if (type == BUILT_FONT) {
-		if (built_in_font) return built_in_font;
 		BinArray *zbin = new BinArray((char*)(consola_ttf), *consola_ttf + 8);
 		LOCompressInfo comp;
-		built_in_font = comp.UnZlibCompress(zbin);
+		BinArray *tbin = comp.UnZlibCompress(zbin);
 		delete zbin;
+		//由使用者自行处理
+		return tbin;
 	}
-	return built_in_font;
+	return nullptr;
 }
 
 

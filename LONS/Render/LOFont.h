@@ -18,6 +18,8 @@ class LOFont {
 public:
 	struct FontWord{
 		int16_t size = 0;
+		int16_t ascent;
+		int16_t descent;
 		TTF_Font *font = nullptr;
 		void Close() {
 			if (font) TTF_CloseFont(font);
@@ -30,7 +32,7 @@ public:
 		SDL_RWops *rwops = nullptr;
 		~MemoryTTF() {
 			if (rwops) SDL_RWclose(rwops);
-			delete data;
+			if(data) delete data;
 		}
 	};
 
@@ -45,18 +47,20 @@ public:
 	bool SetBinData(BinArray *&bin);
 	bool SetName(LOString *fn);
 	void CloseAll();
-	TTF_Font* GetFont(int size);
+	FontWord* GetFont(int size);
 
 	//创建一个字体，如果之前已经创建过了，那么取缓存。fontName为空则创建内置字体
 	static LOFont* CreateFont(LOString &fontName);
-	//内置字体
-	static LOFont builtInFont;
-	static std::map<std::string, LOFont*> fontMap;
+	static std::map<std::string, std::shared_ptr<LOFont>> fontMap;
+	static void FreeAllFont();
 private:
 	//内存字体可能会被多次使用，比如内建的字体
-	MemoryTTF *memTTF;
+	std::unique_ptr<MemoryTTF> memTTF;
 	std::vector<FontWord*> fontList;
+
+	static void InitBuiltInFont();
 };
 
+typedef std::shared_ptr<LOFont> LOShareFont;
 
 #endif // !__LOFONT_H_
