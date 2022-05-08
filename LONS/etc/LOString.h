@@ -79,7 +79,7 @@ public:
 	double GetRealConst(int cur) { return GetReal(cur); }
 
 	int GetCharacter(int cur);
-	int GetCharacter(const char *buf);
+	static int GetCharacter(const char *buf);
 	void SetEncoder(LOCodePage *encoder);
 	LOCodePage *GetEncoder() { return _encoder; }
 	inline bool checkCurrent(int cur);

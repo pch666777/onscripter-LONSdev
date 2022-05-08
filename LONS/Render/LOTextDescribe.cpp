@@ -23,57 +23,84 @@ LOTextStyle::~LOTextStyle() {
 
 //================================================
 
-LOTextDescribe::LOTextDescribe() {
-	parent = nullptr;
-	childs = nullptr;
+//LOTextDescribe::LOTextDescribe() {
+//	parent = nullptr;
+//	childs = nullptr;
+//	words = nullptr;
+//	surface = nullptr;
+//	colorID = x = y = 0;
+//}
+
+
+LOTextDescribe::LOTextDescribe(int ascent, int dscent, int cID) {
+	Ascent = ascent;
+	Dscent = dscent;
+	colorID = cID;
 	words = nullptr;
-	surface = nullptr;
-	x = y = 0;
+	rubby = nullptr;
+	left = top = width = height = 0;
 }
 
 LOTextDescribe::~LOTextDescribe() {
-	if (words) ReleaseWords(false);
-	if (surface) ReleaseSurface(false);
-	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) delete *iter;
-		delete childs;
-	}
+	ClearWords();
+	if (rubby) delete rubby;
+	rubby = nullptr;
 }
 
 
-
-void LOTextDescribe::ReleaseWords(bool ischild) {
+void LOTextDescribe::ClearWords() {
 	if (words) {
 		for (auto iter = words->begin(); iter != words->end(); iter++) delete *iter;
-		delete[] words;
 		words = nullptr;
 	}
-	//子对象的数据一起释放
-	if (ischild && childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) (*iter)->ReleaseWords(ischild);
-	}
 }
 
 
-void LOTextDescribe::ReleaseSurface(bool ischild) {
-	if (surface) {
-		FreeSurface(surface);
-		surface = nullptr;
+bool LOTextDescribe::CreateLocation(int xspace) {
+	left = top = width = height = 0;
+	//空描述
+	if (!words || words->size() == 0) return false;
+	//首先计算出X轴
+	//minx为负表示字形要提前，advance为字形的宽度
+	left = words->at(0)->minx;
+	//Y轴总是0，因为我需要屏幕坐标
+	top = 0;
+	int nextX = left;
+	int topY = 0;
+
+	for (auto iter = words->begin(); iter != words->end(); iter++) {
+		LOWordElement *el = (*iter);
+		el->left = nextX;
+		nextX += el->advance;
+		nextX += xspace;
+		//字形的Y轴要特别注意
+		//当maxy大于FontAscent时，surface的Y位置为 FontAscent - maxy，当maxy小于等于FontAscent时，Y位置为0
+		//完成后需要根据最小Y值校正Y坐标
+		if (el->maxy > Ascent) el->top = Ascent - el->maxy;
+		else el->top = 0;
+		//找出最小的Y值
+		if (el->top < topY) topY = el->top;
 	}
-	//子对象的数据一起释放
-	if (ischild && childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) (*iter)->ReleaseSurface(ischild);
+	//
+	width = nextX - left;
+
+	//Y值校正，同时计算出最大的内容高度
+	for (auto iter = words->begin(); iter != words->end(); iter++) {
+		LOWordElement *el = (*iter);
+		el->top += abs(topY);
+		//如果maxy > Ascent，最大高度是 maxy - miny ;
+		//否则是 Ascent - miny
+		int h = 0;
+		if (el->maxy > Ascent) h = el->maxy - el->miny;
+		else h = Ascent - el->miny;
+		if (h > height) height = h;
 	}
+
+	return true;
 }
 
 
-void LOTextDescribe::FreeChildSurface() {
-	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) (*iter)->ReleaseSurface(true);
-	}
-}
-
-
+/*
 void LOTextDescribe::GetSizeRect(int *left, int *top, int *right, int *bottom) {
 	//从最底层的对象开始
 	if (childs) {
@@ -102,8 +129,8 @@ void LOTextDescribe::GetSizeRect(int *left, int *top, int *right, int *bottom) {
 	if (right && x2 > *right) *right = x2;
 	if (bottom && y2 > *bottom) *bottom = y2;
 }
-
-
+*/
+/*
 void LOTextDescribe::SetPositionZero() {
 	int left, top ;
 	left = top = 0;
@@ -122,17 +149,63 @@ void LOTextDescribe::MovePosition(int mx, int my) {
 	}
 }
 
-
-//=================行描述=============
-LOTextLineDescribe::LOTextLineDescribe() {
-	left = top = width = height = align = 0;
+*/
+void LOTextDescribe::AddElement(LOWordElement *el) {
+	if (!words) words = new std::vector<LOWordElement*>();
+	words->push_back(el);
 }
 
 
+//=================行描述=============
+LOLineDescribe::LOLineDescribe() {
+	left = top = width = height = align = 0;
+	texts = nullptr;
+}
 
-//========================
+
+LOLineDescribe::~LOLineDescribe() {
+	ClearTexts();
+}
+
+
+void LOLineDescribe::ClearTexts() {
+	if (texts) {
+		for (auto iter = texts->begin(); iter != texts->end(); iter++) {
+			delete *iter;
+		}
+		texts = nullptr;
+	}
+}
+
+LOTextDescribe *LOLineDescribe::CreateTextDescribe(int ascent, int dscent, int cID) {
+	if (!texts) texts = new std::vector<LOTextDescribe*>();
+	LOTextDescribe *des = new LOTextDescribe(ascent,dscent, cID);
+	des->colorID = cID;
+	texts->push_back(des);
+	return des;
+}
+
+
+//确定每一个文字区域的尺寸，然后计算出行的尺寸
+void LOLineDescribe::CreateLocation(int xspace, int yspace) {
+	width = height = 0;
+	if (!texts) return;
+	int xx = left;
+	for (auto iter = texts->begin(); iter != texts->end(); iter++) {
+		LOTextDescribe *des = (*iter);
+		des->CreateLocation(xspace);
+		xx += (des->left + des->width);
+		if (des->height > height) height = des->height;
+	}
+	//高度加上间隔
+	height += yspace;
+}
+
+
+//================文字纹理===========
 LOTextTexture::LOTextTexture() {
 	surface = nullptr;
+	lines = nullptr;
 }
 
 
@@ -142,11 +215,26 @@ LOTextTexture::~LOTextTexture(){
 
 
 void LOTextTexture::reset() {
-	lines.reset();
+	ClearLines();
 	if (surface) FreeSurface(surface);
 	surface = nullptr;
 	text.clear();
 	fontName.clear();
+}
+
+
+void LOTextTexture::ClearLines() {
+	if (lines) {
+		for (auto iter = lines->begin(); iter != lines->end(); iter++) delete *iter;
+		lines = nullptr;
+	}
+}
+
+
+void LOTextTexture::ClearTexts() {
+	if (lines) {
+		for (auto iter = lines->begin(); iter != lines->end(); iter++) (*iter)->ClearTexts();
+	}
 }
 
 
@@ -159,9 +247,9 @@ bool LOTextTexture::CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOStrin
 	LOFont *font = LOFont::CreateFont(fontName);
 	if (!font) return false;
 
-	//取出所有文字列表
-	std::vector<LOWordElement*> list;
-	getWordElements(&list, font, style.xsize);
+	lines = new std::vector<LOLineDescribe*>();
+	CreateLineDescribe(font, style.xsize);
+	CreateLineLocation(style.xspace, style.yspace);
 }
 
 
@@ -170,93 +258,114 @@ bool LOTextTexture::divideDescribe(LOFont *font) {
 }
 
 
-//首先获取所有的字形数据
-void LOTextTexture::getWordElements(std::vector<LOWordElement*> *list, LOFont *font, int firstSize) {
-	int minx, maxx, miny, maxy, advance;
+LOLineDescribe* LOTextTexture::CreateNewLine(LOTextDescribe *&des, TTF_Font *font, int indent, int colorID) {
+	if(!lines) lines = new std::vector<LOLineDescribe*>();
+	LOLineDescribe *line = new LOLineDescribe();
+	lines->push_back(line);
+	line->left = indent;
+
+	if (&des && font) {
+		des = line->CreateTextDescribe(TTF_FontAscent(font), TTF_FontDescent(font), colorID);
+	}
+
+	return line;
+}
+
+
+//初步分割文字连续描述
+void LOTextTexture::CreateLineDescribe(LOFont *font, int firstSize) {
 	int colorID = 0;
+	int maxWidth = style.xcount * (firstSize + style.xspace);
 	const char *buf = text.c_str();
 	auto encoder = text.GetEncoder();
 	auto wordFont = font->GetFont(firstSize);
 	SDL_Color bgColor{ 0,0,0,0 };
 	SDL_Color fsColor{ 255,255,255,255 };
 
-	//int count = 0;
-	
+	LOTextDescribe *des = nullptr;
+	LOLineDescribe *line = CreateNewLine(des, wordFont->font, style.textIndent, colorID);
+	int currentX = line->left;
+
 	//可以在这里增加风格变换功能
 	while (buf[0] != 0) {
-		LOWordElement *ele = new LOWordElement();
-		int wordLen = 0;
-		ele->unicode = encoder->GetUtf16(buf, &wordLen);
-		ele->isEng = (wordLen == 1);
-		ele->size = firstSize;
-		ele->color = colorID;
-		buf += wordLen;
+		//忽略的符号
+		if (buf[0] == '\r') {
+			buf++;
+			continue;
+		}
+		LOWordElement *el = new LOWordElement();
+		int ulen = 0;
+		el->unicode = encoder->GetUtf16(buf, &ulen);
+		buf += ulen;
+		el->isEng = (ulen == 1);
 
-		if (wordFont->font) {
-			ele->dscent = wordFont->descent;
-			ele->ascent = wordFont->ascent;
-			//字符都是基线对齐的，基线即FontAscent，但这是一个世界的XY坐标系，不利于理解，需要转换成屏幕坐标系
-			//假定一条在世界坐标系(FontAscent,0)的屏幕坐标系基线，那么有：
-			//当maxy大于FontAscent时，surface的Y位置为 FontAscent - maxy，当maxy小于等于FontAscent时，Y位置为0
-			//X方向上，minx即为X的位置，surface的宽度 = advance - minx，即下一个符号的位置
-			TTF_GlyphMetrics(wordFont->font, ele->unicode, &minx, &maxx, &miny, &maxy, &advance);
-			ele->surface = LTTF_RenderGlyph_Shaded(wordFont->font, ele->unicode, fsColor, bgColor);
-			
-			//std::string s = "d:\\aaaa\\" + std::to_string(count) + ".bmp";
-			//SDL_SaveBMP(ele->surface, s.c_str());
-			//count++;
+		//风格变换开始
+		if (el->unicode == '{') {
 
+		}
+		else if (el->unicode == '}') {
+			//风格变换结束
+		}
+		else if (el->unicode == '\n') {
+			delete el;
+			el = nullptr;
+			line = CreateNewLine(des, wordFont->font, style.textIndent, colorID);
+			currentX = line->left;
 		}
 		else {
-			//当成一个空格
-			ele->minx = 0;
-			ele->maxx = firstSize / 2;
-			ele->miny = 0;
-			ele->maxy = firstSize;
-			ele->advance = firstSize / 2;
-		}
+			if (LOString::GetCharacter(buf - ulen) != LOString::CHARACTER_SPACE && wordFont->font) {
+				//字符都是基线对齐的，基线即FontAscent，但这是一个世界的XY坐标系，不利于理解，需要转换成屏幕坐标系
+				//假定一条在世界坐标系(FontAscent,0)的屏幕坐标系基线，那么有：
+				//当maxy大于FontAscent时，surface的Y位置为 FontAscent - maxy，当maxy小于等于FontAscent时，Y位置为0
+				//X方向上，minx即为X的位置，surface的宽度 = advance - minx，即下一个符号的位置
+				TTF_GlyphMetrics(wordFont->font, el->unicode, &el->minx, &el->maxx, &el->miny, &el->maxy, &el->advance);
+				el->surface = LTTF_RenderGlyph_Shaded(wordFont->font, el->unicode, fsColor, bgColor);
+				//检查是否需要新行了
+				if (currentX + el->minx + el->advance > maxWidth) {
+					line = CreateNewLine(des, wordFont->font, style.textIndent, colorID);
+					currentX = line->left;
+				}
 
-		list->push_back(ele);
+				des->AddElement(el);
+				//std::string s = "d:\\aaaa\\" + std::to_string(count) + ".bmp";
+				//SDL_SaveBMP(ele->surface, s.c_str());
+				//count++;
+				currentX += (el->minx + el->advance);
+			}
+			else {
+				//空格符号
+				el->setSpace(firstSize);
+				des->AddElement(el);
+			}
+
+			//间隔
+			currentX += style.xspace;
+		}
 	}
 	font->CloseAll();
 }
 
 
-//排布段落
-void LOTextTexture::setParagraph(std::vector<LOWordElement*> *list) {
-	int sectionMax = (style.xsize + style.xspace) * style.xcount;
-	int currentX = style.textIndent;
-	int currentY = 0;
 
-	LOTextLineDescribe *last = nullptr;
-	LOTextLineDescribe *cur = new LOTextLineDescribe;
-	lines.reset(cur);
-
-	for (auto iter = list->begin(); iter != list->end(); iter++) {
-		LOWordElement *el = (*iter);
-
-		//下一行
-		if (currentX > sectionMax || el->unicode == '\n') {
-			//每完成一行，需要准确计算出行高，和Y位置校正
-			last = cur;
-
-			currentY += cur->height + style.yspace;
-			if (el->unicode == '\n') currentX = style.textIndent;
-			else currentX = 0;
-			
-			cur = new LOTextLineDescribe;
-			last->next.reset(cur);
-		}
-
-		//计算出每个字形的位置
-		if (el->minx < 0) el->left = currentX + el->minx;
-		else el->left = currentX;
-		currentX += (el->advance - el->minx + el->left);
-
-		//当maxy大于FontAscent时，surface的Y位置为 FontAscent - maxy，当maxy小于等于FontAscent时，Y位置为0
-		if (el->maxy > el->ascent) el->top = el->ascent - el->maxy;
-		else el->top = 0;
+void LOTextTexture::CreateLineLocation(int xspace, int yspace) {
+	for (auto iter = lines->begin(); iter != lines->end(); iter++) {
+		(*iter)->CreateLocation(xspace, yspace);
 	}
+}
 
 
+void LOTextTexture::GetSize(int *width, int *height) {
+	int left, right, top, bottom;
+	left = right = top = bottom = 0;
+	if (lines) {
+		for (auto iter = lines->begin(); iter != lines->end(); iter++) {
+			LOLineDescribe *line = (*iter);
+			if (line->left < left) left = (*iter)->left;
+			if (line->width + line->left > right) right = line->width + line->left;
+			if (line->top < top) top = line->top;
+			if (line->top + line->height > bottom) bottom = line->top + line->height;
+		}
+	}
+	if (width) *width = right - left;
+	if (height) *height = bottom - top;
 }
