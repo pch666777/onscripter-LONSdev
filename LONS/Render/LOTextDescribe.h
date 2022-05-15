@@ -12,7 +12,7 @@
 #include "../etc/LOString.h"
 #include "LOFont.h"
 
-//单个文字
+//单个文字，位置是相对于文字区域描述的
 struct LOWordElement{
 	Uint16 unicode = 0;
 	int16_t left = 0;
@@ -67,7 +67,8 @@ private:
 
 //======================区域文字描述=================
 //区域文字是Ascent、Dscent和颜色模式相同的一组描述
-//RUBY是附加在区域描述上的区域描述
+//RUBY是附加在区域描述上的区域描述，阴影只需要在最后排版时考虑大小即可
+//位置是相对于行的
 class LOTextDescribe
 {
 public:
@@ -75,24 +76,21 @@ public:
 	LOTextDescribe(int ascent, int dscent, int cID);
 	~LOTextDescribe();
 
-	//历遍对象，获取尺寸，注意设置初始值
-	//void GetSizeRect(int *left, int *top, int *right, int *bottom);
-	//位置从0,0开始
-	//void SetPositionZero();
-	//void MovePosition(int mx, int my);
-	void AddElement(LOWordElement *el);
-	void ClearWords();
-	bool CreateLocation(int xspace);
+	//
+	void GetSizeRect(int16_t *left, int16_t *top, int16_t *right, int16_t *bottom);
+	bool CreateLocation(std::vector<LOWordElement*> *wordList, int xspace);
 
 	//rubby
 	LOTextDescribe *rubby;
-	//字列表
-	std::vector<LOWordElement*> *words;
-
-	int left;
-	int top;
-	int width;
-	int height;
+	int xx;
+	int yy;
+	//四至范围确定宽和高，minx和miny可以小于0表示位置变化
+	int16_t minx;
+	int16_t maxx;
+	int16_t miny;
+	int16_t maxy;
+	uint16_t startIndex;
+	uint16_t endIndex;
 	int colorID;
 	int Ascent;
 	int Dscent;
@@ -105,18 +103,24 @@ class LOLineDescribe {
 public:
 	LOLineDescribe();
 	~LOLineDescribe();
-	void ClearTexts();
-	LOTextDescribe *CreateTextDescribe(int ascent, int dscent, int cID);
-	void CreateLocation(int xspace, int yspace);
+	bool CreateLocation(std::vector<LOTextDescribe*> *textList, std::vector<LOWordElement*> *wordList, LOTextStyle *style);
+	//添加阴影尺寸，只有最后一行才考虑yshadow
+	void AddShadowSize(int16_t xspace, int16_t yspace, int16_t xshadow, int16_t yshadow);
+	int height();
 
-	int left;
-	int top;
-	int width;
-	int height;
+	int xx;
+	int yy;
+	//四至范围确定宽和高，minx和miny可以小于0表示位置变化
+	int16_t minx;
+	int16_t maxx;
+	int16_t miny;
+	int16_t maxy;
 	//对齐方式
 	int align;
-	//连续的文字描述区域
-	std::vector<LOTextDescribe*> *texts;
+	//连续文字描述区域索引的起点
+	int16_t startIndex;
+	//连续文字描述区域索引的终点
+	int16_t endIndex;
 };
 
 
@@ -128,10 +132,11 @@ public:
 	void reset();
 	void ClearLines();
 	void ClearTexts();
+	void ClearWords();
 	bool CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOString *fName);
 
 	//取得纹理的尺寸
-	void GetSize(int *width, int *height);
+	void GetSurfaceSize(int *width, int *height);
 
 	//内容
 	LOString text;
@@ -142,17 +147,18 @@ public:
 	//纹理
 	SDL_Surface *surface;
 	//
-	std::vector<LOLineDescribe*> *lines;
+	std::vector<LOLineDescribe*> lineList;
+	std::vector<LOTextDescribe*> textList;
+	std::vector<LOWordElement*> wordList;
 private:
 	bool divideDescribe(LOFont *font);
 
 	//分行
 	void CreateLineDescribe(LOFont *font, int firstSize);
-	//重建行
-	void CreateLineLocation(int xspace, int yspace);
-
 	//添加新行
-	LOLineDescribe* CreateNewLine(LOTextDescribe *&des, TTF_Font *font,  int indent, int colorID);
+	LOLineDescribe* CreateNewLine(LOTextDescribe *&des, TTF_Font *font,  LOTextStyle *style, int colorID);
+	//添加新的文字描述
+	LOTextDescribe* CreateNewTextDes(int ascent, int dscent, int colorID);
 };
 
 
