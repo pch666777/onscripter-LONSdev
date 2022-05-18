@@ -49,6 +49,8 @@ public:
 	LOTextStyle();
 	~LOTextStyle();
 
+	void reset();
+
 	int16_t xcount; //横向文字数
 	int16_t ycount; //纵向文字数
 	int16_t xsize; //文字横向大小
@@ -61,7 +63,7 @@ public:
 
 	//标记，粗体、阴影、斜体等
 	int flags;
-	SDL_Color fontColor = { 255,255,255,255 };
+	SDL_Color fontColor;
 private:
 };
 
@@ -146,7 +148,9 @@ public:
 	LOString fontName;
 	//纹理
 	SDL_Surface *surface;
-	//
+	//位置纠正，比如<pos = -12>体现为左移12个像素
+	uint16_t Xfix;
+	uint16_t Yfix;
 	std::vector<LOLineDescribe*> lineList;
 	std::vector<LOTextDescribe*> textList;
 	std::vector<LOWordElement*> wordList;

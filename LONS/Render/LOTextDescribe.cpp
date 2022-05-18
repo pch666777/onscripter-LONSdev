@@ -7,6 +7,15 @@
 
 //================================================
 LOTextStyle::LOTextStyle() {
+	reset();
+}
+
+LOTextStyle::~LOTextStyle() {
+
+}
+
+
+void LOTextStyle::reset() {
 	xcount = 1024;
 	ycount = 1024;
 	xsize = 16;
@@ -15,10 +24,9 @@ LOTextStyle::LOTextStyle() {
 	yspace = 1;
 	textIndent = 0;
 	flags = 0;
-}
-
-LOTextStyle::~LOTextStyle() {
-
+	xshadow = 0;
+	yshadow = 0;
+	fontColor = { 255,255,255,255 };
 }
 
 //================================================
@@ -179,6 +187,7 @@ void LOLineDescribe::AddShadowSize(int16_t xspace, int16_t yspace, int16_t xshad
 //================文字纹理===========
 LOTextTexture::LOTextTexture() {
 	surface = nullptr;
+	Xfix = Yfix = 0;
 }
 
 
@@ -223,7 +232,13 @@ bool LOTextTexture::CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOStrin
 	if (!font) return false;
 
 	CreateLineDescribe(font, style.xsize);
-	//CreateLineLocation(style.xspace, style.yspace);
+	//计算位置纠正
+	Xfix = Yfix = 0;
+	for (auto iter = lineList.begin(); iter != lineList.end(); iter++) {
+		LOLineDescribe *line = (*iter);
+		if (line->xx + line->minx < Xfix) Xfix =line->xx + line->minx;
+		if (line->yy + line->miny < Yfix) Yfix = line->yy + line->miny;
+	}
 }
 
 
@@ -352,19 +367,19 @@ void LOTextTexture::CreateLineDescribe(LOFont *font, int firstSize) {
 
 
 void LOTextTexture::GetSurfaceSize(int *width, int *height) {
-	/*
-	int left, right, top, bottom;
-	left = right = top = bottom = 0;
-	if (lines) {
-		for (auto iter = lines->begin(); iter != lines->end(); iter++) {
-			LOLineDescribe *line = (*iter);
-			if (line->left < left) left = (*iter)->left;
-			if (line->width + line->left > right) right = line->width + line->left;
-			if (line->top < top) top = line->top;
-			if (line->top + line->height > bottom) bottom = line->top + line->height;
-		}
+	uint16_t minx, maxx, miny, maxy;
+	minx = maxx = miny = maxy = 0;
+	for (auto iter = lineList.begin(); iter != lineList.end(); iter++) {
+		LOLineDescribe *line = (*iter);
+		if (line->xx + line->minx < minx) minx = line->xx + line->minx;
+		if (line->yy + line->miny < miny) miny = line->yy + line->miny;
+		if (line->xx + line->maxx > maxx) maxx = line->xx + line->maxx;
+		if (line->yy + line->maxy > maxy) maxy = line->yy + line->maxy;
 	}
-	if (width) *width = right - left;
-	if (height) *height = bottom - top;
-	*/
+
+	Xfix = minx;
+	Yfix = miny;
+
+	if (width) *width = maxx - minx + style.xshadow;
+	if (height) *height = maxy - miny + style.yshadow;
 }

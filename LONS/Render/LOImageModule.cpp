@@ -45,6 +45,7 @@ void LOImageModule::ResetConfig() {
 	texecFlag = false;
 	st_filelog = false;
 
+	
 	winFont.Reset();
 	winFont.xsize = 20;
 	winFont.ysize = 20;
@@ -65,6 +66,8 @@ void LOImageModule::ResetConfig() {
 	allSpList = NULL;
 	allSpList2 = NULL;
 	winEffect = NULL ;
+
+	
 }
 
 LOImageModule::~LOImageModule(){
@@ -988,8 +991,8 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 }
 
 //单行文字
-/*
-LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerInfo*info, LOString *s) {
+
+LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 	LOFontWindow *fontstyle = NULL;
 	SDL_Color *colors = NULL;
 	int cellcount = 1;
@@ -1066,7 +1069,7 @@ LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerInfo*info, LOString *s
 	}
 	return base;
 }
-*/
+
 //从标记中生成色块
 LOShareBaseTexture LOImageModule::TextureFromColor(LOLayerData *info) {
 	LOShareBaseTexture base;

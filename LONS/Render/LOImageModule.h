@@ -7,6 +7,7 @@
 #include "LOEffect.h"
 #include "LOLayer.h"
 #include "LOTexture.h"
+#include "LOTextDescribe.h"
 #include "LOFontBase.h"
 #include "LOFontInfo.h"
 #include "LOTexture.h"
@@ -233,6 +234,11 @@ private:
 	LOFontWindow winFont;       //默认的窗口
 	LOFontWindow spFont;
 	LOFontManager fontManager;
+
+	//lsp时使用的样式
+	LOTextStyle spStyle;
+	//lsp使用的字体名称
+	LOString    spFontName;
 	LOtextureBase *fpstex;
 
 	LOString btndefStr;     //btndef定义的按钮文件名
@@ -281,7 +287,7 @@ private:
 	LOShareBaseTexture TextureFromFile(LOLayerData *info);
 	LOShareBaseTexture TextureFromEmpty(LOLayerData *info);
 	LOShareBaseTexture TextureFromColor(LOLayerData *info);
-	//LOtextureBase* TextureFromSimpleStr(LOLayerInfo*info, LOString *s);
+	LOtextureBase* TextureFromSimpleStr(LOLayerData*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOFontWindow *fontwin);
