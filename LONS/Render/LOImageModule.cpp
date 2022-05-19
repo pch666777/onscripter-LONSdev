@@ -934,16 +934,16 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 	LOShareBaseTexture base;
 	if (!info->isCache()) {
 		//唯一性纹理
+		std::unique_ptr<LOString> tstr = std::move(info->fileTextName);
 		info->fileTextName.reset(new LOString(LOString("c;") + LOString::RandomStr(30)));
 
-		LOtextureBase *tx = nullptr;
 		if (info->texType == LOtexture::TEX_ACTION_STR) {
 			LOFontWindow ww = winFont;
 			//tx = RenderText2(info, &ww, data, 0);
 			//LOString::SetStr(info->textStr, data, false);
 		}
 		else if (info->texType == LOtexture::TEX_SIMPLE_STR) {
-			//tx = TextureFromSimpleStr(info, data);
+			base = TextureFromSimpleStr(info, tstr.get());
 			//LOLog_i("TextureFromSimpleStr LOSurface is %x",tx->GetSurface()) ;
 		}
 		else if (info->texType == LOtexture::TEX_MULITY_STR) {
@@ -992,7 +992,67 @@ LOShareBaseTexture LOImageModule::GetUseTextrue(LOLayerData *info, void *data, b
 
 //单行文字
 
-LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
+LOShareBaseTexture LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
+	//拷贝一份样式
+	LOTextStyle style = spStyle;
+	const char *buf = s->c_str();
+
+	//基础设置
+	while (buf[0] == '/' || buf[0] == ',' || buf[0] == ' ') buf++;
+	style.xsize = s->GetInt(buf);
+	while (buf[0] == ',' || buf[0] == ' ') buf++;
+	style.ysize = s->GetInt(buf);
+	while (buf[0] == ',' || buf[0] == ' ') buf++;
+	if (s->GetInt(buf)) style.flags |= LOTextStyle::STYLE_SHADOW;
+	else style.flags &= (~LOTextStyle::STYLE_SHADOW);
+
+	if (buf[0] == ',') { //what?
+		buf++;
+		style.xspace = s->GetInt(buf);
+	}
+	if (buf[0] == ',') { //what?
+		buf++;
+		style.yspace = s->GetInt(buf);
+	}
+	while (buf[0] == ',') {  //看着老ons源码有这个，不知道是啥
+		buf++;
+		s->GetInt(buf);
+	}
+	while (buf[0] == ';' || buf[0] == ' ') buf++;
+
+	//颜色数
+	std::vector<SDL_Color> colorList;
+	while (buf[0] == '#') {
+		buf++;
+		int color = s->GetHexInt(buf, 6);
+		SDL_Color cc;
+		cc.r = (color >> 16) & 0xff;
+		cc.g = (color >> 8) & 0xff;
+		cc.b = color & 0xff;
+		colorList.push_back(cc);
+	}
+
+	LOString text(buf);
+	text.SetEncoder(s->GetEncoder());
+	LOShareBaseTexture base;
+	if (colorList.size() == 0) return base;
+	LOTextTexture *texture = new LOTextTexture();
+	int w, h;
+	//先创建文字描述
+	if(!texture->CreateTextDescribe(&text, &style, &spFontName)) return base;
+	texture->GetSurfaceSize(&w, &h);
+	texture->CreateSurface(w * colorList.size(), h);
+
+	//将文本渲染到纹理上
+	for (int ii = 0; ii < colorList.size(); ii++) {
+		int x = w * ii;
+
+	}
+
+
+	return base;
+
+	/*
 	LOFontWindow *fontstyle = NULL;
 	SDL_Color *colors = NULL;
 	int cellcount = 1;
@@ -1068,6 +1128,8 @@ LOtextureBase* LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s
 		delete[] colors;
 	}
 	return base;
+	*/
+	return nullptr;
 }
 
 //从标记中生成色块

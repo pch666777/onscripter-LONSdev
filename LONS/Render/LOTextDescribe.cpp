@@ -242,6 +242,12 @@ bool LOTextTexture::CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOStrin
 }
 
 
+void LOTextTexture::CreateSurface(int w, int h) {
+	if (surface) FreeSurface(surface);
+	surface = CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
+}
+
+
 bool LOTextTexture::divideDescribe(LOFont *font) {
 	return true;
 }
@@ -382,4 +388,10 @@ void LOTextTexture::GetSurfaceSize(int *width, int *height) {
 
 	if (width) *width = maxx - minx + style.xshadow;
 	if (height) *height = maxy - miny + style.yshadow;
+}
+
+
+void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
+	if (!surface) return;
+
 }

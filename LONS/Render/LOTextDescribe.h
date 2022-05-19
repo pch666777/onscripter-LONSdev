@@ -136,6 +136,8 @@ public:
 	void ClearTexts();
 	void ClearWords();
 	bool CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOString *fName);
+	void CreateSurface(int w, int h);
+	void RenderTextSimple(int x, int y, SDL_Color color);
 
 	//取得纹理的尺寸
 	void GetSurfaceSize(int *width, int *height);

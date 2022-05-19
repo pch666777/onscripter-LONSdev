@@ -1,7 +1,6 @@
 ;$V1000G500S1024,576
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
-
 globalon
 filelog
 labellog
@@ -10,6 +9,8 @@ resettimer
 delay 10
 gettimer %1
 debuglog %1
+
+lsp 15,":s/40,40,0;#00ffff这是一个测试。",0,0
 
 debuglog "分辨率是否是1024*576？"
 

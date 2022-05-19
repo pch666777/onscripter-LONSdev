@@ -287,7 +287,7 @@ private:
 	LOShareBaseTexture TextureFromFile(LOLayerData *info);
 	LOShareBaseTexture TextureFromEmpty(LOLayerData *info);
 	LOShareBaseTexture TextureFromColor(LOLayerData *info);
-	LOtextureBase* TextureFromSimpleStr(LOLayerData*info, LOString *s);
+	LOShareBaseTexture TextureFromSimpleStr(LOLayerData*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOFontWindow *fontwin);

@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
 			if (imagemodule->InitImageModule()) {
 				LOLog_i("image module init ok.");
 
+				/*
 				char data[] = { 0xCE,0XD2,0XCA,0XC7,0XD2,0XBB, 0XB8, 0XF6, 0XB2, 0XE2, 0XCA,0XD4,0XA1,0XA3, 0 };
 				LOString s = "default1.ttf";
 				LOString str(data);
@@ -198,6 +199,7 @@ int main(int argc, char **argv) {
 				style.xspace = 1;
 				style.yspace = 1;
 				tex.CreateTextDescribe(&str, &style, &s);
+				*/
 
 				//注册spstr事件
 				LOShareEventHook ev(LOEventHook::CreateSpstrHook());
