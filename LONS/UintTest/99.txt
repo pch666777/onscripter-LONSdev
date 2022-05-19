@@ -10,7 +10,7 @@ delay 10
 gettimer %1
 debuglog %1
 
-lsp 15,":s/40,40,0;#00ffff这是一个测试。",0,0
+lsp 15,":s/16,16,0;#00ffff我是一个测试。",0,0
 
 debuglog "分辨率是否是1024*576？"
 

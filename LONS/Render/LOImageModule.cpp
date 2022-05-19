@@ -50,6 +50,7 @@ void LOImageModule::ResetConfig() {
 	winFont.xsize = 20;
 	winFont.ysize = 20;
 	spFont.Reset();
+	spFontName = "default.ttf";
 	fontManager.ResetMe();
 
 	textbtnValue = 1;
@@ -1046,7 +1047,7 @@ LOShareBaseTexture LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOStrin
 	//将文本渲染到纹理上
 	for (int ii = 0; ii < colorList.size(); ii++) {
 		int x = w * ii;
-
+		texture->RenderTextSimple(x, 0, colorList.at(ii));
 	}
 
 

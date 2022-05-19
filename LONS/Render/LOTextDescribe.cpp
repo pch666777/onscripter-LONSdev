@@ -393,5 +393,22 @@ void LOTextTexture::GetSurfaceSize(int *width, int *height) {
 
 void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 	if (!surface) return;
-
+	x += abs(Xfix);
+	y += abs(Yfix);
+	for (int lineII = 0; lineII < lineList.size(); lineII++) {
+		LOLineDescribe *line = lineList.at(lineII);
+		int lx = x + line->xx;
+		int ly = y + line->yy;
+		for (int textII = line->startIndex; textII < line->endIndex && textII < textList.size(); textII++) {
+			LOTextDescribe *des = textList.at(textII);
+			int dx = lx + des->xx;
+			int dy = ly + des->yy;
+			for (int wordII = des->startIndex; wordII < des->endIndex && wordII < wordList.size(); wordII++) {
+				LOWordElement *el = wordList.at(wordII);
+				int wx = dx + el->left;
+				int wy = dy + el->top;
+				//printf("%d,%d\n", wx, wy);
+			}
+		}
+	}
 }

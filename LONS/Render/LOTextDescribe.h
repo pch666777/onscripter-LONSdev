@@ -165,6 +165,7 @@ private:
 	LOLineDescribe* CreateNewLine(LOTextDescribe *&des, TTF_Font *font,  LOTextStyle *style, int colorID);
 	//添加新的文字描述
 	LOTextDescribe* CreateNewTextDes(int ascent, int dscent, int colorID);
+	void BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, int x, int y, SDL_Color color);
 };
 
 
