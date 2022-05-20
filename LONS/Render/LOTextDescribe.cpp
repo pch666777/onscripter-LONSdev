@@ -5,6 +5,10 @@
 #include "LOTextDescribe.h"
 #include "../etc/LOLog.h"
 
+//在别处已经定义了
+extern char G_Bit[4];
+extern Uint32 G_Texture_format;
+
 //================================================
 LOTextStyle::LOTextStyle() {
 	reset();
@@ -244,7 +248,7 @@ bool LOTextTexture::CreateTextDescribe(LOString *s, LOTextStyle *bstyle, LOStrin
 
 void LOTextTexture::CreateSurface(int w, int h) {
 	if (surface) FreeSurface(surface);
-	surface = CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA32);
+	surface = CreateRGBSurfaceWithFormat(0, w, h, 32, G_Texture_format);
 }
 
 
@@ -395,6 +399,8 @@ void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 	if (!surface) return;
 	x += abs(Xfix);
 	y += abs(Yfix);
+	SDL_Rect dstR, srcR;
+
 	for (int lineII = 0; lineII < lineList.size(); lineII++) {
 		LOLineDescribe *line = lineList.at(lineII);
 		int lx = x + line->xx;
@@ -405,10 +411,86 @@ void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 			int dy = ly + des->yy;
 			for (int wordII = des->startIndex; wordII < des->endIndex && wordII < wordList.size(); wordII++) {
 				LOWordElement *el = wordList.at(wordII);
-				int wx = dx + el->left;
-				int wy = dy + el->top;
+				dstR.x = dx + el->left;
+				dstR.y = dy + el->top;
+				srcR.x = 0; srcR.y = 0;
+				srcR.w = el->surface->w;
+				srcR.h = el->surface->h;
+				
+				BlitToRGBA(surface, el->surface, &dstR, &srcR, color);
 				//printf("%d,%d\n", wx, wy);
 			}
 		}
 	}
+}
+
+void LOTextTexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR, SDL_Color color) {
+	if (!CheckRect(dst, src, dstR, srcR)) return;
+
+	SDL_Color *ccIndex = src->format->palette->colors;
+	Uint32 reA, reB, AP;
+	int apos = G_Bit[0];
+	int rpos = G_Bit[1];
+	int gpos = G_Bit[2];
+	int bpos = G_Bit[3];
+
+	for (int line = 0; line < srcR->h; line++) {
+		//源图是8bit的
+		unsigned char *sbuf = (unsigned char*)src->pixels + (srcR->y + line) * src->pitch + srcR->x;
+		//目标图片是32位的
+		unsigned char *dbuf = (unsigned char*)dst->pixels + (dstR->y + line) * dst->pitch + dstR->x * 4;
+		for (int px = 0; px < srcR->w; px++) {
+			//背景色不拷贝
+			if (sbuf != 0) {
+				//默认材质所只用的RGBA模式位置 0 - A    1 - R    2 - G     3 - B
+				//目标色没有内容
+				if (dbuf[apos] == 0) {
+					dbuf[rpos] = color.r;
+					dbuf[gpos] = color.g;
+					dbuf[bpos] = color.b;
+					dbuf[apos] = sbuf[0];
+				}
+				else {
+					//混合内容
+
+				}
+			}
+			sbuf++;
+			dbuf += 4;
+		}
+	}
+}
+
+//需要安全的拷贝
+bool LOTextTexture::CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR) {
+	if (!dst || !src || !dstR || !srcR) return false;
+	//左上角检查
+	//检查来源
+	if (srcR->x < 0) {
+		dstR->x += abs(srcR->x); srcR->w -= abs(srcR->x); 
+		srcR->x = 0;
+	}
+	if (srcR->y < 0) {
+		dstR->y += abs(srcR->y); srcR->h -= abs(srcR->y);
+		srcR->y = 0;
+	}
+	//检查目标
+	if (dstR->x < 0) {
+		srcR->x += abs(dstR->x); srcR->w -= abs(dstR->x);
+		dstR->x = 0;
+	}
+	if (dstR->y < 0) {
+		srcR->y += abs(dstR->y); srcR->h -= abs(dstR->y);
+		dstR->y = 0;
+	}
+	if (srcR->w < 0 || srcR->h < 0 ) return false;
+	//检查右下角
+	//检查来源
+	if (srcR->x + srcR->w > src->w) srcR->w = src->w - srcR->x;
+	if (srcR->y + srcR->h > src->h) srcR->h = src->h - srcR->y;
+	//检查目标
+	if (dstR->x + srcR->w > dst->w) srcR->w = dst->w - dstR->x;
+	if (dstR->y + srcR->h > dst->h) srcR->h = dst->h - dstR->x;
+	if (srcR->w < 0 || srcR->h < 0) return false;
+	return true;
 }
