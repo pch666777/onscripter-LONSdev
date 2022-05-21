@@ -74,6 +74,7 @@ void LOtextureBase::baseNew() {
 	ispng = false;
 	baseTexture = nullptr;
 	baseSurface = nullptr;
+	textTexture = nullptr;
 }
 
 LOtextureBase::~LOtextureBase() {
@@ -81,8 +82,10 @@ LOtextureBase::~LOtextureBase() {
 	if (baseSurface) FreeSurface(baseSurface);
 	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
 	if (baseTexture) DestroyTexture(baseTexture);
+	if (textTexture) delete textTexture;
 	baseSurface = nullptr;
 	baseTexture = nullptr;
+	textTexture = nullptr;
 }
 
 

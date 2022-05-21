@@ -1038,99 +1038,29 @@ LOShareBaseTexture LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOStrin
 	LOShareBaseTexture base;
 	if (colorList.size() == 0) return base;
 	LOTextTexture *texture = new LOTextTexture();
-	int w, h;
+	
 	//先创建文字描述
-	if(!texture->CreateTextDescribe(&text, &style, &spFontName)) return base;
+	int w, h;
+	if (!texture->CreateTextDescribe(&text, &style, &spFontName)) {
+		delete texture;
+		return base;
+	}
+
 	texture->GetSurfaceSize(&w, &h);
 	texture->CreateSurface(w * colorList.size(), h);
 
 	//将文本渲染到纹理上
 	for (int ii = 0; ii < colorList.size(); ii++) {
-		int x = w * ii;
-		texture->RenderTextSimple(x, 0, colorList.at(ii));
+		texture->RenderTextSimple(w * ii, 0, colorList.at(ii));
 	}
+	//单字和文字区域已经不需要了
+	texture->ClearTexts();
+	texture->ClearWords();
 
+	base.reset(new LOtextureBase());
 
+	//SDL_SaveBMP(texture->surface, "test.bmp");
 	return base;
-
-	/*
-	LOFontWindow *fontstyle = NULL;
-	SDL_Color *colors = NULL;
-	int cellcount = 1;
-	const char *buf = s->c_str();
-	bool isnew = (info->maskName == NULL);
-	//样式
-	if (!isnew) {
-		fontstyle = (LOFontWindow*)info->maskName;
-		colors = (SDL_Color*)info->btnStr;
-		cellcount = info->btnValue;
-		info->maskName = NULL;
-		info->btnStr = NULL;
-		info->btnValue = 0;
-	}
-	else {
-		fontstyle = new LOFontWindow();
-		*fontstyle = spFont;
-		while (buf[0] == '/' || buf[0] == ',' || buf[0] == ' ') buf++;
-		fontstyle->xsize = s->GetInt(buf);
-		while (buf[0] == ',' || buf[0] == ' ') buf++;
-		fontstyle->ysize = s->GetInt(buf);
-		while (buf[0] == ',' || buf[0] == ' ') buf++;
-		fontstyle->isshaded = s->GetInt(buf);
-		if (buf[0] == ',') { //what?
-			buf++;
-			fontstyle->xspace = s->GetInt(buf);
-		}
-		if (buf[0] == ',') { //what?
-			buf++;
-			fontstyle->yspace = s->GetInt(buf);
-		}
-		while (buf[0] == ',') {  //看着老ons源码有这个，不知道是啥
-			buf++;
-			s->GetInt(buf);
-		}
-
-		while (buf[0] == ';' || buf[0] == ' ') buf++;
-		fontstyle->xcount = 256;
-		fontstyle->ycount = 256;
-		//颜色及格数
-		colors = new SDL_Color[3];
-		for (int ii = 0; buf[0] != 0 && ii < 3 && buf[0] == '#'; ii++) {
-			buf++;
-			int color = s->GetHexInt(buf, 6);
-			colors[ii].r = (color >> 16) & 0xff;
-			colors[ii].g = (color >> 8) & 0xff;
-			colors[ii].b = color & 0xff;
-			cellcount = ii + 1;
-		}
-	}
-
-	if (info->textStr) delete info->textStr;
-	info->textStr = new LOString(buf, s->GetEncoder());
-	info->textStr->SetEncoder(s->GetEncoder());
-
-	LOtextureBase *base = RenderText(info, fontstyle, info->textStr, colors, cellcount);
-	if (cellcount > 1) {
-		LOAnimationNS *anim = new LOAnimationNS;
-		info->ReplaceAction(anim);
-		anim->cellCount = cellcount;
-		anim->perTime = new int[anim->cellCount];
-		for (int ii = 0; ii < anim->cellCount; ii++)
-			*(anim->perTime + ii) = 0;
-		anim->loopMode = 3;
-		anim->cellCurrent = 0; //总是指向马上要执行的帧
-		anim->cellForward = 1; //1或者-1
-		anim->isEnble = true;
-		anim->control = LOAnimation::CON_REPLACE;
-	}
-
-	if (isnew) {
-		delete fontstyle;
-		delete[] colors;
-	}
-	return base;
-	*/
-	return nullptr;
 }
 
 //从标记中生成色块

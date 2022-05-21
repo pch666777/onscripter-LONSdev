@@ -151,8 +151,8 @@ public:
 	//纹理
 	SDL_Surface *surface;
 	//位置纠正，比如<pos = -12>体现为左移12个像素
-	uint16_t Xfix;
-	uint16_t Yfix;
+	int16_t Xfix;
+	int16_t Yfix;
 	std::vector<LOLineDescribe*> lineList;
 	std::vector<LOTextDescribe*> textList;
 	std::vector<LOWordElement*> wordList;
@@ -166,6 +166,7 @@ private:
 	//添加新的文字描述
 	LOTextDescribe* CreateNewTextDes(int ascent, int dscent, int colorID);
 	void BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR,SDL_Rect *srcR, SDL_Color color);
+	void BlitShadow(SDL_Surface *dst, SDL_Surface *src, SDL_Rect dstR, SDL_Rect srcR, SDL_Color color, int maxsize);
 	bool CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR);
 };
 

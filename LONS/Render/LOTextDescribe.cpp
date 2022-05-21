@@ -362,7 +362,9 @@ void LOTextTexture::CreateLineDescribe(LOFont *font, int firstSize) {
 			else {
 				//空格符号
 				el->setSpace(firstSize);
+				currentX += (el->maxx - el->minx);
 				wordList.push_back(el);
+				des->endIndex++;
 			}
 
 			//间隔
@@ -400,6 +402,7 @@ void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 	x += abs(Xfix);
 	y += abs(Yfix);
 	SDL_Rect dstR, srcR;
+	SDL_Color shadowColor = { 0,0,0,255 };
 
 	for (int lineII = 0; lineII < lineList.size(); lineII++) {
 		LOLineDescribe *line = lineList.at(lineII);
@@ -411,11 +414,18 @@ void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 			int dy = ly + des->yy;
 			for (int wordII = des->startIndex; wordII < des->endIndex && wordII < wordList.size(); wordII++) {
 				LOWordElement *el = wordList.at(wordII);
+				//空格跳过
+				if (!el->surface) continue;
+
 				dstR.x = dx + el->left;
 				dstR.y = dy + el->top;
 				srcR.x = 0; srcR.y = 0;
 				srcR.w = el->surface->w;
 				srcR.h = el->surface->h;
+				//阴影
+				if (style.xshadow != 0 || style.yshadow != 0) {
+					BlitShadow(surface, el->surface, dstR, srcR, shadowColor, des->Ascent - des->Dscent);
+				}
 				
 				BlitToRGBA(surface, el->surface, &dstR, &srcR, color);
 				//printf("%d,%d\n", wx, wy);
@@ -424,15 +434,27 @@ void LOTextTexture::RenderTextSimple(int x, int y, SDL_Color color) {
 	}
 }
 
+
+void LOTextTexture::BlitShadow(SDL_Surface *dst, SDL_Surface *src, SDL_Rect dstR, SDL_Rect srcR, SDL_Color color, int maxsize) {
+	int xs = style.xshadow;
+	int ys = style.yshadow;
+	if (xs < 0) xs = maxsize / 30 + 1;
+	if (ys < 0) ys = maxsize / 30 + 1;
+	dstR.x += xs;
+	dstR.y += ys;
+	BlitToRGBA(dst, src, &dstR, &srcR, color);
+}
+
 void LOTextTexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR, SDL_Color color) {
 	if (!CheckRect(dst, src, dstR, srcR)) return;
 
 	SDL_Color *ccIndex = src->format->palette->colors;
 	Uint32 reA, reB, AP;
-	int apos = G_Bit[0];
-	int rpos = G_Bit[1];
-	int gpos = G_Bit[2];
-	int bpos = G_Bit[3];
+	//默认材质所只用的RGBA模式位置 R  G  B  A
+	int rpos = G_Bit[0];
+	int gpos = G_Bit[1];
+	int bpos = G_Bit[2];
+	int apos = G_Bit[3];
 
 	for (int line = 0; line < srcR->h; line++) {
 		//源图是8bit的
@@ -442,8 +464,8 @@ void LOTextTexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dst
 		for (int px = 0; px < srcR->w; px++) {
 			//背景色不拷贝
 			if (sbuf != 0) {
-				//默认材质所只用的RGBA模式位置 0 - A    1 - R    2 - G     3 - B
-				//目标色没有内容
+				//默认材质所只用的RGBA模式位置 R  G  B  A
+ 				//目标色没有内容
 				if (dbuf[apos] == 0) {
 					dbuf[rpos] = color.r;
 					dbuf[gpos] = color.g;
@@ -451,8 +473,21 @@ void LOTextTexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dst
 					dbuf[apos] = sbuf[0];
 				}
 				else {
-					//混合内容
+					//混合内容，有优化空间，暂时先这样
+					AP = sbuf[0];
+					reA = (sbuf[0] ^ 255);  // 1 - srcAlpha
+					reB = (dbuf[apos] * reA / 255);
 
+					dbuf[apos] = AP + dbuf[apos] * reA / 255;  //dst alpha
+
+					dbuf[rpos] = (color.r * AP) / 255 + dbuf[rpos] * reB / 255;
+					dbuf[rpos] = dbuf[rpos] * 255 / dbuf[apos];
+
+					dbuf[gpos] = (color.g * AP) / 255 + dbuf[gpos] * reB / 255;
+					dbuf[gpos] = dbuf[gpos] * 255 / dbuf[apos];
+
+					dbuf[bpos] = (color.b * AP) / 255 + dbuf[bpos] * reB / 255;
+					dbuf[bpos] = dbuf[bpos] * 255 / dbuf[apos];
 				}
 			}
 			sbuf++;
@@ -490,7 +525,7 @@ bool LOTextTexture::CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR
 	if (srcR->y + srcR->h > src->h) srcR->h = src->h - srcR->y;
 	//检查目标
 	if (dstR->x + srcR->w > dst->w) srcR->w = dst->w - dstR->x;
-	if (dstR->y + srcR->h > dst->h) srcR->h = dst->h - dstR->x;
+	if (dstR->y + srcR->h > dst->h) srcR->h = dst->h - dstR->y;
 	if (srcR->w < 0 || srcR->h < 0) return false;
 	return true;
 }

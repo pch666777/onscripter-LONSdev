@@ -15,6 +15,7 @@
 #include "../etc/LOString.h"
 #include "../etc/SDL_mem.h"
 #include "../Scripter/FuncInterface.h"
+#include "LOTextDescribe.h"
 
 extern void GetFormatBit(SDL_PixelFormat *format, char *bit);
 extern void GetFormatBit(Uint32 format, char *bit);
@@ -63,6 +64,8 @@ public:
 
 	int ww;
 	int hh;
+	//纹理类型，分为普通和文字纹理
+	int texType;
 	//只有加载时这个参数才有效
 	bool ispng;
 	bool isbig;
@@ -71,6 +74,7 @@ private:
 	//是否超大纹理
 	SDL_Surface *baseSurface;
 	SDL_Texture *baseTexture;
+	LOTextTexture *textTexture;
 	void baseNew();
 };
 typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;
