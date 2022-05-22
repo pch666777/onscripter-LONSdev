@@ -318,7 +318,8 @@ void LOLayer::upDataNewFile() {
 	upDataBase(bakInfo.get());
 	upDataEx(bakInfo.get());
 	//有部分需要手动的
-	curInfo->fileTextName.reset(new LOString(*bakInfo->fileTextName.get()));
+	if(bakInfo->keyStr) curInfo->keyStr.reset(new LOString(*bakInfo->keyStr));
+	if(bakInfo->buildStr) curInfo->buildStr.reset(new LOString(*bakInfo->buildStr));
 	curInfo->texture = bakInfo->texture;
 
 	//在前台显示了

@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 #include <vector>
-
-#include "LOFontBase.h"
+#include <memory>
+#include <SDL.h>
 
 class LOAction
 {
@@ -76,7 +76,7 @@ public:
 	int16_t loopDelay = -1;   //循环延时
 	//bool isadd = false;
 	double perPix = 10.0;     //每毫秒显示的像素数
-	std::vector<LOLineInfo> lineInfos;  //行信息
+	//std::vector<LOLineInfo> lineInfos;  //行信息
 };
 
 #endif // !__H_LOACTION_

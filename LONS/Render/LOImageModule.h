@@ -8,8 +8,6 @@
 #include "LOLayer.h"
 #include "LOTexture.h"
 #include "LOTextDescribe.h"
-#include "LOFontBase.h"
-#include "LOFontInfo.h"
 #include "LOTexture.h"
 #include <SDL.h>
 
@@ -77,12 +75,27 @@ public:
 		}
 	};
 
+	//对话框描述
+	struct LOSayWindow {
+		int x;
+		int y;
+		int w;
+		int h;
+		int textX;
+		int textY;
+		LOString winstr;
+		void reset() {
+			x = y = textX = textY = 0;
+			w = G_gameWidth;
+			h = G_gameHeight;
+			winstr.clear();
+		}
+	};
+
 
 	int z_order;    //对话框所在的位置，大于这个值的sp将被显示在对话框的下方
 	int trans_mode;   //透明类型
 	bool winbackMode;
-	LOString winstr;   //对话窗口
-	SDL_Rect winoff;  //对话框的坐标，长宽
 	int winState;  //对话框的状态，0表示没有显示，1表示已经显示
 	int winEraseFlag;   //print的时候对话框是否隐藏，0为不隐藏，1为隐藏且先执行，2为隐藏且随print执行
 	int effectRunFalg[2];  //是否正处于特性运行阶段 [0] 1处于 0不处于  [1] 0允许点击时跳过  1不允许跳过
@@ -106,7 +119,7 @@ public:
 	LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 
-	LOShareBaseTexture GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
+	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
 	void ClearBtndef(const char *printName);
 	//const char* NewSysBtndef();
@@ -144,8 +157,8 @@ public:
 
 	bool ParseImgSP(LOLayerData *info, LOString *tag, const char *buf);
 
-	LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
-	LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
+	//LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
+	//LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
 
 	bool LoadDialogText(LOString *s, bool isAdd);
 	bool LoadDialogWin();
@@ -231,14 +244,17 @@ private:
 	static bool isShowFps;
 	static bool st_filelog;  //是否使用文件记录
 	std::unordered_map<std::string, LOtexture*> texMap;        //材质缓存
-	LOFontWindow winFont;       //默认的窗口
-	LOFontWindow spFont;
-	LOFontManager fontManager;
 
 	//lsp时使用的样式
 	LOTextStyle spStyle;
 	//lsp使用的字体名称
 	LOString    spFontName;
+	//对话使用的样式
+	LOTextStyle sayStyle;
+	LOString    sayFontName;
+	//对话框
+	LOSayWindow sayWindow;
+
 	LOtextureBase *fpstex;
 
 	LOString btndefStr;     //btndef定义的按钮文件名
@@ -284,13 +300,14 @@ private:
 	bool InitFps();
 	void ResetConfig();
 	void FreeFps();
-	LOShareBaseTexture TextureFromFile(LOLayerData *info);
-	LOShareBaseTexture TextureFromEmpty(LOLayerData *info);
-	LOShareBaseTexture TextureFromColor(LOLayerData *info);
-	LOShareBaseTexture TextureFromSimpleStr(LOLayerData*info, LOString *s);
+	void TextureFromFile(LOLayerData *info);
+	void TextureFromCache(LOLayerData *info);
+	void TextureFromEmpty(LOLayerData *info);
+	void TextureFromColor(LOLayerData *info);
+	void TextureFromSimpleStr(LOLayerData*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
-	void ScaleTextParam(LOLayerData *info, LOFontWindow *fontwin);
+	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
 

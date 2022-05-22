@@ -78,19 +78,6 @@ LOLayerData::LOLayerData() {
 	isinit = false;
 }
 
-LOLayerData::LOLayerData(const LOLayerData &obj)
-:LOLayerDataBase(obj)
-{
-	isinit = false;
-	//首先调用基类的拷贝函数
-	//接着特殊处理一下
-	if (obj.fileTextName) fileTextName.reset(new LOString(*obj.fileTextName));
-	if (obj.maskName) maskName.reset(new LOString(*obj.maskName));
-	if (obj.btnStr) btnStr.reset(new LOString(*obj.btnStr));
-	texture = obj.texture;
-	if (obj.actions) actions.reset(new std::vector<LOShareAction>(*obj.actions));
-}
-
 LOLayerData::~LOLayerData() {
 	//if (actions) for (int ii = 0; ii < actions->size(); ii++) delete actions->at(ii);
 	//if (eventHooks) for (int ii = 0; ii < eventHooks->size(); ii++) delete eventHooks->at(ii);
@@ -192,8 +179,8 @@ void LOLayerData::SetTextureType(int dt) {
 	texType = dt & 0xff;
 	switch (texType){
 		//使用缓存
-	case LOtexture::TEX_COLOR_AREA:
-	case LOtexture::TEX_EMPTY:
+	//case LOtexture::TEX_COLOR_AREA:
+	//case LOtexture::TEX_EMPTY:
 	case LOtexture::TEX_IMG:
 		flags |= FLAGS_USECACHE;
 		break;
@@ -205,8 +192,8 @@ void LOLayerData::SetTextureType(int dt) {
 	flags |= FLAGS_UPDATA;
 }
 
-void LOLayerData::SetNewFile(LOShareBaseTexture &base) {
-	if(base) texture.reset(new LOtexture(base));
+void LOLayerData::SetNewFile(LOShareTexture &tex) {
+	texture = tex;
 	flags |= FLAGS_NEWFILE;
 	flags |= FLAGS_UPDATA;
 	flags |= FLAGS_UPDATAEX;
@@ -217,7 +204,8 @@ void LOLayerData::SetNewFile(LOShareBaseTexture &base) {
 //释放图层数据并打上delete标记
 void LOLayerData::SetDelete() {
 	resetBase();
-	fileTextName.reset();
+	keyStr.reset();
+	buildStr.reset();
 	maskName.reset();
 	texture.reset();
 	if (actions) actions->clear();

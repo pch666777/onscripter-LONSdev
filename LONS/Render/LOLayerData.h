@@ -76,7 +76,6 @@ protected:
 class LOLayerData :public LOLayerDataBase{
 public:
 	LOLayerData();
-	LOLayerData(const LOLayerData &obj);
 	~LOLayerData();
 
 	//禁用赋值
@@ -140,19 +139,14 @@ public:
 		//TRANS_MASK
 	};
 
-	/*
-	LOString *fileName;  //透明样式;文件名
-	LOString *maskName;
-	LOtexture *texture;
-	LOStack<LOAnimation> *actions;
-	*/
-	//文本直接复制一份即可，无需引用计数
-	//文件名或者显示的文字或者执行的命令
-	std::unique_ptr<LOString> fileTextName;
+	//复用式纹理的索引key
+	std::unique_ptr<LOString> keyStr;
 	//遮片名称
 	std::unique_ptr<LOString> maskName;
 	//按钮字符串
 	std::unique_ptr<LOString> btnStr;
+	//loadsp时的字符串，保证读档时可以完整重新
+	std::unique_ptr<LOString> buildStr;
 
 	//纹理使用引用计数
 	LOShareTexture texture;
@@ -187,7 +181,7 @@ public:
 	void SetAlpha(int alp);
 	bool SetCell(LOActionNS *ac, int ce);
 	void SetTextureType(int dt);
-	void SetNewFile(LOShareBaseTexture &base);
+	void SetNewFile(LOShareTexture &tex);
 	void SetDelete();
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();

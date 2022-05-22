@@ -41,16 +41,16 @@ public:
 	~LOtextureBase();
 
 	void SetSurface(SDL_Surface *su);
-	SDL_Surface *GetSurface() { return baseSurface; }
-	SDL_Texture *GetTexture() { return baseTexture; }
 	void SetName(LOString &s) { Name.assign(s); }
 	LOString GetName() { return Name; }
 	bool isValid() { return baseSurface || baseTexture; }
 	SDL_Texture *GetFullTexture();
 	void FreeData();
+	SDL_Surface* GetSurface() { return baseSurface; }
 
 	//只对surface有效
 	bool hasAlpha();
+	bool isBig();
 
 	static uint16_t maxTextureW;
 	static uint16_t maxTextureH;
@@ -68,7 +68,6 @@ public:
 	int texType;
 	//只有加载时这个参数才有效
 	bool ispng;
-	bool isbig;
 private:
 	LOString Name;
 	//是否超大纹理
@@ -108,6 +107,20 @@ public:
 		EFF_MONO,
 		EFF_INVERT,
 	};
+
+	struct TextData{
+		std::vector<LOLineDescribe*> lineList;
+		std::vector<LOTextDescribe*> textList;
+		std::vector<LOWordElement*> wordList;
+		LOTextStyle style;
+		LOString fontName;
+		~TextData();
+		void ClearLines();
+		void ClearTexts();
+		void ClearWords();
+	};
+
+
 	LOtexture();
 	LOtexture(LOShareBaseTexture &base);
 	~LOtexture();
@@ -139,16 +152,40 @@ public:
 	static void addTextureBaseToMap(LOString &fname, LOShareBaseTexture &base);
 	static void notUseTextureBase(LOShareBaseTexture &base);
 	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //只能运行在主线程
-	static bool CopySurfaceToTextureRGBA(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst);
 
 	int baseW();
 	int baseH();
 	int W();
 	int H();
+	void setEmpty(int w, int h);
+
+	//创建文字文描述，通常是创建文字纹理的前奏
+	bool CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fontName);
+	void CreateSurface(int w, int h);
+	//取得纹理的尺寸
+	void GetTextSurfaceSize(int *width, int *height);
+	void RenderTextSimple(int x, int y, SDL_Color color);
+
+	//创建色块
+	void CreateSimpleColor(int w, int h, SDL_Color color);
+
+	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义
+	int16_t Xfix;
+	int16_t Yfix;
+	bool isEdit;
+	//文本纹理的信息
+	std::unique_ptr<TextData> textData;
 private:
 	void NewTexture();
-	void FreeRef();
-	void MakeGPUTexture();
+	void resetSurface();
+	void resetTexture();
+
+	void CreateLineDescribe(LOString *s, LOFont *font, int firstSize);
+	LOLineDescribe *CreateNewLine(LOTextDescribe *&des, TTF_Font *font, LOTextStyle *style, int colorID);
+	LOTextDescribe *CreateNewTextDes(int ascent, int dscent, int colorID);
+	void BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR, SDL_Color color);
+	void BlitShadow(SDL_Surface *dst, SDL_Surface *src, SDL_Rect dstR, SDL_Rect srcR, SDL_Color color, int maxsize);
+	bool CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR);
 
 	static std::unordered_map<std::string, LOShareBaseTexture> baseMap;
 
@@ -169,6 +206,7 @@ private:
 
 	//基础纹理
 	LOShareBaseTexture baseTexture;
+
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;

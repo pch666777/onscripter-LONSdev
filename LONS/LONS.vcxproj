@@ -171,8 +171,6 @@
     <ClCompile Include="Render\LOAction.cpp" />
     <ClCompile Include="Render\LOEffect.cpp" />
     <ClCompile Include="Render\LOFont.cpp" />
-    <ClCompile Include="Render\LOFontBase.cpp" />
-    <ClCompile Include="Render\LOFontInfo.cpp" />
     <ClCompile Include="Render\LOImageModule.cpp" />
     <ClCompile Include="Render\LOImageModule2.cpp" />
     <ClCompile Include="Render\LOImageModule_command.cpp" />

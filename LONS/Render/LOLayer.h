@@ -5,7 +5,6 @@
 #define _LOLAYER_H_
 
 #include "../Scripter/FuncInterface.h"
-#include "LOFontBase.h"
 #include "../etc/LOStack.h"
 #include "LOMatrix2d.h"
 #include "LOLayerData.h"

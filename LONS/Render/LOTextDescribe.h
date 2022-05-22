@@ -12,6 +12,7 @@
 #include "../etc/LOString.h"
 #include "LOFont.h"
 
+
 //单个文字，位置是相对于文字区域描述的
 struct LOWordElement{
 	Uint16 unicode = 0;

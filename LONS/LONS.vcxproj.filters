@@ -57,9 +57,6 @@
     <ClCompile Include="Render\LOMatrix2d.cpp">
       <Filter>源文件\Render</Filter>
     </ClCompile>
-    <ClCompile Include="Render\LOFontBase.cpp">
-      <Filter>源文件\Render</Filter>
-    </ClCompile>
     <ClCompile Include="Render\LOEffect.cpp">
       <Filter>源文件\Render</Filter>
     </ClCompile>
@@ -71,9 +68,6 @@
     </ClCompile>
     <ClCompile Include="File\LOCompressInfo.cpp">
       <Filter>源文件\File</Filter>
-    </ClCompile>
-    <ClCompile Include="Render\LOFontInfo.cpp">
-      <Filter>源文件\Render</Filter>
     </ClCompile>
     <ClCompile Include="Render\LOImageModule_command.cpp">
       <Filter>源文件\Render</Filter>

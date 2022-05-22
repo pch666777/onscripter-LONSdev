@@ -325,16 +325,27 @@ int LOImageModule::bgcopyCommand(FunctionInterface *reader) {
 int LOImageModule::spfontCommand(FunctionInterface *reader) {
 	LOString s = reader->GetParamStr(0).toLower();
 	if (s == "clear") {
-		spFont.Reset();
+		spFontName = sayFontName;
+		spStyle = sayStyle;
+		spStyle.xcount = 1024;
+		spStyle.ycount = 1024;
 	}
 	else {
-		spFont.fontName = reader->GetParamStr(0);
-		spFont.xsize = reader->GetParamInt(1);
-		spFont.ysize = reader->GetParamInt(2);
-		spFont.xspace = reader->GetParamInt(3);
-		spFont.yspace = reader->GetParamInt(4);
-		spFont.isbold = reader->GetParamInt(5);
-		spFont.isshaded = reader->GetParamInt(6);
+		spFontName = reader->GetParamStr(0);
+		spStyle.xsize = reader->GetParamInt(1);
+		spStyle.ysize = reader->GetParamInt(2);
+		spStyle.xspace = reader->GetParamInt(3);
+		spStyle.yspace = reader->GetParamInt(4);
+		if (reader->GetParamInt(5)) spStyle.flags |= LOTextStyle::STYLE_BOLD;
+		else spStyle.flags &= (~LOTextStyle::STYLE_BOLD);
+		if (reader->GetParamInt(6)) {
+			spStyle.xshadow = -1;
+			spStyle.yshadow = -1;
+		}
+		else {
+			spStyle.xshadow = 0;
+			spStyle.yshadow = 0;
+		}
 	}
 	return RET_CONTINUE;
 }
@@ -696,26 +707,30 @@ int LOImageModule::textbtnsetCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::setwindowCommand(FunctionInterface *reader) {
-	winFont.topx = reader->GetParamInt(0);
-	winFont.topy = reader->GetParamInt(1);
-	winFont.xcount = reader->GetParamInt(2);
-	winFont.ycount = reader->GetParamInt(3);
-	winFont.xsize = reader->GetParamInt(4);
-	winFont.ysize = reader->GetParamInt(5);
-	winFont.xspace = reader->GetParamInt(6);
-	winFont.yspace = reader->GetParamInt(7);
+	//文字显示的起点
+	sayWindow.textX = reader->GetParamInt(0);
+	sayWindow.textY = reader->GetParamInt(1);
+	sayStyle.xcount = reader->GetParamInt(2);
+	sayStyle.ycount = reader->GetParamInt(3);
+	sayStyle.xsize = reader->GetParamInt(4);
+	sayStyle.ysize = reader->GetParamInt(5);
+	sayStyle.xspace = reader->GetParamInt(6);
+	sayStyle.yspace = reader->GetParamInt(7);
 	G_textspeed = reader->GetParamInt(8);
 	//ons no bold?
 	//winFont.isbold = reader->GetParamInt(9);
-	winFont.isshaded = reader->GetParamInt(10);
-	winstr = reader->GetParamStr(11);
-	winoff.x = reader->GetParamInt(12);
-	winoff.y = reader->GetParamInt(13);
+	//阴影
+	if (reader->GetParamInt(10)) {
+		sayStyle.flags |= LOTextStyle::STYLE_SHADOW;
+	}
+	sayWindow.winstr = reader->GetParamStr(11);
+	sayWindow.x = reader->GetParamInt(12);
+	sayWindow.y = reader->GetParamInt(13);
 
-	if (winstr.length() > 0 && winstr.at(0) == '#') {
-		winoff.w = reader->GetParamInt(14);
-		winoff.h = reader->GetParamInt(15);
-		winstr = StringFormat(64, ">%d,%d,%s", winoff.w, winoff.h, winstr.c_str());
+	if (sayWindow.winstr.length() > 0 && sayWindow.winstr.at(0) == '#') {
+		sayWindow.w = reader->GetParamInt(14);
+		sayWindow.h = reader->GetParamInt(15);
+		sayWindow.winstr = StringFormat(64, ">%d,%d,%s", sayWindow.w, sayWindow.h, sayWindow.winstr.c_str());
 	}
 
 	if (reader->isName("setwindow")) ClearDialogText('\\'); //setwindow will clear text
@@ -724,11 +739,11 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::setwindow2Command(FunctionInterface *reader) {
-	winstr = reader->GetParamStr(11);
-	if (winstr.length() > 0 && winstr.at(0) == '#') {
-		if (winoff.w < 1) winoff.w = 1;
-		if (winoff.h < 1) winoff.h = 1;  //safe value
-		winstr = StringFormat(64, ">%d,%d,%s", winoff.w, winoff.h, winstr.c_str() + 1);
+	sayWindow.winstr = reader->GetParamStr(11);
+	if (sayWindow.winstr.length() > 0 && sayWindow.winstr.at(0) == '#') {
+		if (sayWindow.w < 1) sayWindow.w = 1;
+		if (sayWindow.h < 1) sayWindow.h = 1;  //safe value
+		sayWindow.winstr = StringFormat(64, ">%d,%d,%s", sayWindow.w, sayWindow.h, sayWindow.winstr.c_str());
 	}
 	return RET_CONTINUE;
 }
@@ -951,6 +966,7 @@ int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::rubyCommand(FunctionInterface *reader) {
+	/*
 	if (reader->isName("rubyon")) {
 		if (reader->GetParamCount() >= 1) fontManager.rubySize[0] = reader->GetParamInt(0);
 		if (reader->GetParamCount() >= 2) fontManager.rubySize[1] = reader->GetParamInt(1);
@@ -966,6 +982,7 @@ int LOImageModule::rubyCommand(FunctionInterface *reader) {
 		if (reader->GetParamCount() >= 3) fontManager.rubyFontName = reader->GetParamStr(2);
 		fontManager.rubySize[2] = LOFontManager::RUBY_LINE;
 	}
+	*/
 	return RET_CONTINUE;
 }
 
