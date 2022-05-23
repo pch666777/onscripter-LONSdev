@@ -315,7 +315,7 @@ LOtexture::~LOtexture() {
 
 //有可用的basetexture且basetext是可以用的
 bool LOtexture::isAvailable() {
-	if (baseTexture && baseTexture->ww > 0 && baseTexture->hh > 0) return true;
+	if (surfacePtr || texturePtr || baseTexture || expectRect.w > 0) return true;
 	else return false;
 }
 

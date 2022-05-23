@@ -938,6 +938,19 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 	if (!info->isCache()) {
 		//唯一性纹理
 		std::unique_ptr<LOString> tstr = std::move(info->keyStr);
+		switch (info->texType){
+		case LOtexture::TEX_SIMPLE_STR:
+			TextureFromSimpleStr(info, tstr.get());
+			break;
+		case LOtexture::TEX_EMPTY:
+			TextureFromEmpty(info);
+			break;
+		default:
+			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
+			SimpleError(errs.c_str());
+			break;
+		}
+		/*
 		if (info->texType == LOtexture::TEX_ACTION_STR) {
 			//tx = RenderText2(info, &ww, data, 0);
 			//LOString::SetStr(info->textStr, data, false);
@@ -957,6 +970,7 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 			SimpleError(errs.c_str());
 		}
 		//LOtexture::addTextureBaseToMap(*info->fileName, tx);
+		*/
 	}
 	else {
 		//只有图像才使用纹理缓存
@@ -1014,28 +1028,29 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 		colorList.push_back(cc);
 	}
 	if (colorList.size() == 0) return ;
-	info->texture.reset(new LOtexture());
+	LOShareTexture texture(new LOtexture());
+	info->SetNewFile(texture);
 
 	LOString text(buf);
 	text.SetEncoder(s->GetEncoder());
 	
 	//先创建文字描述
 	int w, h;
-	if (!info->texture->CreateTextDescribe(&text, &style, &spFontName)) {
-		info->texture.reset();
+	if (!texture->CreateTextDescribe(&text, &style, &spFontName)) {
+		texture.reset();
 		return;
 	}
 
-	info->texture->GetTextSurfaceSize(&w, &h);
-	info->texture->CreateSurface(w * colorList.size(), h);
+	texture->GetTextSurfaceSize(&w, &h);
+	texture->CreateSurface(w * colorList.size(), h);
 
 	//将文本渲染到纹理上
 	for (int ii = 0; ii < colorList.size(); ii++) {
-		info->texture->RenderTextSimple(w * ii, 0, colorList.at(ii));
+		texture->RenderTextSimple(w * ii, 0, colorList.at(ii));
 	}
 	//单字和文字区域已经不需要了
-	info->texture->textData->ClearTexts();
-	info->texture->textData->ClearWords();
+	texture->textData->ClearTexts();
+	texture->textData->ClearWords();
 	return ;
 }
 
@@ -1058,8 +1073,9 @@ void LOImageModule::TextureFromColor(LOLayerData *info) {
 	cc.g = (color >> 8) & 0xff;
 	cc.b = color & 0xff;
 
-	info->texture.reset(new LOtexture());
-	info->texture->CreateSimpleColor(w, h, cc);
+	LOShareTexture texture(new LOtexture());
+	info->SetNewFile(texture);
+	texture->CreateSimpleColor(w, h, cc);
 	return ;
 }
 /*
@@ -1070,8 +1086,9 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 */
 
 void LOImageModule::TextureFromEmpty(LOLayerData *info) {
-	info->texture.reset(new LOtexture());
-	info->texture->setEmpty(G_gameWidth, G_gameHeight);
+	LOShareTexture texture(new LOtexture());
+	info->SetNewFile(texture);
+	texture->setEmpty(G_gameWidth, G_gameHeight);
 }
 
 void LOImageModule::TextureFromFile(LOLayerData *info) {
