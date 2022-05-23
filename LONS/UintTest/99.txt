@@ -11,6 +11,7 @@ gettimer %1
 debuglog %1
 
 lsp 15,":s/16,16,0;#00ffff#ffff00个测试我是。",0,0
+btnwait %0
 
 debuglog "分辨率是否是1024*576？"
 

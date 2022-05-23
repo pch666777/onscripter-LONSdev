@@ -255,7 +255,7 @@ private:
 	//对话框
 	LOSayWindow sayWindow;
 
-	LOtextureBase *fpstex;
+	LOtexture *fpstex;
 
 	LOString btndefStr;     //btndef定义的按钮文件名
 	//LOString exbtn_dStr;

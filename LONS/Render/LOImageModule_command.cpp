@@ -5,9 +5,9 @@
 #include "LOImageModule.h"
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	if (reader->GetCurrentLine() == 386) {
-		int debugbreak = 1;
-	}
+	//if (reader->GetCurrentLine() == 386) {
+	//	int debugbreak = 1;
+	//}
 	bool visiable = !reader->isName("lsph");
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	int fixpos = 0;

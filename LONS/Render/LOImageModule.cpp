@@ -20,7 +20,6 @@ LOImageModule::LOImageModule(){
 	maskTex = NULL;
 	fpstex = NULL;
 	isShowFps = true;
-	fpstex = NULL;
 	//screenshotSu = NULL;
 	winEffect = NULL ;
 
@@ -569,17 +568,17 @@ void LOImageModule::ShowFPS(double postime) {
 	int fps = 1000 / postime;
 
 	SDL_Rect rect = { 0,0,0,0 };
-	rect.x = fpstex[0].ww * 3 + 5; rect.y = 5;
+	rect.x = fpstex[0].baseW() * 3 + 5; rect.y = 5;
 	while (fps > 0) {
 		int ii = fps % 10;
 
-		rect.w = (int)((double)fpstex[ii].ww / G_gameScaleX);
-		rect.h = (int)((double)fpstex[ii].hh / G_gameScaleX);
+		rect.w = (int)((double)fpstex[ii].baseW() / G_gameScaleX);
+		rect.h = (int)((double)fpstex[ii].baseH() / G_gameScaleX);
 		//auto ittt = fpstex[ii].GetTexture(NULL);
 
 		////LOLog_i("%d fps number!", ii) ;
 
-		SDL_RenderCopy(render, fpstex[ii].GetFullTexture(), NULL, &rect);
+		SDL_RenderCopy(render, fpstex[ii].GetTexture(), NULL, &rect);
 		rect.x -= rect.w;
 		fps = fps / 10;
 	}
@@ -591,6 +590,23 @@ void LOImageModule::FreeFps() {
 }
 
 bool LOImageModule::InitFps() {
+	fpstex = new LOtexture[10];
+	SDL_Color cc = { 0, 255, 0 };
+	LOTextStyle fpsStyle = spStyle;
+	fpsStyle.xsize = fpsStyle.ysize = G_viewRect.h * 14 / 400;
+
+	for (int ii = 0; ii <= 9; ii++) {
+		LOString s = std::to_string(ii);
+		fpstex[ii].CreateTextDescribe(&s, &spStyle, &spFontName);
+		int w = 0;
+		int h = 0;
+		fpstex[ii].GetTextSurfaceSize(&w, &h);
+		fpstex[ii].CreateSurface(w, h);
+		fpstex[ii].RenderTextSimple(0, 0, cc);
+		SDL_Rect rect = { 0,0,w,h };
+		fpstex[ii].activeTexture(&rect, true);
+	}
+
 	/*
 	fpsconfig.fontName = "*#?";
 	fpsconfig.xsize = G_viewRect.h * 14 / 400;

@@ -328,7 +328,7 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 	expectRect = *src;
 	actualRect = expectRect;
 	//复用性纹理和非复用性纹理
-	if (baseTexture) {
+	if (!baseTexture) {
 		//非复用式纹理不可能再次初始化
 		if (texturePtr) return true;
 		if (!surfacePtr) return false;
@@ -564,6 +564,15 @@ bool LOtexture::CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fo
 
 	textData->style = *style;
 	textData->fontName = *fontName;
+
+	CreateLineDescribe( s, font, textData->style.xsize);
+	//计算位置纠正
+	Xfix = Yfix = 0;
+	for (auto iter = textData->lineList.begin(); iter != textData->lineList.end(); iter++) {
+		LOLineDescribe *line = (*iter);
+		if (line->xx + line->minx < Xfix) Xfix = line->xx + line->minx;
+		if (line->yy + line->miny < Yfix) Yfix = line->yy + line->miny;
+	}
 }
 
 LOLineDescribe *LOtexture::CreateNewLine(LOTextDescribe *&des, TTF_Font *font, LOTextStyle *style, int colorID) {
