@@ -278,6 +278,7 @@ void LOtexture::SetBaseTexture(LOShareBaseTexture &base) {
 void LOtexture::NewTexture() {
 	useflag = 0;
 	Xfix = Yfix = 0;
+	bw = bh = 0;
 	expectRect = { 0,0,0,0 };
 	actualRect = { 0,0,0,0 };
 	isEdit = false;
@@ -315,7 +316,7 @@ LOtexture::~LOtexture() {
 
 //有可用的basetexture且basetext是可以用的
 bool LOtexture::isAvailable() {
-	if (surfacePtr || texturePtr || baseTexture || expectRect.w > 0) return true;
+	if (surfacePtr || texturePtr || baseTexture || bw > 0) return true;
 	else return false;
 }
 
@@ -346,6 +347,9 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 			SDL_UnlockTexture(texturePtr);
 		}
 		else texturePtr = CreateTextureFromSurface(LOtextureBase::render, surfacePtr);
+		//读取texturePtr的信息稍微麻烦点，因此采用一个记录
+		bw = surfacePtr->w;
+		bh = surfacePtr->h;
 		resetSurface();
 	}
 	else {
@@ -442,12 +446,12 @@ void LOtexture::setForceAplha(int alpha) {
 int LOtexture::baseW() {
 	if (baseTexture) return baseTexture->ww;
 	else if (surfacePtr) return surfacePtr->w;
-	else return expectRect.w;
+	else return bw;
 }
 int LOtexture::baseH() {
 	if (baseTexture) return baseTexture->hh;
 	else if (surfacePtr) return surfacePtr->h;
-	else return expectRect.h;
+	else return bh;
 }
 
 //初始化对话文字纹理，纹理是可编辑的
@@ -698,7 +702,7 @@ void LOtexture::CreateSurface(int w, int h) {
 }
 
 void LOtexture::GetTextSurfaceSize(int *width, int *height) {
-	uint16_t minx, maxx, miny, maxy;
+	int16_t minx, maxx, miny, maxy;
 	minx = maxx = miny = maxy = 0;
 	for (auto iter = textData->lineList.begin(); iter != textData->lineList.end(); iter++) {
 		LOLineDescribe *line = (*iter);
@@ -852,8 +856,8 @@ void LOtexture::BlitShadow(SDL_Surface *dst, SDL_Surface *src, SDL_Rect dstR, SD
 
 
 void LOtexture::setEmpty(int w, int h) {
-	expectRect.w = w;
-	expectRect.h = h;
+	bw = w;
+	bh = h;
 }
 
 

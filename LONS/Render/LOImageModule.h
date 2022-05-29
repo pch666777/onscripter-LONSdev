@@ -92,14 +92,48 @@ public:
 		}
 	};
 
+	//对话框的状态
+	struct LOSayState{
+		enum {
+			//文字、窗口和图标
+			FLAGS_TEXT_SHOW = 1 ,
+			FLAGS_WINDOW_SHOW = 2,
+			FLAGS_CUR_SHOW = 4,
+			//默认print隐藏对话框
+			FLAGS_PRINT_HIDE = 8,
+			FLAGS_PRINT_BEFOR = 16,
+			FLAGS_WINBACK_MODE = 32,
+			//textec决定了下一行是否从头开始
+			FLAGS_TEXT_CLEAR = 64 ,
+		};
+		//当前显示的对话文字
+		LOString say;
+		//对话框显示、消失时候执行的效果
+		std::unique_ptr<LOEffect> winEffect;
+		//状态标记
+		int flags;
+		//对话框所在的位置，大于这个值的sp将被显示在对话框的下方
+		int z_order;
+		//结尾符号，值的是 / \ @ 三种
+		int pageEnd;
+		
+		void reset() {
+			say.clear();
+			winEffect.reset();
+			flags = FLAGS_PRINT_HIDE;
+			z_order = 499;
+			pageEnd = 0;
+		}
+		//相信编译器，自动inline优化
+		bool isWinbak() { return flags & FLAGS_WINBACK_MODE;}
+		bool isTexec() { return flags & FLAGS_TEXT_CLEAR; }
+		void setFlags(int f) { flags |= f; }
+		void unSetFlags(int f) { flags &= (~f); }
+	};
 
-	int z_order;    //对话框所在的位置，大于这个值的sp将被显示在对话框的下方
+
 	int trans_mode;   //透明类型
-	bool winbackMode;
-	int winState;  //对话框的状态，0表示没有显示，1表示已经显示
-	int winEraseFlag;   //print的时候对话框是否隐藏，0为不隐藏，1为隐藏且先执行，2为隐藏且随print执行
 	int effectRunFalg[2];  //是否正处于特性运行阶段 [0] 1处于 0不处于  [1] 0允许点击时跳过  1不允许跳过
-	LOEffect* winEffect;     //对话框显示、消失时候执行的效果
 
 	SDL_mutex* layerQueMutex;	//图层队列锁
 	//std::mutex layerTestMute;
@@ -116,7 +150,7 @@ public:
 	bool breakflag = false;
 	bool dialogWinHasChange;
 	bool dialogTextHasChange;
-	LOString dialogText; //当前显示的文本
+	//LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 
 	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
@@ -254,6 +288,8 @@ private:
 	LOString    sayFontName;
 	//对话框
 	LOSayWindow sayWindow;
+	//对话框状态
+	LOSayState sayState;
 
 	LOtexture *fpstex;
 
@@ -268,12 +304,10 @@ private:
 	int dialogDisplayMode;
 	bool effectSkipFlag;    //是否允许跳过效果（单击时）
 	bool textbtnFlag;    //控制textbtnwait时，文字按钮是否自动注册
-	bool texecFlag;
 	int  textbtnValue;   //文字按钮的值，默认为1
 	std::vector<int> *allSpList;   //allsphide、allspresume命令使用的列表
 	std::vector<int> *allSpList2;  //allsp2hide、allsp2resume命令使用的列表
 	//char pageEndFlag[2];  //'\' or '@' or '/' 0位置反映真实的换页符号，1位置反映根据处理后的换页符号
-	int pageEndFlag;
 	int shaderList[20];
 	int mouseXY[2];
 	//LOSurface *screenshotSu;       //屏幕截图

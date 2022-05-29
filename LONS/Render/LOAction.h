@@ -57,6 +57,8 @@ class LOActionNS :public LOAction{
 public:
 	LOActionNS();
 	~LOActionNS();
+	//设置指定格数的动画时间
+	void setSameTime(int32_t t, int count);
 
 	int16_t cellCount = 1;	 //动画分格总数
 	int8_t  cellForward = 1; //前进方向, -1表示倒放

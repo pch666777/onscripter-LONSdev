@@ -28,6 +28,11 @@ LOActionNS::~LOActionNS() {
 
 }
 
+void LOActionNS::setSameTime(int32_t t, int count) {
+	cellTimes.clear();
+	for (int ii = 0; ii < count; ii++) cellTimes.push_back(t);
+}
+
 //========================
 
 LOActionText::LOActionText() {

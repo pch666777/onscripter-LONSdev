@@ -204,9 +204,13 @@ private:
 	//实际纹理的位置和大小
 	SDL_Rect actualRect;
 
+	//原始宽度和高度
+	int16_t bw;
+	int16_t bh;
+
+
 	//基础纹理
 	LOShareBaseTexture baseTexture;
-
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;

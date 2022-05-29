@@ -61,6 +61,8 @@ public:
 	int16_t textIndent;  //首行缩进
 	int16_t xshadow; //阴影X方向的偏移
 	int16_t yshadow; //阴影y方向的偏移
+	int16_t xruby;
+	int16_t yruby;
 
 	//标记，粗体、阴影、斜体等
 	int flags;

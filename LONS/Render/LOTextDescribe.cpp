@@ -20,16 +20,14 @@ LOTextStyle::~LOTextStyle() {
 
 
 void LOTextStyle::reset() {
-	xcount = 1024;
-	ycount = 1024;
-	xsize = 16;
-	ysize = 16;
+	xcount = ycount = 1024;
+	xsize = ysize = 16;
 	xspace = 0;
 	yspace = 1;
 	textIndent = 0;
 	flags = 0;
-	xshadow = 0;
-	yshadow = 0;
+	xshadow = yshadow = 0;
+	xruby = yruby = 0;
 	fontColor = { 255,255,255,255 };
 }
 

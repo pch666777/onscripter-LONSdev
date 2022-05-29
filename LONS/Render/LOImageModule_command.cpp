@@ -238,24 +238,22 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::cellCommand(FunctionInterface *reader) {
-	/*
-	int ids[] = { reader->GetParamInt(0),255,255 };
-	LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
+	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (info) {
-		info->SetCell(reader->GetParamInt(1));
+		info->SetCell(nullptr, reader->GetParamInt(1));
 	}
-	*/
 	return RET_CONTINUE;
 }
 
 int LOImageModule::humanzCommand(FunctionInterface *reader) {
 	int no = reader->GetParamInt(0);
 	if (no < 1 || no > 999) {
-		SDL_Log("[humanz] command is just for 1~999, buf it's %d!", no);
+		LOLog_i("[humanz] command is just for 1~999, buf it's %d!", no);
 		return RET_WARNING;
 	}
 	else {
-		z_order = no;
+		sayState.z_order = no;
 		return RET_CONTINUE;
 	}
 }
@@ -517,7 +515,7 @@ int LOImageModule::allspCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::windowbackCommand(FunctionInterface *reader) {
-	winbackMode = true;
+	sayState.setFlags(LOSayState::FLAGS_WINBACK_MODE);
 	return RET_CONTINUE;
 }
 
@@ -527,11 +525,14 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	//}
 
 	LOString text = reader->GetParamStr(0);
-	pageEndFlag = reader->GetParamInt(1);
+	sayState.pageEnd = reader->GetParamInt(1);
+	//pageEndFlag = reader->GetParamInt(1);
 
-	if (texecFlag && dialogText.length() > 0) dialogText.append("\n");
-	dialogText.append(text);
-	LoadDialogText(&dialogText, true);  //文字都是由text命令控制的，不受上次的符号影响
+	if (sayState.isTexec() && sayState.say.length() > 0) sayState.say.append("\n");
+	//if (texecFlag && dialogText.length() > 0) dialogText.append("\n");
+	//dialogText.append(text);
+	sayState.say.append(text);
+	LoadDialogText(&sayState.say, true);  //文字都是由text命令控制的，不受上次的符号影响
 
 	/*
 	//结尾符号进入参数传递
@@ -574,11 +575,10 @@ int LOImageModule::effectCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
-	if (winEffect) delete winEffect;
-	winEffect = GetEffect(reader->GetParamInt(0));
-	if (winEffect) {
-		if (reader->GetParamCount() > 1) winEffect->time = reader->GetParamInt(1);
-		if (reader->GetParamCount() > 2) winEffect->mask = reader->GetParamStr(2);
+	sayState.winEffect.reset(GetEffect(reader->GetParamInt(0)));
+	if (sayState.winEffect) {
+		if (reader->GetParamCount() > 1) sayState.winEffect->time = reader->GetParamInt(1);
+		if (reader->GetParamCount() > 2) sayState.winEffect->mask = reader->GetParamStr(2);
 	}
 	return RET_CONTINUE;
 }
@@ -652,18 +652,18 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 //对话框受erasetextwindow影响，当erasetextwindow有效时，leveatextmode对话框消失
 
 	//texecFlag决定下一行文字是紧接着还是从下一行位置开始
-	char lineEnd = pageEndFlag & 0xff;
-	if (lineEnd == '\\') {  //换页清除
-		ClearDialogText(lineEnd);
-		DialogWindowSet(0, -1, -1);
-		texecFlag = false;
-		//dialogDisplayMode = DISPLAY_MODE_NORMAL;
-	}
-	else if (lineEnd == '@') {
-		if ((pageEndFlag & 0xff00) == 0x1000)texecFlag = true;
-		else texecFlag = false;
-	}
-	else texecFlag = false;
+	//char lineEnd = pageEndFlag & 0xff;
+	//if (lineEnd == '\\') {  //换页清除
+	//	ClearDialogText(lineEnd);
+	//	DialogWindowSet(0, -1, -1);
+	//	texecFlag = false;
+	//	//dialogDisplayMode = DISPLAY_MODE_NORMAL;
+	//}
+	//else if (lineEnd == '@') {
+	//	if ((pageEndFlag & 0xff00) == 0x1000)texecFlag = true;
+	//	else texecFlag = false;
+	//}
+	//else texecFlag = false;
 	return RET_CONTINUE;
 }
 
@@ -758,7 +758,8 @@ int LOImageModule::clickCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::erasetextwindowCommand(FunctionInterface *reader) {
-	winEraseFlag = reader->GetParamInt(0);
+	if (reader->GetParamInt(0)) sayState.setFlags(LOSayState::FLAGS_PRINT_HIDE);
+	else  sayState.unSetFlags(LOSayState::FLAGS_PRINT_HIDE);
 	return RET_CONTINUE;
 }
 
@@ -1022,8 +1023,8 @@ int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 
 int LOImageModule::ispageCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	if (pageEndFlag == '\\') v->SetValue(1.0);
-	else v->SetValue(0.0);
+	//if (pageEndFlag == '\\') v->SetValue(1.0);
+	//else v->SetValue(0.0);
 	return RET_CONTINUE;
 }
 

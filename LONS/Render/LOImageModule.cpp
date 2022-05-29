@@ -21,7 +21,6 @@ LOImageModule::LOImageModule(){
 	fpstex = NULL;
 	isShowFps = true;
 	//screenshotSu = NULL;
-	winEffect = NULL ;
 
     ResetConfig();
 
@@ -36,20 +35,17 @@ LOImageModule::LOImageModule(){
 
 void LOImageModule::ResetConfig() {
 	tickTime = 0;
-	z_order = 499;
 	trans_mode = LOLayerData::TRANS_TOPLEFT;
 	effectSkipFlag = false;
-	winbackMode = false;
 	textbtnFlag = true;
-	texecFlag = false;
 	st_filelog = false;
 
 	spFontName = "default.ttf";
 	sayFontName = "default.ttf";
 	sayWindow.reset();
+	sayState.reset();
 
 	textbtnValue = 1;
-	winEraseFlag = 1;  //默认print的时候隐藏对话框
 
 	btndefStr.clear();
 	btnOverTime = 0;
@@ -57,12 +53,8 @@ void LOImageModule::ResetConfig() {
 
 	if (allSpList) allSpList->clear();
 	if (allSpList2) allSpList2->clear();
-    if (winEffect) delete winEffect;
 	allSpList = NULL;
 	allSpList2 = NULL;
-	winEffect = NULL ;
-
-	
 }
 
 LOImageModule::~LOImageModule(){
@@ -430,17 +422,17 @@ void LOImageModule::UpDisplay(double postime) {
 	tickTime += (int)postime;
 	//位于底部的要先渲染
 	UpDataLayer(G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
-	UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, z_order + 1, 0);
+	UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, sayState.z_order + 1, 0);
 	UpDataLayer(G_baseLayer[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
-	if (winbackMode) {
+	if (sayState.isWinbak()) {
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
-		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, sayState.z_order, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
 	}
 	else {
-		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, z_order, 0, 0);
+		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, sayState.z_order, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
@@ -1042,6 +1034,11 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 	}
 
 	texture->GetTextSurfaceSize(&w, &h);
+	if (w <= 0 || h <= 0) {
+		texture.reset();
+		return;
+	}
+
 	texture->CreateSurface(w * colorList.size(), h);
 
 	//将文本渲染到纹理上
@@ -1051,6 +1048,14 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 	//单字和文字区域已经不需要了
 	texture->textData->ClearTexts();
 	texture->textData->ClearWords();
+	//如果是多颜色的，生成ns动画
+	if (colorList.size() > 1) {
+		LOActionNS *ac = new LOActionNS();
+		ac->cellCount = colorList.size();
+		//不会进入动画检测
+		ac->setEnble(false);
+		info->SetAction(ac);
+	}
 	return ;
 }
 
@@ -1182,19 +1187,19 @@ LOEffect* LOImageModule::GetEffect(int id) {
 
 
 void LOImageModule::EnterTextDisplayMode(bool force) {
-	if ( dialogDisplayMode == DISPLAY_MODE_NORMAL|| force) {
-		DialogWindowSet(1, 1, 1);
-		dialogDisplayMode = DISPLAY_MODE_TEXT;
-		dialogTextHasChange = false;
-	}
+	//if ( dialogDisplayMode == DISPLAY_MODE_NORMAL|| force) {
+	//	DialogWindowSet(1, 1, 1);
+	//	dialogDisplayMode = DISPLAY_MODE_TEXT;
+	//	dialogTextHasChange = false;
+	//}
 }
 
 
 void LOImageModule::LeveTextDisplayMode(bool force) {
-	if ( dialogDisplayMode != DISPLAY_MODE_NORMAL && (force || winEraseFlag != 0)) {
-		DialogWindowSet(0, 0, 0);
-		dialogDisplayMode = DISPLAY_MODE_NORMAL;
-	}
+	//if ( dialogDisplayMode != DISPLAY_MODE_NORMAL && (force || winEraseFlag != 0)) {
+	//	DialogWindowSet(0, 0, 0);
+	//	dialogDisplayMode = DISPLAY_MODE_NORMAL;
+	//}
 }
 
 //控制对话框和文字的显示状态，负数表示不改变，0隐藏，1显示
@@ -1301,53 +1306,58 @@ int LOImageModule::ShowLayer(int fullid, const char *printName) {
 
 
 void LOImageModule::DialogWindowPrint() {
-	LOEffect *ef = nullptr;
-	if (winEffect) {
-		ef = new LOEffect;
-		ef->CopyFrom(winEffect);
-		ExportQuequ("_lons", ef, true);
-		delete ef;
-	}
-	else ExportQuequ("_lons", nullptr, true);
+	//LOEffect *ef = nullptr;
+	//if (winEffect) {
+	//	ef = new LOEffect;
+	//	ef->CopyFrom(winEffect);
+	//	ExportQuequ("_lons", ef, true);
+	//	delete ef;
+	//}
+	//else ExportQuequ("_lons", nullptr, true);
 }
 
 //文字显示进入队列
 bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
-	/*
-	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
-
-	LOLayer *lyr = nullptr;
-	int startline = 0;
-	int startpos = 0;
-
-	if (isAdd) {
-		isAdd = false;
-		lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
-		if (lyr) {
-			//确认下一行的开始位置
-			//LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
-			//if (text) {
-			//	startline = text->lineInfo->size() - 1;
-			//	startpos = text->lineInfo->top()->sumx;
-			//	isAdd = true;
-			//}
-		}
-	}
+	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
+	LOLayerData *info = CreateNewLayerData(fullid, "_lons");
 
 	LOString tag = "*s;" + (*s);
-	loadSpCore(info, tag, winFont.topx, winFont.topy + fontManager.GetRubyPreHeight(), 255);
-	if (isAdd) {
-		LOAnimationText *text = (LOAnimationText*)info->GetAnimation(LOAnimation::ANIM_TEXT);
-		if (text) {
-			text->currentLine = startline;
-			text->currentPos = startpos;
-			text->isadd = true;
-			//SDL_SaveBMP(text->su, "test.bmp");
-		}
-	}
-	dialogTextHasChange = true;
-	*/
+	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + fontManager.GetRubyPreHeight(), 255);
+	
+	//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
+	//LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
+
+	//LOLayer *lyr = nullptr;
+	//int startline = 0;
+	//int startpos = 0;
+
+	//if (isAdd) {
+	//	isAdd = false;
+	//	lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
+	//	if (lyr) {
+	//		//确认下一行的开始位置
+	//		//LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
+	//		//if (text) {
+	//		//	startline = text->lineInfo->size() - 1;
+	//		//	startpos = text->lineInfo->top()->sumx;
+	//		//	isAdd = true;
+	//		//}
+	//	}
+	//}
+
+	//LOString tag = "*s;" + (*s);
+	//loadSpCore(info, tag, winFont.topx, winFont.topy + fontManager.GetRubyPreHeight(), 255);
+	//if (isAdd) {
+	//	LOAnimationText *text = (LOAnimationText*)info->GetAnimation(LOAnimation::ANIM_TEXT);
+	//	if (text) {
+	//		text->currentLine = startline;
+	//		text->currentPos = startpos;
+	//		text->isadd = true;
+	//		//SDL_SaveBMP(text->su, "test.bmp");
+	//	}
+	//}
+	//dialogTextHasChange = true;
+
 	return true;
 }
 
