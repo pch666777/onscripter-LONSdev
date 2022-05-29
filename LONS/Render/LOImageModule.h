@@ -105,6 +105,7 @@ public:
 			FLAGS_WINBACK_MODE = 32,
 			//textec决定了下一行是否从头开始
 			FLAGS_TEXT_CLEAR = 64 ,
+			FLAGS_WINDOW_CHANGE = 128 ,
 		};
 		//当前显示的对话文字
 		LOString say;

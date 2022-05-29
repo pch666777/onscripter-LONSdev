@@ -868,3 +868,42 @@ void LOtexture::CreateSimpleColor(int w, int h, SDL_Color color) {
 	SDL_Palette *pale = surfacePtr->format->palette;
 	pale->colors[0] = color;
 }
+
+
+bool LOtexture::RollTextTexture(int start, int end) {
+	//不能运行的，直接相当于到终点
+	if (!texturePtr || !isEdit || !textData || textData->lineList.size() == 0) return true;
+	int startLine, startPos, endLine, endPos;
+	tranzPosition(&startLine, &startPos, start);
+	tranzPosition(&endLine, &endPos, end);
+	//确定所有需要修改的区域
+	for (int ii = startLine; ii <= endLine; ii++) {
+		SDL_Rect re;
+		LOLineDescribe *line = textData->lineList.at(ii);
+		re.x = line->xx + abs(Xfix);
+		re.y = line->yy + abs(Yfix);
+		re.w = line->width() + textData->style.xshadow;
+		re.h = line->height() + textData->style.yshadow;
+	}
+}
+
+
+void LOtexture::tranzPosition(int *lineID, int *linePos, int position) {
+	*lineID = -1;
+	*linePos = 0;
+	if (!textData || textData->lineList.size() == 0) return;
+	for (*lineID = 0; *lineID < textData->lineList.size(); (*lineID)++) {
+		LOLineDescribe *line = textData->lineList.at(*lineID);
+		int lw = line->width() + textData->style.xshadow;
+		if (position - lw > 0) position -= lw;
+		else {
+			*linePos = lw - position;
+			break;
+		}
+	}
+	//最大只允许到尾部
+	if (*lineID == textData->lineList.size()) {
+		*lineID = textData->lineList.size() - 1;
+		*linePos = textData->lineList[*lineID]->width() + textData->style.xshadow;
+	}
+}

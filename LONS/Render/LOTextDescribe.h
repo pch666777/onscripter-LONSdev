@@ -112,6 +112,7 @@ public:
 	//添加阴影尺寸，只有最后一行才考虑yshadow
 	void AddShadowSize(int16_t xspace, int16_t yspace, int16_t xshadow, int16_t yshadow);
 	int height();
+	int width();
 
 	int xx;
 	int yy;

@@ -37,6 +37,8 @@ public:
 	enum {
 		FLAGS_FINISH = 1,
 		FLAGS_ENBLE = 2,
+		//某些动作需要初始化，会设置这个值
+		FLAGS_INIT = 4 ,
 	};
 
 	AnimaType acType;
@@ -46,6 +48,8 @@ public:
 	int gVal;
 	bool isEnble() { return flags & FLAGS_ENBLE; }
 	void setEnble(bool enble);
+	void setFlags(int f) { flags |= f; }
+	void unSetFlags(int f) { flags &= (~f); }
 private:
 	int flags;
 };
@@ -74,11 +78,9 @@ public:
 	~LOActionText();
 
 	int16_t currentPos = 0;  //动画当前运行的位置
-	int16_t currentLine = 0; //当前的行
+//	int16_t currentLine = 0; //当前的行
 	int16_t loopDelay = -1;   //循环延时
-	//bool isadd = false;
 	double perPix = 10.0;     //每毫秒显示的像素数
-	//std::vector<LOLineInfo> lineInfos;  //行信息
 };
 
 #endif // !__H_LOACTION_

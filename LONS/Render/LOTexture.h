@@ -165,6 +165,9 @@ public:
 	//取得纹理的尺寸
 	void GetTextSurfaceSize(int *width, int *height);
 	void RenderTextSimple(int x, int y, SDL_Color color);
+	//按行渐显文字，返回是否已经到终点
+	bool RollTextTexture(int start, int end);
+	void tranzPosition(int *lineID, int *linePos, int position);
 
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);
@@ -207,7 +210,6 @@ private:
 	//原始宽度和高度
 	int16_t bw;
 	int16_t bh;
-
 
 	//基础纹理
 	LOShareBaseTexture baseTexture;

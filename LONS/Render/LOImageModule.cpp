@@ -1322,7 +1322,8 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 	LOLayerData *info = CreateNewLayerData(fullid, "_lons");
 
 	LOString tag = "*s;" + (*s);
-	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + fontManager.GetRubyPreHeight(), 255);
+	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
+
 	
 	//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	//LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
