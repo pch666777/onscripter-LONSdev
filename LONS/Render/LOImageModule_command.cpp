@@ -842,7 +842,7 @@ int LOImageModule::getpixcolorCommand(FunctionInterface *reader) {
 
 int LOImageModule::gettextCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	v->SetValue(&dialogText);
+	//v->SetValue(&dialogText);
 	return RET_CONTINUE;
 }
 

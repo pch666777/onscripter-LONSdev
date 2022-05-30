@@ -937,6 +937,9 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 		case LOtexture::TEX_EMPTY:
 			TextureFromEmpty(info);
 			break;
+		case LOtexture::TEX_ACTION_STR:
+			TextureFromActionStr(info, tstr.get());
+			break;
 		default:
 			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
 			SimpleError(errs.c_str());
@@ -1020,24 +1023,17 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 		colorList.push_back(cc);
 	}
 	if (colorList.size() == 0) return ;
-	LOShareTexture texture(new LOtexture());
-	info->SetNewFile(texture);
 
+	LOShareTexture texture(new LOtexture());
 	LOString text(buf);
 	text.SetEncoder(s->GetEncoder());
 	
 	//先创建文字描述
 	int w, h;
-	if (!texture->CreateTextDescribe(&text, &style, &spFontName)) {
-		texture.reset();
-		return;
-	}
+	if (!texture->CreateTextDescribe(&text, &style, &spFontName)) return;
 
 	texture->GetTextSurfaceSize(&w, &h);
-	if (w <= 0 || h <= 0) {
-		texture.reset();
-		return;
-	}
+	if (w <= 0 || h <= 0) return;
 
 	texture->CreateSurface(w * colorList.size(), h);
 
@@ -1056,7 +1052,31 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 		ac->setEnble(false);
 		info->SetAction(ac);
 	}
+
+	info->SetNewFile(texture);
 	return ;
+}
+
+
+void LOImageModule::TextureFromActionStr(LOLayerData*info, LOString *s) {
+	LOShareTexture texture(new LOtexture());
+	//先创建文字描述
+	int w, h;
+	if (!texture->CreateTextDescribe(s, &sayStyle, &sayFontName)) return;
+	texture->GetTextSurfaceSize(&w, &h);
+	if (w <= 0 || h <= 0) return;
+	texture->CreateSurface(w, h);
+	//默认是白色，并且是透明的，后面文字动作时才改为显示
+	SDL_Color cc = { 255,255,255,0 };
+	texture->RenderTextSimple(w, 0, cc);
+	//单字和文字区域已经不需要了
+	texture->textData->ClearTexts();
+	texture->textData->ClearWords();
+	//添加action动画
+	info->SetNewFile(texture);
+	LOActionText *ac = new LOActionText();
+	ac->setFlags(LOAction::FLAGS_INIT);
+	info->SetAction(ac);
 }
 
 //从标记中生成色块
@@ -1321,10 +1341,20 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 	LOLayerData *info = CreateNewLayerData(fullid, "_lons");
 
+	//添加模式需要获取上一次的位置
+	int lastPos = 0;
+	LOLayerData *lastData = GetLayerInfoData(fullid, "_lons");
+	if (lastData && lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
+
 	LOString tag = "*s;" + (*s);
 	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
-
+	if (isAdd && lastPos > 0) {
+		LOActionText *ac = (LOActionText*)info->GetAction(LOAction::ANIM_TEXT);
+		ac->initPos = lastPos;
+	}
 	
+	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);
+
 	//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	//LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
 

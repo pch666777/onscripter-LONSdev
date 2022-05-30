@@ -233,7 +233,7 @@ void LOImageModule::ClearDialogText(char flag) {
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
 	if (flag == '\\') {
-		dialogText.clear();
+		//dialogText.clear();
 		//LOLayerInfo *info = GetInfoNewAndFreeOld(fullid, "_lons");
 		//info->SetLayerDelete();
 	}

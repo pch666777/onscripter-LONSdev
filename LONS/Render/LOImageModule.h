@@ -340,6 +340,7 @@ private:
 	void TextureFromEmpty(LOLayerData *info);
 	void TextureFromColor(LOLayerData *info);
 	void TextureFromSimpleStr(LOLayerData*info, LOString *s);
+	void TextureFromActionStr(LOLayerData*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);

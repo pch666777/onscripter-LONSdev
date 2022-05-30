@@ -78,7 +78,7 @@ public:
 	~LOActionText();
 
 	int16_t currentPos = 0;  //动画当前运行的位置
-//	int16_t currentLine = 0; //当前的行
+	int16_t initPos = 0; //初始化时需要到底的位置
 	int16_t loopDelay = -1;   //循环延时
 	double perPix = 10.0;     //每毫秒显示的像素数
 };

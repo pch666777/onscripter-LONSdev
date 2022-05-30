@@ -340,9 +340,12 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 			void *dst;
 			int pitch;
 			SDL_LockTexture(texturePtr, nullptr, &dst, &pitch);
-			for (int line = 0; line < surfacePtr->h; line++) {
-				char *src = (char*)surfacePtr->pixels + line * surfacePtr->pitch;
-				memcpy((char*)dst + line * pitch, src, pitch);
+			//文字模式是在动作过程中复制的
+			if (!isTextAction()) {
+				for (int line = 0; line < surfacePtr->h; line++) {
+					char *src = (char*)surfacePtr->pixels + line * surfacePtr->pitch;
+					memcpy((char*)dst + line * pitch, src, pitch);
+				}
 			}
 			SDL_UnlockTexture(texturePtr);
 		}

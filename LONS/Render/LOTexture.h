@@ -88,6 +88,7 @@ public:
 		USE_COLOR_MOD = 1,
 		USE_BLEND_MOD = 2,
 		USE_ALPHA_MOD = 4,
+		USE_TEXTACTION_MOD = 8,
 	};
 
 	enum {
@@ -147,6 +148,9 @@ public:
 	void setColorModel(Uint8 r, Uint8 g, Uint8 b);
 	void setAplhaModel(int alpha);
 	void setForceAplha(int alpha);
+	void setFlags(int f) { useflag |= f; }
+	void unSetFlags(int f) { useflag &= (~f); }
+	bool isTextAction() { return useflag & USE_TEXTACTION_MOD; }
 	bool rollTxtTexture(SDL_Rect *src, SDL_Rect *dst);
 	void SaveSurface(LOString *fname) ;  //debug use
 
@@ -174,7 +178,7 @@ public:
 	//按行渐显文字，返回是否已经到终点
 	int RollTextTexture(int start, int end);
 	void TranzPosition(int *lineID, int *linePos, bool *isend, int position);
-	bool SetSurfaceAlpha(uint8_t alp);
+	int GetTextTextureEnd();
 
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);
