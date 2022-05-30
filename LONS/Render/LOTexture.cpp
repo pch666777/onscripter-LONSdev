@@ -870,25 +870,41 @@ void LOtexture::CreateSimpleColor(int w, int h, SDL_Color color) {
 }
 
 
-bool LOtexture::RollTextTexture(int start, int end) {
+int LOtexture::RollTextTexture(int start, int end) {
 	//不能运行的，直接相当于到终点
-	if (!texturePtr || !isEdit || !textData || textData->lineList.size() == 0) return true;
+	if (!texturePtr || !isEdit || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
+	if (end < start || end <= 0) return RET_ROLL_FAILD;
+
 	int startLine, startPos, endLine, endPos;
-	tranzPosition(&startLine, &startPos, start);
-	tranzPosition(&endLine, &endPos, end);
+	bool isend = false;
+	TranzPosition(&startLine, &startPos, &isend, start);
+	//做一些限制检测 开头已超过限制，直接返回
+	if (isend) return RET_ROLL_END;
+	TranzPosition(&endLine, &endPos, &isend, end);
+
 	//确定所有需要修改的区域
+	SDL_Point p1, p2;
 	for (int ii = startLine; ii <= endLine; ii++) {
 		SDL_Rect re;
 		LOLineDescribe *line = textData->lineList.at(ii);
-		re.x = line->xx + abs(Xfix);
-		re.y = line->yy + abs(Yfix);
-		re.w = line->width() + textData->style.xshadow;
-		re.h = line->height() + textData->style.yshadow;
+		//计算出两个点的位置
+		p1.x = line->xx + abs(Xfix);
+		p1.y = line->yy + abs(Yfix);
+		p2.x = p1.x + line->width() + textData->style.xshadow;
+		p2.y = p1.y + line->height() + textData->style.yshadow;
+
+		if (ii == startLine) p1.x += startPos;
+		if (ii == endLine) p2.x = p1.x + endPos + textData->style.xshadow;
+
+		printf("%d,%d - -%d,%d\n", p1.x, p1.y, p2.x, p2.y);
 	}
+
+	if (isend) return RET_ROLL_END;
+	else return RET_ROLL_CONTINUE;
 }
 
 
-void LOtexture::tranzPosition(int *lineID, int *linePos, int position) {
+void LOtexture::TranzPosition(int *lineID, int *linePos, bool *isend, int position) {
 	*lineID = -1;
 	*linePos = 0;
 	if (!textData || textData->lineList.size() == 0) return;
@@ -905,5 +921,6 @@ void LOtexture::tranzPosition(int *lineID, int *linePos, int position) {
 	if (*lineID == textData->lineList.size()) {
 		*lineID = textData->lineList.size() - 1;
 		*linePos = textData->lineList[*lineID]->width() + textData->style.xshadow;
+		if (isend) *isend = true;
 	}
 }

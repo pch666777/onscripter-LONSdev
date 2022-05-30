@@ -108,6 +108,12 @@ public:
 		EFF_INVERT,
 	};
 
+	enum {
+		RET_ROLL_FAILD = -1,
+		RET_ROLL_CONTINUE = 0,
+		RET_ROLL_END = 1
+	};
+
 	struct TextData{
 		std::vector<LOLineDescribe*> lineList;
 		std::vector<LOTextDescribe*> textList;
@@ -166,8 +172,9 @@ public:
 	void GetTextSurfaceSize(int *width, int *height);
 	void RenderTextSimple(int x, int y, SDL_Color color);
 	//按行渐显文字，返回是否已经到终点
-	bool RollTextTexture(int start, int end);
-	void tranzPosition(int *lineID, int *linePos, int position);
+	int RollTextTexture(int start, int end);
+	void TranzPosition(int *lineID, int *linePos, bool *isend, int position);
+	bool SetSurfaceAlpha(uint8_t alp);
 
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);

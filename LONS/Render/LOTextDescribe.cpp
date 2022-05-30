@@ -182,6 +182,7 @@ int LOLineDescribe::width() {
 	return maxx - minx;
 }
 
+
 void LOLineDescribe::AddShadowSize(int16_t xspace, int16_t yspace, int16_t xshadow, int16_t yshadow) {
 	maxx -= xspace;
 	maxy -= yspace;
