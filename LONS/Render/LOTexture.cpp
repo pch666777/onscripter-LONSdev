@@ -495,20 +495,9 @@ bool LOtexture::rollTxtTexture(SDL_Rect *src, SDL_Rect *dst) {
 
 
 void LOtexture::SaveSurface(LOString *fname){
-	/*
-	if(baseTexture){
-		LOSurface *lsu = baseTexture->GetSurface() ;
-		if(lsu){
-			if(lsu->GetSurface()){
-				SDL_SaveBMP(lsu->GetSurface(),fname->c_str()) ;
-				LOLog_i("bmp has save!") ;
-			}
-			else LOLog_i("LOSurface's SDL_Surface is NULL!") ;
-		}
-		else LOLog_i("LOSurface is NULL!") ;
+	if (surfacePtr) {
+		SDL_SaveBMP(surfacePtr, fname->c_str());
 	}
-	else LOLog_i("baseTexture is NULL!") ;
-	*/
 }
 
 

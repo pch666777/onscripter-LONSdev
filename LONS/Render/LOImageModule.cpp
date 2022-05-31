@@ -44,6 +44,9 @@ void LOImageModule::ResetConfig() {
 	sayFontName = "default.ttf";
 	sayWindow.reset();
 	sayState.reset();
+	sayStyle.reset();
+	sayStyle.xcount = 22;
+
 
 	textbtnValue = 1;
 
@@ -1066,12 +1069,16 @@ void LOImageModule::TextureFromActionStr(LOLayerData*info, LOString *s) {
 	texture->GetTextSurfaceSize(&w, &h);
 	if (w <= 0 || h <= 0) return;
 	texture->CreateSurface(w, h);
-	//默认是白色，并且是透明的，后面文字动作时才改为显示
-	SDL_Color cc = { 255,255,255,0 };
-	texture->RenderTextSimple(w, 0, cc);
+	//默认是白色
+	SDL_Color cc = { 255,255,255,255 };
+	texture->RenderTextSimple(0, 0, cc);
 	//单字和文字区域已经不需要了
 	texture->textData->ClearTexts();
 	texture->textData->ClearWords();
+
+	//LOString ss("test.bmp");
+	//texture->SaveSurface(&ss);
+
 	//添加action动画
 	info->SetNewFile(texture);
 	LOActionText *ac = new LOActionText();
@@ -1207,6 +1214,10 @@ LOEffect* LOImageModule::GetEffect(int id) {
 
 
 void LOImageModule::EnterTextDisplayMode(bool force) {
+	if (!sayState.isTextDispaly() || force) {
+		DialogWindowSet(1, 1, 1);
+		sayState.setFlags(LOSayState::FLAGS_TEXT_DISPLAY);
+	}
 	//if ( dialogDisplayMode == DISPLAY_MODE_NORMAL|| force) {
 	//	DialogWindowSet(1, 1, 1);
 	//	dialogDisplayMode = DISPLAY_MODE_TEXT;
@@ -1216,6 +1227,11 @@ void LOImageModule::EnterTextDisplayMode(bool force) {
 
 
 void LOImageModule::LeveTextDisplayMode(bool force) {
+	//force就没有为真的
+	if (sayState.isTextDispaly() && (force || sayState.isPrinHide() )) {
+		DialogWindowSet(0, 0, 0);
+		sayState.unSetFlags(LOSayState::FLAGS_TEXT_DISPLAY);
+	}
 	//if ( dialogDisplayMode != DISPLAY_MODE_NORMAL && (force || winEraseFlag != 0)) {
 	//	DialogWindowSet(0, 0, 0);
 	//	dialogDisplayMode = DISPLAY_MODE_NORMAL;
@@ -1228,7 +1244,7 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	//文字显示
 	if (showtext >= 0) {
-		fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
+		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 		int ret;
 		if (showtext) ret = ShowLayer(fullid, "_lons");
 		else ret = HideLayer(fullid, "_lons");
@@ -1236,8 +1252,7 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	}
 	//对话框显示
 	if (showwin >= 0) {
-		ids[0] = LOLayer::IDEX_DIALOG_WINDOW;
-		fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
+		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
 
 		if (dialogTextHasChange) { //updata
 			LoadDialogWin();

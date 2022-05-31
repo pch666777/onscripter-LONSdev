@@ -44,11 +44,11 @@ public:
 		IMG_EFFECT_USECOLOR  //着色
 	};
 
-	enum {
-		DISPLAY_MODE_NORMAL = 0,
-		DISPLAY_MODE_TEXT = 1,
-		//DISPLAY_MODE_AFTERCLEAR = 4,
-	};
+	//enum {
+	//	DISPLAY_MODE_NORMAL = 0,
+	//	DISPLAY_MODE_TEXT = 1,
+	//	//DISPLAY_MODE_AFTERCLEAR = 4,
+	//};
 
 	enum {
 		PARAM_BGCOPY = 1723 ,
@@ -106,6 +106,8 @@ public:
 			//textec决定了下一行是否从头开始
 			FLAGS_TEXT_CLEAR = 64 ,
 			FLAGS_WINDOW_CHANGE = 128 ,
+			FLAGS_TEXT_CHANGE = 256,
+			FLAGS_TEXT_DISPLAY = 512,
 		};
 		//当前显示的对话文字
 		LOString say;
@@ -128,6 +130,8 @@ public:
 		//相信编译器，自动inline优化
 		bool isWinbak() { return flags & FLAGS_WINBACK_MODE;}
 		bool isTexec() { return flags & FLAGS_TEXT_CLEAR; }
+		bool isPrinHide() {return flags & FLAGS_PRINT_HIDE;}
+		bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
 		void setFlags(int f) { flags |= f; }
 		void unSetFlags(int f) { flags &= (~f); }
 	};
@@ -149,8 +153,8 @@ public:
 	std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
 
 	bool breakflag = false;
-	bool dialogWinHasChange;
-	bool dialogTextHasChange;
+	//bool dialogWinHasChange;
+	//bool dialogTextHasChange;
 	//LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 
