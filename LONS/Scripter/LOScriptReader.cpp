@@ -19,6 +19,10 @@ bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
+	//设置默认编码，可以消除潜在的错误
+	if (filesList.size() == 0 && file) {
+		LOString::SetDefaultEncoder(file->GetBuf()->GetEncoder()->codeID);
+	}
 	filesList.push(file);
 	return file;
 }

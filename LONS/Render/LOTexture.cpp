@@ -631,6 +631,11 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 		LOWordElement *el = new LOWordElement();
 		int ulen = 0;
 		el->unicode = encoder->GetUtf16(buf, &ulen);
+		if (ulen == 0) {
+			LOLog_e("LOString encoder error:%s", buf);
+			return;
+		}
+
 		buf += ulen;
 		el->isEng = (ulen == 1);
 
@@ -926,4 +931,15 @@ void LOtexture::TranzPosition(int *lineID, int *linePos, bool *isend, int positi
 		*linePos = textData->lineList[*lineID]->width() + textData->style.xshadow;
 		if (isend) *isend = true;
 	}
+}
+
+
+int LOtexture::GetTextTextureEnd() {
+	int sumlen = 0;
+	if (textData) {
+		for (int ii = 0; ii < textData->lineList.size(); ii++) {
+			sumlen += textData->lineList[ii]->width() + textData->style.xshadow;
+		}
+	}
+	return sumlen;
 }

@@ -95,6 +95,7 @@ public:
 	static LOString RandomStr(int len);
 	static uintptr_t HexToNum(const char* buf);
 	static int HashStr(const char* buf);
+	static void SetDefaultEncoder(int codeID); 
 private:
 	enum {
 		GETWORD_LIKE,
@@ -106,6 +107,8 @@ private:
 	static char charactOperator[9]; //符号
 	int GetWordBase(LOString &s, int current, int stop, int type);
 	const char* GetWordBase(LOString &s, const char *buf, int stop, int type);
+
+	static int defaultEncoder;
 };
 
 

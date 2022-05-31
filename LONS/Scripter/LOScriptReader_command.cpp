@@ -643,6 +643,7 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 
 	//获取要显示的文字
 	LOString text;
+
 	buf = scriptbuf->SkipSpace(buf);
 	const char *obuf = buf;
 	const char *ebuf = scriptbuf->e_buf();

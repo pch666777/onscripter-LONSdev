@@ -532,6 +532,7 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	//if (texecFlag && dialogText.length() > 0) dialogText.append("\n");
 	//dialogText.append(text);
 	sayState.say.append(text);
+	sayState.say.SetEncoder(text.GetEncoder());
 	LoadDialogText(&sayState.say, true);  //文字都是由text命令控制的，不受上次的符号影响
 
 	/*

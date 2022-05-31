@@ -23,10 +23,17 @@ unsigned char LOString::charactTable[256] = {
 	0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
 };
 
+int LOString::defaultEncoder = LOCodePage::ENCODER_UTF8;
+
 char LOString::charactOperator[9] = { '+','-','*','/','^','(',')','[',']' };
 
+
+void LOString::SetDefaultEncoder(int codeID) {
+	defaultEncoder = codeID;
+}
+
 LOString::LOString() {
-	_encoder = LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8);
+	_encoder = LOCodePage::GetEncoder(defaultEncoder);
 }
 
 LOString::~LOString() {
@@ -34,15 +41,15 @@ LOString::~LOString() {
 }
 
 LOString::LOString(const char *ptr):std::string(ptr) {
-	_encoder = LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8);
+	_encoder = LOCodePage::GetEncoder(defaultEncoder);
 }
 
 LOString::LOString(const char *ptr, int slen) : std::string(ptr, slen) {
-	_encoder = LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8);
+	_encoder = LOCodePage::GetEncoder(defaultEncoder);
 }
 
 LOString::LOString(const std::string &str) : std::string(str) {
-	_encoder = LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8);
+	_encoder = LOCodePage::GetEncoder(defaultEncoder);
 }
 
 LOString::LOString(const LOString &str) : std::string(str){

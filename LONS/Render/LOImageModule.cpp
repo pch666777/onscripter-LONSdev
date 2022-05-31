@@ -1347,6 +1347,7 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 	if (lastData && lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
 
 	LOString tag = "*s;" + (*s);
+
 	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
 	if (isAdd && lastPos > 0) {
 		LOActionText *ac = (LOActionText*)info->GetAction(LOAction::ANIM_TEXT);
