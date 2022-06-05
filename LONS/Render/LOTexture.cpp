@@ -859,7 +859,7 @@ int LOtexture::RollTextTexture(int start, int end) {
 
 		re = { p1.x, p1.y , p2.x - p1.x, p2.y - p1.y };
 		CopySurfaceToTexture(texturePtr, surfacePtr, re);
-		printf("left:%d,%d   right:%d,%d\n", p1.x, p1.y, p2.x, p2.y);
+		//printf("left:%d,%d   right:%d,%d\n", p1.x, p1.y, p2.x, p2.y);
 	}
 
 	if (isend) return RET_ROLL_END;
@@ -914,7 +914,7 @@ void LOtexture::CopySurfaceToTexture(SDL_Texture *dst, SDL_Surface *src, SDL_Rec
 	int pitch = 0;
 	SDL_LockTexture(dst, &rect, &pixs, &pitch);
 	for (int line = 0; line < rect.h; line++) {
-		char *srcbuf = (char*)src->pixels + line * src->pitch + rect.x * 4;
+		char *srcbuf = (char*)src->pixels + (line + rect.y) * src->pitch + rect.x * 4;
 		char *dstbuf = (char*)pixs + line * pitch;
 		memcpy(dstbuf, srcbuf, rect.w * 4);
 	}
