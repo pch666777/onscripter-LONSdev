@@ -353,7 +353,7 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 		//读取texturePtr的信息稍微麻烦点，因此采用一个记录
 		bw = surfacePtr->w;
 		bh = surfacePtr->h;
-		resetSurface();
+		if(!isTextAction()) resetSurface();
 	}
 	else {
 		//复用式纹理
@@ -455,42 +455,6 @@ int LOtexture::baseH() {
 	if (baseTexture) return baseTexture->hh;
 	else if (surfacePtr) return surfacePtr->h;
 	else return bh;
-}
-
-//初始化对话文字纹理，纹理是可编辑的
-bool LOtexture::activeActionTxtTexture() {
-	/*
-	if (!baseTexture) return false;
-	LOSurface *su = baseTexture->GetSurface();
-	if (!su || su->isNull()) return false;
-
-	int w = su->W();
-	int h = su->H();
-	SDL_Texture *tx = CreateTexture(LOtextureBase::render, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-	if (!tx) return false;
-	//baseTexture->AddSizeTexture(0, 0, w, h, tx);
-	//部分显卡的显存还留有上一次显示的数据，因此需要重新覆盖数据
-	void *pixdata;
-	int pitch;
-	SDL_LockTexture(tx, NULL, &pixdata, &pitch);
-	SDL_UnlockTexture(tx);
-
-	activeTexture(NULL);
-	*/
-	return true;
-}
-
-
-//滚动从surface复制内容到纹理中
-bool LOtexture::rollTxtTexture(SDL_Rect *src, SDL_Rect *dst) {
-	/*
-	LOSurface *su = baseTexture->GetSurface();
-	//if (!tex) tex = baseTexture->GetTexture(NULL);
-	LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, src);
-	LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, dst);
-	//if(src->w > 0 && src->h > 0) CopySurfaceToTextureRGBA(su->GetSurface(), src, tex, dst);
-	*/
-	return true;
 }
 
 
@@ -893,7 +857,9 @@ int LOtexture::RollTextTexture(int start, int end) {
 		if (ii == startLine) p1.x += startPos;
 		if (ii == endLine) p2.x = p1.x + endPos + textData->style.xshadow;
 
-		printf("%d,%d - -%d,%d\n", p1.x, p1.y, p2.x, p2.y);
+		re = { p1.x, p1.y , p2.x - p1.x, p2.y - p1.y };
+		CopySurfaceToTexture(texturePtr, surfacePtr, re);
+		printf("left:%d,%d   right:%d,%d\n", p1.x, p1.y, p2.x, p2.y);
 	}
 
 	if (isend) return RET_ROLL_END;
@@ -910,7 +876,7 @@ void LOtexture::TranzPosition(int *lineID, int *linePos, bool *isend, int positi
 		int lw = line->width() + textData->style.xshadow;
 		if (position - lw > 0) position -= lw;
 		else {
-			*linePos = lw - position;
+			*linePos = position;
 			break;
 		}
 	}
@@ -931,4 +897,26 @@ int LOtexture::GetTextTextureEnd() {
 		}
 	}
 	return sumlen;
+}
+
+
+void LOtexture::CopySurfaceToTexture(SDL_Texture *dst, SDL_Surface *src, SDL_Rect rect) {
+	if (!dst || !src) return;
+	LOtextureBase::AvailableRect(src->w, src->h, &rect);
+	int maxw, maxh;
+	SDL_QueryTexture(dst, nullptr, nullptr, &maxw, &maxh);
+	LOtextureBase::AvailableRect(maxw, maxh, &rect);
+
+	if (rect.w < 0 || rect.h < 0) return;
+	if (rect.w == 0 && rect.h == 0) return;
+
+	void *pixs = nullptr;
+	int pitch = 0;
+	SDL_LockTexture(dst, &rect, &pixs, &pitch);
+	for (int line = 0; line < rect.h; line++) {
+		char *srcbuf = (char*)src->pixels + line * src->pitch + rect.x * 4;
+		char *dstbuf = (char*)pixs + line * pitch;
+		memcpy(dstbuf, srcbuf, rect.w * 4);
+	}
+	SDL_UnlockTexture(dst);
 }

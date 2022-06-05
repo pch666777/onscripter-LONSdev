@@ -35,6 +35,7 @@ public:
 	enum {
 		PRE_EVENT_PREPRINTOK = 1,
 		PRE_EVENT_EFFECTCONTIUE,
+		PRE_EVENT_TEXTFINISH,
 	};
 
 	enum {
@@ -107,7 +108,7 @@ public:
 			FLAGS_TEXT_CLEAR = 64 ,
 			FLAGS_WINDOW_CHANGE = 128 ,
 			FLAGS_TEXT_CHANGE = 256,
-			FLAGS_TEXT_DISPLAY = 512,
+			//FLAGS_TEXT_DISPLAY = 512,
 		};
 		//当前显示的对话文字
 		LOString say;
@@ -131,7 +132,8 @@ public:
 		bool isWinbak() { return flags & FLAGS_WINBACK_MODE;}
 		bool isTexec() { return flags & FLAGS_TEXT_CLEAR; }
 		bool isPrinHide() {return flags & FLAGS_PRINT_HIDE;}
-		bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
+		//bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
+		bool isWindowChange() { return flags & FLAGS_WINDOW_CHANGE; }
 		void setFlags(int f) { flags |= f; }
 		void unSetFlags(int f) { flags &= (~f); }
 	};
@@ -157,15 +159,13 @@ public:
 	//bool dialogTextHasChange;
 	//LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
+		//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
+	std::vector<LOShareEventHook> preEventList;
 
 	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
 	void ClearBtndef(const char *printName);
-	//const char* NewSysBtndef();
 
-	//LOLayer* FindLayerInBtnQuePosition(int x, int y);
-	//LOLayer* FindLayerInBase(LOLayer::SysLayerType type, const int *ids);
-	//LOLayer* FindLayerInBase(int fullid);
 	
 
 	//新建一个图层数据
@@ -199,10 +199,11 @@ public:
 	//LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
 	//LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
 
-	bool LoadDialogText(LOString *s, bool isAdd);
+	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
 	bool LoadDialogWin();
-	int ShowLayer(int fullid, const char *printName);
-	int HideLayer(int fullid, const char *printName);
+	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
+	//int ShowLayer(int fullid, const char *printName);
+	//int HideLayer(int fullid, const char *printName);
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();
@@ -212,6 +213,7 @@ public:
 	void RunExbtnStr(LOString *s);
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
+	int RunFuncText(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
@@ -330,9 +332,6 @@ private:
 	LOUniqBaseTexture maskTex;
 	Uint32 tickTime;
 
-	//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
-	std::vector<LOShareEventHook> preEventList;
-
 	void ResetViewPort();
 	void CaleWindowSize(int scX, int scY, int srcW, int srcH, int dstW, int dstH, SDL_Rect *result);
 	void ShowFPS(double postime);
@@ -352,7 +351,7 @@ private:
 	const char* ParseTrans(int *alphaMode, const char *buf);
 
 	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
-	void DoDelayEvent(double postime);
+	//void DoDelayEvent(double postime);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	void HandlingEvents();

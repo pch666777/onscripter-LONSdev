@@ -515,6 +515,11 @@ int LOScriptReader::ContinueEvent() {
 		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
 		if (ev->isFinish()) {
 			if (ev->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(ev.get());
+			else if (ev->catchFlag & LOEventHook::ANSWER_PRINGJMP) {
+				//响应此事件的有文字和print
+				if (ev->param2 == LOEventHook::FUN_TEXT_ACTION) RunFuncSayFinish(ev.get());
+				else;
+			}
 			isfinish = true;
 		}
 		else if (ev->isInvalid()) isfinish = true;
@@ -1567,6 +1572,12 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 	return 0;
 }
 
+
+int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
+	ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
+	hook->InvalidMe();
+	return 0;
+}
 
 
 

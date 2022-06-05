@@ -199,6 +199,16 @@ LOEventHook* LOEventHook::CreateTimerHook(int outtime, bool isleft) {
 	return e;
 }
 
+LOEventHook* LOEventHook::CreateTextHook(int pageEnd, int hash) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_NONE;
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_TEXT_ACTION;
+	e->paramList.push_back(new LOVariant(pageEnd));
+	e->paramList.push_back(new LOVariant(hash));
+	return e;
+}
+
 LOEventHook* LOEventHook::CreateLayerAnswer(int answer, void *lyr) {
 	auto *e = CreateHookBase();
 	e->catchFlag = answer;

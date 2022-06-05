@@ -28,16 +28,21 @@ public:
 		//定义的按钮
 		EVENT_BTNDEF,
 		EVENT_BTNWAIT,
+		EVENT_TEXTFINISH,
 	};
 
 	//要响应的事件
 	enum {
+		ANSWER_NONE = 0,
 		ANSWER_TIMER = 1,
 		ANSWER_BTNSTR = 2,
 		ANSWER_SEPLAYOVER = 8,
 		ANSWER_BTNCLICK = 16,
 		ANSWER_LEFTCLICK = 32,
 		ANSWER_RIGHTCLICK = 64,
+		//需要同时响应点击跳过print和文字，因此如果单击事件遇到这两个事件会
+		//转换成PRINGJMP事件
+		ANSWER_PRINGJMP = 128,
 	};
 
 	//一些参数的位置
@@ -52,7 +57,6 @@ public:
 	//RunFunc的返回值
 	enum {
 		RUNFUNC_FINISH,
-
 		RUNFUNC_CONTINUE,
 	};
 
@@ -76,6 +80,7 @@ public:
 		FUN_BTNFINISH,
 		FUN_SPSTR,
 		FUN_LAYERANSWER,
+		FUN_TEXT_ACTION,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
@@ -130,7 +135,8 @@ public:
 	static LOEventHook* CreateSpstrHook();
 	//创建一个时间阻塞钩子，参数可设置是否响应左键
 	static LOEventHook* CreateTimerHook(int outtime, bool isleft);
-
+	//创建一个文字事件hook
+	static LOEventHook* CreateTextHook(int pageEnd, int hash);
 	//创建一个图层相应事件
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 private:

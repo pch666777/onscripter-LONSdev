@@ -1,5 +1,8 @@
 #include "LOLayer.h"
 
+
+extern void AddPreEvent(LOShareEventHook &e);
+
 LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
 
@@ -443,6 +446,7 @@ void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
 				DoNsAction(data, (LOActionNS*)acb.get(), curTime);
 				break;
 			case LOAction::ANIM_TEXT:
+				DoTextAction(data, (LOActionText*)acb.get(), curTime);
 				break;
 			default:
 				break;
@@ -478,6 +482,33 @@ void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 		}
 
 		curInfo->SetCell(ai, cell);
+	}
+}
+
+
+void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) {
+	if (ai->isInit()) {
+		SDL_Rect srcR = { 0,0, data->texture->baseW(), data->texture->baseH() };
+		data->texture->activeTexture(&srcR, true);
+		data->texture->RollTextTexture(0, ai->initPos);
+		ai->currentPos = ai->initPos;
+		ai->lastTime = curTime;
+		ai->unSetFlags(LOAction::FLAGS_INIT);
+		//初始化后才会相应左键跳过事件
+		ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
+		G_hookQue.push_back(ai->hook, LOEventQue::LEVEL_HIGH);
+	}
+	else {
+		int posPx = ai->perPix * (curTime - ai->lastTime);
+		posPx = 20;
+		int ret = data->texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
+		if (ret == LOtexture::RET_ROLL_END) {
+			ai->setEnble(false);
+			//添加帧刷新后事件
+			AddPreEvent(ai->hook);
+			ai->currentPos += posPx;
+		}
+		else if(ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;
 	}
 }
 

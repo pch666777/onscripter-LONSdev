@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <SDL.h>
+#include "../etc/LOEvent1.h"
 
 class LOAction
 {
@@ -47,6 +48,7 @@ public:
 	//加速度
 	int gVal;
 	bool isEnble() { return flags & FLAGS_ENBLE; }
+	bool isInit() { return flags & FLAGS_INIT; }
 	void setEnble(bool enble);
 	void setFlags(int f) { flags |= f; }
 	void unSetFlags(int f) { flags &= (~f); }
@@ -81,6 +83,7 @@ public:
 	int16_t initPos = 0; //初始化时需要到底的位置
 	int16_t loopDelay = -1;   //循环延时
 	double perPix = 10.0;     //每毫秒显示的像素数
+	LOShareEventHook hook;
 };
 
 #endif // !__H_LOACTION_

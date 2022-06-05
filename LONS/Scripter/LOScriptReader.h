@@ -188,6 +188,7 @@ public:
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnSetVal(LOEventHook *hook);
+	int RunFuncSayFinish(LOEventHook *hook);
 
 	//添加新的脚本到缓冲区
 	static LOScripFile* AddScript(const char *buf, int length, const char* filename);

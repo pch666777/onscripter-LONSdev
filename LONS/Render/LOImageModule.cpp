@@ -275,7 +275,7 @@ int LOImageModule::MainLoop() {
 				DoPreEvent(posTime);
 				//在进入事件处理之前，先整理一下钩子队列
 				G_hookQue.arrangeList();
-				DoDelayEvent(posTime);
+				//DoDelayEvent(posTime);
 				lastTime = hightTimeNow;
 				if(moduleState >= MODULE_STATE_EXIT) break;
 				else if (moduleState & MODULE_STATE_RESET) {
@@ -1214,10 +1214,11 @@ LOEffect* LOImageModule::GetEffect(int id) {
 
 
 void LOImageModule::EnterTextDisplayMode(bool force) {
-	if (!sayState.isTextDispaly() || force) {
-		DialogWindowSet(1, 1, 1);
-		sayState.setFlags(LOSayState::FLAGS_TEXT_DISPLAY);
-	}
+	DialogWindowSet(1, 1, 1);
+	//if (!sayState.isTextDispaly() || force) {
+	//	DialogWindowSet(1, 1, 1);
+	//	sayState.setFlags(LOSayState::FLAGS_TEXT_DISPLAY);
+	//}
 	//if ( dialogDisplayMode == DISPLAY_MODE_NORMAL|| force) {
 	//	DialogWindowSet(1, 1, 1);
 	//	dialogDisplayMode = DISPLAY_MODE_TEXT;
@@ -1228,9 +1229,8 @@ void LOImageModule::EnterTextDisplayMode(bool force) {
 
 void LOImageModule::LeveTextDisplayMode(bool force) {
 	//force就没有为真的
-	if (sayState.isTextDispaly() && (force || sayState.isPrinHide() )) {
+	if (force || sayState.isPrinHide()) {
 		DialogWindowSet(0, 0, 0);
-		sayState.unSetFlags(LOSayState::FLAGS_TEXT_DISPLAY);
 	}
 	//if ( dialogDisplayMode != DISPLAY_MODE_NORMAL && (force || winEraseFlag != 0)) {
 	//	DialogWindowSet(0, 0, 0);
@@ -1245,48 +1245,34 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	//文字显示
 	if (showtext >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
-		int ret;
-		if (showtext) ret = ShowLayer(fullid, "_lons");
-		else ret = HideLayer(fullid, "_lons");
-		if (ret >= 0) haschange |= ret;
+		if (SetLayerShow(showtext, fullid, "_lons")) haschange |= 1;
 	}
 	//对话框显示
 	if (showwin >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
-
-		if (dialogTextHasChange) { //updata
+		if (sayState.isWindowChange()) {
 			LoadDialogWin();
 			haschange |= 2;
 		}
-		else if (showwin) { //show
-			/*
-			int ret = ShowLayer(fullid, "_lons");
-			if (ret < 0 && winstr.length() > 0) {
-				LoadDialogWin();
-				haschange |= 2;
-			}
-			else if (ret == 1) haschange |= 2;
-			*/
-		}
-		else { //hide
-			if (HideLayer(fullid, "_lons")) haschange |= 2;
-		}
+
+		if (SetLayerShow(showwin, fullid, "_lons")) haschange |= 2;
 	}
 	//文字后的符号显示
-	if (haschange > 1) DialogWindowPrint();
+	if (haschange > 1) {
+		DialogWindowPrint();
+		sayState.unSetFlags(LOSayState::FLAGS_WINDOW_CHANGE);
+	}
 	else if (haschange == 1) ExportQuequ("_lons", NULL, true);
 	return;
 }
 
+//加载对话框
 bool LOImageModule::LoadDialogWin() {
-	/*
-	int ids[] = { LOLayer::IDEX_DIALOG_WINDOW,255,255 };
-	int fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
-	if (winstr.length() > 0) {
-		LOLayerInfo* info = GetInfoNewAndFreeOld(fullid, "_lons");
-		if(fontManager.rubySize[2] == LOFontManager::RUBY_ON)  loadSpCore(info, winstr, winoff.x + fontManager.rubySize[0], winoff.y + fontManager.rubySize[1], 255);
-		else loadSpCore(info, winstr, winoff.x, winoff.y, 255);
-		if (info->loadType == LOtexture::TEX_COLOR_AREA) {
+	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
+	if ( sayWindow.winstr.length() > 0) {
+		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
+		loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255);
+		if (info->texType == LOtexture::TEX_COLOR_AREA) {
 			if (info->texture) {
 				info->texture->setAplhaModel(-1);
 				info->texture->setBlendModel(SDL_BLENDMODE_MOD);
@@ -1295,49 +1281,34 @@ bool LOImageModule::LoadDialogWin() {
 		}
 	}
 	else {
-		LOLayerInfo* info = GetInfoNewAndFreeOld(fullid, "_lons");
-		info->SetLayerDelete();
+		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
+		info->SetDelete();
 	}
-	*/
 	return true;
 }
 
-//隐藏图层，0表示无需刷新状态，1表示需刷新状态
-int LOImageModule::HideLayer(int fullid, const char *printName) {
-	/*
-	int sstate;
-	LOLayerInfo *cinfo = LayerInfomation(fullid, printName);
-	if (cinfo && cinfo->visiable) {
-		LOLayerInfo *info = GetInfoNewAndNoFreeOld(fullid, printName);
-		info->SetVisable(0);
-		sstate = 1;
+//修改图层的显示状态，如果创建了后台队列，则返回真，否则返回假
+//强调的是当前显示状态的改变
+bool LOImageModule::SetLayerShow(bool isVisi, int fullid, const char *printName) {
+	LOLayerData *info = GetLayerInfoData(fullid, printName);
+	//前台、后台都没有指定层
+	if (!info) return false;
+	else if (info->isForce()) {
+		//只有前台，且跟要设置的状态一致
+		if (isVisi == info->isVisiable()) return false;
+		//不一致的要创建一个后台队列
+		info = CreateLayerBakData(fullid, printName);
+		info->SetVisable((int)isVisi);
+		return true;
 	}
-	else sstate = 0;
-
-	if (cinfo)delete cinfo;
-	*/
-	//return sstate;
-	return 0;
+	else {
+		//有后台说明是新载入的图层
+		info->SetVisable((int)isVisi);
+		//既然是后台队列，那么肯定要刷新的，因此总是返回真
+	}
+	return true;
 }
 
-//显示图层，0表示无需刷新状态，1表示需刷新状态，-1表示图层不存在
-int LOImageModule::ShowLayer(int fullid, const char *printName) {
-	/*
-	int sstate;
-	LOLayerInfo *cinfo = LayerInfomation(fullid, printName);
-	if (!cinfo || cinfo->visiable == 0) { //图层不存在或者隐藏的
-		LOLayerInfo *info = GetInfoNewAndNoFreeOld(fullid, printName);
-		info->SetVisable(1);
-		sstate = 1;
-	}
-	else if (cinfo && cinfo->visiable) sstate = 0;
-	else sstate = -1;
-
-	if (cinfo)delete cinfo;
-	return sstate;
-	*/
-	return 0;
-}
 
 
 void LOImageModule::DialogWindowPrint() {
@@ -1352,7 +1323,7 @@ void LOImageModule::DialogWindowPrint() {
 }
 
 //文字显示进入队列
-bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
+LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd) {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 	LOLayerData *info = CreateNewLayerData(fullid, "_lons");
 
@@ -1364,48 +1335,19 @@ bool LOImageModule::LoadDialogText(LOString *s, bool isAdd) {
 	LOString tag = "*s;" + (*s);
 
 	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
-	if (isAdd && lastPos > 0) {
-		LOActionText *ac = (LOActionText*)info->GetAction(LOAction::ANIM_TEXT);
-		ac->initPos = lastPos;
-	}
+	if (!info->texture) return nullptr ;
+
+	info->texture->isEdit = true;
+	info->texture->setFlags(LOtexture::USE_TEXTACTION_MOD);
+
+	LOActionText *ac = (LOActionText*)info->GetAction(LOAction::ANIM_TEXT);
+	ac->initPos = lastPos;
+	ac->setFlags(LOAction::FLAGS_INIT);
+	ac->hook.reset(LOEventHook::CreateTextHook(pageEnd, 0));
 	
-	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);
-
-	//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	//LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_DIALOG, ids), "_lons");
-
-	//LOLayer *lyr = nullptr;
-	//int startline = 0;
-	//int startpos = 0;
-
-	//if (isAdd) {
-	//	isAdd = false;
-	//	lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
-	//	if (lyr) {
-	//		//确认下一行的开始位置
-	//		//LOAnimationText *text = (LOAnimationText*)lyr->curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
-	//		//if (text) {
-	//		//	startline = text->lineInfo->size() - 1;
-	//		//	startpos = text->lineInfo->top()->sumx;
-	//		//	isAdd = true;
-	//		//}
-	//	}
-	//}
-
-	//LOString tag = "*s;" + (*s);
-	//loadSpCore(info, tag, winFont.topx, winFont.topy + fontManager.GetRubyPreHeight(), 255);
-	//if (isAdd) {
-	//	LOAnimationText *text = (LOAnimationText*)info->GetAnimation(LOAnimation::ANIM_TEXT);
-	//	if (text) {
-	//		text->currentLine = startline;
-	//		text->currentPos = startpos;
-	//		text->isadd = true;
-	//		//SDL_SaveBMP(text->su, "test.bmp");
-	//	}
-	//}
-	//dialogTextHasChange = true;
-
-	return true;
+	//文字已经被改变
+	sayState.setFlags(LOSayState::FLAGS_TEXT_CHANGE);
+	return ac;
 }
 
 
@@ -1436,8 +1378,6 @@ LOLayerData* LOImageModule::GetLayerInfoData(int fullid, const char *printName) 
 	if (lyr->bakInfo->isNewFile()) return lyr->bakInfo.get();
 	else return lyr->curInfo.get();
 }
-
-
 
 
 LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {

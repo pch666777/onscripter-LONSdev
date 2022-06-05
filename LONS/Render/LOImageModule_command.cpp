@@ -533,18 +533,14 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	//dialogText.append(text);
 	sayState.say.append(text);
 	sayState.say.SetEncoder(text.GetEncoder());
-	LoadDialogText(&sayState.say, true);  //文字都是由text命令控制的，不受上次的符号影响
-
-	/*
-	//结尾符号进入参数传递
-	LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_TEXT_ACTION, FunctionInterface::LAYER_TEXT_WORKING);
-	e->value = pageEndFlag;
 	
-	e->enterEdit();  //lock event,cant't get it now
-	G_SendEvent(e);                         //进入layer初始化
-	reader->blocksEvent.SendToSlot(e);      //阻塞脚本
-	e->closeEdit();
-	*/
+	LOActionText *ac = LoadDialogText(&sayState.say, sayState.pageEnd,  true);
+	
+	//发出文字事件hook
+	if (ac) {
+		reader->waitEventQue.push_back(ac->hook, LOEventQue::LEVEL_NORMAL);
+	}
+
 	EnterTextDisplayMode(true);  //will display here
 
 	//after show text
@@ -681,7 +677,8 @@ int LOImageModule::texthideCommand(FunctionInterface *reader) {
 int LOImageModule::textonCommand(FunctionInterface *reader) {
 	if (reader->isName("texton")) {
 		DialogWindowSet(1, 1, 1);
-		dialogDisplayMode = DISPLAY_MODE_TEXT;
+
+		//dialogDisplayMode = DISPLAY_MODE_TEXT;
 	}
 	else if (reader->isName("textclear")) {
 		ClearDialogText('\\');
@@ -692,7 +689,7 @@ int LOImageModule::textonCommand(FunctionInterface *reader) {
 //		ClearDialogText(pageEndFlag[0]);
 		DialogWindowSet(0, 0, 0);
 		//实际上显示模式只跟对话框的存在与否有关，跟文字是否存在无关
-		dialogDisplayMode = DISPLAY_MODE_NORMAL; 
+		//dialogDisplayMode = DISPLAY_MODE_NORMAL; 
 	}
 	return RET_CONTINUE;
 }

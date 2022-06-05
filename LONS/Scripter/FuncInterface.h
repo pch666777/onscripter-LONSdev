@@ -23,7 +23,7 @@ class FunctionInterface
 {
 public:
 	FunctionInterface();
-	~FunctionInterface();
+	virtual ~FunctionInterface();
 	enum {
 		RET_CONTINUE,
 		RET_ERROR,      //致命错误，不应该继续运行了

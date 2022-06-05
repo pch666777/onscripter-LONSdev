@@ -141,8 +141,6 @@ public:
 	//某些在渲染线程使用的过程，必须直接获取一次纹理
 	bool activeFirstTexture();
 
-	bool activeActionTxtTexture();
-
 	bool activeFlagControl();
 	void setBlendModel(SDL_BlendMode model);
 	void setColorModel(Uint8 r, Uint8 g, Uint8 b);
@@ -151,7 +149,6 @@ public:
 	void setFlags(int f) { useflag |= f; }
 	void unSetFlags(int f) { useflag &= (~f); }
 	bool isTextAction() { return useflag & USE_TEXTACTION_MOD; }
-	bool rollTxtTexture(SDL_Rect *src, SDL_Rect *dst);
 	void SaveSurface(LOString *fname) ;  //debug use
 
 	SDL_Surface *getSurface();
@@ -200,6 +197,7 @@ private:
 	void BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR, SDL_Color color);
 	void BlitShadow(SDL_Surface *dst, SDL_Surface *src, SDL_Rect dstR, SDL_Rect srcR, SDL_Color color, int maxsize);
 	bool CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR);
+	void CopySurfaceToTexture(SDL_Texture *dst, SDL_Surface *src, SDL_Rect rect);
 
 	static std::unordered_map<std::string, LOShareBaseTexture> baseMap;
 

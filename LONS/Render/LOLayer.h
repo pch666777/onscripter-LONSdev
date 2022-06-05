@@ -121,12 +121,8 @@ public:
 
 	void ShowMe(SDL_Renderer *render);
 	void DoAction(LOLayerData *data, Uint32 curTime);
-	//void DoTextAnima(LOLayerInfo *info, LOAnimationText *ai, Uint32 curTime);
-	//void DoMoveAnima(LOLayerInfo *info, LOAnimationMove *ai, Uint32 curTime);
-	//void DoScaleAnima(LOLayerInfo *info, LOAnimationScale *ai, Uint32 curTime);
-	//void DoRotateAnima(LOLayerInfo *info, LOAnimationRotate *ai, Uint32 curTime);
-	//void DoFadeAnima(LOLayerInfo *info, LOAnimationFade *ai, Uint32 curTime);
 	void DoNsAction(LOLayerData *data, LOActionNS *ai,  Uint32 curTime);
+	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
 	void Serialize(BinArray *sbin);
