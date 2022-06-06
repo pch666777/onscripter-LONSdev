@@ -897,8 +897,10 @@ void LOImageModule::ClearBtndef(const char *printName) {
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
 //"**;_?_empty_?_"  空的纹理
-bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha) {
-	return loadSpCoreWith(info, tag, x, y, alpha,0);
+bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable) {
+	bool ret = loadSpCoreWith(info, tag, x, y, alpha, 0);
+	info->SetVisable(visiable);
+	return ret;
 }
 
 bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int y, int alpha, int eff) {
@@ -942,6 +944,9 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 			break;
 		case LOtexture::TEX_ACTION_STR:
 			TextureFromActionStr(info, tstr.get());
+			break;
+		case LOtexture::TEX_COLOR_AREA:
+			TextureFromColor(info, tstr.get());
 			break;
 		default:
 			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
@@ -1087,8 +1092,7 @@ void LOImageModule::TextureFromActionStr(LOLayerData*info, LOString *s) {
 }
 
 //从标记中生成色块
-void LOImageModule::TextureFromColor(LOLayerData *info) {
-	LOString *s = info->keyStr.get();
+void LOImageModule::TextureFromColor(LOLayerData *info, LOString *s) {
 	const char *buf = s->SkipSpace(s->c_str());
 
 	int w = s->GetInt(buf);
@@ -1104,6 +1108,7 @@ void LOImageModule::TextureFromColor(LOLayerData *info) {
 	cc.r = (color >> 16) & 0xff;
 	cc.g = (color >> 8) & 0xff;
 	cc.b = color & 0xff;
+	cc.a = 255;
 
 	LOShareTexture texture(new LOtexture());
 	info->SetNewFile(texture);
@@ -1250,7 +1255,7 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	//对话框显示
 	if (showwin >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
-		if (sayState.isWindowChange()) {
+		if (showwin > 0 && sayState.isWindowChange()) {
 			LoadDialogWin();
 			haschange |= 2;
 		}
@@ -1271,7 +1276,7 @@ bool LOImageModule::LoadDialogWin() {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
 	if ( sayWindow.winstr.length() > 0) {
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255);
+		loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255, true);
 		if (info->texType == LOtexture::TEX_COLOR_AREA) {
 			if (info->texture) {
 				info->texture->setAplhaModel(-1);
@@ -1312,14 +1317,14 @@ bool LOImageModule::SetLayerShow(bool isVisi, int fullid, const char *printName)
 
 
 void LOImageModule::DialogWindowPrint() {
-	//LOEffect *ef = nullptr;
-	//if (winEffect) {
-	//	ef = new LOEffect;
-	//	ef->CopyFrom(winEffect);
-	//	ExportQuequ("_lons", ef, true);
-	//	delete ef;
-	//}
-	//else ExportQuequ("_lons", nullptr, true);
+	LOEffect *ef = nullptr;
+	if (sayState.winEffect) {
+		ef = new LOEffect;
+		ef->CopyFrom(sayState.winEffect.get());
+		ExportQuequ("_lons", ef, true);
+		delete ef;
+	}
+	else ExportQuequ("_lons", nullptr, true);
 }
 
 //文字显示进入队列

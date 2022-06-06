@@ -124,7 +124,7 @@ public:
 		void reset() {
 			say.clear();
 			winEffect.reset();
-			flags = FLAGS_PRINT_HIDE;
+			flags = FLAGS_PRINT_HIDE | FLAGS_WINDOW_CHANGE;
 			z_order = 499;
 			pageEnd = 0;
 		}
@@ -182,7 +182,7 @@ public:
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
-	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha);
+	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
 	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);
 
 
@@ -341,7 +341,7 @@ private:
 	void TextureFromFile(LOLayerData *info);
 	void TextureFromCache(LOLayerData *info);
 	void TextureFromEmpty(LOLayerData *info);
-	void TextureFromColor(LOLayerData *info);
+	void TextureFromColor(LOLayerData *info, LOString *s);
 	void TextureFromSimpleStr(LOLayerData*info, LOString *s);
 	void TextureFromActionStr(LOLayerData*info, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);

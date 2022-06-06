@@ -828,6 +828,7 @@ void LOtexture::CreateSimpleColor(int w, int h, SDL_Color color) {
 	surfacePtr = CreateRGBSurfaceWithFormat(0, w, h, 8, SDL_PIXELFORMAT_INDEX8);
 	SDL_Palette *pale = surfacePtr->format->palette;
 	pale->colors[0] = color;
+	pale->colors[255] = color;
 }
 
 

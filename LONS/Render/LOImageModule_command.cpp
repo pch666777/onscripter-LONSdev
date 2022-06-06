@@ -31,7 +31,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//已经在队列里的需要释放
 	//
 	LOLayerData* info = CreateNewLayerData(fullid, reader->GetPrintName());
-	loadSpCore(info, tag, xx, yy, alpha);
+	loadSpCore(info, tag, xx, yy, alpha, true);
 	info->SetVisable(visiable);
 	return RET_CONTINUE;
 }
@@ -118,11 +118,11 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 502) {
 	//	int debugbreak = 0;
 	//}
-	/*
+	
 	LeveTextDisplayMode();
 
-	int ids[] = { 5,255,255 };
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_BG, ids), reader->GetPrintName());
+	int fullid = GetFullID(LOLayer::LAYER_BG, 5, 255, 255);
+	LOLayerData *info = CreateNewLayerData(fullid, reader->GetPrintName());
 	LOString tag = reader->GetParamStr(0);
 
 	LOString tmp = tag.toLower();
@@ -130,14 +130,14 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 	else if (tmp == "black") tag = StringFormat(64, ":c;>%d,%d#000000", G_gameWidth, G_gameHeight);
 	else if (tmp.at(0) == '#') tag = StringFormat(64, ":c;>%d,%d%s", G_gameWidth, G_gameHeight, tag.c_str());
 	else if (tmp.at(0) != ':') tag = ":c;" + tag;
-	loadSpCore(info, tag, 0, 0, -1);
+	loadSpCore(info, tag, 0, 0, -1, true);
 	if (reader->GetParamCount() > 1) {
 		return printStack(reader, 1);
 	}
 	else {
 		return RET_CONTINUE;
 	}
-	*/
+	
 
 	return RET_CONTINUE;
 }
