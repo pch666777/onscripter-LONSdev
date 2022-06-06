@@ -33,6 +33,8 @@ public:
 		~MemoryTTF() {
 			if (rwops) SDL_RWclose(rwops);
 			if(data) delete data;
+			data = nullptr;
+			rwops = nullptr;
 		}
 	};
 

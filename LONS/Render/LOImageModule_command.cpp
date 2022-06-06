@@ -722,6 +722,7 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 		sayStyle.flags |= LOTextStyle::STYLE_SHADOW;
 	}
 	sayWindow.winstr = reader->GetParamStr(11);
+	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);
 	sayWindow.x = reader->GetParamInt(12);
 	sayWindow.y = reader->GetParamInt(13);
 
