@@ -701,7 +701,7 @@ if %99 == 25 then
 	getpixcolor $1,1,1
 	if $1 != "ffff00" debuglog "erasetextwindow²âÊÔ²»Í¨¹ý",$1
 endif
-;textbtnwait %0
+textbtnwait %0
 return
 
 *text_test

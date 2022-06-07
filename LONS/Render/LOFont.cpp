@@ -77,7 +77,11 @@ LOFont::FontWord* LOFont::GetFont(int size) {
 	}
 	//检查是否已经打开
 	if (!fw->font) {
-		if(memTTF) fw->font = TTF_OpenFontRW(memTTF->rwops, 0, fw->size);
+		if (memTTF) {
+			//设置流的读写位置，这是个坑
+			SDL_RWseek(memTTF->rwops, 0, RW_SEEK_SET);
+			fw->font = TTF_OpenFontRW(memTTF->rwops, 0, fw->size);
+		}
 		else if (path.length() > 0) fw->font = TTF_OpenFont(path.c_str(), fw->size);
 		if (fw->font) {
 			fw->descent = TTF_FontDescent(fw->font);

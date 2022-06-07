@@ -83,7 +83,7 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::printCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 538) {
+	//if (reader->GetCurrentLine() == 700) {
 	//	int debugbreak = 11;
 	//}
 	return printStack(reader, 0);
@@ -528,13 +528,18 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	sayState.pageEnd = reader->GetParamInt(1);
 	//pageEndFlag = reader->GetParamInt(1);
 
-	if (sayState.isTexec() && sayState.say.length() > 0) sayState.say.append("\n");
+	bool isadd = false;
+	if (!sayState.isTexec() && sayState.say.length() > 0) {
+		sayState.say.append("\n");
+		sayState.say.append(text);
+		isadd = true;
+	}
+	else sayState.say = text;
 	//if (texecFlag && dialogText.length() > 0) dialogText.append("\n");
 	//dialogText.append(text);
-	sayState.say.append(text);
 	sayState.say.SetEncoder(text.GetEncoder());
 	
-	LOActionText *ac = LoadDialogText(&sayState.say, sayState.pageEnd,  true);
+	LOActionText *ac = LoadDialogText(&sayState.say, sayState.pageEnd,  isadd);
 	
 	//发出文字事件hook
 	if (ac) {
@@ -723,6 +728,7 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 	}
 	sayWindow.winstr = reader->GetParamStr(11);
 	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);
+	if(!reader->isName("setwindow3"))sayState.say.clear();
 	sayWindow.x = reader->GetParamInt(12);
 	sayWindow.y = reader->GetParamInt(13);
 

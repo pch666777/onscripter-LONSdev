@@ -1334,8 +1334,16 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 	//添加模式需要获取上一次的位置
 	int lastPos = 0;
-	LOLayerData *lastData = GetLayerInfoData(fullid, "_lons");
-	if (lastData && lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
+
+	if (isAdd) {
+		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+		if (lyr) {
+			LOLayerData *lastData = nullptr;
+			if (lyr->bakInfo->isNewFile()) lastData = lyr->bakInfo.get();
+			else lastData = lyr->curInfo.get();
+			if (lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
+		}
+	}
 
 	LOString tag = "*s;" + (*s);
 

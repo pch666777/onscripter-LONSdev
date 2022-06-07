@@ -564,6 +564,11 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 	const char *buf = s->c_str();
 	auto encoder = s->GetEncoder();
 	auto wordFont = font->GetFont(firstSize);
+	if (!wordFont) {
+		LOLog_e("LOtexture::CreateLineDescribe() faild:%s", TTF_GetError());
+		return;
+	}
+
 	SDL_Color bgColor{ 0,0,0,0 };
 	SDL_Color fsColor{ 255,255,255,255 };
 	int Ypos = 0;
@@ -622,6 +627,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				el->surface = LTTF_RenderGlyph_Shaded(wordFont->font, el->unicode, fsColor, bgColor);
 				//检查是否需要新行了
 				if (currentX + el->minx + el->advance > maxWidth) {
+					//SDL_SaveBMP(el->surface, "test.bmp");
 					//处理好上一行
 					line->endIndex = textData->textList.size();
 					line->CreateLocation(&textData->textList, &textData->wordList, &textData->style);
