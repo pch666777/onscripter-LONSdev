@@ -354,19 +354,13 @@ int LOImageModule::effectskipCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::getspmodeCommand(FunctionInterface *reader) {
-	/*
+
 	ONSVariableRef *v = reader->GetParamRef(0);
-	int ids[] = { reader->GetParamInt(1), 255, 255 };
+	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(1), 255, 255);
 	int visiable = 0;
-
-	LOLayerInfo *info = LayerInfomation(LOLayer::LAYER_SPRINT, ids, reader->GetPrintName());
-	if (info) {
-		visiable = info->visiable;
-		delete info;
-	}
-
+	LOLayerData *info = GetLayerInfoData(fullid, reader->GetPrintName());
+	if (info && info->isVisiable()) visiable = 1;
 	v->SetValue((double)visiable);
-	*/
 	return RET_CONTINUE;
 }
 
