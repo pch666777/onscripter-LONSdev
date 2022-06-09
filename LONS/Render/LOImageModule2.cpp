@@ -41,19 +41,6 @@ void LOImageModule::DoPreEvent(double postime) {
 	preEventList.clear();
 }
 
-//void LOImageModule::DoDelayEvent(double postime) {
-//	/*
-//	//延迟事件队列只应该用于 updisplay() 里需要等待帧完成后刷新后通知的情况
-//	//虽然增加了事件执行的复杂度，但是我认为这是必要的，统一处理事件更容易确定程序中用了哪些通讯事件，以及外部处理中断事件
-//	LOEventSlot *slot = GetEventSlot(LOEvent1::EVENT_IMGMODULE_AFTER);
-//	
-//	//通过函数调用，避免暴露 LOEventSlot 的内部成员
-//	int ecount = slot->ForeachCall(&EventDo, postime);
-//	//运行时的同时事件不可能超过20个，超过该检查问题了
-//	if (ecount > 20) SimpleError("LonsEvent is too much! check event logic please!");
-//	*/
-//}
-
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait) {
@@ -244,12 +231,12 @@ bool LOImageModule::TranzMousePos(int xx, int yy) {
 
 
 void LOImageModule::ClearDialogText(char flag) {
-	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	int fullid = GetFullID(LOLayer::LAYER_DIALOG, ids);
+	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 	if (flag == '\\') {
-		//dialogText.clear();
-		//LOLayerInfo *info = GetInfoNewAndFreeOld(fullid, "_lons");
-		//info->SetLayerDelete();
+		int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
+		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
+		info->SetDelete();
+		sayState.say.clear();
 	}
 }
 

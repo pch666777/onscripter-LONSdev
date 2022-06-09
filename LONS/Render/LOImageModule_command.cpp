@@ -520,17 +520,11 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 
 	LOString text = reader->GetParamStr(0);
 	sayState.pageEnd = reader->GetParamInt(1);
-	//pageEndFlag = reader->GetParamInt(1);
-
-	bool isadd = false;
-	if (!sayState.isTexec() && sayState.say.length() > 0) {
-		sayState.say.append("\n");
-		sayState.say.append(text);
-		isadd = true;
-	}
-	else sayState.say = text;
-	//if (texecFlag && dialogText.length() > 0) dialogText.append("\n");
-	//dialogText.append(text);
+	//是不是添加模式只看原来有没有缓存的文字
+	bool isadd = sayState.say.length() > 0;
+	//texec标记只是决定新添加的文字是否换行
+	if (sayState.isTexec() && isadd > 0) sayState.say.append("\n");
+	sayState.say.append(text);
 	sayState.say.SetEncoder(text.GetEncoder());
 	
 	LOActionText *ac = LoadDialogText(&sayState.say, sayState.pageEnd,  isadd);
@@ -660,6 +654,24 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 	//	else texecFlag = false;
 	//}
 	//else texecFlag = false;
+	//if (reader->GetCurrentLine() == 680) {
+	//	int bbk = 1;
+	//}
+
+	char lineEnd = sayState.pageEnd & 0xff;
+	//换页清除
+	if (lineEnd == '\\') {
+		ClearDialogText(lineEnd);
+		DialogWindowSet(0, -1, -1);
+		sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
+	}
+	else if (lineEnd == '@') {
+		//换页不清除，但是句子的结束是 \n，那么下一行还是要换页的
+		if (sayState.pageEnd & 0xff00 == 0x1000) sayState.setFlags(LOSayState::FLAGS_TEXT_TEXEC);
+		else sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
+	}
+	else sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
+
 	return RET_CONTINUE;
 }
 
@@ -719,6 +731,8 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 	//阴影
 	if (reader->GetParamInt(10)) {
 		sayStyle.flags |= LOTextStyle::STYLE_SHADOW;
+		sayStyle.xshadow = sayStyle.xsize / 30 + 1;
+		sayStyle.yshadow = sayStyle.ysize / 30 + 1;
 	}
 	sayWindow.winstr = reader->GetParamStr(11);
 	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);
@@ -857,6 +871,8 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 	dst.w = src.w; dst.h = src.h;
 
 	ONSVariableRef *v = reader->GetParamRef(4);
+
+
 	/*
 	LOSurface *su = nullptr;
 		//ScreenShot(&src, &dst);

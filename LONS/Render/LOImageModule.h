@@ -105,7 +105,7 @@ public:
 			FLAGS_PRINT_BEFOR = 16,
 			FLAGS_WINBACK_MODE = 32,
 			//textec决定了下一行是否从头开始
-			FLAGS_TEXT_CLEAR = 64 ,
+			FLAGS_TEXT_TEXEC = 64 ,
 			FLAGS_WINDOW_CHANGE = 128 ,
 			FLAGS_TEXT_CHANGE = 256,
 			//FLAGS_TEXT_DISPLAY = 512,
@@ -130,7 +130,7 @@ public:
 		}
 		//相信编译器，自动inline优化
 		bool isWinbak() { return flags & FLAGS_WINBACK_MODE;}
-		bool isTexec() { return flags & FLAGS_TEXT_CLEAR; }
+		bool isTexec() { return flags & FLAGS_TEXT_TEXEC; }
 		bool isPrinHide() {return flags & FLAGS_PRINT_HIDE;}
 		//bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
 		bool isWindowChange() { return flags & FLAGS_WINDOW_CHANGE; }

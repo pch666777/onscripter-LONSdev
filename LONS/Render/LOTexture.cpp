@@ -559,8 +559,10 @@ LOTextDescribe *LOtexture::CreateNewTextDes(int ascent, int dscent, int colorID)
 
 
 void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
+	//按文字个数算，汉字算2个，英文算1个
 	int colorID = 0;
-	int maxWidth = textData->style.xcount * (firstSize + textData->style.xspace);
+	double maxCount = textData->style.xcount * 2;
+	double curCount = 0.0;
 	const char *buf = s->c_str();
 	auto encoder = s->GetEncoder();
 	auto wordFont = font->GetFont(firstSize);
@@ -615,6 +617,8 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 			//定位下一行
 			line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 			currentX = line->xx;
+			//curCount = currentX / firstSize;
+			curCount = 0;
 			line->yy = Ypos;
 		}
 		else {
@@ -626,7 +630,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				TTF_GlyphMetrics(wordFont->font, el->unicode, &el->minx, &el->maxx, &el->miny, &el->maxy, &el->advance);
 				el->surface = LTTF_RenderGlyph_Shaded(wordFont->font, el->unicode, fsColor, bgColor);
 				//检查是否需要新行了
-				if (currentX + el->minx + el->advance > maxWidth) {
+				if (curCount >= maxCount) {
 					//SDL_SaveBMP(el->surface, "test.bmp");
 					//处理好上一行
 					line->endIndex = textData->textList.size();
@@ -636,6 +640,9 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 					//定位下一行
 					line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 					currentX = line->xx;
+					//换算成相对有多少个字
+					//curCount = currentX / firstSize;
+					curCount = 0;
 					line->yy = Ypos;
 				}
 
@@ -645,11 +652,14 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				//SDL_SaveBMP(ele->surface, s.c_str());
 				//count++;
 				currentX += (el->minx + el->advance);
+				if (el->isEng) curCount += 1.0;
+				else curCount += 2.0;
 			}
 			else {
 				//空格符号
 				el->setSpace(firstSize);
 				currentX += (el->maxx - el->minx);
+				curCount += 1.0;
 				textData->wordList.push_back(el);
 				des->endIndex++;
 			}

@@ -12,7 +12,7 @@ debuglog %1
 
 debuglog "分辨率是否是1024*576？"
 
-gosub *window_test
+;gosub *window_test
 
 ;基本的赋值测试
 mov $1," abc我是abc";
@@ -633,7 +633,7 @@ mov %99,24
 
 ;测试erasetextwindow是否正常
 mov %99,25
-erasetextwindow 1
+erasetextwindow 0
 
 对话框模式切换，单击继续，下面到。\
 

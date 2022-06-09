@@ -210,6 +210,12 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 	LOMatrix2d mat,tmp;
 	int cx = curInfo->centerX;
 	int cy = curInfo->centerY;
+	int ofx = curInfo->offsetX;
+	int ofy = curInfo->offsetY;
+	if (curInfo->texture) {
+		ofx += curInfo->texture->Xfix;
+		ofy += curInfo->texture->Yfix;
+	}
 
 	if (curInfo->isShowRotate() && abs(M_PI*curInfo->rotate) > 0.00001) {
 		if (cx == -1) cx = curInfo->texture->W() / 2;
@@ -221,7 +227,7 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 			mat = mat * tmp;
 			tmp = LOMatrix2d::GetRotateMatrix(-curInfo->rotate);
 			mat = tmp * mat;
-			tmp = LOMatrix2d::GetMoveMatrix(curInfo->offsetX, curInfo->offsetY);
+			tmp = LOMatrix2d::GetMoveMatrix(ofx, ofy);
 			mat = tmp * mat;
 		}
 		else {
@@ -229,7 +235,7 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 			tmp = LOMatrix2d::GetMoveMatrix(-cx, -cy);
 			mat = LOMatrix2d::GetRotateMatrix(-curInfo->rotate);
 			mat = mat * tmp;
-			tmp = LOMatrix2d::GetMoveMatrix(curInfo->offsetX, curInfo->offsetY);
+			tmp = LOMatrix2d::GetMoveMatrix(ofx, ofy);
 			mat = tmp * mat;
 		}
 	}
@@ -239,12 +245,12 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 		//缩放
 		mat.Set(0, 0, curInfo->scaleX);
 		mat.Set(1, 1, curInfo->scaleY);
-		mat.Set(0, 2, curInfo->offsetX - cx * curInfo->scaleX);
-		mat.Set(1, 2, curInfo->offsetY - cy * curInfo->scaleY);
+		mat.Set(0, 2, ofx - cx * curInfo->scaleX);
+		mat.Set(1, 2, ofy - cy * curInfo->scaleY);
 	}
 	else {
-		mat.Set(0, 2, curInfo->offsetX);
-		mat.Set(1, 2, curInfo->offsetY);
+		mat.Set(0, 2, ofx);
+		mat.Set(1, 2, ofy);
 	}
 	return mat;
 }
@@ -263,10 +269,18 @@ void LOLayer::GetInheritScale(double *sx, double *sy) {
 void LOLayer::GetInheritOffset(float *ox, float *oy) {
 	*ox = curInfo->offsetX;
 	*oy = curInfo->offsetY;
+	if (curInfo->texture) {
+		*ox += curInfo->texture->Xfix;
+		*oy += curInfo->texture->Yfix;
+	}
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		*ox += lyr->curInfo->offsetX;
+		*ox += lyr->curInfo->offsetX ;
 		*oy += lyr->curInfo->offsetY;
+		if (lyr->curInfo->texture) {
+			*ox += lyr->curInfo->texture->Xfix;
+			*oy += lyr->curInfo->texture->Yfix;
+		}
 		lyr = lyr->parent;
 	}
 }

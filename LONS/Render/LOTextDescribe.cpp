@@ -23,7 +23,7 @@ void LOTextStyle::reset() {
 	xcount = ycount = 1024;
 	xsize = ysize = 16;
 	xspace = 0;
-	yspace = 1;
+	yspace = 0;
 	textIndent = 0;
 	flags = 0;
 	xshadow = yshadow = 0;
