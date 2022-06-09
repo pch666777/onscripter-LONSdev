@@ -64,15 +64,53 @@ LOLayerDataBase::LOLayerDataBase() {
 }
 
 void LOLayerDataBase::resetBase() {
-	fullid = -1;
-	flags = 0;
+	flags = upflags = 0;
 	offsetX = offsetY = centerX = centerY = 0;
 	alpha = -1;
 	showSrcX = showSrcY = showWidth = showHeight = 0;
-	cellNum = tWidth = tHeight = 0;
+	cellNum = 0;
 	scaleX = scaleY = rotate = 0.0;
-	showType = texType = 0;
+	showType = texType = visiable = 0;
+	keyStr.reset();
+	btnStr.reset();
+	buildStr.reset();
+	texture.reset();
+	actions.reset();
 }
+
+LOLayerDataBase::~LOLayerDataBase() {
+
+}
+
+void LOLayerDataBase::UpData(LOLayerDataBase *base, int f) {
+	upflags = f;
+	if (f & UP_BTNVAL) btnval = base->btnval;
+	if (f & UP_OFFX) offsetX = base->offsetX;
+	if (f & UP_OFFY) offsetY = base->offsetY;
+	if (f & UP_ALPHA) alpha = base->alpha;
+	if (f & UP_CENX) centerX = base->centerX;
+	if (f & UP_CENY) centerY = base->centerY;
+	if (f & UP_SRCX) showSrcX = base->showSrcX;
+	if (f & UP_SRCY) showSrcY = base->showSrcY;
+	if (f & UP_SHOWW) showWidth = base->showWidth;
+	if (f & UP_SHOWH) showHeight = base->showHeight;
+	if (f & UP_CELLNUM) cellNum = base->cellNum;
+	if (f & UP_ALPHAMODE) alphaMode = base->alphaMode;
+	if (f & UP_SCALEX) scaleX = base->scaleX;
+	if (f & UP_SCALEY) scaleY = base->scaleY;
+	if (f & UP_ROTATE) rotate = base->rotate;
+	if (f & UP_BTNSTR) btnStr = std::move(base->btnStr);
+	if (f & UP_SHOWTYPE) showType = base->showType;
+	if (f & UP_ACTIONS) actions = std::move(base->actions);
+	if (f & UP_NEWFILE) {
+		keyStr = std::move(base->keyStr);
+		buildStr = std::move(base->buildStr);
+		texture = base->texture;
+		texType = base->texType;
+	}
+}
+
+//=================================
 
 LOLayerData::LOLayerData() {
 	isinit = false;
@@ -84,62 +122,78 @@ LOLayerData::~LOLayerData() {
 }
 
 void LOLayerData::GetSimpleDst(SDL_Rect *dst) {
-	dst->x = offsetX; dst->y = offsetY;
-	dst->w = texture->baseW(); dst->h = texture->baseH();
+	//dst->x = cur.offsetX; dst->y = cur.offsetY;
+	//dst->w = texture->baseW(); dst->h = texture->baseH();
 }
 
 void LOLayerData::GetSimpleSrc(SDL_Rect *src) {
-	src->x = showSrcX; src->y = showSrcY;
-	src->w = showWidth; src->h = showHeight;
+	//src->x = showSrcX; src->y = showSrcY;
+	//src->w = showWidth; src->h = showHeight;
 }
 
 int LOLayerData::GetCellCount() {
-	if (actions) {
-		for (int ii = 0; ii < actions->size(); ii++) {
-			LOShareAction ac = actions->at(ii);
-			if (ac->acType == LOAction::ANIM_NSANIM) return ((LOActionNS*)(ac.get()))->cellCount;
-		}
-	}
-	//默认是1格的
+	//if (actions) {
+	//	for (int ii = 0; ii < actions->size(); ii++) {
+	//		LOShareAction ac = actions->at(ii);
+	//		if (ac->acType == LOAction::ANIM_NSANIM) return ((LOActionNS*)(ac.get()))->cellCount;
+	//	}
+	//}
+	////默认是1格的
 	return 1;
 }
 
 
 
-void LOLayerData::SetVisable(int v) {
-	if(v) flags |= FLAGS_VISIABLE;
-	else flags &= (~FLAGS_VISIABLE);
-	flags |= FLAGS_UPDATA;
+void LOLayerData::SetVisable(int v, bool isforce) {
+	LOLayerDataBase *data = &bak;
+	if (isforce) data = &cur;
+
+	if (v) data->visiable = 1;
+	else data->visiable = 0;
+	data->upflags |= UP_VISIABLE;
 }
 
 
-void LOLayerData::SetShowRect(int x, int y, int w, int h) {
-	showWidth = w;
-	showHeight = h;
-	showSrcX = x;
-	showSrcY = y;
-	showType |= SHOW_RECT;
-	flags |= FLAGS_UPDATA;
+void LOLayerData::SetShowRect(int x, int y, int w, int h, bool isforce) {
+	LOLayerDataBase *data = &bak;
+	if (isforce) data = &cur;
+
+	data->showWidth = w;
+	data->showHeight = h;
+	data->showSrcX = x;
+	data->showSrcY = y;
+	data->showType |= SHOW_RECT;
+	data->upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
 }
 
-void LOLayerData::SetShowType(int show) {
-	showType |= show;
-	flags |= FLAGS_UPDATA;
+void LOLayerData::SetShowType(int show, bool isforce) {
+	LOLayerDataBase *data = &bak;
+	if (isforce) data = &cur;
+
+	data->showType |= show;
+	data->upflags |= UP_SHOWTYPE;
 }
 
 
 
-void LOLayerData::SetPosition(int ofx, int ofy) {
-	offsetX = ofx;
-	offsetY = ofy;
-	flags |= FLAGS_UPDATA;
+void LOLayerData::SetPosition(int ofx, int ofy, bool isforce) {
+	LOLayerDataBase *data = &bak;
+	if (isforce) data = &cur;
+
+	data->offsetX = ofx;
+	data->offsetY = ofy;
+	data->upflags |= UP_OFFX;
+	data->upflags |= UP_OFFY;
 }
 
-void LOLayerData::SetPosition2(int cx, int cy, double sx, double sy) {
-	centerX = cx; centerY = cy;
-	scaleX = sx; scaleY = sy;
-	showType |= SHOW_SCALE;
-	flags |= FLAGS_UPDATA;
+void LOLayerData::SetPosition2(int cx, int cy, double sx, double sy, bool isforce) {
+	LOLayerDataBase *data = &bak;
+	if (isforce) data = &cur;
+
+	data->centerX = cx; data->centerY = cy;
+	data->scaleX = sx; data->scaleY = sy;
+	data->showType |= SHOW_SCALE;
+	data->upflags |= (UP_CENX | UP_CENY | UP_SCALEX | UP_SCALEY | UP_SHOWTYPE);
 }
 
 void LOLayerData::SetRotate(double ro) {

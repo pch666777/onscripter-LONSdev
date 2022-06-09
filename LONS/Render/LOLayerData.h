@@ -43,10 +43,37 @@ extern void GetTypeAndIds(int *type, int *ids, int fullid);
 class LOLayerDataBase {
 public:
 	LOLayerDataBase();
+	~LOLayerDataBase();
 	void resetBase();
+	void UpData(LOLayerDataBase *base, int f);
 
-	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
-	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
+	enum {
+		UP_BTNVAL = 1,
+		UP_OFFX = 2,
+		UP_OFFY = 4,
+		UP_ALPHA = 8,
+		UP_CENX = 16,
+		UP_CENY = 32,
+		UP_SRCX = 64,
+		UP_SRCY = 128,
+		UP_SHOWW = 256,
+		UP_SHOWH = 512,
+		UP_CELLNUM = 1024,
+		UP_ALPHAMODE = 2048,
+		UP_SCALEX = 0x1000,
+		UP_SCALEY = 0x2000,
+		UP_ROTATE = 0x4000,
+		UP_BTNSTR = 0x8000,
+		//跟新文件必定挂钩的 keystr buildstr texture  textype
+		//UP_NEWFILE = 0x10000,
+		UP_ACTIONS = 0x20000,
+		UP_SHOWTYPE = 0x40000,
+		UP_VISIABLE = 0x80000,
+		UP_NEWFILE = -1,
+	};
+
+	int flags;
+	int upflags;    //更新了那些值
 	int btnval;    //btn的值
 	int16_t offsetX;    //显示目标左上角位置
 	int16_t offsetY;    //显示目标左上角位置
@@ -61,19 +88,65 @@ public:
 
 	uint8_t cellNum;      //第几格动画
 	uint8_t alphaMode;
-	uint16_t tWidth;     //材质的宽度
-	uint16_t tHeight;	//材质的高度
+	//data是哪一种类型的
+	uint8_t texType;
+	uint8_t visiable;   //是否可见
 
 	double scaleX;   //X方向的缩放
 	double scaleY;	//y方向的缩放
 	double rotate;	//旋转，角度
 
-	uint8_t texType;  //data是哪一种类型的
-protected:
+	//复用式纹理的索引key
+	std::unique_ptr<LOString> keyStr;
+	//按钮字符串
+	std::unique_ptr<LOString> btnStr;
+	//loadsp时的字符串，保证读档时可以完整重新
+	std::unique_ptr<LOString> buildStr;
+	//纹理使用引用计数
+	LOShareTexture texture;
+	//每一个动作我们都不确定什么时候删除，所以需要一个引用计数
+	std::unique_ptr<std::vector<LOShareAction>> actions;
+
 	uint8_t showType;
 };
 
-class LOLayerData :public LOLayerDataBase{
+////基本类型都放在一起，拷贝方便
+//class LOLayerDataBase {
+//public:
+//	LOLayerDataBase();
+//	void resetBase();
+//
+//	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
+//	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
+//	int btnval;    //btn的值
+//	int16_t offsetX;    //显示目标左上角位置
+//	int16_t offsetY;    //显示目标左上角位置
+//	int16_t alpha;      //透明度
+//	int16_t centerX;    //锚点，缩放旋转时有用
+//	int16_t centerY;
+//
+//	int16_t showSrcX;      //显示区域的X偏移
+//	int16_t showSrcY;     //显示区域的Y偏移
+//	uint16_t showWidth;   //显示区域的宽度
+//	uint16_t showHeight;  //显示区域的高度
+//
+//	uint8_t cellNum;      //第几格动画
+//	uint8_t alphaMode;
+//	uint16_t tWidth;     //材质的宽度
+//	uint16_t tHeight;	//材质的高度
+//
+//	double scaleX;   //X方向的缩放
+//	double scaleY;	//y方向的缩放
+//	double rotate;	//旋转，角度
+//
+//	uint8_t texType;  //data是哪一种类型的
+//protected:
+//	uint8_t showType;
+//};
+
+
+//数据由前台数据和后台数据组成，set时总是设置后台数据, get时则根据upflags确定返回前台还是后台数据
+class LOLayerData{
 public:
 	LOLayerData();
 	~LOLayerData();
@@ -89,6 +162,31 @@ public:
 		SHOW_RECT = 2,
 		SHOW_SCALE = 4,
 		SHOW_ROTATE = 8
+	};
+
+	enum {
+		UP_BTNVAL = 1,
+		UP_OFFX = 2,
+		UP_OFFY = 4,
+		UP_ALPHA = 8,
+		UP_CENX = 16,
+		UP_CENY = 32,
+		UP_SRCX = 64,
+		UP_SRCY = 128,
+		UP_SHOWW = 256,
+		UP_SHOWH = 512,
+		UP_CELLNUM = 1024,
+		UP_ALPHAMODE = 2048,
+		UP_SCALEX = 0x1000,
+		UP_SCALEY = 0x2000,
+		UP_ROTATE = 0x4000,
+		UP_BTNSTR = 0x8000,
+		//跟新文件必定挂钩的 keystr buildstr texture  textype
+		//UP_NEWFILE = 0x10000,
+		UP_ACTIONS = 0x20000,
+		UP_SHOWTYPE = 0x40000,
+		UP_VISIABLE = 0x80000,
+		UP_NEWFILE = -1,
 	};
 
 	enum {
@@ -139,22 +237,8 @@ public:
 		//TRANS_MASK
 	};
 
-	//复用式纹理的索引key
-	std::unique_ptr<LOString> keyStr;
-	//遮片名称
-	std::unique_ptr<LOString> maskName;
-	//按钮字符串
-	std::unique_ptr<LOString> btnStr;
-	//loadsp时的字符串，保证读档时可以完整重新
-	std::unique_ptr<LOString> buildStr;
-
-	//纹理使用引用计数
-	LOShareTexture texture;
-
-	//每一个动作、事件钩子我们都不确定什么时候删除，所以需要一个引用计数
-	//所有的action和eventHook都只有在print时才同步
-	//动作组
-	std::unique_ptr<std::vector<LOShareAction>> actions; 
+	LOLayerDataBase cur;
+	LOLayerDataBase bak;
 
 	inline bool isShowScale() { return showType & SHOW_SCALE; }
 	inline bool isShowRotate() { return showType & SHOW_ROTATE; }
@@ -172,11 +256,11 @@ public:
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();
-	void SetVisable(int v);
-	void SetShowRect(int x, int y, int w, int h);
-	void SetShowType(int show);
-	void SetPosition(int ofx, int ofy);
-	void SetPosition2(int cx, int cy, double sx, double sy);
+	void SetVisable(int v ,bool isforce = false);
+	void SetShowRect(int x, int y, int w, int h, bool isforce = false);
+	void SetShowType(int show, bool isforce = false);
+	void SetPosition(int ofx, int ofy, bool isforce = false);
+	void SetPosition2(int cx, int cy, double sx, double sy, bool isforce = false);
 	void SetRotate(double ro);
 	void SetAlpha(int alp);
 	bool SetCell(LOActionNS *ac, int ce);
@@ -189,8 +273,6 @@ public:
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();
-	//void upData(LOLayerData *data);
-	//void upDataEx(LOLayerData *data);
 
 	//添加敏感类事件时删除
 	void SetAction(LOShareAction &ac);
@@ -198,15 +280,6 @@ public:
 	LOAction *GetAction(LOAction::AnimaType acType);
 private:
 	bool isinit;
-	//void lockMe();
-	//void unLockMe();
-	//void cpuDelay();
-
-	//插入移除 actions 和 eventHooks要特别注意
-	//图层有一个变量确定是否有 action 和 eventHook失效事件，有的话锁定，删除
-	//std::atomic_int threadLock;
 };
-
-//typedef std::shared_ptr<LOLayerData> LOShareLayerData;
 
 #endif // !__H_LOLAYERDATA_

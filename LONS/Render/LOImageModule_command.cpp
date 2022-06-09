@@ -449,6 +449,10 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::vspCommand(FunctionInterface *reader) {
+	if (reader->GetCurrentLine() == 434) {
+		int bbk = 0;
+	}
+
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("vsp2")) sptype = LOLayer::LAYER_SPRINTEX;
 

@@ -421,7 +421,7 @@ if %1 != 0 || %2 != 0 debuglog "[csp]不通过",%1,%2
 lsp 0,":a/10,500,0;otm.png",200,200
 cell 0,4
 getspsize 0,%1,%2,%3
-if %1 != 132 || %2 != 119 || %3 != 5 debuglog "[lsp]不通过",%1,%2,%3
+if %1 != 132 || %2 != 119 || %3 != 10 debuglog "[lsp]不通过",%1,%2,%3
 
 vsp 0,0
 getspmode %1,0
