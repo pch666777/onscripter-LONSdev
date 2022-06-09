@@ -22,11 +22,12 @@ void LOLayer::BaseNew(SysLayerType lyrType) {
 
 LOLayer::LOLayer() {
 	BaseNew(LAYER_CC_USE);
-	curInfo.reset(new LOLayerData());
+	data.reset(new LOLayerData());
 }
 
 LOLayer::LOLayer(SysLayerType lyrType) {
 	BaseNew(lyrType);
+	data.reset(new LOLayerData());
 }
 
 LOLayer::LOLayer(int fullid) {
@@ -35,16 +36,13 @@ LOLayer::LOLayer(int fullid) {
 	GetTypeAndIds(&lyrType, ids, fullid);
 	BaseNew((SysLayerType)lyrType);
 	memcpy(id, ids, 3 * 4);
-	curInfo.reset(new LOLayerData());
-	bakInfo.reset(new LOLayerData());
-	curInfo->fullid = fullid;
-	bakInfo->fullid = fullid;
+	data.reset(new LOLayerData());
+	data->fullid = fullid;
 }
 
 
 LOLayer::~LOLayer() {
-	if(curInfo) curInfo->SetDelete();
-	if(bakInfo) bakInfo->SetDelete();
+
 	//与parent解除关系
 	if (parent && parent->childs) parent->RemodeChild(GetSelfChildID());
 	//与子对象解除关系
@@ -53,7 +51,7 @@ LOLayer::~LOLayer() {
 			LOLayer *layer = iter->second;
 			layer->parent = nullptr;
 			//如果子图层不是新的对象，那么直接移除
-			if (!layer->bakInfo->isNewFile()) NoUseLayer(layer);
+			if (!layer->data->isNewFile()) NoUseLayer(layer);
 		}
 		childs->clear();
 	}
@@ -171,12 +169,14 @@ LOLayer *LOLayer::FindChild(int cid) {
 
 bool LOLayer::isPositionInsideMe(int x, int y) {
 	//隐藏的按钮会激活为显示
+	LOLayerDataBase *curInfo = &data->cur;
 	int left = curInfo->offsetX;
 	int top = curInfo->offsetY;
 	int right = left + curInfo->showWidth;
 	int bottom = top + curInfo->showHeight;
 	if (x >= left && x <= right && y >= top && y <= bottom) {
-		curInfo->SetVisable(1);
+		data->SetVisable(1, true);
+		//curInfo->SetVisable(1);
 		return true;
 	}
 	else return false;
@@ -208,6 +208,8 @@ LOAnimation *LOLayer::GetAnimation(LOAnimation::AnimaType type) {
 
 LOMatrix2d LOLayer::GetTranzMatrix() {
 	LOMatrix2d mat,tmp;
+	LOLayerDataBase *curInfo = &data->cur;
+
 	int cx = curInfo->centerX;
 	int cy = curInfo->centerY;
 	int ofx = curInfo->offsetX;
@@ -217,10 +219,10 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 		ofy += curInfo->texture->Yfix;
 	}
 
-	if (curInfo->isShowRotate() && abs(M_PI*curInfo->rotate) > 0.00001) {
+	if (data->isShowRotate(true) && abs(M_PI*curInfo->rotate) > 0.00001) {
 		if (cx == -1) cx = curInfo->texture->W() / 2;
 		if (cy == -1) cy = curInfo->texture->H() / 2;
-		if (curInfo->isShowScale()) {
+		if (data->isShowScale(true)) {
 			//M = T * R * S * -T
 			tmp = LOMatrix2d::GetMoveMatrix(-cx, -cy);
 			mat = LOMatrix2d::GetScaleMatrix(curInfo->scaleX,curInfo->scaleY);
@@ -239,7 +241,7 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 			mat = tmp * mat;
 		}
 	}
-	else if (curInfo->isShowScale()) {
+	else if (data->isShowScale(true)) {
 		if (cx == -1) cx = curInfo->texture->W() / 2;
 		if (cy == -1) cy = curInfo->texture->H() / 2;
 		//缩放
@@ -256,12 +258,12 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 }
 
 void LOLayer::GetInheritScale(double *sx, double *sy) {
-	*sx = curInfo->scaleX;
-	*sy = curInfo->scaleY;
+	*sx = data->cur.scaleX;
+	*sy = data->cur.scaleY;
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		*sx *= lyr->curInfo->scaleX;
-		*sy *= lyr->curInfo->scaleY;
+		*sx *= lyr->data->cur.scaleX;
+		*sy *= lyr->data->cur.scaleY;
 		lyr = lyr->parent;
 	}
 }

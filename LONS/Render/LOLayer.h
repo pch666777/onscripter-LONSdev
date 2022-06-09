@@ -62,9 +62,7 @@ public:
 	int id[3];
 	SysLayerType layerType;     //图层所在的组，在new图层时已经把LAYER_SPRINT转换
 	//前台数据
-	std::unique_ptr<LOLayerData> curInfo;
-	//后台数据
-	std::unique_ptr<LOLayerData> bakInfo;
+	std::unique_ptr<LOLayerData> data;
 	//父对象
 	LOLayer *parent;
 	//根图层的，根图层总是有效的

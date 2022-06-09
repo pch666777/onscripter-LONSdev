@@ -90,7 +90,7 @@ public:
 	uint8_t alphaMode;
 	//data是哪一种类型的
 	uint8_t texType;
-	uint8_t visiable;   //是否可见
+	//uint8_t visiable;   //是否可见
 
 	double scaleX;   //X方向的缩放
 	double scaleY;	//y方向的缩放
@@ -237,22 +237,21 @@ public:
 		//TRANS_MASK
 	};
 
+	int fullid;
 	LOLayerDataBase cur;
 	LOLayerDataBase bak;
 
-	inline bool isShowScale() { return showType & SHOW_SCALE; }
-	inline bool isShowRotate() { return showType & SHOW_ROTATE; }
-	inline bool isShowRect() { return showType & SHOW_RECT; }
-	inline bool isVisiable() { return flags & FLAGS_VISIABLE; }
-	inline bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
-	inline bool isCache() { return flags & FLAGS_USECACHE; }
-	inline bool isDelete() { return flags & FLAGS_DELETE; }
-	inline bool isNewFile() { return flags & FLAGS_NEWFILE; }
-	inline bool isUpData() { return flags & FLAGS_UPDATA; }
-	inline bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
-	inline bool isBtndef() { return flags & FLAGS_BTNDEF; }
-	inline bool isActive() { return flags & FLAGS_ACTIVE; }
-	inline bool isForce() { return flags & FLAGS_ISFORCE; }
+	inline bool isShowScale(bool isforce);
+	inline bool isShowRotate(bool isforce);
+	inline bool isShowRect(bool isforce);
+	inline bool isVisiable(bool isforce);
+	inline bool isChildVisiable(bool isforce);
+	inline bool isCache(bool isforce);
+	inline bool isDelete(bool isforce);
+	inline bool isNewFile() { return bak.flags & FLAGS_NEWFILE; }
+	inline bool isBtndef(bool isforce);
+	inline bool isActive(bool isforce);
+	//inline bool isForce(bool isforce);
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
 	int GetCellCount();
@@ -261,23 +260,24 @@ public:
 	void SetShowType(int show, bool isforce = false);
 	void SetPosition(int ofx, int ofy, bool isforce = false);
 	void SetPosition2(int cx, int cy, double sx, double sy, bool isforce = false);
-	void SetRotate(double ro);
-	void SetAlpha(int alp);
-	bool SetCell(LOActionNS *ac, int ce);
-	void SetTextureType(int dt);
+	void SetRotate(double ro, bool isforce = false);
+	void SetAlpha(int alp, bool isforce = false);
+	bool SetCell(LOActionNS *ac, int ce, bool isforce = false);
+	void SetTextureType(int dt, bool isforce = false);
 	void SetNewFile(LOShareTexture &tex);
-	void SetDelete();
+	void SetDelete(bool isforce = false);
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
 	void GetSize(int *xx, int *yy, int *cell);
+	inline LOLayerDataBase *GetBase(bool isforce);
 
 	//将动画的初始信息同步到layerinfo上
 	void FirstSNC();
 
 	//添加敏感类事件时删除
-	void SetAction(LOShareAction &ac);
+	void SetAction(LOShareAction &ac, bool isforce = false);
 	void SetAction(LOAction *ac);
-	LOAction *GetAction(LOAction::AnimaType acType);
+	LOAction *GetAction(LOAction::AnimaType acType, bool isforce = false);
 private:
 	bool isinit;
 };
