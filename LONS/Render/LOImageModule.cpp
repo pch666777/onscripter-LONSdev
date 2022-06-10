@@ -159,15 +159,15 @@ int LOImageModule::InitImageModule() {
 	GetFormatBit(G_Texture_format, G_Bit);
 	SDL_SetRenderDrawColor(render, 0, 0, 0, 255);  //defalt is 0,0,0,0, it will has some problem.
 
-	ResetViewPort();
-	titleStr = "ONScripter-LONS " + LOString( ONS_VERSION );
-	SDL_SetWindowTitle(window, titleStr.c_str());
-
 	//初始化ttf
 	if (TTF_Init() == -1) {
 		SDL_LogError(0, "TTF_Init() faild!");
 		return 0;
 	}
+
+	ResetViewPort();
+	titleStr = "ONScripter-LONS " + LOString(ONS_VERSION);
+	SDL_SetWindowTitle(window, titleStr.c_str());
 
  	return 1;
 }
@@ -209,8 +209,9 @@ void LOImageModule::ResetViewPort() {
 
 	effectTex.reset(new LOtexture());
 	effectTex->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_TARGET);
-	effmakTex.reset(new LOtexture());
-	//FreeFps();
+	effmakTex.reset();
+	FreeFps();
+	InitFps();
 }
 
 void LOImageModule::CaleWindowSize(int scX, int scY, int srcW, int srcH, int dstW, int dstH, SDL_Rect *result) {
@@ -494,7 +495,9 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
-	loadSpCore(info, ntemp, 0, 0, -1);
+	loadSpCore(info, ntemp, 0, 0, -1, true);
+	//需要马上使用
+	info->cur.texture = info->bak.texture;
 	/*
 	info->SetVisable(1);
 	//至少加载一次，不然首次加载会失败
@@ -519,7 +522,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	*/
 	ef->ReadyToRun();
 	//准备好第一帧的运行
-	ef->RunEffect(render, info, effectTex->GetTexture(), effmakTex->GetTexture(), 0);
+	ef->RunEffect(render, info, effectTex, effmakTex, 0);
 }
 
 //完成了返回true, 否则返回false
@@ -529,9 +532,7 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
 		//maybe has some error!
 		if (!lyr) return true;
-		SDL_Texture *effm = nullptr;
-		if (effmakTex) effm = effmakTex->GetTexture();
-		if (ef->RunEffect(render, lyr->data.get(), effectTex->GetTexture(), effm, postime)) {
+		if (ef->RunEffect(render, lyr->data.get(), effectTex, effmakTex, postime)) {
 			//重置数据
 			lyr->data->bak.SetDelete();
 			lyr->data->cur.SetDelete();
@@ -1209,28 +1210,18 @@ LOEffect* LOImageModule::GetEffect(int id) {
 
 
 void LOImageModule::EnterTextDisplayMode(bool force) {
-	DialogWindowSet(1, 1, 1);
-	//if (!sayState.isTextDispaly() || force) {
-	//	DialogWindowSet(1, 1, 1);
-	//	sayState.setFlags(LOSayState::FLAGS_TEXT_DISPLAY);
-	//}
-	//if ( dialogDisplayMode == DISPLAY_MODE_NORMAL|| force) {
-	//	DialogWindowSet(1, 1, 1);
-	//	dialogDisplayMode = DISPLAY_MODE_TEXT;
-	//	dialogTextHasChange = false;
-	//}
+	//TextDispaly在DialogWindowSet中自动设置
+	if (!sayState.isTextDispaly() || force) {
+		DialogWindowSet(1, 1, 1);
+	}
 }
 
 
 void LOImageModule::LeveTextDisplayMode(bool force) {
-	//force就没有为真的
-	if (force || sayState.isPrinHide()) {
+	//增加TextDispaly模式，减少频繁判断
+	if (sayState.isTextDispaly() && (force || sayState.isPrinHide())) {
 		DialogWindowSet(0, 0, 0);
 	}
-	//if ( dialogDisplayMode != DISPLAY_MODE_NORMAL && (force || winEraseFlag != 0)) {
-	//	DialogWindowSet(0, 0, 0);
-	//	dialogDisplayMode = DISPLAY_MODE_NORMAL;
-	//}
 }
 
 //控制对话框和文字的显示状态，负数表示不改变，0隐藏，1显示
@@ -1258,6 +1249,10 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 		sayState.unSetFlags(LOSayState::FLAGS_WINDOW_CHANGE);
 	}
 	else if (haschange == 1) ExportQuequ("_lons", NULL, true);
+
+	//只有对话框和文字同时隐藏才是离开文字模式
+	if (showtext == 0 && showwin == 0) sayState.unSetFlags(LOSayState::FLAGS_TEXT_DISPLAY);
+	else sayState.setFlags(LOSayState::FLAGS_TEXT_DISPLAY);
 	return;
 }
 

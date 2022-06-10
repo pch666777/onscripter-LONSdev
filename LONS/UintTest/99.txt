@@ -5,6 +5,10 @@ globalon
 filelog
 labellog
 
+;mov $499,"¡ö¡ö¡ö¡ö¡ö¡ö¡ö"
+;lsp 15,":s/40,40,0;#00ffff#ffff00$499",0,0
+;btnwait %0
+
 resettimer
 delay 10
 gettimer %1

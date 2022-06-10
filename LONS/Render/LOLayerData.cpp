@@ -249,6 +249,16 @@ void LOLayerDataBase::FirstSNC() {
 	}
 }
 
+void LOLayerDataBase::GetSimpleSrc(SDL_Rect *src) {
+	src->x = showSrcX; src->y = showSrcY;
+	src->w = showWidth; src->h = showHeight;
+}
+
+void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
+	dst->x = offsetX; dst->y = offsetY;
+	dst->w = texture->baseW(); dst->h = texture->baseH();
+}
+
 //=================================
 
 LOLayerData::LOLayerData() {
@@ -260,15 +270,6 @@ LOLayerData::~LOLayerData() {
 	//if (eventHooks) for (int ii = 0; ii < eventHooks->size(); ii++) delete eventHooks->at(ii);
 }
 
-void LOLayerData::GetSimpleDst(SDL_Rect *dst) {
-	//dst->x = cur.offsetX; dst->y = cur.offsetY;
-	//dst->w = texture->baseW(); dst->h = texture->baseH();
-}
-
-void LOLayerData::GetSimpleSrc(SDL_Rect *src) {
-	//src->x = showSrcX; src->y = showSrcY;
-	//src->w = showWidth; src->h = showHeight;
-}
 
 
 bool LOLayerData::GetVisiable() {

@@ -20,9 +20,14 @@ void LOImageModule::DoPreEvent(double postime) {
 		LOShareEventHook e = preEventList[ii];
 
 		if (e->catchFlag == PRE_EVENT_PREPRINTOK) {  //print准备完成
-			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
-			const char *printName = e->paramList[1]->GetChars(nullptr);
-			PrepareEffect(ef, printName);
+			if (e->param2 == LOEventHook::FUN_SCREENSHOT) {
+				ScreenShotCountinue(e.get());
+			}
+			else {
+				LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
+				const char *printName = e->paramList[1]->GetChars(nullptr);
+				PrepareEffect(ef, printName);
+			}
 			e->FinishMe();
 		}
 		else if (e->catchFlag == PRE_EVENT_EFFECTCONTIUE) { //继续运行

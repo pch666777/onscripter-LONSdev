@@ -73,13 +73,17 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 }
 
 //true为已经到达时间界限，图层被隐藏，false表示需要继续进行
-bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex, SDL_Texture *maskTex, double pos) {
+bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &efstex, LOShareTexture &efmtex, double pos) {
 	//debug use
 	//pos = 10;
 	//time = 576*10;
 	//图像特效的核心在于我们不能直接操作 target 的textrue，需要构造一个 stream 的textrue
 	//然后使用 SDL_BLENDMODE_MOD 让 target 的textrue叠加到 stream 的textrue上，改变每个像素的显示效果
 	//SDL_BLENDMODE_MOD(dstRGB = srcRGB * dstRGB     dstA = dstA)
+	SDL_Texture *effectTex = nullptr;
+	SDL_Texture *maskTex = nullptr;
+	if (efstex) effectTex = efstex->GetTexture();
+	if (efmtex) maskTex = efmtex->GetTexture();
 
 	//重置状态
 	SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_NONE);

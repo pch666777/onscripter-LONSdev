@@ -108,7 +108,7 @@ public:
 			FLAGS_TEXT_TEXEC = 64 ,
 			FLAGS_WINDOW_CHANGE = 128 ,
 			FLAGS_TEXT_CHANGE = 256,
-			//FLAGS_TEXT_DISPLAY = 512,
+			FLAGS_TEXT_DISPLAY = 512,
 		};
 		//当前显示的对话文字
 		LOString say;
@@ -132,7 +132,7 @@ public:
 		bool isWinbak() { return flags & FLAGS_WINBACK_MODE;}
 		bool isTexec() { return flags & FLAGS_TEXT_TEXEC; }
 		bool isPrinHide() {return flags & FLAGS_PRINT_HIDE;}
-		//bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
+		bool isTextDispaly() { return flags & FLAGS_TEXT_DISPLAY; }
 		bool isWindowChange() { return flags & FLAGS_WINDOW_CHANGE; }
 		void setFlags(int f) { flags |= f; }
 		void unSetFlags(int f) { flags &= (~f); }

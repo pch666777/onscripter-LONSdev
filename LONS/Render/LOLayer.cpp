@@ -299,7 +299,7 @@ bool LOLayer::isFaterCopyEx() {
 
 void LOLayer::GetShowSrc(SDL_Rect *srcR) {
 	if (data->cur.isShowRect()) {
-		data->GetSimpleSrc(srcR);
+		data->cur.GetSimpleSrc(srcR);
 	}
 	else {
 		srcR->x = 0; srcR->y = 0;
@@ -364,6 +364,9 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	/*bool debugbreak = false ;*/
 	//全透明或者不可见，不渲染对象
 	//LONS::printInfo("alpha:%d visiable:%d", ptr[LOLayerInfo::alpha], ptr[LOLayerInfo::visiable]);
+	//if (layerType == LAYER_SPRINT && id[0] == 15) {
+	//	int bbk = 1;
+	//}
 
 	if (!isVisible()) return;
 	LOLayerDataBase *curInfo = &data->cur;

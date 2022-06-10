@@ -80,6 +80,8 @@ public:
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
 	void FirstSNC();
+	void GetSimpleSrc(SDL_Rect *src);
+	void GetSimpleDst(SDL_Rect *dst);
 
 	enum {
 		UP_BTNVAL = 1,
@@ -214,8 +216,8 @@ public:
 	LOLayerDataBase bak;
 
 	//get类函数都会检查后台，如果后台有更新则返回后台数据
-	void GetSimpleDst(SDL_Rect *dst);
-	void GetSimpleSrc(SDL_Rect *src);
+	//void GetSimpleDst(SDL_Rect *dst);
+	//void GetSimpleSrc(SDL_Rect *src);
 	bool GetVisiable();
 	int GetOffsetX();
 	int GetOffsetY();
