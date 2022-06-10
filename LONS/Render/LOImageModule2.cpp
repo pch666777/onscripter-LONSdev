@@ -84,16 +84,19 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 			////////
 			if (isnow) {
-				if (lyr->bakInfo->isDelete()) {
-					LOLayer::NoUseLayer(lyr);
-				}
-				else if (lyr->bakInfo->isNewFile()) {
-					lyr->upDataNewFile();
-				}
-				else {
-					//只更新信息的图层
-					lyr->upData();
-				}
+				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);
+				else lyr->UpDataToForce();
+
+				//if (lyr->bakInfo->isDelete()) {
+				//	LOLayer::NoUseLayer(lyr);
+				//}
+				//else if (lyr->bakInfo->isNewFile()) {
+				//	lyr->upDataNewFile();
+				//}
+				//else {
+				//	//只更新信息的图层
+				//	lyr->upData();
+				//}
 
 				//指向下一个
 				iter = map->erase(iter);
@@ -153,7 +156,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
-		ev->catchFlag = LOLayerData::FLAGS_MOUSEMOVE;
+		ev->catchFlag = LOLayerDataBase::FLAGS_MOUSEMOVE;
 		ev->paramList.push_back(new LOVariant(mouseXY[0]));
 		ev->paramList.push_back(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
@@ -170,8 +173,8 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			//队列没有响应按键事件，那么就发送到图层响应
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
 			if (SendEventToHooks(ev.get()) == LOEventHook::RUNFUNC_CONTINUE) {
-				if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerData::FLAGS_LEFTCLICK;
-				else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerData::FLAGS_RIGHTCLICK;
+				if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
+				else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
 				SendEventToLayer(ev.get());
 			}
 		}
@@ -235,7 +238,7 @@ void LOImageModule::ClearDialogText(char flag) {
 	if (flag == '\\') {
 		int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		info->SetDelete();
+		info->bak.SetDelete();
 		sayState.say.clear();
 	}
 }

@@ -126,10 +126,8 @@ public:
 	void Serialize(BinArray *sbin);
 
 	//将图层挂载到图层结构上
-	void upDataBase(LOLayerData *data);
-	void upDataEx(LOLayerData *data);
-	void upDataNewFile();
-	void upData();
+	//void upDataNewFile();
+	void UpDataToForce();
 
 	//切换图层的悬停激活状态
 	//bool setActive(bool isactive);

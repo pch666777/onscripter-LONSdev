@@ -86,13 +86,13 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effec
 
 	postime += pos;
 	if (postime > time || postime < 0) {
-		info->SetVisable(0);  //not
+		info->cur.SetVisable(0);  //not
 		//释放15和18特效的遮片，如果有的话
 		masksu.reset();
 		return true;
 	}
 	else {
-		info->alpha = 255;
+		info->cur.alpha = 255;
 		switch (nseffID)
 		{
 		case 2:
@@ -157,7 +157,7 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effec
 		Uint8 r, g, b, a;
 		SDL_GetRenderDrawColor(ren, &r, &g, &b, &a);
 
-		SDL_SetRenderTarget(ren, info->texture->GetTexture());
+		SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
 		//it must be alpha mode,must clear render
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 		SDL_RenderClear(ren);
@@ -180,7 +180,7 @@ bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effec
 void LOEffect::FadeOut(SDL_Renderer*ren, LOLayerData *info, double pos) {
 	int per = (time - postime) / time * 255;
 	if (per > 255) per = 255;
-	info->alpha = per;
+	info->cur.alpha = per;
 }
 
 void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isalpha) {
@@ -374,7 +374,7 @@ void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 		SDL_Surface *tsu = CreateRGBSurfaceWithFormat(0, dst.w, dst.h, 32, iformat);
 		//masksu = new LOSurface(tsu);
 
-		SDL_SetRenderTarget(ren, info->texture->GetTexture());
+		SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
 		SDL_RenderClear(ren);  //must clear data
 		SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_NONE);
 		SDL_RenderCopy(ren, effectTex, NULL, &dst);

@@ -1,4 +1,5 @@
 #include "LOLayer.h"
+#include "LOLayerData.h"
 
 
 extern void AddPreEvent(LOShareEventHook &e);
@@ -51,7 +52,7 @@ LOLayer::~LOLayer() {
 			LOLayer *layer = iter->second;
 			layer->parent = nullptr;
 			//如果子图层不是新的对象，那么直接移除
-			if (!layer->data->isNewFile()) NoUseLayer(layer);
+			if (!layer->data->bak.isNewFile()) NoUseLayer(layer);
 		}
 		childs->clear();
 	}
@@ -175,8 +176,7 @@ bool LOLayer::isPositionInsideMe(int x, int y) {
 	int right = left + curInfo->showWidth;
 	int bottom = top + curInfo->showHeight;
 	if (x >= left && x <= right && y >= top && y <= bottom) {
-		data->SetVisable(1, true);
-		//curInfo->SetVisable(1);
+		data->cur.SetVisable(1);
 		return true;
 	}
 	else return false;
@@ -219,10 +219,10 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 		ofy += curInfo->texture->Yfix;
 	}
 
-	if (data->isShowRotate(true) && abs(M_PI*curInfo->rotate) > 0.00001) {
+	if (data->cur.isShowRotate() && abs(M_PI*curInfo->rotate) > 0.00001) {
 		if (cx == -1) cx = curInfo->texture->W() / 2;
 		if (cy == -1) cy = curInfo->texture->H() / 2;
-		if (data->isShowScale(true)) {
+		if (data->cur.isShowScale()) {
 			//M = T * R * S * -T
 			tmp = LOMatrix2d::GetMoveMatrix(-cx, -cy);
 			mat = LOMatrix2d::GetScaleMatrix(curInfo->scaleX,curInfo->scaleY);
@@ -241,7 +241,7 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 			mat = tmp * mat;
 		}
 	}
-	else if (data->isShowScale(true)) {
+	else if (data->cur.isShowScale()) {
 		if (cx == -1) cx = curInfo->texture->W() / 2;
 		if (cy == -1) cy = curInfo->texture->H() / 2;
 		//缩放
@@ -269,6 +269,7 @@ void LOLayer::GetInheritScale(double *sx, double *sy) {
 }
 
 void LOLayer::GetInheritOffset(float *ox, float *oy) {
+	LOLayerDataBase *curInfo = &data->cur;
 	*ox = curInfo->offsetX;
 	*oy = curInfo->offsetY;
 	if (curInfo->texture) {
@@ -277,11 +278,11 @@ void LOLayer::GetInheritOffset(float *ox, float *oy) {
 	}
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		*ox += lyr->curInfo->offsetX ;
-		*oy += lyr->curInfo->offsetY;
-		if (lyr->curInfo->texture) {
-			*ox += lyr->curInfo->texture->Xfix;
-			*oy += lyr->curInfo->texture->Yfix;
+		*ox += lyr->data->cur.offsetX ;
+		*oy += lyr->data->cur.offsetY;
+		if (lyr->data->cur.texture) {
+			*ox += lyr->data->cur.texture->Xfix;
+			*oy += lyr->data->cur.texture->Yfix;
 		}
 		lyr = lyr->parent;
 	}
@@ -290,72 +291,74 @@ void LOLayer::GetInheritOffset(float *ox, float *oy) {
 bool LOLayer::isFaterCopyEx() {
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		if (lyr->curInfo->isShowRotate() || lyr->curInfo->isShowScale())return true;
+		if (lyr->data->cur.isShowRotate() || lyr->data->cur.isShowScale())return true;
 		lyr = lyr->parent;
 	}
 	return false;
 }
 
 void LOLayer::GetShowSrc(SDL_Rect *srcR) {
-	if (curInfo->isShowRect()) {
-		curInfo->GetSimpleSrc(srcR);
+	if (data->cur.isShowRect()) {
+		data->GetSimpleSrc(srcR);
 	}
 	else {
 		srcR->x = 0; srcR->y = 0;
-		srcR->w = curInfo->texture->baseW();
-		srcR->h = curInfo->texture->baseH();
+		srcR->w = data->cur.texture->baseW();
+		srcR->h = data->cur.texture->baseH();
 	}
 }
 
 
 bool LOLayer::isVisible() {
-	if (curInfo->alpha == 0 || !curInfo->isVisiable()) return false ;
+	if (data->cur.alpha == 0 || !data->cur.isVisiable()) return false ;
 	else return true;
 }
 
 bool LOLayer::isChildVisible() {
-	return curInfo->isChildVisiable();
+	return data->cur.isChildVisiable();
 }
 
-void LOLayer::upDataBase(LOLayerData *data) {
-	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
-	LOLayerDataBase *src = (LOLayerDataBase*)data;
-	*dst = *src;
-	if (data->btnStr) curInfo->btnStr.reset(new LOString(*(data->btnStr.get())));
+//void LOLayer::upDataBase(LOLayerData *data) {
+//	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
+//	LOLayerDataBase *src = (LOLayerDataBase*)data;
+//	*dst = *src;
+//	if (data->btnStr) curInfo->btnStr.reset(new LOString(*(data->btnStr.get())));
+//}
+//
+//void LOLayer::upDataEx(LOLayerData *data) {
+//	if (data->maskName) curInfo->maskName.reset(new LOString(*data->maskName));
+//	else curInfo->maskName.reset();
+//	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
+//	else curInfo->actions.reset();
+//}
+
+
+//void LOLayer::upDataNewFile() {
+	//curInfo->SetDelete();
+	//upDataBase(bakInfo.get());
+	//upDataEx(bakInfo.get());
+	////有部分需要手动的
+	//if(bakInfo->keyStr) curInfo->keyStr.reset(new LOString(*bakInfo->keyStr));
+	//if(bakInfo->buildStr) curInfo->buildStr.reset(new LOString(*bakInfo->buildStr));
+	//curInfo->texture = bakInfo->texture;
+
+	////在前台显示了
+	//curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
+	////后台数据要去掉newfile
+	//bakInfo->flags &= (~LOLayerData::FLAGS_NEWFILE);
+//	LOLayer::LinkLayerLeve(this);
+//	isinit = false;
+//}
+
+void LOLayer::UpDataToForce() {
+	bool isnew = data->bak.isNewFile();
+	data->UpdataToForce();
+	if (isnew) {
+		LOLayer::LinkLayerLeve(this);
+		isinit = false;
+	}
 }
 
-void LOLayer::upDataEx(LOLayerData *data) {
-	if (data->maskName) curInfo->maskName.reset(new LOString(*data->maskName));
-	else curInfo->maskName.reset();
-	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
-	else curInfo->actions.reset();
-}
-
-
-void LOLayer::upDataNewFile() {
-	curInfo->SetDelete();
-	upDataBase(bakInfo.get());
-	upDataEx(bakInfo.get());
-	//有部分需要手动的
-	if(bakInfo->keyStr) curInfo->keyStr.reset(new LOString(*bakInfo->keyStr));
-	if(bakInfo->buildStr) curInfo->buildStr.reset(new LOString(*bakInfo->buildStr));
-	curInfo->texture = bakInfo->texture;
-
-	//在前台显示了
-	curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
-	//后台数据要去掉newfile
-	bakInfo->flags &= (~LOLayerData::FLAGS_NEWFILE);
-	LOLayer::LinkLayerLeve(this);
-	isinit = false;
-}
-
-void LOLayer::upData() {
-	if (bakInfo->isUpData()) upDataBase(bakInfo.get());
-	if (bakInfo->isUpDataEx()) upDataEx(bakInfo.get());
-	//在前台显示了
-	curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
-	//LOLayer::LinkLayerLeve(this);
-}
 
 void LOLayer::ShowMe(SDL_Renderer *render) {
 	/*bool debugbreak = false ;*/
@@ -363,6 +366,7 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	//LONS::printInfo("alpha:%d visiable:%d", ptr[LOLayerInfo::alpha], ptr[LOLayerInfo::visiable]);
 
 	if (!isVisible()) return;
+	LOLayerDataBase *curInfo = &data->cur;
 
 	SDL_Rect src;
 	SDL_FRect dst;
@@ -378,7 +382,7 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	//不可渲染的错误
 	if (!curInfo->texture->GetTexture()) return;
 
-	if (curInfo->isShowScale() || curInfo->isShowRotate()) is_ex = true;
+	if (data->cur.isShowScale() || data->cur.isShowRotate()) is_ex = true;
 	if (isFaterCopyEx()) is_ex = true;
 
 	curInfo->texture->setForceAplha(curInfo->alpha);
@@ -453,9 +457,10 @@ void LOLayer::Serialize(BinArray *sbin) {
 
 
 void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
-	if (!data->actions) return;
-	for (int ii = 0; ii < data->actions->size(); ii++) {
-		LOShareAction acb = data->actions->at(ii);
+	auto *acions = data->cur.actions.get();
+	if (!acions) return;
+	for (int ii = 0; ii < acions->size(); ii++) {
+		LOShareAction acb = acions->at(ii);
 		if (acb->isEnble()) {
 			switch (acb->acType) {
 			case LOAction::ANIM_NSANIM:
@@ -497,16 +502,17 @@ void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 			else ai->setEnble(false);
 		}
 
-		curInfo->SetCell(ai, cell);
+		data->cur.SetCell(ai, cell);
 	}
 }
 
 
 void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) {
+	LOShareTexture texture = data->cur.texture;
 	if (ai->isInit()) {
-		SDL_Rect srcR = { 0,0, data->texture->baseW(), data->texture->baseH() };
-		data->texture->activeTexture(&srcR, true);
-		data->texture->RollTextTexture(0, ai->initPos);
+		SDL_Rect srcR = { 0,0, texture->baseW(), texture->baseH() };
+		texture->activeTexture(&srcR, true);
+		texture->RollTextTexture(0, ai->initPos);
 		ai->currentPos = ai->initPos;
 		ai->lastTime = curTime;
 		ai->unSetFlags(LOAction::FLAGS_INIT);
@@ -517,7 +523,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);
 		posPx = 20;
-		int ret = data->texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
+		int ret = texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
 		if (ret == LOtexture::RET_ROLL_END) {
 			ai->setEnble(false);
 			//添加帧刷新后事件
@@ -620,6 +626,7 @@ bool LOLayer::GetTextEndPosition(int *xx, int *yy, int *lineH) {
 
 
 void LOLayer::GetLayerPosition(int *xx, int *yy, int *aph) {
+	LOLayerDataBase *curInfo = &data->cur;
 	if (xx) *xx = curInfo->offsetX;
 	if (yy) *yy = curInfo->offsetY;
 	if (aph) *aph = curInfo->alpha;
@@ -676,9 +683,9 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	//已经在子层中完成了
 	if (ret == SENDRET_END) return ret;
 	//没有需要响应的事件
-	if (!(e->catchFlag & curInfo->flags)) return ret;
+	if (!(e->catchFlag & data->cur.flags)) return ret;
 	//左键、右键、长按、悬停
-	if (e->catchFlag & LOLayerData::FLAGS_RIGHTCLICK) {
+	if (e->catchFlag & LOLayerDataBase::FLAGS_RIGHTCLICK) {
 		//只有按钮才相应右键事件
 		LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), -1, 0));
 		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
@@ -687,7 +694,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 		//左键、长按、悬停，如果是按钮均会触发按钮类操作
 		if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
 			//按钮处理
-			if (curInfo->isBtndef()) {
+			if (data->cur.isBtndef()) {
 				//鼠标已经离开对象
 				if (e->param1 & LOEventHook::BTN_STATE_ACTIVED) {
 					setBtnShow(false);
@@ -697,11 +704,11 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 				else {
 					//鼠标进入对象
 					//已经激活的图层不会再次激活
-					if (!curInfo->isActive()) {
+					if (!data->cur.isActive()) {
 						setBtnShow(true);
 						//产生btnstr事件
-						if (curInfo->btnStr) {
-							LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), curInfo->btnStr.get()));
+						if (data->cur.btnStr) {
+							LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), data->cur.btnStr.get()));
 							aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 						}
 					}
@@ -709,8 +716,8 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 					e->param1 |= LOEventHook::BTN_STATE_ACTIVED;
 
 					//左键和长按会进一步产生按钮响应点击事件
-					if (e->catchFlag & (LOLayerData::FLAGS_LONGCLICK | LOLayerData::FLAGS_LEFTCLICK)) {
-						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), curInfo->btnval, 0));
+					if (e->catchFlag & (LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
+						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), data->cur.btnval, 0));
 						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 					}
 				}
@@ -721,7 +728,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 		}
 		else {
 			//按钮处理
-			if (curInfo->isBtndef() && curInfo->isActive()) {
+			if (data->cur.isBtndef() && data->cur.isActive()) {
 				//鼠标已经离开对象
 				setBtnShow(false);
 				e->param1 |= LOEventHook::BTN_STATE_UNACTIVED;
@@ -740,17 +747,17 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 void LOLayer::setBtnShow(bool isshow) {
 	if (isshow) {
 		setActiveCell(1);
-		curInfo->SetVisable(1);
-		curInfo->flags |= LOLayerData::FLAGS_ACTIVE;
+		data->cur.SetVisable(1);
+		data->cur.flags |= LOLayerDataBase::FLAGS_ACTIVE;
 	}
 	else {
-		if (!setActiveCell(0))curInfo->SetVisable(0);
-		curInfo->flags &= (~LOLayerData::FLAGS_ACTIVE);
+		if (!setActiveCell(0))data->cur.SetVisable(0);
+		data->cur.flags &= (~LOLayerDataBase::FLAGS_ACTIVE);
 	}
 }
 
 bool LOLayer::setActiveCell(int cell) {
-	bool ret = curInfo->SetCell(nullptr, cell);
+	bool ret = data->cur.SetCell(nullptr, cell);
 	//下次刷新图层时自动更新
 	if (ret) isinit = false;
 	return ret;
@@ -758,7 +765,7 @@ bool LOLayer::setActiveCell(int cell) {
 
 
 void LOLayer::unSetBtndefAll() {
-	curInfo->unSetBtndef();
+	data->cur.unSetBtndef();
 	if (childs) {
 		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->unSetBtndefAll();
 	}

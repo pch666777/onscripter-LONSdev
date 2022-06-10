@@ -5,9 +5,9 @@
 #include "LOImageModule.h"
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 386) {
-	//	int debugbreak = 1;
-	//}
+	if (reader->GetCurrentLine() == 377) {
+		int debugbreak = 1;
+	}
 	bool visiable = !reader->isName("lsph");
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	int fixpos = 0;
@@ -32,7 +32,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//
 	LOLayerData* info = CreateNewLayerData(fullid, reader->GetPrintName());
 	loadSpCore(info, tag, xx, yy, alpha, true);
-	info->SetVisable(visiable);
+	info->bak.SetVisable(visiable);
 	return RET_CONTINUE;
 }
 
@@ -165,7 +165,7 @@ void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *pr
 	for (int ii = fromid; ii <= endid; ii++) {
 		int fullid = GetFullID(layerType, ii, 255, 255);
 		LOLayerData *data = CreateLayerBakData(fullid, print_name);
-		if (data) data->SetDelete();
+		if (data) data->bak.SetDelete();
 	}
 }
 
@@ -241,7 +241,7 @@ int LOImageModule::cellCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (info) {
-		info->SetCell(nullptr, reader->GetParamInt(1));
+		info->bak.SetCell(nullptr, reader->GetParamInt(1));
 	}
 	return RET_CONTINUE;
 }
@@ -358,8 +358,8 @@ int LOImageModule::getspmodeCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(1), 255, 255);
 	int visiable = 0;
-	LOLayerData *info = GetLayerInfoData(fullid, reader->GetPrintName());
-	if (info && info->isVisiable()) visiable = 1;
+	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
+	if (info && info->GetVisiable()) visiable = 1;
 	v->SetValue((double)visiable);
 	return RET_CONTINUE;
 }
@@ -376,9 +376,13 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 
 	int ww, hh, cell;
 	ww = hh = 0;
-	cell = 0;
-	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
-	if (data) data->GetSize(&ww, &hh, &cell);
+	cell = 1;
+	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
+	if (data) {
+		ww = data->GetShowWidth();
+		hh = data->GetShowHeight();
+		cell = data->GetCellCount();
+	}
 	v1->SetValue((double)ww);
 	v2->SetValue((double)hh);
 	if (v3) v3->SetValue((double)cell);
@@ -388,14 +392,14 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 
 int LOImageModule::getspposCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	int xx = 0;
 	int yy = 0;
 	ONSVariableRef *v1 = reader->GetParamRef(1);
 	ONSVariableRef *v2 = reader->GetParamRef(2);
 	if (data) {
-		v1->SetValue((double)data->offsetX);
-		v2->SetValue((double)data->offsetY);
+		v1->SetValue((double)data->GetOffsetX());
+		v2->SetValue((double)data->GetOffsetY());
 	}
 	else {
 		v1->SetValue(0.0);
@@ -406,11 +410,11 @@ int LOImageModule::getspposCommand(FunctionInterface *reader) {
 
 int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	ONSVariableRef *v = reader->GetParamRef(1);
 	double val = 0.0;
 	if (data) {
-		val = data->alpha;
+		val = data->GetAlpha();
 		if (val < 0.0 || val > 255.0) val = 255.0;
 	}
 	v->SetValue(val);
@@ -431,14 +435,14 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 	int lyrType = LOLayer::LAYER_SPRINT;
 	if (reader->isName("getspposex2")) lyrType = LOLayer::LAYER_SPRINTEX;
 	int fullid = GetFullID(lyrType, reader->GetParamInt(0), 255, 255);
-	LOLayerData *data = GetLayerInfoData(fullid, reader->GetPrintName());
+	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 
 	if (data) {
-		val[0] = data->offsetX;
-		val[1] = data->offsetY;
-		val[2] = data->scaleX * 100;
-		val[3] = data->scaleY * 100;
-		val[4] = data->rotate;
+		val[0] = data->GetOffsetX();
+		val[1] = data->GetOffsetY();
+		val[2] = data->GetScaleX() * 100;
+		val[3] = data->GetScaleY() * 100;
+		val[4] = data->GetRotate();
 	}
 
 	for (int ii = 0; ii < 5; ii++) {
@@ -464,7 +468,7 @@ int LOImageModule::vspCommand(FunctionInterface *reader) {
 
 void LOImageModule::VspCore(int fullid, const char *print_name, int vals) {
 	LOLayerData *data = CreateLayerBakData(fullid, print_name);
-	if (data) data->SetVisable(vals);
+	if (data) data->bak.SetVisable(vals);
 }
 
 
@@ -596,7 +600,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
-	data->SetBtndef(nullptr, 0, true, true);
+	data->bak.SetBtndef(nullptr, 0, true, true);
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
@@ -623,8 +627,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (data) {
-		if(reader->GetParamCount() > 2) data->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
-		else data->SetBtndef(nullptr, reader->GetParamInt(1), true, false);
+		if(reader->GetParamCount() > 2) data->bak.SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
+		else data->bak.SetBtndef(nullptr, reader->GetParamInt(1), true, false);
 	}
 	return RET_CONTINUE;
 }
@@ -633,7 +637,7 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
-	data->SetBtndef(&reader->GetParamStr(0), 0, true, true);
+	data->bak.SetBtndef(&reader->GetParamStr(0), 0, true, true);
 	return RET_CONTINUE;
 }
 

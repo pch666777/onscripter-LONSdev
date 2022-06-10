@@ -82,31 +82,170 @@ LOLayerDataBase::~LOLayerDataBase() {
 
 }
 
-void LOLayerDataBase::UpData(LOLayerDataBase *base, int f) {
-	upflags = f;
-	if (f & UP_BTNVAL) btnval = base->btnval;
-	if (f & UP_OFFX) offsetX = base->offsetX;
-	if (f & UP_OFFY) offsetY = base->offsetY;
-	if (f & UP_ALPHA) alpha = base->alpha;
-	if (f & UP_CENX) centerX = base->centerX;
-	if (f & UP_CENY) centerY = base->centerY;
-	if (f & UP_SRCX) showSrcX = base->showSrcX;
-	if (f & UP_SRCY) showSrcY = base->showSrcY;
-	if (f & UP_SHOWW) showWidth = base->showWidth;
-	if (f & UP_SHOWH) showHeight = base->showHeight;
-	if (f & UP_CELLNUM) cellNum = base->cellNum;
-	if (f & UP_ALPHAMODE) alphaMode = base->alphaMode;
-	if (f & UP_SCALEX) scaleX = base->scaleX;
-	if (f & UP_SCALEY) scaleY = base->scaleY;
-	if (f & UP_ROTATE) rotate = base->rotate;
-	if (f & UP_BTNSTR) btnStr = std::move(base->btnStr);
-	if (f & UP_SHOWTYPE) showType = base->showType;
-	if (f & UP_ACTIONS) actions = std::move(base->actions);
-	if (f & UP_NEWFILE) {
-		keyStr = std::move(base->keyStr);
-		buildStr = std::move(base->buildStr);
-		texture = base->texture;
-		texType = base->texType;
+
+LOAction* LOLayerDataBase::GetAction(int t) {
+	if (actions) {
+		for (int ii = 0; ii < actions->size(); ii++) {
+			if (actions->at(ii)->acType == t) return actions->at(ii).get();
+		}
+	}
+	return nullptr;
+}
+
+void LOLayerDataBase::SetAction(LOAction *ac) {
+	LOShareAction sac(ac);
+	SetAction(sac);
+}
+
+//同类型的动画只存在一个
+void LOLayerDataBase::SetAction(LOShareAction &ac) {
+	if (!actions) actions.reset(new std::vector<LOShareAction>());
+	auto iter = actions->begin();
+	while (iter != actions->end()) {
+		if ((*iter)->acType == ac->acType) iter = actions->erase(iter);
+		else iter++;
+	}
+	actions->push_back(ac);
+}
+
+int LOLayerDataBase::GetCellCount() {
+	LOAction *ac = GetAction(LOAction::ANIM_NSANIM);
+	if (ac) {
+		LOActionNS *nac = (LOActionNS*)ac;
+		return nac->cellCount;
+	}
+	return 1;
+}
+
+void LOLayerDataBase::SetVisable(int v) {
+	if (v) flags |= FLAGS_VISIABLE;
+	else flags &= (~FLAGS_VISIABLE);
+	upflags |= UP_VISIABLE;
+}
+
+void LOLayerDataBase::SetShowRect(int x, int y, int w, int h) {
+	showWidth = w;
+	showHeight = h;
+	showSrcX = x;
+	showSrcY = y;
+	showType |= SHOW_RECT;
+	upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
+}
+
+void LOLayerDataBase::SetShowType(int show) {
+	showType |= show;
+	upflags |= UP_SHOWTYPE;
+}
+
+void LOLayerDataBase::SetPosition(int ofx, int ofy) {
+	offsetX = ofx;
+	offsetY = ofy;
+	upflags |= UP_OFFX;
+	upflags |= UP_OFFY;
+}
+
+void LOLayerDataBase::SetPosition2(int cx, int cy, double sx, double sy) {
+	centerX = cx; centerY = cy;
+	scaleX = sx; scaleY = sy;
+	showType |= SHOW_SCALE;
+	upflags |= (UP_CENX | UP_CENY | UP_SCALEX | UP_SCALEY | UP_SHOWTYPE);
+}
+
+void LOLayerDataBase::SetRotate(double ro) {
+	rotate = ro;
+	showType |= SHOW_ROTATE;
+	upflags |= UP_ROTATE;
+}
+
+void LOLayerDataBase::SetAlpha(int alp) {
+	alpha = alp & 0xff;
+	upflags |= UP_ALPHA;
+}
+
+void LOLayerDataBase::SetAlphaMode(int mode) {
+	alphaMode = mode & 0xff;
+	upflags |= UP_ALPHAMODE;
+}
+
+bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
+	upflags |= UP_CELLNUM;
+	//如果有active，那么应该设置action的值
+	if (!ac) ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
+	if (ac && texture && ce < ac->cellCount) {
+		showType |= SHOW_RECT;
+		int perx = texture->baseW() / ac->cellCount;
+		ac->cellCurrent = ce;
+		showSrcX = ac->cellCurrent * perx;
+		showSrcY = 0;
+		showWidth = perx;
+		showHeight = texture->baseH();
+		upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
+		return true;
+	}
+	else {
+		cellNum = 0;
+		return false;
+	}
+}
+
+void LOLayerDataBase::SetTextureType(int dt) {
+	texType = dt & 0xff;
+	switch (texType) {
+		//使用缓存
+	//case LOtexture::TEX_COLOR_AREA:
+	//case LOtexture::TEX_EMPTY:
+	case LOtexture::TEX_IMG:
+		flags |= FLAGS_USECACHE;
+		break;
+	default:
+		//不使用缓存
+		flags &= (~FLAGS_USECACHE);
+		break;
+	}
+}
+
+void LOLayerDataBase::SetNewFile(LOShareTexture &tex) {
+	texture = tex;
+	flags |= FLAGS_NEWFILE;
+	upflags |= UP_NEWFILE;
+	//清理删除标记
+	flags &= (~FLAGS_DELETE);
+}
+
+void LOLayerDataBase::SetDelete() {
+	resetBase();
+	flags |= FLAGS_DELETE;
+}
+
+void LOLayerDataBase::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
+	if (s) btnStr.reset(new LOString(*s));
+	btnval = val;
+	flags |= FLAGS_BTNDEF;
+	flags |= FLAGS_MOUSEMOVE;
+	if (isleft) flags |= FLAGS_LEFTCLICK;
+	if (isright) flags |= FLAGS_RIGHTCLICK;
+	upflags |= UP_BTNSTR;
+	upflags |= UP_BTNVAL;
+}
+
+void LOLayerDataBase::unSetBtndef() {
+	flags &= (~(FLAGS_BTNDEF | FLAGS_LEFTCLICK | FLAGS_RIGHTCLICK | FLAGS_MOUSEMOVE));
+}
+
+void LOLayerDataBase::FirstSNC() {
+	if (!actions) return;
+	for (int ii = 0; ii < actions->size(); ii++) {
+		LOShareAction ac = actions->at(ii);
+		if (ac->acType == LOAction::ANIM_NSANIM) {
+			if (texture) {
+				LOActionNS *ai = (LOActionNS*)(ac.get());
+				showType |= SHOW_RECT;
+				cellNum = ai->cellCurrent;
+				showWidth = texture->baseW() / ai->cellCount;
+				showHeight = texture->baseH();
+				upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
+			}
+		}
 	}
 }
 
@@ -131,238 +270,100 @@ void LOLayerData::GetSimpleSrc(SDL_Rect *src) {
 	//src->w = showWidth; src->h = showHeight;
 }
 
-int LOLayerData::GetCellCount() {
-	//if (actions) {
-	//	for (int ii = 0; ii < actions->size(); ii++) {
-	//		LOShareAction ac = actions->at(ii);
-	//		if (ac->acType == LOAction::ANIM_NSANIM) return ((LOActionNS*)(ac.get()))->cellCount;
-	//	}
-	//}
-	////默认是1格的
-	return 1;
+
+bool LOLayerData::GetVisiable() {
+	if (bak.upflags & LOLayerDataBase::UP_VISIABLE) return bak.isVisiable();
+	return cur.isVisiable();
 }
 
+int LOLayerData::GetOffsetX() {
+	if (bak.upflags & LOLayerDataBase::UP_OFFX) return bak.offsetX;
+	return cur.offsetX;
+}
+
+int LOLayerData::GetOffsetY() {
+	if (bak.upflags & LOLayerDataBase::UP_OFFY) return bak.offsetY;
+	return cur.offsetY;
+}
+
+int LOLayerData::GetAlpha() {
+	if (bak.upflags & LOLayerDataBase::UP_ALPHA) return bak.alpha;
+	return cur.alpha;
+}
+
+int LOLayerData::GetShowWidth() {
+	if (bak.upflags & LOLayerDataBase::UP_SHOWW) return bak.showWidth;
+	return cur.showWidth;
+}
+
+int LOLayerData::GetShowHeight() {
+	if (bak.upflags & LOLayerDataBase::UP_SHOWH) return bak.showHeight;
+	return cur.showHeight;
+}
+
+int LOLayerData::GetCellCount() {
+	if (bak.upflags & LOLayerDataBase::UP_NEWFILE) return bak.GetCellCount();
+	return cur.GetCellCount();
+}
+
+double LOLayerData::GetScaleX() {
+	if (bak.upflags & LOLayerDataBase::UP_SCALEX) return bak.scaleX;
+	return cur.scaleX;
+}
+
+double LOLayerData::GetScaleY() {
+	if (bak.upflags & LOLayerDataBase::UP_SCALEY) return bak.scaleY;
+	return cur.scaleY;
+}
+
+
+double LOLayerData::GetRotate() {
+	if (bak.upflags & LOLayerDataBase::UP_ROTATE) return bak.rotate;
+	return cur.rotate;
+}
 
 LOLayerDataBase *LOLayerData::GetBase(bool isforce) {
 	if (isforce)return &cur;
 	return &bak;
 }
 
-
-void LOLayerData::SetVisable(int v, bool isforce) {
+//设置默认的显示范围，通常在loadsp后调用
+void LOLayerData::SetDefaultShowSize(bool isforce) {
 	LOLayerDataBase *data = GetBase(isforce);
-	if (v) data->flags |= FLAGS_VISIABLE;
-	else data->flags &= (~FLAGS_VISIABLE);
-	data->upflags |= UP_VISIABLE;
-}
-
-
-void LOLayerData::SetShowRect(int x, int y, int w, int h, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-
-	data->showWidth = w;
-	data->showHeight = h;
-	data->showSrcX = x;
-	data->showSrcY = y;
-	data->showType |= SHOW_RECT;
-	data->upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
-}
-
-void LOLayerData::SetShowType(int show, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-
-	data->showType |= show;
-	data->upflags |= UP_SHOWTYPE;
-}
-
-
-
-void LOLayerData::SetPosition(int ofx, int ofy, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-
-	data->offsetX = ofx;
-	data->offsetY = ofy;
-	data->upflags |= UP_OFFX;
-	data->upflags |= UP_OFFY;
-}
-
-void LOLayerData::SetPosition2(int cx, int cy, double sx, double sy, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-
-	data->centerX = cx; data->centerY = cy;
-	data->scaleX = sx; data->scaleY = sy;
-	data->showType |= SHOW_SCALE;
-	data->upflags |= (UP_CENX | UP_CENY | UP_SCALEX | UP_SCALEY | UP_SHOWTYPE);
-}
-
-void LOLayerData::SetRotate(double ro, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-
-	data->rotate = ro;
-	data->showType |= SHOW_ROTATE;
-	data->upflags |= UP_ROTATE;
-}
-
-void LOLayerData::SetAlpha(int alp, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	data->alpha = alp & 0xff;
-	data->upflags |= UP_ALPHA;
-}
-
-
-bool LOLayerData::SetCell(LOActionNS *ac, int ce, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	data->upflags |= UP_CELLNUM;
-	//如果有active，那么应该设置action的值
-	if(!ac) ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
-	if (ac && data->texture && ce < ac->cellCount) {
-		SetShowType(SHOW_RECT);
-		int perx = data->texture->baseW() / ac->cellCount;
-		ac->cellCurrent = ce;
-		data->showSrcX = ac->cellCurrent * perx;
-		data->showSrcY = 0;
-		data->showWidth = perx;
-		data->showHeight = data->texture->baseH();
-		data->upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
-		return true;
+	if (data->actions) {
+		data->FirstSNC();
 	}
 	else {
-		data->cellNum = 0;
-		return false;
+		data->showWidth = data->texture->baseW();
+		data->showHeight = data->texture->baseH();
+		data->upflags |= LOLayerDataBase::UP_SHOWW;
+		data->upflags |= LOLayerDataBase::UP_SHOWH;
 	}
 }
 
 
-void LOLayerData::SetTextureType(int dt, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	data->texType = dt & 0xff;
-	switch (data->texType){
-		//使用缓存
-	//case LOtexture::TEX_COLOR_AREA:
-	//case LOtexture::TEX_EMPTY:
-	case LOtexture::TEX_IMG:
-		data->flags |= FLAGS_USECACHE;
-		break;
-	default:
-		//不使用缓存
-		data->flags &= (~FLAGS_USECACHE);
-		break;
-	}
-}
-
-//只允许后台设置新文件
-void LOLayerData::SetNewFile(LOShareTexture &tex) {
-	LOLayerDataBase *data = GetBase(false);
-	data->texture = tex;
-	data->flags |= FLAGS_NEWFILE;
-	data->upflags |= UP_NEWFILE;
-	//清理删除标记
-	data->flags &= (~FLAGS_DELETE);
-}
-
-//释放图层数据并打上delete标记
-void LOLayerData::SetDelete(bool isforce) {
-	LOLayerDataBase *data = GetBase(false);
-	data->resetBase();
-	data->flags |= FLAGS_DELETE;
-}
+//void LOLayerData::SetAction(LOAction *ac) {
+//	LOShareAction acs(ac);
+//	SetAction(acs);
+//}
 
 
-//只允许后台定义按钮
-void LOLayerData::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
-	LOLayerDataBase *data = GetBase(false);
-	if (s) data->btnStr.reset(new LOString(*s));
-	data->btnval = val;
-	data->flags |= FLAGS_BTNDEF;
-	data->flags |= FLAGS_MOUSEMOVE;
-	if (isleft) data->flags |= FLAGS_LEFTCLICK;
-	if (isright) data->flags |= FLAGS_RIGHTCLICK;
-	data->upflags |= UP_BTNSTR;
-	data->upflags |= UP_BTNVAL;
-}
-
-void LOLayerData::unSetBtndef() {
-	LOLayerDataBase *data = GetBase(false);
-	data->flags &= (~(FLAGS_BTNDEF| FLAGS_LEFTCLICK| FLAGS_RIGHTCLICK| FLAGS_MOUSEMOVE));
-}
-
-
-void LOLayerData::SetAction(LOAction *ac) {
-	LOShareAction acs(ac);
-	SetAction(acs);
-}
-
-
-void LOLayerData::SetAction(LOShareAction &ac, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	//同一种类型的action只能存在一个
-	if (data->actions) {
-		for (auto iter = data->actions->begin(); iter != data->actions->end(); ) {
-			if ((*iter)->acType == ac->acType) {
-				//计数会-1？
-				iter = data->actions->erase(iter);
-			}
-			else iter++;
-		}
-	}
-	else data->actions.reset(new std::vector<LOShareAction>());
-	data->actions->push_back(ac);
-	data->upflags |= UP_ACTIONS;
-}
-
-
-LOAction *LOLayerData::GetAction(LOAction::AnimaType acType, bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	if (data->actions) {
-		for(int ii = 0; ii < data->actions->size(); ii++){
-			if (data->actions->at(ii)->acType == acType) return data->actions->at(ii).get();
-		}
-	}
-	return nullptr;
-}
-
-
-
-void LOLayerData::FirstSNC() {
-	LOLayerDataBase *data = GetBase(false);
-	for (int ii = 0; ii < data->actions->size(); ii++) {
-		LOShareAction ac = data->actions->at(ii);
-		if (ac->acType == LOAction::ANIM_NSANIM) {
-			if (data->texture) {
-				LOActionNS *ai = (LOActionNS*)(ac.get());
-				data->showType |= SHOW_RECT;
-				data->cellNum = ai->cellCurrent;
-				data->showWidth = data->texture->baseW() / ai->cellCount;
-				data->showHeight = data->texture->baseH();
-				data->upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
-			}
-		}
-	}
-}
-
-
-void LOLayerData::GetSize(int *xx, int *yy, int *cell) {
-	//if (showType & SHOW_RECT) {
-	//	if (xx) *xx = showWidth;
-	//	if (yy) *yy = showHeight;
-	//}
-	//else if (texture) {
-	//	if (xx) *xx = texture->baseW();
-	//	if (yy) *yy = texture->baseH();
-	//}
-	//else {
-	//	if (xx) *xx = 0;
-	//	if (yy) *yy = 0;
-	//}
-
-	//if (cell) {
-	//	*cell = 1;
-	//	LOActionNS *ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
-	//	if (ac) {
-	//		*cell = ac->cellCount;
-	//	}
-	//}
-}
+//void LOLayerData::SetAction(LOShareAction &ac, bool isforce) {
+//	LOLayerDataBase *data = GetBase(isforce);
+//	//同一种类型的action只能存在一个
+//	if (data->actions) {
+//		for (auto iter = data->actions->begin(); iter != data->actions->end(); ) {
+//			if ((*iter)->acType == ac->acType) {
+//				//计数会-1？
+//				iter = data->actions->erase(iter);
+//			}
+//			else iter++;
+//		}
+//	}
+//	else data->actions.reset(new std::vector<LOShareAction>());
+//	data->actions->push_back(ac);
+//	data->upflags |= UP_ACTIONS;
+//}
 
 
 //void LOLayerData::upData(LOLayerData *data) {
@@ -409,51 +410,32 @@ void LOLayerData::cpuDelay() {
 */
 
 
-bool LOLayerData::isShowScale(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->showType & SHOW_SCALE;
+void LOLayerData::UpdataToForce() {
+	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) cur.btnval = bak.btnval;
+	if (bak.upflags & LOLayerDataBase::UP_OFFX) cur.offsetX = bak.offsetX;
+	if (bak.upflags & LOLayerDataBase::UP_OFFY) cur.offsetY = bak.offsetY;
+	if (bak.upflags & LOLayerDataBase::UP_ALPHA) cur.alpha = bak.alpha;
+	if (bak.upflags & LOLayerDataBase::UP_CENX) cur.centerX = bak.centerX;
+	if (bak.upflags & LOLayerDataBase::UP_CENY) cur.centerY = bak.centerY;
+	if (bak.upflags & LOLayerDataBase::UP_SRCX) cur.showSrcX = bak.showSrcX;
+	if (bak.upflags & LOLayerDataBase::UP_SRCY) cur.showSrcY = bak.showSrcY;
+	if (bak.upflags & LOLayerDataBase::UP_SHOWW) cur.showWidth = bak.showWidth;
+	if (bak.upflags & LOLayerDataBase::UP_SHOWH) cur.showHeight = bak.showHeight;
+	if (bak.upflags & LOLayerDataBase::UP_CELLNUM) cur.cellNum = bak.cellNum;
+	if (bak.upflags & LOLayerDataBase::UP_ALPHAMODE) cur.alphaMode = bak.alphaMode;
+	if (bak.upflags & LOLayerDataBase::UP_SCALEX) cur.scaleX = bak.scaleX;
+	if (bak.upflags & LOLayerDataBase::UP_SCALEY) cur.scaleY = bak.scaleY;
+	if (bak.upflags & LOLayerDataBase::UP_ROTATE) cur.rotate = bak.rotate;
+	if (bak.upflags & LOLayerDataBase::UP_BTNSTR) cur.btnStr = std::move(bak.btnStr);
+	if (bak.upflags & LOLayerDataBase::UP_SHOWTYPE) cur.showType = bak.showType;
+	if (bak.upflags & LOLayerDataBase::UP_ACTIONS) cur.actions = std::move(bak.actions);
+	if (bak.upflags & LOLayerDataBase::UP_NEWFILE) {
+		cur.keyStr = std::move(bak.keyStr);
+		cur.buildStr = std::move(bak.buildStr);
+		cur.texture = bak.texture;
+		cur.texType = bak.texType;
+	}
+	cur.flags = bak.flags;
+	cur.flags |= LOLayerDataBase::FLAGS_ISFORCE;
+	bak.resetBase();
 }
-
-bool LOLayerData::isShowRotate(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->showType & SHOW_ROTATE;
-}
-
-bool LOLayerData::isShowRect(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->showType & SHOW_RECT;
-}
-
-bool LOLayerData::isVisiable(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_VISIABLE;
-}
-
-bool LOLayerData::isChildVisiable(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_CHILDVISIABLE;
-}
-
-bool LOLayerData::isCache(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_USECACHE;
-}
-
-bool LOLayerData::isDelete(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_DELETE;
-}
-
-bool LOLayerData::isBtndef(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_BTNDEF;
-}
-
-bool LOLayerData::isActive(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	return data->flags & FLAGS_ACTIVE;
-}
-
-//bool LOLayerData::isForce() {
-//
-//}

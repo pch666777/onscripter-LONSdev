@@ -459,13 +459,13 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 		if (lyr->id[0] < dest) break;
 
 		//在下方的对象先渲染，渲染父对象
-		if (lyr->curInfo->texture) {
+		if (lyr->data->cur.texture) {
 			//运行图层的action
-			if (lyr->curInfo->actions) {
-				lyr->DoAction(lyr->curInfo.get(), curTime);
+			if (lyr->data->cur.actions) {
+				lyr->DoAction(lyr->data.get(), curTime);
 			}
 			//if (!lyr->curInfo->texture->isNull()) {
-			if (lyr->curInfo->texture->isAvailable()) {
+			if (lyr->data->cur.texture->isAvailable()) {
 				lyr->ShowMe(render);
 			}
 		}
@@ -499,6 +499,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
+	/*
 	info->SetVisable(1);
 	//至少加载一次，不然首次加载会失败
 	info->texture->activeFirstTexture(); 
@@ -518,6 +519,8 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 			delete su;
 		}
 	}
+
+	*/
 	ef->ReadyToRun();
 	//准备好第一帧的运行
 	ef->RunEffect(render, info, effectTex->GetFullTexture(), maskTex->GetFullTexture(), 0);
@@ -684,7 +687,7 @@ void LOImageModule::ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin) {
 	fontwin->ysize = G_gameScaleX * fontwin->ysize;
 	fontwin->xspace = G_gameScaleX * fontwin->xspace;
 	fontwin->yspace = G_gameScaleX * fontwin->yspace;
-	info->SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
+	info->bak.SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
 }
 
 
@@ -695,49 +698,49 @@ bool LOImageModule::ParseTag(LOLayerData *info, LOString *tag) {
 	//LOLog_i("tag is %s",tag->c_str()) ;
 	buf = ParseTrans(&alphaMode, tag->c_str());
 	if (alphaMode == LOLayerData::TRANS_STRING) {
-		info->SetTextureType(LOtexture::TEX_SIMPLE_STR);
-		info->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+		info->bak.SetTextureType(LOtexture::TEX_SIMPLE_STR);
+		info->bak.keyStr.reset(new LOString(buf, tag->GetEncoder()));
 	}
 	else {
 		buf = tag->SkipSpace(buf);
 		if (buf[0] == '>') {
 			buf = tag->SkipSpace(buf + 1);
-			info->SetTextureType(LOtexture::TEX_COLOR_AREA);
-			info->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+			info->bak.SetTextureType(LOtexture::TEX_COLOR_AREA);
+			info->bak.keyStr.reset(new LOString(buf, tag->GetEncoder()));
 		}
 		else if (buf[0] == '*') {
 			buf++;
 			if (buf[0] == 'd') {
-				info->SetTextureType(LOtexture::TEX_DRAW_COMMAND);
+				info->bak.SetTextureType(LOtexture::TEX_DRAW_COMMAND);
 			}
 			else if (buf[0] == 's') {
-				info->SetTextureType(LOtexture::TEX_ACTION_STR);
-				info->alphaMode = LOLayerData::TRANS_COPY;
+				info->bak.SetTextureType(LOtexture::TEX_ACTION_STR);
+				info->bak.SetAlphaMode(LOLayerData::TRANS_COPY);
 			}
 			else if (buf[0] == 'S') {
-				info->SetTextureType(LOtexture::TEX_MULITY_STR);
-				info->alphaMode = LOLayerData::TRANS_COPY;
+				info->bak.SetTextureType(LOtexture::TEX_MULITY_STR);
+				info->bak.SetAlphaMode(LOLayerData::TRANS_COPY);
 			}
 			else if (buf[0] == '>') {
-				info->SetTextureType(LOtexture::TEX_COLOR_AREA);
-				info->alphaMode = LOLayerData::TRANS_COPY;
+				info->bak.SetTextureType(LOtexture::TEX_COLOR_AREA);
+				info->bak.SetAlphaMode(LOLayerData::TRANS_COPY);
 				//LOLog_i("usecache is %c",info->usecache) ;
 			}
 			else if (buf[0] == 'b') {
 				//"*b;50,100,内容" ;绘制一个NS样式的按钮，通常模式时只显示文字，鼠标悬停时显示变色文字和有一定透明度的灰色
-				info->SetTextureType(LOtexture::TEX_NSSIMPLE_BTN);
-				info->alphaMode = LOLayerData::TRANS_COPY;
+				info->bak.SetTextureType(LOtexture::TEX_NSSIMPLE_BTN);
+				info->bak.SetAlphaMode(LOLayerData::TRANS_COPY);
 			}
 			else if (buf[0] == '*') {
 				//** 空纹理，基本上只是为了挂载子对象
-				info->SetTextureType(LOtexture::TEX_EMPTY);
+				info->bak.SetTextureType(LOtexture::TEX_EMPTY);
 			}
 			buf += 2;
-			info->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+			info->bak.keyStr.reset(new LOString(buf, tag->GetEncoder()));
 		}
 		else {
-			info->SetTextureType(LOtexture::TEX_IMG);
-			info->alphaMode = alphaMode;
+			info->bak.SetTextureType(LOtexture::TEX_IMG);
+			info->bak.SetAlphaMode(alphaMode);
 			ParseImgSP(info, tag, buf);
 		}
 	}
@@ -798,7 +801,7 @@ bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf
 			SDL_Log("Animation grid number cannot be 0!\n");
 			return false;
 		}
-		info->SetAction(ac);
+		info->bak.SetAction(ac);
 
 		//读取每格的时间
 		//有逗号表示继续对时间进行描述
@@ -830,7 +833,7 @@ bool LOImageModule::ParseImgSP(LOLayerData *info, LOString *tag, const char *buf
 	}
 	if (buf[0] == ';') buf++;
 
-	info->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+	info->bak.keyStr.reset(new LOString(buf, tag->GetEncoder()));
 }
 
 ////随机字符串
@@ -899,30 +902,23 @@ void LOImageModule::ClearBtndef(const char *printName) {
 //"**;_?_empty_?_"  空的纹理
 bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable) {
 	bool ret = loadSpCoreWith(info, tag, x, y, alpha, 0);
-	info->SetVisable(visiable);
+	info->bak.SetVisable(visiable);
 	return ret;
 }
 
 bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int y, int alpha, int eff) {
-	info->buildStr.reset(new LOString(tag));
+	info->bak.buildStr.reset(new LOString(tag));
 
-	info->SetShowType(LOLayerData::SHOW_NORMAL); //简单模式
+	info->bak.SetShowType(LOLayerDataBase::SHOW_NORMAL); //简单模式
 	ParseTag(info, &tag);
 
 	GetUseTextrue(info, nullptr, true);
 	//空纹理不参与下面的设置了，以免出现问题
-	if (!info->texture) return false;
+	if (!info->bak.texture) return false;
 
-	info->SetPosition(x, y);
-	if (!info->actions) {  //没有动画则使用默认的宽高
-		info->showWidth = info->texture->baseW();
-		info->showHeight = info->texture->baseH();
-	}
-	else {
-		info->FirstSNC();
-	}
-
-	info->SetAlpha(alpha);
+	info->bak.SetPosition(x, y);
+	info->SetDefaultShowSize(false);
+	info->bak.SetAlpha(alpha);
 
 	//记录
 	//queLayerMap[info->fullid] = NULL;
@@ -932,10 +928,10 @@ bool LOImageModule::loadSpCoreWith(LOLayerData *info, LOString &tag, int x, int 
 
 
 void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) {
-	if (!info->isCache()) {
+	if (!info->bak.isCache()) {
 		//唯一性纹理
-		std::unique_ptr<LOString> tstr = std::move(info->keyStr);
-		switch (info->texType){
+		std::unique_ptr<LOString> tstr = std::move(info->bak.keyStr);
+		switch (info->bak.texType){
 		case LOtexture::TEX_SIMPLE_STR:
 			TextureFromSimpleStr(info, tstr.get());
 			break;
@@ -949,7 +945,7 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 			TextureFromColor(info, tstr.get());
 			break;
 		default:
-			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
+			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->bak.texType);
 			SimpleError(errs.c_str());
 			break;
 		}
@@ -978,12 +974,12 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 	else {
 		//只有图像才使用纹理缓存
 		TextureFromCache(info);
-		if (!info->texture) {
-			if (info->texType == LOtexture::TEX_IMG) {
+		if (!info->bak.texture) {
+			if (info->bak.texType == LOtexture::TEX_IMG) {
 				TextureFromFile(info);
 			}
 			else {
-				LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
+				LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->bak.texType);
 			}
 		}
 	}
@@ -1058,10 +1054,10 @@ void LOImageModule::TextureFromSimpleStr(LOLayerData*info, LOString *s) {
 		ac->cellCount = colorList.size();
 		//不会进入动画检测
 		ac->setEnble(false);
-		info->SetAction(ac);
+		info->bak.SetAction(ac);
 	}
 
-	info->SetNewFile(texture);
+	info->bak.SetNewFile(texture);
 	return ;
 }
 
@@ -1085,10 +1081,10 @@ void LOImageModule::TextureFromActionStr(LOLayerData*info, LOString *s) {
 	//texture->SaveSurface(&ss);
 
 	//添加action动画
-	info->SetNewFile(texture);
+	info->bak.SetNewFile(texture);
 	LOActionText *ac = new LOActionText();
 	ac->setFlags(LOAction::FLAGS_INIT);
-	info->SetAction(ac);
+	info->bak.SetAction(ac);
 }
 
 //从标记中生成色块
@@ -1111,7 +1107,7 @@ void LOImageModule::TextureFromColor(LOLayerData *info, LOString *s) {
 	cc.a = 255;
 
 	LOShareTexture texture(new LOtexture());
-	info->SetNewFile(texture);
+	info->bak.SetNewFile(texture);
 	texture->CreateSimpleColor(w, h, cc);
 	return ;
 }
@@ -1124,20 +1120,20 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 
 void LOImageModule::TextureFromEmpty(LOLayerData *info) {
 	LOShareTexture texture(new LOtexture());
-	info->SetNewFile(texture);
+	info->bak.SetNewFile(texture);
 	texture->setEmpty(G_gameWidth, G_gameHeight);
 }
 
 void LOImageModule::TextureFromFile(LOLayerData *info) {
 	bool useAlpha;
-	LOShareBaseTexture base(SurfaceFromFile(info->keyStr.get()));
+	LOShareBaseTexture base(SurfaceFromFile(info->bak.keyStr.get()));
 	if (!base) return ;
 
 	//转换透明格式 
-	if (info->alphaMode != LOLayerData::TRANS_COPY && !base->hasAlpha()) {
-		if (info->alphaMode == LOLayerData::TRANS_ALPHA && !base->ispng) {
+	if (info->bak.alphaMode != LOLayerData::TRANS_COPY && !base->hasAlpha()) {
+		if (info->bak.alphaMode == LOLayerData::TRANS_ALPHA && !base->ispng) {
 			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), info->GetCellCount()));
-			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", info->keyStr->c_str());
+			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", info->bak.keyStr->c_str());
 		}
 		//else if (info->alphaMode == LOLayerData::TRANS_TOPLEFT) {
 		//	SDL_Color color = tmp->getPositionColor(0, 0);
@@ -1152,23 +1148,23 @@ void LOImageModule::TextureFromFile(LOLayerData *info) {
 		//}
 	}
 
-	LOString s = info->keyStr->toLower() + "?" + std::to_string(info->alphaMode) + ";";
+	LOString s = info->bak.keyStr->toLower() + "?" + std::to_string(info->bak.alphaMode) + ";";
 	LOtexture::addTextureBaseToMap(s, base);
 
 	LOShareTexture texture(new LOtexture(base));
-	info->SetNewFile(texture);
-	info->keyStr.reset(new LOString(s));
+	info->bak.SetNewFile(texture);
+	info->bak.keyStr.reset(new LOString(s));
 	return ;
 }
 
 
 void LOImageModule::TextureFromCache(LOLayerData *info) {
-	LOString s = info->keyStr->toLower() + "?" + std::to_string(info->alphaMode) + ";";
+	LOString s = info->bak.keyStr->toLower() + "?" + std::to_string(info->bak.alphaMode) + ";";
 	LOShareBaseTexture base = LOtexture::findTextureBaseFromMap(s);
 	if (base) {
 		LOShareTexture texture(new LOtexture(base));
-		info->SetNewFile(texture);
-		info->keyStr.reset(new LOString(s));
+		info->bak.SetNewFile(texture);
+		info->bak.keyStr.reset(new LOString(s));
 	}
 }
 
@@ -1277,17 +1273,17 @@ bool LOImageModule::LoadDialogWin() {
 	if ( sayWindow.winstr.length() > 0) {
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
 		loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255, true);
-		if (info->texType == LOtexture::TEX_COLOR_AREA) {
-			if (info->texture) {
-				info->texture->setAplhaModel(-1);
-				info->texture->setBlendModel(SDL_BLENDMODE_MOD);
-				info->texture->setColorModel(255, 255, 255);
+		if (info->bak.texType == LOtexture::TEX_COLOR_AREA) {
+			if (info->bak.texture) {
+				info->bak.texture->setAplhaModel(-1);
+				info->bak.texture->setBlendModel(SDL_BLENDMODE_MOD);
+				info->bak.texture->setColorModel(255, 255, 255);
 			}
 		}
 	}
 	else {
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		info->SetDelete();
+		info->bak.SetDelete();
 	}
 	return true;
 }
@@ -1295,23 +1291,24 @@ bool LOImageModule::LoadDialogWin() {
 //修改图层的显示状态，如果创建了后台队列，则返回真，否则返回假
 //强调的是当前显示状态的改变
 bool LOImageModule::SetLayerShow(bool isVisi, int fullid, const char *printName) {
-	LOLayerData *info = GetLayerInfoData(fullid, printName);
-	//前台、后台都没有指定层
-	if (!info) return false;
-	else if (info->isForce()) {
-		//只有前台，且跟要设置的状态一致
-		if (isVisi == info->isVisiable()) return false;
-		//不一致的要创建一个后台队列
-		info = CreateLayerBakData(fullid, printName);
-		info->SetVisable((int)isVisi);
-		return true;
-	}
-	else {
-		//有后台说明是新载入的图层
-		info->SetVisable((int)isVisi);
-		//既然是后台队列，那么肯定要刷新的，因此总是返回真
-	}
-	return true;
+	//LOLayerData *info = GetLayerInfoData(fullid, printName);
+	return false;
+	////前台、后台都没有指定层
+	//if (!info) return false;
+	//else if (info->isForce()) {
+	//	//只有前台，且跟要设置的状态一致
+	//	if (isVisi == info->isVisiable()) return false;
+	//	//不一致的要创建一个后台队列
+	//	info = CreateLayerBakData(fullid, printName);
+	//	info->SetVisable((int)isVisi);
+	//	return true;
+	//}
+	//else {
+	//	//有后台说明是新载入的图层
+	//	info->SetVisable((int)isVisi);
+	//	//既然是后台队列，那么肯定要刷新的，因此总是返回真
+	//}
+	//return true;
 }
 
 
@@ -1336,24 +1333,24 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 	int lastPos = 0;
 
 	if (isAdd) {
-		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-		if (lyr) {
-			LOLayerData *lastData = nullptr;
-			if (lyr->bakInfo->isNewFile()) lastData = lyr->bakInfo.get();
-			else lastData = lyr->curInfo.get();
-			if (lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
-		}
+		//LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+		//if (lyr) {
+		//	LOLayerData *lastData = nullptr;
+		//	if (lyr->bakInfo->isNewFile()) lastData = lyr->bakInfo.get();
+		//	else lastData = lyr->curInfo.get();
+		//	if (lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
+		//}
 	}
 
 	LOString tag = "*s;" + (*s);
 
 	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
-	if (!info->texture) return nullptr ;
+	if (!info->bak.texture) return nullptr ;
 
-	info->texture->isEdit = true;
-	info->texture->setFlags(LOtexture::USE_TEXTACTION_MOD);
+	info->bak.texture->isEdit = true;
+	info->bak.texture->setFlags(LOtexture::USE_TEXTACTION_MOD);
 
-	LOActionText *ac = (LOActionText*)info->GetAction(LOAction::ANIM_TEXT);
+	LOActionText *ac = (LOActionText*)info->bak.GetAction(LOAction::ANIM_TEXT);
 	ac->initPos = lastPos;
 	ac->setFlags(LOAction::FLAGS_INIT);
 	ac->hook.reset(LOEventHook::CreateTextHook(pageEnd, 0));
@@ -1367,29 +1364,19 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 //创建新图层，会释放原来的老的数据，lsp使用
 LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
 	LOLayer *lyr = LOLayer::CreateLayer(fullid);
-	lyr->bakInfo->SetDelete();
+	lyr->data->bak.SetDelete();
 	auto *map = GetPrintNameMap(printName)->map;
 	(*map)[fullid] = lyr;
-	return lyr->bakInfo.get();
+	return lyr->data.get();
 }
 
-//对已经存在的对象获取后台数据，后台为delete返回空，不可能操作已经删除的对象
-//其他如果layer存在则返回layer的后台，通常是为操作图层使用
+//获取信息或者操作原来的对象
 LOLayerData* LOImageModule::CreateLayerBakData(int fullid, const char *printName) {
+	//优先搜索已存在的图层
 	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (!lyr || lyr->bakInfo->isDelete()) return nullptr;
-	auto *map = GetPrintNameMap(printName)->map;
-	(*map)[fullid] = lyr;
-	return lyr->bakInfo.get();
-}
-
-//对已经存在的对象获取前台数据，后台为delete返回空，不可能读取已删除对象的数据
-//其他如果后台为newfile则返回后台，否则返回存在对象的前台，通常是为读取图层信息
-LOLayerData* LOImageModule::GetLayerInfoData(int fullid, const char *printName) {
-	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (!lyr || lyr->bakInfo->isDelete()) return nullptr;
-	if (lyr->bakInfo->isNewFile()) return lyr->bakInfo.get();
-	else return lyr->curInfo.get();
+	if (lyr) return lyr->data.get();
+	//不存在的图层是无法操作也无法获取信息的
+	return nullptr;
 }
 
 

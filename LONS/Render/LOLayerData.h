@@ -45,7 +45,41 @@ public:
 	LOLayerDataBase();
 	~LOLayerDataBase();
 	void resetBase();
-	void UpData(LOLayerDataBase *base, int f);
+	LOAction* GetAction(int t);
+	int GetCellCount();
+
+	//属性设置的目标应该是明确的
+	inline bool isShowScale() { return showType & SHOW_SCALE; }
+	inline bool isShowRotate() { return showType & SHOW_ROTATE; }
+	inline bool isShowRect() { return showType & SHOW_RECT; }
+	inline bool isVisiable() { return flags & FLAGS_VISIABLE; }
+	inline bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
+	inline bool isCache() { return flags & FLAGS_USECACHE; }
+	inline bool isDelete() { return flags & FLAGS_DELETE; }
+	inline bool isNewFile() { return flags & FLAGS_NEWFILE; }
+	inline bool isUpData() { return flags & FLAGS_UPDATA; }
+	inline bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
+	inline bool isBtndef() { return flags & FLAGS_BTNDEF; }
+	inline bool isActive() { return flags & FLAGS_ACTIVE; }
+	inline bool isForce() { return flags & FLAGS_ISFORCE; }
+
+	void SetAction(LOAction *ac);
+	void SetAction(LOShareAction &ac);
+	void SetVisable(int v);
+	void SetShowRect(int x, int y, int w, int h);
+	void SetShowType(int show);
+	void SetPosition(int ofx, int ofy);
+	void SetPosition2(int cx, int cy, double sx, double sy);
+	void SetRotate(double ro);
+	void SetAlpha(int alp);
+	void SetAlphaMode(int mode);
+	bool SetCell(LOActionNS *ac, int ce);
+	void SetTextureType(int dt);
+	void SetNewFile(LOShareTexture &tex);
+	void SetDelete();
+	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
+	void unSetBtndef();
+	void FirstSNC();
 
 	enum {
 		UP_BTNVAL = 1,
@@ -70,6 +104,41 @@ public:
 		UP_SHOWTYPE = 0x40000,
 		UP_VISIABLE = 0x80000,
 		UP_NEWFILE = -1,
+	};
+
+	enum {
+		FLAGS_VISIABLE = 1,
+		FLAGS_CHILDVISIABLE = 2,
+		FLAGS_USECACHE = 4,
+		FLAGS_DELETE = 8,
+		//只更新了位置、缩放等简单数值
+		FLAGS_UPDATA = 16,
+		FLAGS_NEWFILE = 32,
+		//更新了事件钩子和动作
+		FLAGS_UPDATAEX = 64,
+		//该图层被设置btn
+		FLAGS_BTNDEF = 128,
+		//图层正处于鼠标悬停激活状态
+		FLAGS_ACTIVE = 256,
+		//响应左键
+		FLAGS_LEFTCLICK = 0x200,
+		//响应右键
+		FLAGS_RIGHTCLICK = 0x400,
+		//响应长按
+		FLAGS_LONGCLICK = 0x800,
+		//响应悬停
+		FLAGS_MOUSEMOVE = 0x1000,
+		//释放时，只有前台和后台同时处于不适用状态才会删除
+		//是否处于前台
+		FLAGS_ISFORCE = 0x2000,
+	};
+
+	//显示模式
+	enum {
+		SHOW_NORMAL = 1,
+		SHOW_RECT = 2,
+		SHOW_SCALE = 4,
+		SHOW_ROTATE = 8
 	};
 
 	int flags;
@@ -110,40 +179,6 @@ public:
 	uint8_t showType;
 };
 
-////基本类型都放在一起，拷贝方便
-//class LOLayerDataBase {
-//public:
-//	LOLayerDataBase();
-//	void resetBase();
-//
-//	int fullid;    //图层号，父id 10位（0-1023），子id 8位（0-254），孙子id 8位(0-254)
-//	int flags;     //图层标记，比如是否使用缓存，是否有遮片，是否显示
-//	int btnval;    //btn的值
-//	int16_t offsetX;    //显示目标左上角位置
-//	int16_t offsetY;    //显示目标左上角位置
-//	int16_t alpha;      //透明度
-//	int16_t centerX;    //锚点，缩放旋转时有用
-//	int16_t centerY;
-//
-//	int16_t showSrcX;      //显示区域的X偏移
-//	int16_t showSrcY;     //显示区域的Y偏移
-//	uint16_t showWidth;   //显示区域的宽度
-//	uint16_t showHeight;  //显示区域的高度
-//
-//	uint8_t cellNum;      //第几格动画
-//	uint8_t alphaMode;
-//	uint16_t tWidth;     //材质的宽度
-//	uint16_t tHeight;	//材质的高度
-//
-//	double scaleX;   //X方向的缩放
-//	double scaleY;	//y方向的缩放
-//	double rotate;	//旋转，角度
-//
-//	uint8_t texType;  //data是哪一种类型的
-//protected:
-//	uint8_t showType;
-//};
-
 
 //数据由前台数据和后台数据组成，set时总是设置后台数据, get时则根据upflags确定返回前台还是后台数据
 class LOLayerData{
@@ -153,69 +188,6 @@ public:
 
 	//禁用赋值
 	const LOLayerData& operator=(const LOLayerData &obj) = delete;
-
-	//拷贝构造
-
-	//显示模式
-	enum {
-		SHOW_NORMAL = 1,
-		SHOW_RECT = 2,
-		SHOW_SCALE = 4,
-		SHOW_ROTATE = 8
-	};
-
-	enum {
-		UP_BTNVAL = 1,
-		UP_OFFX = 2,
-		UP_OFFY = 4,
-		UP_ALPHA = 8,
-		UP_CENX = 16,
-		UP_CENY = 32,
-		UP_SRCX = 64,
-		UP_SRCY = 128,
-		UP_SHOWW = 256,
-		UP_SHOWH = 512,
-		UP_CELLNUM = 1024,
-		UP_ALPHAMODE = 2048,
-		UP_SCALEX = 0x1000,
-		UP_SCALEY = 0x2000,
-		UP_ROTATE = 0x4000,
-		UP_BTNSTR = 0x8000,
-		//跟新文件必定挂钩的 keystr buildstr texture  textype
-		//UP_NEWFILE = 0x10000,
-		UP_ACTIONS = 0x20000,
-		UP_SHOWTYPE = 0x40000,
-		UP_VISIABLE = 0x80000,
-		UP_NEWFILE = -1,
-	};
-
-	enum {
-		FLAGS_VISIABLE = 1,
-		FLAGS_CHILDVISIABLE = 2,
-		FLAGS_USECACHE = 4 ,
-		FLAGS_DELETE = 8,
-		//只更新了位置、缩放等简单数值
-		FLAGS_UPDATA = 16,
-		FLAGS_NEWFILE = 32,
-		//更新了事件钩子和动作
-		FLAGS_UPDATAEX = 64,
-		//该图层被设置btn
-		FLAGS_BTNDEF = 128,
-		//图层正处于鼠标悬停激活状态
-		FLAGS_ACTIVE = 256,
-		//响应左键
-		FLAGS_LEFTCLICK = 0x200,
-		//响应右键
-		FLAGS_RIGHTCLICK = 0x400,
-		//响应长按
-		FLAGS_LONGCLICK = 0x800,
-		//响应悬停
-		FLAGS_MOUSEMOVE = 0x1000,
-		//释放时，只有前台和后台同时处于不适用状态才会删除
-		//是否处于前台
-		FLAGS_ISFORCE = 0x2000,
-	};
-
 
 	//透明模式
 	enum {
@@ -241,43 +213,26 @@ public:
 	LOLayerDataBase cur;
 	LOLayerDataBase bak;
 
-	inline bool isShowScale(bool isforce);
-	inline bool isShowRotate(bool isforce);
-	inline bool isShowRect(bool isforce);
-	inline bool isVisiable(bool isforce);
-	inline bool isChildVisiable(bool isforce);
-	inline bool isCache(bool isforce);
-	inline bool isDelete(bool isforce);
-	inline bool isNewFile() { return bak.flags & FLAGS_NEWFILE; }
-	inline bool isBtndef(bool isforce);
-	inline bool isActive(bool isforce);
-	//inline bool isForce(bool isforce);
+	//get类函数都会检查后台，如果后台有更新则返回后台数据
 	void GetSimpleDst(SDL_Rect *dst);
 	void GetSimpleSrc(SDL_Rect *src);
+	bool GetVisiable();
+	int GetOffsetX();
+	int GetOffsetY();
+	int GetAlpha();
+	int GetShowWidth();
+	int GetShowHeight();
 	int GetCellCount();
-	void SetVisable(int v ,bool isforce = false);
-	void SetShowRect(int x, int y, int w, int h, bool isforce = false);
-	void SetShowType(int show, bool isforce = false);
-	void SetPosition(int ofx, int ofy, bool isforce = false);
-	void SetPosition2(int cx, int cy, double sx, double sy, bool isforce = false);
-	void SetRotate(double ro, bool isforce = false);
-	void SetAlpha(int alp, bool isforce = false);
-	bool SetCell(LOActionNS *ac, int ce, bool isforce = false);
-	void SetTextureType(int dt, bool isforce = false);
-	void SetNewFile(LOShareTexture &tex);
-	void SetDelete(bool isforce = false);
-	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
-	void unSetBtndef();
-	void GetSize(int *xx, int *yy, int *cell);
+	double GetScaleX();
+	double GetScaleY();
+	double GetRotate();
+
+	void SetDefaultShowSize(bool isforce);
+	
 	inline LOLayerDataBase *GetBase(bool isforce);
 
 	//将动画的初始信息同步到layerinfo上
-	void FirstSNC();
-
-	//添加敏感类事件时删除
-	void SetAction(LOShareAction &ac, bool isforce = false);
-	void SetAction(LOAction *ac);
-	LOAction *GetAction(LOAction::AnimaType acType, bool isforce = false);
+	void UpdataToForce();
 private:
 	bool isinit;
 };
