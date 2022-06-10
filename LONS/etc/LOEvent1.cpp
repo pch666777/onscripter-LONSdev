@@ -131,6 +131,19 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 }
 
 
+LOEventHook* LOEventHook::CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh) {
+	e->paramList.clear();
+	e->timeStamp = SDL_GetTicks();
+	e->param2 = FUN_SCREENSHOT;
+	e->paramList.push_back(new LOVariant(x));
+	e->paramList.push_back(new LOVariant(y));
+	e->paramList.push_back(new LOVariant(w));
+	e->paramList.push_back(new LOVariant(h));
+	e->paramList.push_back(new LOVariant(dw));
+	e->paramList.push_back(new LOVariant(dh));
+	return e;
+}
+
 
 
 //响应按钮事件,waittime <= 0 表示不超时，printName = nullptr表示不清除按钮定义，否则则 > 0 时清除按钮定义

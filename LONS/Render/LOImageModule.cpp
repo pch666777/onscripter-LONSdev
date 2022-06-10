@@ -16,8 +16,6 @@ LOImageModule::LOImageModule(){
 	allSpList2 = NULL;
 	window = NULL;
 	render = NULL;
-	effectTex = NULL;
-	maskTex = NULL;
 	fpstex = NULL;
 	isShowFps = true;
 	//screenshotSu = NULL;
@@ -209,9 +207,9 @@ void LOImageModule::ResetViewPort() {
 		G_viewRect.y = (int)(G_gameScaleY * winView.y); //? is right?
 	}
 
-	auto *temp = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
-	effectTex.reset(new LOtextureBase(temp));
-	maskTex.reset(new LOtextureBase());
+	effectTex.reset(new LOtexture());
+	effectTex->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_TARGET);
+	effmakTex.reset(new LOtexture());
 	//FreeFps();
 }
 
@@ -374,12 +372,12 @@ int LOImageModule::RefreshFrame(double postime) {
 			//}
 			//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
 
-			if (SDL_SetRenderTarget(render, effectTex->GetFullTexture()) < 0) LOLog_e("SDL_SetRenderTarget(effectTexture) faild!");
+			if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) LOLog_e("SDL_SetRenderTarget(effectTexture) faild!");
 			SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
 			SDL_RenderClear(render);
 			UpDisplay(postime);
 			SDL_SetRenderTarget(render, NULL);
-			SDL_RenderCopy(render, effectTex->GetFullTexture(), NULL, NULL);
+			SDL_RenderCopy(render, effectTex->GetTexture(), NULL, NULL);
 			//LOLog_i("prepare ok!") ;
 			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
 			printPreHook->catchFlag = PRE_EVENT_PREPRINTOK;
@@ -487,17 +485,15 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//首先需要抓取图像，抓取的图像存储在effectTex中，其次需要一张保存最终结果的纹理，_?_effect_?_
 	//还需要一个可编辑的遮片 maskTex
 
-	LOString ntemp("_?_effect_?_");      //care trigraph or Digraph
-	LOtexture::addNewEditTexture(ntemp, G_viewRect.w, G_viewRect.h, G_Texture_format, SDL_TEXTUREACCESS_TARGET);
-	//除效果10外，其他效果均需要特殊调制
+	LOString ntemp("**;_?_effect_?_");
+	//除效果10外，其他效果均需要进行遮片操作
 	if (ef->nseffID != 10) {
-		auto *editEff = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_STREAMING, G_viewRect.w, G_viewRect.h);
-		maskTex.reset(new LOtextureBase(editEff));
+		effmakTex.reset(new LOtexture());
+		effmakTex->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_STREAMING);
 	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
-	ntemp = ":c;" + ntemp;
 	loadSpCore(info, ntemp, 0, 0, -1);
 	/*
 	info->SetVisable(1);
@@ -523,31 +519,26 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	*/
 	ef->ReadyToRun();
 	//准备好第一帧的运行
-	ef->RunEffect(render, info, effectTex->GetFullTexture(), maskTex->GetFullTexture(), 0);
+	ef->RunEffect(render, info, effectTex->GetTexture(), effmakTex->GetTexture(), 0);
 }
 
 //完成了返回true, 否则返回false
 bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double postime) {
 	if (ef) { //print 2-8
-		int ids[] = { LOLayer::IDEX_NSSYS_EFFECT,255,255 };
-		int fullid = GetFullID(LOLayer::LAYER_NSSYS, ids);
-		
-		/*
-		LOLayer *elyr = FindLayerInBase(fullid);
-		if (elyr) {
-			if (ef->RunEffect(render, elyr->curInfo.get(), effectTex->GetFullTexture(), maskTex->GetFullTexture(), postime)) {
-				//前台后台数据都重置
-				LOLayerData *data = GetLayerData(fullid, printName);
-				if (data) data->SetDelete();
-				elyr->curInfo->SetDelete();
-				maskTex->FreeData();
-				//effectTex经常要使用，所以不释放
-				return true;
-			}
-			else return false;  //we will have next frame.
+		int fullid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255);
+		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+		//maybe has some error!
+		if (!lyr) return true;
+		SDL_Texture *effm = nullptr;
+		if (effmakTex) effm = effmakTex->GetTexture();
+		if (ef->RunEffect(render, lyr->data.get(), effectTex->GetTexture(), effm, postime)) {
+			//重置数据
+			lyr->data->bak.SetDelete();
+			lyr->data->cur.SetDelete();
+			effmakTex.reset();
+			return true;
 		}
-		else return true; //maybe has some error!
-		*/
+		else return false;
 	}
 
 	return true; //print 1
@@ -732,8 +723,9 @@ bool LOImageModule::ParseTag(LOLayerData *info, LOString *tag) {
 				info->bak.SetAlphaMode(LOLayerData::TRANS_COPY);
 			}
 			else if (buf[0] == '*') {
+				//操作式纹理
 				//** 空纹理，基本上只是为了挂载子对象
-				info->bak.SetTextureType(LOtexture::TEX_EMPTY);
+				info->bak.SetTextureType(LOtexture::TEX_CONTROL);
 			}
 			buf += 2;
 			info->bak.keyStr.reset(new LOString(buf, tag->GetEncoder()));
@@ -899,7 +891,7 @@ void LOImageModule::ClearBtndef(const char *printName) {
 //"*s;$499" 对话框文字sp，特效跟随setwindow的值
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
-//"**;_?_empty_?_"  空的纹理
+//"**;_?_empty_?_"  操作式纹理，比如_?_empty_?_表示空纹理， _?_effect_?_ 表示print时的效果纹理
 bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable) {
 	bool ret = loadSpCoreWith(info, tag, x, y, alpha, 0);
 	info->bak.SetVisable(visiable);
@@ -935,8 +927,8 @@ void LOImageModule::GetUseTextrue(LOLayerData *info, void *data, bool addcount) 
 		case LOtexture::TEX_SIMPLE_STR:
 			TextureFromSimpleStr(info, tstr.get());
 			break;
-		case LOtexture::TEX_EMPTY:
-			TextureFromEmpty(info);
+		case LOtexture::TEX_CONTROL:
+			TextureFromControl(info, tstr.get());
 			break;
 		case LOtexture::TEX_ACTION_STR:
 			TextureFromActionStr(info, tstr.get());
@@ -1118,10 +1110,12 @@ LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
 }           
 */
 
-void LOImageModule::TextureFromEmpty(LOLayerData *info) {
+
+void LOImageModule::TextureFromControl(LOLayerData *info, LOString *s) {
 	LOShareTexture texture(new LOtexture());
 	info->bak.SetNewFile(texture);
-	texture->setEmpty(G_gameWidth, G_gameHeight);
+	if (*s == "_?_empty_?_") texture->setEmpty(G_gameWidth, G_gameHeight);
+	else if (*s == "_?_effect_?_") texture->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_TARGET);
 }
 
 void LOImageModule::TextureFromFile(LOLayerData *info) {

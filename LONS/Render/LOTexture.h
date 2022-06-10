@@ -100,7 +100,8 @@ public:
 		TEX_COLOR_AREA,
 		TEX_DRAW_COMMAND,
 		TEX_NSSIMPLE_BTN,
-		TEX_EMPTY,
+		//TEX_EMPTY,
+		TEX_CONTROL,
 	};
 
 	enum {
@@ -180,6 +181,9 @@ public:
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);
 
+	//创建一个target纹理
+	void CreateDstTexture(int w, int h, int access);
+
 	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义
 	int16_t Xfix;
 	int16_t Yfix;
@@ -225,7 +229,6 @@ private:
 };
 
 typedef std::shared_ptr<LOtexture> LOShareTexture;
-
 
 
 #endif // !__LOTEXTURE_H__

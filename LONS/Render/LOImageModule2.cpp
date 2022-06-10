@@ -86,18 +86,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			if (isnow) {
 				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);
 				else lyr->UpDataToForce();
-
-				//if (lyr->bakInfo->isDelete()) {
-				//	LOLayer::NoUseLayer(lyr);
-				//}
-				//else if (lyr->bakInfo->isNewFile()) {
-				//	lyr->upDataNewFile();
-				//}
-				//else {
-				//	//只更新信息的图层
-				//	lyr->upData();
-				//}
-
 				//指向下一个
 				iter = map->erase(iter);
 			}
@@ -274,62 +262,43 @@ int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 }
 
 
-/*
-LOSurface* LOImageModule::ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect) {
-	LOEvent1 *e = new LOEvent1(LOEvent1::EVENT_PREPARE_EFFECT, PARAM_SCREENSHORT);
-	auto *param = new LOEventParamBtnRef;
-	param->ptr1 = (intptr_t)srcRect;
-	param->ptr2 = (intptr_t)dstRect;
-	e->SetValuePtr(param);
-
-	G_SendEvent(e);
-	e->waitEvent(1, -1);
-
-	LOSurface *su = (LOSurface*)param->ptr2;
-	e->InvalidMe();
-	return su;
+LOtexture* LOImageModule::ScreenShot(int x, int y, int w, int h, int dw, int dh) {
+	LOEventHook::CreateScreenShot(printPreHook.get(), x, y, w, h, dw, dh);
+	printPreHook->waitEvent(1, -1);
+	LOtexture *tex = (LOtexture*)printPreHook->paramList[6]->GetPtr();
+	return tex;
 }
 
-void LOImageModule::ScreenShotCountinue(LOEvent1 *e) {
-	if (!e->value) return;
-	LOEventParamBtnRef *param = (LOEventParamBtnRef*)e->value;
-	SDL_Rect *rect = (SDL_Rect*)param->ptr1;
-	SDL_Rect *dst = (SDL_Rect*)param->ptr2;
-	if (!rect || rect->w == 0 || rect->h == 0) return;
-	//核算截图的位置
-	int xx, yy, ww, hh;
-	xx = G_gameScaleX * rect->x; yy = G_gameScaleY * rect->y;
-	ww = G_gameScaleX * rect->w; hh = G_gameScaleY * rect->h;
-	if (xx < 0) xx = 0;
-	if (yy < 0) yy = 0;
-	if (ww > G_viewRect.w || ww < 0) ww = G_viewRect.w;
-	if (hh > G_viewRect.h || hh < 0) hh = G_viewRect.h;
-	SDL_Rect src;
-	src.x = xx; src.y = yy;
-	src.w = ww; src.h = hh;
 
-	//把画面帧缩放转移到新的buf中
-	SDL_Texture *tex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, dst->w, dst->h);
-	SDL_SetRenderTarget(render, tex);
-	SDL_RenderClear(render);
-	SDL_RenderCopy(render, effectTex, &src, dst);
+void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
+	SDL_Rect src, dst;
+	src.x = e->paramList[0]->GetInt();
+	src.y = e->paramList[1]->GetInt();
+	src.w = e->paramList[2]->GetInt();
+	src.h = e->paramList[3]->GetInt();
+	dst.x = 0; dst.y = 0;
+	dst.w = e->paramList[4]->GetInt();
+	dst.h = e->paramList[5]->GetInt();
 
-	//转写到surface中，注意如果是一个比较大的图像尺寸，会比较耗时
-	LOSurface *su = new LOSurface(dst->w, dst->h, 32, G_Texture_format);
-	SDL_Surface *su_t = su->GetSurface();
-	SDL_LockSurface(su_t);
-	int cks = SDL_RenderReadPixels(render, dst, G_Texture_format, su_t->pixels, su_t->pitch);
-	SDL_UnlockSurface(su_t);
-	//SDL_SaveBMP(su_t, "gggg.bmp");
+	//要截取的是渲染器的位置，因此要根据缩放位置计算
+	src.x = G_gameScaleX * src.x; src.y = G_gameScaleY * src.y;
+	src.w = G_gameScaleX * src.w; src.h = G_gameScaleY * src.w;
+	if (src.w > 0 && src.h > 0 && dst.w > 0 && dst.h > 0) {
+		//创建一个用于接收画面的纹理
+		LOtexture *tex = new LOtexture();
+		tex->CreateDstTexture(dst.w, dst.h, SDL_TEXTUREACCESS_TARGET);
+		//把画面帧缩放转移到缓冲纹理中
+		SDL_SetRenderTarget(render, tex->GetTexture());
+		SDL_RenderClear(render);
+		SDL_RenderCopy(render, effectTex->GetTexture(), &src, &dst);
+		//从GPU拷贝数据到内存
 
-	//还原渲染器状态
-	SDL_SetRenderTarget(render, NULL);
-	DestroyTexture(tex);
+		e->paramList.push_back(new LOVariant(tex));
+	}
+	else e->paramList.push_back(new LOVariant(0));
 
-	param->ptr2 = (intptr_t)su;  //替换掉dst的指针
 	e->FinishMe();
 }
-*/
 
 
 

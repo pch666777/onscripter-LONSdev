@@ -186,8 +186,8 @@ public:
 
 
 
-	//LOSurface* ScreenShot(SDL_Rect *srcRect, SDL_Rect *dstRect);
-	//void ScreenShotCountinue(LOEvent1 *e);
+	LOtexture* ScreenShot(int x, int y, int w, int h, int dw, int dh);
+	void ScreenShotCountinue(LOEventHook *e);
 	LOtextureBase* SurfaceFromFile(LOString *filename);
 	int RefreshFrame(double postime);        //刷新帧显示
 
@@ -326,9 +326,9 @@ private:
 	LOString titleStr;
 
 	//抓取图像的遮片
-	LOUniqBaseTexture effectTex;
+	LOShareTexture effectTex;
 	//遮片纹理
-	LOUniqBaseTexture maskTex;
+	LOShareTexture effmakTex;
 	Uint32 tickTime;
 
 	void ResetViewPort();
@@ -339,7 +339,8 @@ private:
 	void FreeFps();
 	void TextureFromFile(LOLayerData *info);
 	void TextureFromCache(LOLayerData *info);
-	void TextureFromEmpty(LOLayerData *info);
+	//void TextureFromEmpty(LOLayerData *info);
+	void TextureFromControl(LOLayerData *info, LOString *s);
 	void TextureFromColor(LOLayerData *info, LOString *s);
 	void TextureFromSimpleStr(LOLayerData*info, LOString *s);
 	void TextureFromActionStr(LOLayerData*info, LOString *s);

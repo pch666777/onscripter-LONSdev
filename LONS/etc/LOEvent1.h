@@ -81,6 +81,7 @@ public:
 		FUN_SPSTR,
 		FUN_LAYERANSWER,
 		FUN_TEXT_ACTION,
+		FUN_SCREENSHOT,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
@@ -123,6 +124,8 @@ public:
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
 	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
+	//创建一个截图事件
+	static LOEventHook* CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh);
 	//创建一个btnwait事件
 	static LOEventHook* CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd);
 	//创建一个按钮被点击事件
