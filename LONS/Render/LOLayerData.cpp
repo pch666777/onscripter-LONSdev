@@ -64,7 +64,7 @@ LOLayerDataBase::LOLayerDataBase() {
 }
 
 void LOLayerDataBase::resetBase() {
-	flags = upflags = 0;
+	flags = upflags = upaction = 0;
 	offsetX = offsetY = centerX = centerY = 0;
 	alpha = -1;
 	showSrcX = showSrcY = showWidth = showHeight = 0;
@@ -106,6 +106,7 @@ void LOLayerDataBase::SetAction(LOShareAction &ac) {
 		else iter++;
 	}
 	actions->push_back(ac);
+	upaction |= ac->acType;
 }
 
 int LOLayerDataBase::GetCellCount() {
@@ -188,6 +189,13 @@ bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
 	}
 }
 
+//只设置数，不检查有效性
+void LOLayerDataBase::SetCellNum(int ce) {
+	cellNum = ce;
+	upflags |= UP_CELLNUM;
+}
+
+
 void LOLayerDataBase::SetTextureType(int dt) {
 	texType = dt & 0xff;
 	switch (texType) {
@@ -208,6 +216,7 @@ void LOLayerDataBase::SetNewFile(LOShareTexture &tex) {
 	texture = tex;
 	flags |= FLAGS_NEWFILE;
 	upflags |= UP_NEWFILE;
+	upaction |= UP_ACTION_ALL;
 	//清理删除标记
 	flags &= (~FLAGS_DELETE);
 }
@@ -273,52 +282,62 @@ LOLayerData::~LOLayerData() {
 
 
 bool LOLayerData::GetVisiable() {
-	if (bak.upflags & LOLayerDataBase::UP_VISIABLE) return bak.isVisiable();
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return false;
+	else if (bak.upflags & LOLayerDataBase::UP_VISIABLE) return bak.isVisiable();
 	return cur.isVisiable();
 }
 
 int LOLayerData::GetOffsetX() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_OFFX) return bak.offsetX;
 	return cur.offsetX;
 }
 
 int LOLayerData::GetOffsetY() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_OFFY) return bak.offsetY;
 	return cur.offsetY;
 }
 
 int LOLayerData::GetAlpha() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 255;
 	if (bak.upflags & LOLayerDataBase::UP_ALPHA) return bak.alpha;
 	return cur.alpha;
 }
 
 int LOLayerData::GetShowWidth() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWW) return bak.showWidth;
 	return cur.showWidth;
 }
 
 int LOLayerData::GetShowHeight() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWH) return bak.showHeight;
 	return cur.showHeight;
 }
 
 int LOLayerData::GetCellCount() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_NEWFILE) return bak.GetCellCount();
 	return cur.GetCellCount();
 }
 
 double LOLayerData::GetScaleX() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEX) return bak.scaleX;
 	return cur.scaleX;
 }
 
 double LOLayerData::GetScaleY() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEY) return bak.scaleY;
 	return cur.scaleY;
 }
 
 
 double LOLayerData::GetRotate() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
 	if (bak.upflags & LOLayerDataBase::UP_ROTATE) return bak.rotate;
 	return cur.rotate;
 }
@@ -341,43 +360,6 @@ void LOLayerData::SetDefaultShowSize(bool isforce) {
 		data->upflags |= LOLayerDataBase::UP_SHOWH;
 	}
 }
-
-
-//void LOLayerData::SetAction(LOAction *ac) {
-//	LOShareAction acs(ac);
-//	SetAction(acs);
-//}
-
-
-//void LOLayerData::SetAction(LOShareAction &ac, bool isforce) {
-//	LOLayerDataBase *data = GetBase(isforce);
-//	//同一种类型的action只能存在一个
-//	if (data->actions) {
-//		for (auto iter = data->actions->begin(); iter != data->actions->end(); ) {
-//			if ((*iter)->acType == ac->acType) {
-//				//计数会-1？
-//				iter = data->actions->erase(iter);
-//			}
-//			else iter++;
-//		}
-//	}
-//	else data->actions.reset(new std::vector<LOShareAction>());
-//	data->actions->push_back(ac);
-//	data->upflags |= UP_ACTIONS;
-//}
-
-
-//void LOLayerData::upData(LOLayerData *data) {
-//	LOLayerDataBase *dst = (LOLayerDataBase*)this;
-//	LOLayerDataBase *src = (LOLayerDataBase*)data;
-//	*dst = *src;
-//}
-//
-//void LOLayerData::upDataEx(LOLayerData *data) {
-//	if (data->maskName) maskName.reset(new LOString(*data->maskName));
-//	if (data->actions) actions.reset(new std::vector<LOShareAction>(*data->actions));
-//	if (data->eventHooks) eventHooks.reset(new std::vector<LOShareEventHook>(*data->eventHooks));
-//}
 
 
 
@@ -412,6 +394,12 @@ void LOLayerData::cpuDelay() {
 
 
 void LOLayerData::UpdataToForce() {
+	//首先更新action，后面有用
+	if (bak.upaction == LOLayerDataBase::UP_ACTION_ALL) cur.actions = std::move(bak.actions);
+	else if (bak.upaction != 0) {
+		//更新单个状态
+	}
+
 	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) cur.btnval = bak.btnval;
 	if (bak.upflags & LOLayerDataBase::UP_OFFX) cur.offsetX = bak.offsetX;
 	if (bak.upflags & LOLayerDataBase::UP_OFFY) cur.offsetY = bak.offsetY;
@@ -422,21 +410,27 @@ void LOLayerData::UpdataToForce() {
 	if (bak.upflags & LOLayerDataBase::UP_SRCY) cur.showSrcY = bak.showSrcY;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWW) cur.showWidth = bak.showWidth;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWH) cur.showHeight = bak.showHeight;
-	if (bak.upflags & LOLayerDataBase::UP_CELLNUM) cur.cellNum = bak.cellNum;
+
 	if (bak.upflags & LOLayerDataBase::UP_ALPHAMODE) cur.alphaMode = bak.alphaMode;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEX) cur.scaleX = bak.scaleX;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEY) cur.scaleY = bak.scaleY;
 	if (bak.upflags & LOLayerDataBase::UP_ROTATE) cur.rotate = bak.rotate;
 	if (bak.upflags & LOLayerDataBase::UP_BTNSTR) cur.btnStr = std::move(bak.btnStr);
 	if (bak.upflags & LOLayerDataBase::UP_SHOWTYPE) cur.showType = bak.showType;
-	if (bak.upflags & LOLayerDataBase::UP_ACTIONS) cur.actions = std::move(bak.actions);
-	if (bak.upflags & LOLayerDataBase::UP_NEWFILE) {
+	if (bak.upflags == LOLayerDataBase::UP_NEWFILE) {
 		cur.keyStr = std::move(bak.keyStr);
 		cur.buildStr = std::move(bak.buildStr);
 		cur.texture = bak.texture;
 		cur.texType = bak.texType;
+		cur.flags = bak.flags;
 	}
-	cur.flags = bak.flags;
+
+	//最后更新动画格数，因为涉及一些操作
+	if (bak.upflags & LOLayerDataBase::UP_CELLNUM) {
+		cur.cellNum = bak.cellNum;
+		cur.SetCell(nullptr, cur.cellNum);
+	}
+
 	cur.flags |= LOLayerDataBase::FLAGS_ISFORCE;
 	bak.resetBase();
 }

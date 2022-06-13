@@ -177,6 +177,7 @@ public:
 
 	LOLayerData* CreateNewLayerData(int fullid, const char *printName);
 	LOLayerData* CreateLayerBakData(int fullid, const char *printName);
+	LOLayerData* GetLayerData(int fullid, const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);

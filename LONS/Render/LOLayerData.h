@@ -74,6 +74,7 @@ public:
 	void SetAlpha(int alp);
 	void SetAlphaMode(int mode);
 	bool SetCell(LOActionNS *ac, int ce);
+	void SetCellNum(int ce);
 	void SetTextureType(int dt);
 	void SetNewFile(LOShareTexture &tex);
 	void SetDelete();
@@ -102,10 +103,13 @@ public:
 		UP_BTNSTR = 0x8000,
 		//跟新文件必定挂钩的 keystr buildstr texture  textype
 		//UP_NEWFILE = 0x10000,
-		UP_ACTIONS = 0x20000,
+		//UP_ACTIONS = 0x20000,
 		UP_SHOWTYPE = 0x40000,
 		UP_VISIABLE = 0x80000,
 		UP_NEWFILE = -1,
+
+		//更新了哪一个action，使用LOAction的类型标识
+		UP_ACTION_ALL = -1,
 	};
 
 	enum {
@@ -145,6 +149,7 @@ public:
 
 	int flags;
 	int upflags;    //更新了那些值
+	int upaction;
 	int btnval;    //btn的值
 	int16_t offsetX;    //显示目标左上角位置
 	int16_t offsetY;    //显示目标左上角位置

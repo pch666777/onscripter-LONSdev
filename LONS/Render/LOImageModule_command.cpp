@@ -31,53 +31,47 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//已经在队列里的需要释放
 	//
 	LOLayerData* info = CreateNewLayerData(fullid, reader->GetPrintName());
-	loadSpCore(info, tag, xx, yy, alpha, true);
-	info->bak.SetVisable(visiable);
+	loadSpCore(info, tag, xx, yy, alpha, visiable);
 	return RET_CONTINUE;
 }
 
 int LOImageModule::lsp2Command(FunctionInterface *reader) {
-	/*
-	int ids[] = { reader->GetParamInt(0),255,255 };
 	LOString tag = reader->GetParamStr(1);
 	int alpha = -1;
+	int fullid = GetFullID(LOLayer::LAYER_SPRINTEX, reader->GetParamInt(0), 255, 255);
 	if (reader->GetParamCount() > 7) alpha = reader->GetParamInt(7);
 
 	LeveTextDisplayMode();
 
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_SPRINTEX, ids), reader->GetPrintName());
-	loadSpCore(info, tag, reader->GetParamInt(2), reader->GetParamInt(3), alpha);
+	LOLayerData *info = CreateNewLayerData(fullid, reader->GetPrintName());
+	loadSpCore(info, tag, reader->GetParamInt(2), reader->GetParamInt(3), alpha, true);
+	if (!info->bak.texture) return RET_CONTINUE;
 
-	if (info->texture) {
-		int w, h;
-		info->centerX = info->texture->baseW() / 2;
-		info->centerY = info->texture->baseH() / 2;
+	int cx = info->bak.texture->baseW() / 2;
+	int cy = info->bak.texture->baseH() / 2;
+	info->bak.SetPosition2(cx, cy, reader->GetParamDoublePer(4), reader->GetParamDoublePer(5));
+	double rotate = reader->GetParamDoublePer(6);
+	if (fabs(rotate - 0.0) > 0.001) {
+		info->bak.SetRotate(rotate);
+	}
+	// lsp2 lsph2  lsp2add lsph2add
+	const char *buf = reader->GetCmdChar() + 3;
+	if (buf[0] == 'h') {
+		info->bak.SetVisable(false);
+		buf++;
 	}
 
-	info->SetPosition2(info->centerX, info->centerY, reader->GetParamDoublePer(4), reader->GetParamDoublePer(5));
-	
-	info->rotate = reader->GetParamDoublePer(6);
-	if (fabs(info->rotate - 0.0) > 0.001) {
-		info->SetRotate(info->rotate);
+	if (buf[0] == 'a') {//lsp2add or  lsph2add
+		info->bak.texture->setBlendModel(SDL_BLENDMODE_ADD);
 	}
-
-	std::string cmd(reader->GetCmdChar());
-	if (cmd.length() > 3) {
-		if (cmd[3] == 'h') info->visiable = false;
-		std::string eflag = cmd.substr(cmd.length() - 3, 3);
-		if (eflag == "add" && info->texture) {
-			info->texture->setBlendModel(SDL_BLENDMODE_ADD);
-		}
-		else if (eflag == "sub" && info->texture) {
-			//info->texture->setBlendModel(SDL_BLENDMODE_INVALID);
-			//注意并不是所有的渲染器都能正确实现
-			//SDL_BlendMode bmodel = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_SRC_COLOR, SDL_BLENDFACTOR_ONE_MINUS_DST_COLOR,
-				//SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
-			//info->texture->setBlendModel(bmodel);
-			SimpleError("LONS not support [lsp2sub], because some renderers do not support!\n");
-		}
+	else if (buf[0] == 's') {
+		//info->texture->setBlendModel(SDL_BLENDMODE_INVALID);
+		//注意并不是所有的渲染器都能正确实现
+		//SDL_BlendMode bmodel = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_SRC_COLOR, SDL_BLENDFACTOR_ONE_MINUS_DST_COLOR,
+		//SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
+		//info->texture->setBlendModel(bmodel);
+		LOLog_i("LONS not support [lsp2sub], because some renderers do not support!");
 	}
-	*/
 	return RET_CONTINUE;
 }
 
@@ -241,7 +235,7 @@ int LOImageModule::cellCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (info) {
-		info->bak.SetCell(nullptr, reader->GetParamInt(1));
+		info->bak.SetCellNum(reader->GetParamInt(1));
 	}
 	return RET_CONTINUE;
 }
@@ -377,7 +371,7 @@ int LOImageModule::getspsizeCommand(FunctionInterface *reader) {
 	int ww, hh, cell;
 	ww = hh = 0;
 	cell = 1;
-	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
+	LOLayerData *data = GetLayerData(fullid, reader->GetPrintName());
 	if (data) {
 		ww = data->GetShowWidth();
 		hh = data->GetShowHeight();

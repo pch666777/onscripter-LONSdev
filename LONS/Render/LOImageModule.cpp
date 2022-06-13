@@ -1127,7 +1127,7 @@ void LOImageModule::TextureFromFile(LOLayerData *info) {
 	//转换透明格式 
 	if (info->bak.alphaMode != LOLayerData::TRANS_COPY && !base->hasAlpha()) {
 		if (info->bak.alphaMode == LOLayerData::TRANS_ALPHA && !base->ispng) {
-			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), info->GetCellCount()));
+			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), info->bak.GetCellCount()));
 			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", info->bak.keyStr->c_str());
 		}
 		//else if (info->alphaMode == LOLayerData::TRANS_TOPLEFT) {
@@ -1333,7 +1333,7 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 	LOString tag = "*s;" + (*s);
 
-	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255);
+	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255, true);
 	if (!info->bak.texture) return nullptr ;
 
 	info->bak.texture->isEdit = true;
@@ -1354,6 +1354,8 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
 	LOLayer *lyr = LOLayer::CreateLayer(fullid);
 	lyr->data->bak.SetDelete();
+	//去除setdelete的标记，不去除的话某些情况下会导致图层被删除
+	//lyr->data->bak.flags = 0;
 	auto *map = GetPrintNameMap(printName)->map;
 	(*map)[fullid] = lyr;
 	return lyr->data.get();
@@ -1361,6 +1363,20 @@ LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName
 
 //获取信息或者操作原来的对象
 LOLayerData* LOImageModule::CreateLayerBakData(int fullid, const char *printName) {
+	//首先搜索是否已经在队列中
+	auto *map = GetPrintNameMap(printName)->map;
+	auto iter = map->find(fullid);
+	if (iter != map->end()) return iter->second->data.get();
+	//不在的检查是否有图层
+	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+	if (!lyr) return nullptr;
+	//有图层的添加进队列
+	(*map)[fullid] = lyr;
+	return lyr->data.get();
+}
+
+
+LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 	//优先搜索已存在的图层
 	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
 	if (lyr) return lyr->data.get();
