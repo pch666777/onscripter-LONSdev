@@ -69,7 +69,8 @@ void LOLayerDataBase::resetBase() {
 	alpha = -1;
 	showSrcX = showSrcY = showWidth = showHeight = 0;
 	cellNum = 0;
-	scaleX = scaleY = rotate = 0.0;
+	scaleX = scaleY = 1.0;
+	rotate = 0.0;
 	showType = texType = 0;
 	keyStr.reset();
 	btnStr.reset();
@@ -154,6 +155,9 @@ void LOLayerDataBase::SetPosition2(int cx, int cy, double sx, double sy) {
 
 void LOLayerDataBase::SetRotate(double ro) {
 	rotate = ro;
+	//位置为正方向
+	//if (abs(rotate) < 0.0001) showType &= (~SHOW_ROTATE);
+	//else 
 	showType |= SHOW_ROTATE;
 	upflags |= UP_ROTATE;
 }
@@ -297,6 +301,18 @@ int LOLayerData::GetOffsetY() {
 	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
 	if (bak.upflags & LOLayerDataBase::UP_OFFY) return bak.offsetY;
 	return cur.offsetY;
+}
+
+int LOLayerData::GetCenterX() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak.upflags & LOLayerDataBase::UP_CENX) return bak.centerX;
+	return cur.centerX;
+}
+
+int LOLayerData::GetCenterY() {
+	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak.upflags & LOLayerDataBase::UP_CENY) return bak.centerY;
+	return cur.centerY;
 }
 
 int LOLayerData::GetAlpha() {

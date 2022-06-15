@@ -226,6 +226,8 @@ public:
 	bool GetVisiable();
 	int GetOffsetX();
 	int GetOffsetY();
+	int GetCenterX();
+	int GetCenterY();
 	int GetAlpha();
 	int GetShowWidth();
 	int GetShowHeight();

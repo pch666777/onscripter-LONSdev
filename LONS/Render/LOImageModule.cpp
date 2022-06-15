@@ -1232,7 +1232,10 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	if (showtext >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 		if (SetLayerShow(showtext, fullid, "_lons")) haschange |= 1;
+		//注意检查是否文字已经被改变
+		if (sayState.FLAGS_TEXT_CHANGE) haschange |= 1;
 	}
+
 	//对话框显示
 	if (showwin >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
@@ -1247,8 +1250,12 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	if (haschange > 1) {
 		DialogWindowPrint();
 		sayState.unSetFlags(LOSayState::FLAGS_WINDOW_CHANGE);
+		sayState.unSetFlags(LOSayState::FLAGS_TEXT_CHANGE);
 	}
-	else if (haschange == 1) ExportQuequ("_lons", NULL, true);
+	else if (haschange == 1) {
+		ExportQuequ("_lons", NULL, true);
+		sayState.unSetFlags(LOSayState::FLAGS_TEXT_CHANGE);
+	}
 
 	//只有对话框和文字同时隐藏才是离开文字模式
 	if (showtext == 0 && showwin == 0) sayState.unSetFlags(LOSayState::FLAGS_TEXT_DISPLAY);

@@ -472,7 +472,7 @@ getpixcolor $1,149,74
 getpixcolor $2,249,124
 getpixcolor $3,250,125
 if $1 != "000000" || $2!= "08efa3" || $3 != "000000" debuglog "[lsp2]²»Í¨¹ý",$1,$2,$3
-btnwait %0
+;btnwait %0
 csp2 2
 print 1
 getpixcolor $2,249,124

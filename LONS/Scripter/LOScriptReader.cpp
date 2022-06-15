@@ -517,7 +517,10 @@ int LOScriptReader::ContinueEvent() {
 			if (ev->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(ev.get());
 			else if (ev->catchFlag & LOEventHook::ANSWER_PRINGJMP) {
 				//响应此事件的有文字和print
-				if (ev->param2 == LOEventHook::FUN_TEXT_ACTION) RunFuncSayFinish(ev.get());
+				if (ev->param2 == LOEventHook::FUN_TEXT_ACTION) {
+					//printf("***********text funish***********\n");
+					RunFuncSayFinish(ev.get());
+				}
 				else;
 			}
 			isfinish = true;

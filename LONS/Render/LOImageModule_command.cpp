@@ -36,6 +36,10 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::lsp2Command(FunctionInterface *reader) {
+	//if (reader->GetCurrentLine() == 577) {
+	//	int bbbk = 0;
+	//}
+
 	LOString tag = reader->GetParamStr(1);
 	int alpha = -1;
 	int fullid = GetFullID(LOLayer::LAYER_SPRINTEX, reader->GetParamInt(0), 255, 255);
@@ -50,10 +54,11 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 	int cx = info->bak.texture->baseW() / 2;
 	int cy = info->bak.texture->baseH() / 2;
 	info->bak.SetPosition2(cx, cy, reader->GetParamDoublePer(4), reader->GetParamDoublePer(5));
-	double rotate = reader->GetParamDoublePer(6);
+	double rotate = (double)reader->GetParamInt(6);
 	if (fabs(rotate - 0.0) > 0.001) {
 		info->bak.SetRotate(rotate);
 	}
+
 	// lsp2 lsph2  lsp2add lsph2add
 	const char *buf = reader->GetCmdChar() + 3;
 	if (buf[0] == 'h') {
@@ -77,9 +82,9 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::printCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 411) {
-	//	int debugbreak = 11;
-	//}
+	if (reader->GetCurrentLine() == 700) {
+		int debugbreak = 11;
+	}
 	return printStack(reader, 0);
 }
 
@@ -164,69 +169,60 @@ void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *pr
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 571) {
+	//if (reader->GetCurrentLine() == 581) {
 	//	int debugbreak = 1;
 	//}
-	/*
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("msp2") || reader->isName("amsp2")) sptype = LOLayer::LAYER_SPRINTEX;
 	bool addmode = false;
 	if (reader->isName("msp") || reader->isName("msp2")) addmode = true;
-	int ids[] = { reader->GetParamInt(0),255,255 };
+	int fullid = GetFullID(sptype, reader->GetParamInt(0), 255, 255);
 
 	LeveTextDisplayMode();
-	SDL_LockMutex(layerQueMutex);
-	//万恶的队列操作，麻烦
-	LOLayerInfo *doinfo = GetInfoLayerAvailable(sptype, ids, reader->GetPrintName());
-	if (!doinfo) {
-		SDL_UnlockMutex(layerQueMutex);
-		return RET_CONTINUE;
-	}
-	LOLayerInfo *info = NULL;
-	if (addmode) info = LayerInfomation(sptype, ids, reader->GetPrintName());
-	SDL_UnlockMutex(layerQueMutex);
 
-	//位置或者中心位置
-	if (addmode) {
-		doinfo->SetPosition(reader->GetParamInt(1) + info->offsetX, reader->GetParamInt(2) + info->offsetY);
+	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
+	if (!info) return RET_CONTINUE;
+
+	if (sptype == LOLayer::LAYER_SPRINT) {
+		int bx, by, ba = 0;
+		bx = reader->GetParamInt(1);
+		by = reader->GetParamInt(2);
+		if (reader->GetParamCount() > 3) ba = reader->GetParamInt(3);
+
+		if (addmode) {
+			bx += info->GetOffsetX();
+			by += info->GetOffsetY();
+			ba += info->GetAlpha();
+		}
+
+		info->bak.SetPosition(bx, by);
+		if (reader->GetParamCount() > 3) info->bak.SetAlpha(ba);
 	}
 	else {
-		doinfo->SetPosition(reader->GetParamInt(1), reader->GetParamInt(2));
-	}
+		int ox, oy, ra, ba = 0;
+		double sx, sy;
+		ox = reader->GetParamInt(1);
+		oy = reader->GetParamInt(2);
+		sx = (double)reader->GetParamInt(3) / 100;
+		sy = (double)reader->GetParamInt(4) / 100;
+		ra = reader->GetParamInt(5) ;  //rotate
+		if (reader->GetParamCount() > 6) ba = reader->GetParamInt(6); //alpha
 
-	//sp2操作
-	if (sptype == LOLayer::LAYER_SPRINTEX) {
 		if (addmode) {
-			//doinfo->centerX = info->centerX;
-			//doinfo->centerY = info->centerY;
-			//doinfo->scaleX = ((double)reader->GetParamInt(3) / 100) + info->scaleX;
-			//doinfo->scaleY = ((double)reader->GetParamInt(4) / 100) + info->scaleY;
-			//doinfo->rotate = info->rotate + reader->GetParamInt(5);
-			doinfo->SetPosition2(info->centerX, info->centerY,
-				reader->GetParamDoublePer(3) + info->scaleX,
-				reader->GetParamDoublePer(4) + info->scaleY);
-			doinfo->SetRotate(info->rotate + reader->GetParamInt(5));
+			//ex中，offset实际就是指中心点的位置
+			ox += info->GetOffsetX();
+			oy += info->GetOffsetY();
+			sx += info->GetScaleX();
+			sy += info->GetScaleY();
+			ra += info->GetRotate();
+			ba += info->GetAlpha();
 		}
-		else {
-			//doinfo->scaleX = ((double)reader->GetParamInt(3) / 100);
-			//doinfo->scaleY = ((double)reader->GetParamInt(4) / 100);
-			doinfo->SetPosition2(doinfo->centerX, doinfo->centerY, reader->GetParamDoublePer(3), reader->GetParamDoublePer(4));
-			doinfo->SetRotate(reader->GetParamInt(5));
-			//doinfo->rotate = reader->GetParamInt(5);
-		}
-	}
-	//透明度
-	int fixp = 3;
-	if (sptype == LOLayer::LAYER_SPRINTEX) fixp = 6;
-	if (reader->GetParamCount() > fixp) {
-		if (addmode) doinfo->AddAlpha(reader->GetParamInt(fixp));
-		else doinfo->SetAlpha(reader->GetParamInt(fixp));
-		//	doinfo->alpha = reader->GetParamInt(fixp);
-		//doinfo->layerControl |= LOLayerInfo::CON_UPAPLHA;
-	}
 
-	if (info) delete info;
-	*/
+		info->bak.SetPosition2(info->GetCenterX(), info->GetCenterY(), sx, sy);
+		info->bak.SetPosition(ox, oy);
+		info->bak.SetRotate(ra);
+		if (reader->GetParamCount() > 6) info->bak.SetAlpha(ba);
+	}
 	return RET_CONTINUE;
 }
 
@@ -416,6 +412,9 @@ int LOImageModule::getspalphaCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::getspposexCommand(FunctionInterface *reader) {
+	//if (reader->GetCurrentLine() == 582) {
+	//	int bbk = 1;
+	//}
 
 	ONSVariableRef *v[5];
 	double val[5];
@@ -432,6 +431,7 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 
 	if (data) {
+		//在ex中offset指的是中心点的位置
 		val[0] = data->GetOffsetX();
 		val[1] = data->GetOffsetY();
 		val[2] = data->GetScaleX() * 100;
@@ -516,7 +516,7 @@ int LOImageModule::windowbackCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::textCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 298258) {
+	//if (reader->GetCurrentLine() == 638) {
 	//	int debugbreak = 1;
 	//}
 
@@ -528,7 +528,8 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	if (sayState.isTexec() && isadd > 0) sayState.say.append("\n");
 	sayState.say.append(text);
 	sayState.say.SetEncoder(text.GetEncoder());
-	
+	//注意总是有文字被改变
+	sayState.setFlags(LOSayState::FLAGS_TEXT_CHANGE);
 	LOActionText *ac = LoadDialogText(&sayState.say, sayState.pageEnd,  isadd);
 	
 	//发出文字事件hook
