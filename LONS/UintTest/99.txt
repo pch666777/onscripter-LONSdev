@@ -633,7 +633,7 @@ mov %99,24
 
 ;测试erasetextwindow是否正常
 mov %99,25
-erasetextwindow 0
+erasetextwindow 1
 
 对话框模式切换，单击继续，下面到。\
 

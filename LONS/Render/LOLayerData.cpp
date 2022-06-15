@@ -415,7 +415,7 @@ void LOLayerData::UpdataToForce() {
 	else if (bak.upaction != 0) {
 		//更新单个状态
 	}
-
+	
 	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) cur.btnval = bak.btnval;
 	if (bak.upflags & LOLayerDataBase::UP_OFFX) cur.offsetX = bak.offsetX;
 	if (bak.upflags & LOLayerDataBase::UP_OFFY) cur.offsetY = bak.offsetY;
@@ -426,7 +426,6 @@ void LOLayerData::UpdataToForce() {
 	if (bak.upflags & LOLayerDataBase::UP_SRCY) cur.showSrcY = bak.showSrcY;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWW) cur.showWidth = bak.showWidth;
 	if (bak.upflags & LOLayerDataBase::UP_SHOWH) cur.showHeight = bak.showHeight;
-
 	if (bak.upflags & LOLayerDataBase::UP_ALPHAMODE) cur.alphaMode = bak.alphaMode;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEX) cur.scaleX = bak.scaleX;
 	if (bak.upflags & LOLayerDataBase::UP_SCALEY) cur.scaleY = bak.scaleY;
@@ -447,6 +446,7 @@ void LOLayerData::UpdataToForce() {
 		cur.SetCell(nullptr, cur.cellNum);
 	}
 
+	if (bak.upflags & LOLayerDataBase::UP_VISIABLE) cur.SetVisable(bak.isVisiable());
 	cur.flags |= LOLayerDataBase::FLAGS_ISFORCE;
 	bak.resetBase();
 }

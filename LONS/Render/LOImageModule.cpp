@@ -1227,7 +1227,6 @@ void LOImageModule::LeveTextDisplayMode(bool force) {
 //控制对话框和文字的显示状态，负数表示不改变，0隐藏，1显示
 void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	int fullid, index, haschange = 0;
-	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 	//文字显示
 	if (showtext >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
@@ -1287,24 +1286,18 @@ bool LOImageModule::LoadDialogWin() {
 //修改图层的显示状态，如果创建了后台队列，则返回真，否则返回假
 //强调的是当前显示状态的改变
 bool LOImageModule::SetLayerShow(bool isVisi, int fullid, const char *printName) {
-	//LOLayerData *info = GetLayerInfoData(fullid, printName);
-	return false;
-	////前台、后台都没有指定层
-	//if (!info) return false;
-	//else if (info->isForce()) {
-	//	//只有前台，且跟要设置的状态一致
-	//	if (isVisi == info->isVisiable()) return false;
-	//	//不一致的要创建一个后台队列
-	//	info = CreateLayerBakData(fullid, printName);
-	//	info->SetVisable((int)isVisi);
-	//	return true;
-	//}
-	//else {
-	//	//有后台说明是新载入的图层
-	//	info->SetVisable((int)isVisi);
-	//	//既然是后台队列，那么肯定要刷新的，因此总是返回真
-	//}
-	//return true;
+	LOLayerData *info = CreateLayerBakData(fullid, printName);
+	if (!info) return false;
+	if (info->bak.isNewFile()) {
+		if (info->bak.isVisiable() == isVisi) return false;
+		info->bak.SetVisable(isVisi);
+		return true;
+	}
+	else {
+		if (info->cur.isVisiable() == isVisi) return false;
+		info->bak.SetVisable(isVisi);
+		return true;
+	}
 }
 
 
@@ -1329,13 +1322,9 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 	int lastPos = 0;
 
 	if (isAdd) {
-		//LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-		//if (lyr) {
-		//	LOLayerData *lastData = nullptr;
-		//	if (lyr->bakInfo->isNewFile()) lastData = lyr->bakInfo.get();
-		//	else lastData = lyr->curInfo.get();
-		//	if (lastData->texture) lastPos = lastData->texture->GetTextTextureEnd();
-		//}
+		if (info->cur.texture) {
+			lastPos = info->cur.texture->GetTextTextureEnd();
+		}
 	}
 
 	LOString tag = "*s;" + (*s);

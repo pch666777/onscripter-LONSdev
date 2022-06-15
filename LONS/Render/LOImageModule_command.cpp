@@ -82,9 +82,9 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::printCommand(FunctionInterface *reader) {
-	if (reader->GetCurrentLine() == 700) {
-		int debugbreak = 11;
-	}
+	//if (reader->GetCurrentLine() == 700) {
+	//	int debugbreak = 11;
+	//}
 	return printStack(reader, 0);
 }
 
