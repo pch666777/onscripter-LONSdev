@@ -105,6 +105,20 @@ void LOEventHook::paramListCut(int maxsize) {
 	}
 }
 
+LOVariant* LOEventHook::GetParam(int index) {
+	if (index < paramList.size()) return paramList.at(index);
+	return nullptr;
+}
+
+void LOEventHook::PushParam(LOVariant *var) {
+	paramList.push_back(var);
+}
+
+void LOEventHook::ClearParam() {
+	for (int ii = 0; ii < paramList.size(); ii++) delete paramList.at(ii);
+	paramList.clear();
+}
+
 
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
@@ -123,7 +137,7 @@ LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNe
 }
 
 LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName) {
-	e->paramList.clear();
+	e->ClearParam();
 	e->timeStamp = SDL_GetTicks();
 	e->param2 = 0;
 	e->paramList.push_back(new LOVariant(ef));
@@ -133,7 +147,7 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 
 
 LOEventHook* LOEventHook::CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh) {
-	e->paramList.clear();
+	e->ClearParam();
 	e->timeStamp = SDL_GetTicks();
 	e->param2 = FUN_SCREENSHOT;
 	e->paramList.push_back(new LOVariant(x));

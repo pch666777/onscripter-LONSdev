@@ -873,8 +873,17 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 	w = reader->GetParamInt(2);
 	h = reader->GetParamInt(3);
 	ONSVariableRef *v = reader->GetParamRef(4);
-	LOtexture *tex = ScreenShot(x, y, w, h, w, h);
-	
+	LOShareTexture tex(ScreenShot(x, y, w, h, w, h));
+	if (tex) {
+		const char *buf = v->GetStr()->c_str();
+		if (buf[0] == '#')buf++;
+		int hex = v->GetStr()->GetHexInt(buf);
+		SDL_Color color;
+		color.r = (hex >> 16) & 0xff;
+		color.g = (hex >> 8) & 0xff;
+		color.b = hex & 0xff;
+
+	}
 	/*
 	LOSurface *su = nullptr;
 		//ScreenShot(&src, &dst);

@@ -181,8 +181,11 @@ public:
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);
 
-	//创建一个target纹理
+	//创建一个纹理
 	void CreateDstTexture(int w, int h, int access);
+	//将纹理中的数据转移到surface
+	void CopyTextureToSurface(bool freeTex);
+
 
 	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义
 	int16_t Xfix;

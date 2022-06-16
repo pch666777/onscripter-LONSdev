@@ -667,8 +667,8 @@ LOLayer* LOLayer::FindViewLayer(int fullid, bool isRemove) {
 
 //外部要相应的主要是鼠标进入图层和离开图层
 bool LOLayer::SendEvent(LOEventHook *e, LOEventQue *aswerQue) {
-	int xx = e->paramList[0]->GetInt();
-	int yy = e->paramList[1]->GetInt();
+	int xx = e->GetParam(0)->GetInt();
+	int yy = e->GetParam(1)->GetInt();
 
 
 	return false;
@@ -695,7 +695,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	}
 	else {
 		//左键、长按、悬停，如果是按钮均会触发按钮类操作
-		if (isPositionInsideMe(e->paramList[0]->GetInt(), e->paramList[1]->GetInt())) {
+		if (isPositionInsideMe(e->GetParam(0)->GetInt(), e->GetParam(1)->GetInt())) {
 			//按钮处理
 			if (data->cur.isBtndef()) {
 				//鼠标已经离开对象

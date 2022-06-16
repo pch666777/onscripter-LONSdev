@@ -946,3 +946,20 @@ void LOtexture::CreateDstTexture(int w, int h, int access) {
 	isRef = false;
 	texturePtr = CreateTexture(LOtextureBase::render, G_Texture_format, access, w, h);
 }
+
+
+//这个函数只能在主线程调用
+void LOtexture::CopyTextureToSurface(bool freeTex) {
+	resetSurface();
+	if (!texturePtr) return;
+	int w, h;
+	Uint32 format;
+	SDL_QueryTexture(texturePtr, &format, nullptr, &w, &h);
+	surfacePtr = CreateRGBSurfaceWithFormat(0, w, h, 32, format);
+	SDL_LockSurface(surfacePtr);
+	SDL_RenderReadPixels(LOtextureBase::render, nullptr, format, surfacePtr->pixels, surfacePtr->pitch);
+	SDL_UnlockSurface(surfacePtr);
+
+	if (freeTex) resetTexture();
+	isRef = false;
+}

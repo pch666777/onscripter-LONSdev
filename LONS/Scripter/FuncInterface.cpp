@@ -499,7 +499,7 @@ void FunctionInterface::WriteLog(int logt) {
 
 bool FunctionInterface::CheckTimer(LOEventHook *e, int waittmer) {
 	Uint32 postime = SDL_GetTicks() - e->timeStamp;
-	int maxtime = e->paramList[0]->GetInt();
+	int maxtime = e->GetParam(0)->GetInt();
 	if (postime >= maxtime) return true;
 	else if (postime + waittmer >= maxtime) {
 		//进入等待，直到满足时间要求

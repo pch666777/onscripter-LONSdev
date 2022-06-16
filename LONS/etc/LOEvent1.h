@@ -114,11 +114,13 @@ public:
 	int16_t param1;
 	//参数2，不同的处理函数有不同的意义
 	uint16_t param2;
-	//参数表
-	std::vector<LOVariant*> paramList;
 
 	void paramListMoveTo(std::vector<LOVariant*> &list);
 	void paramListCut(int maxsize);
+	LOVariant* GetParam(int index);
+	std::vector<LOVariant*> &GetParamList() { return paramList; }
+	void PushParam(LOVariant *var);
+	void ClearParam();
 
 	//创建一个等待事件
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
@@ -144,6 +146,8 @@ public:
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 private:
 	bool upState(int sa);
+	//参数表
+	std::vector<LOVariant*> paramList;
 	std::atomic_int state;
 	static std::atomic_int exitFlag;
 	//===================================

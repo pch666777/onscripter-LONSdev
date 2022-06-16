@@ -24,15 +24,15 @@ void LOImageModule::DoPreEvent(double postime) {
 				ScreenShotCountinue(e.get());
 			}
 			else {
-				LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
-				const char *printName = e->paramList[1]->GetChars(nullptr);
+				LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+				const char *printName = e->GetParam(1)->GetChars(nullptr);
 				PrepareEffect(ef, printName);
 			}
 			e->FinishMe();
 		}
 		else if (e->catchFlag == PRE_EVENT_EFFECTCONTIUE) { //继续运行
-			LOEffect *ef = (LOEffect*)e->paramList[0]->GetPtr();
-			const char *printName = e->paramList[1]->GetChars(nullptr);
+			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+			const char *printName = e->GetParam(1)->GetChars(nullptr);
 			if (ContinueEffect(ef, printName , postime)) e->FinishMe();
 			else e->closeEdit();
 			//printf("main thread finish:%d\n", SDL_GetTicks());
@@ -150,8 +150,8 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
 		ev->catchFlag = LOLayerDataBase::FLAGS_MOUSEMOVE;
-		ev->paramList.push_back(new LOVariant(mouseXY[0]));
-		ev->paramList.push_back(new LOVariant(mouseXY[1]));
+		ev->PushParam(new LOVariant(mouseXY[0]));
+		ev->PushParam(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
 		break;
 	case SDL_MOUSEBUTTONUP:
@@ -161,8 +161,8 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOEventHook::ANSWER_LEFTCLICK;
 		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOEventHook::ANSWER_RIGHTCLICK;
 		if (ev->catchFlag) {
-			ev->paramList.push_back(new LOVariant(mouseXY[0]));
-			ev->paramList.push_back(new LOVariant(mouseXY[1]));
+			ev->PushParam(new LOVariant(mouseXY[0]));
+			ev->PushParam(new LOVariant(mouseXY[1]));
 			//队列没有响应按键事件，那么就发送到图层响应
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
 			if (SendEventToHooks(ev.get()) == LOEventHook::RUNFUNC_CONTINUE) {
@@ -269,21 +269,23 @@ int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 
 LOtexture* LOImageModule::ScreenShot(int x, int y, int w, int h, int dw, int dh) {
 	LOEventHook::CreateScreenShot(printPreHook.get(), x, y, w, h, dw, dh);
+	printPreHook->ResetMe();
 	printPreHook->waitEvent(1, -1);
-	LOtexture *tex = (LOtexture*)printPreHook->paramList[6]->GetPtr();
+	LOtexture *tex = (LOtexture*)printPreHook->GetParam(6)->GetPtr();
+	printPreHook->ClearParam();
 	return tex;
 }
 
 
 void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 	SDL_Rect src, dst;
-	src.x = e->paramList[0]->GetInt();
-	src.y = e->paramList[1]->GetInt();
-	src.w = e->paramList[2]->GetInt();
-	src.h = e->paramList[3]->GetInt();
+	src.x = e->GetParam(0)->GetInt();
+	src.y = e->GetParam(1)->GetInt();
+	src.w = e->GetParam(2)->GetInt();
+	src.h = e->GetParam(3)->GetInt();
 	dst.x = 0; dst.y = 0;
-	dst.w = e->paramList[4]->GetInt();
-	dst.h = e->paramList[5]->GetInt();
+	dst.w = e->GetParam(4)->GetInt();
+	dst.h = e->GetParam(5)->GetInt();
 
 	//要截取的是渲染器的位置，因此要根据缩放位置计算
 	src.x = G_gameScaleX * src.x; src.y = G_gameScaleY * src.y;
@@ -297,11 +299,11 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 		SDL_RenderClear(render);
 		SDL_RenderCopy(render, effectTex->GetTexture(), &src, &dst);
 		//从GPU拷贝数据到内存，必须在主线程中，因为涉及到纹理锁定
+		tex->CopyTextureToSurface(true);
 
-
-		e->paramList.push_back(new LOVariant(tex));
+		e->PushParam(new LOVariant(tex));
 	}
-	else e->paramList.push_back(new LOVariant(0));
+	else e->PushParam(new LOVariant((void*)0));
 
 	e->FinishMe();
 }
@@ -309,7 +311,7 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 
 
 int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
-	LOString btnstr = e->paramList[1]->GetLOString();
+	LOString btnstr = e->GetParam(1)->GetLOString();
 	RunExbtnStr(&btnstr);
 	//这个钩子长期有效
 	hook->closeEdit();

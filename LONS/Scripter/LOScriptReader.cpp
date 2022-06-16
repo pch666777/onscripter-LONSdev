@@ -1532,23 +1532,23 @@ int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 	if (!e) {
 		ev.reset(new LOEventHook());
 		e = ev.get();
-		e->paramList.push_back(new LOVariant(-1));
+		e->PushParam(new LOVariant(-1));
 		//btnval的超时值为-2
-		e->paramList.push_back(new LOVariant(-2));
+		e->PushParam(new LOVariant(-2));
 	}
 
 	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
 		//没有满足要求
-		if (e->param1 != hook->paramList[LOEventHook::PINDS_SE_CHANNEL]->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
+		if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
 	}
 	//要确定是否清除btndef
-	if (strcmp(hook->paramList[LOEventHook::PINDS_CMD]->GetChars(nullptr), "btnwait2") != 0) {
-		if (e->paramList[1]->GetInt() > 0) 
-			imgeModule->ClearBtndef(hook->paramList[LOEventHook::PINDS_PRINTNAME]->GetChars(nullptr));
+	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
+		if (e->GetParam(1)->GetInt() > 0)
+			imgeModule->ClearBtndef(hook->GetParam(LOEventHook::PINDS_PRINTNAME)->GetChars(nullptr));
 	}
 	//确定是否要设置变量的值，变量设置要转移到脚本线程中
-	if (hook->paramList[LOEventHook::PINDS_REFID] > 0) {
-		e->paramListMoveTo(hook->paramList);
+	if (hook->GetParam(LOEventHook::PINDS_REFID) != nullptr) {
+		e->paramListMoveTo(hook->GetParamList());
 		hook->FinishMe();
 	}
 	else hook->InvalidMe();
@@ -1559,9 +1559,9 @@ int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 	//跟btnwaithook的原始参数个数有关
 	int fix = 5;
-	int refid = hook->paramList[LOEventHook::PINDS_REFID]->GetInt();
+	int refid = hook->GetParam(LOEventHook::PINDS_REFID)->GetInt();
 	LOUniqVariableRef ref(ONSVariableRef::GetRefFromTypeRefid(refid));
-	LOVariant *var = hook->paramList[LOEventHook::PINDS_BTNVAL + fix];
+	LOVariant *var = hook->GetParam(LOEventHook::PINDS_BTNVAL + fix);
 	if (var->IsType(LOVariant::TYPE_INT)) {
 		LOLog_i("btnwait is:%d", var->GetInt());
 		ref->SetValue((double)var->GetInt());
