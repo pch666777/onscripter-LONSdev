@@ -867,15 +867,14 @@ int LOImageModule::gettextCommand(FunctionInterface *reader) {
 //检查指定区域是否全部为某种颜色，允许少量容差
 int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 
-	SDL_Rect src, dst;
-	src.x = reader->GetParamInt(0); src.y = reader->GetParamInt(1);
-	src.w = reader->GetParamInt(2); src.h = reader->GetParamInt(3);
-	dst.x = 0; dst.y = 0;
-	dst.w = src.w; dst.h = src.h;
-
+	int x, y, w, h, dw, dh;
+	x = reader->GetParamInt(0);
+	y = reader->GetParamInt(1);
+	w = reader->GetParamInt(2);
+	h = reader->GetParamInt(3);
 	ONSVariableRef *v = reader->GetParamRef(4);
-
-
+	LOtexture *tex = ScreenShot(x, y, w, h, w, h);
+	
 	/*
 	LOSurface *su = nullptr;
 		//ScreenShot(&src, &dst);

@@ -296,7 +296,8 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 		SDL_SetRenderTarget(render, tex->GetTexture());
 		SDL_RenderClear(render);
 		SDL_RenderCopy(render, effectTex->GetTexture(), &src, &dst);
-		//从GPU拷贝数据到内存
+		//从GPU拷贝数据到内存，必须在主线程中，因为涉及到纹理锁定
+
 
 		e->paramList.push_back(new LOVariant(tex));
 	}
