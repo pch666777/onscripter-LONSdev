@@ -185,6 +185,8 @@ public:
 	void CreateDstTexture(int w, int h, int access);
 	//将纹理中的数据转移到surface
 	void CopyTextureToSurface(bool freeTex);
+	//检查surface中是否是同一种颜色
+	bool CheckColor(SDL_Color *cc, int diff);
 
 
 	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义

@@ -963,3 +963,30 @@ void LOtexture::CopyTextureToSurface(bool freeTex) {
 	if (freeTex) resetTexture();
 	isRef = false;
 }
+
+
+//Ö»¿¼ÂÇRGBÄ£Ê½
+bool LOtexture::CheckColor(SDL_Color *cc, int diff) {
+	if (!surfacePtr) return false;
+	int per = surfacePtr->format->BytesPerPixel;
+	int dr, dg, db;
+	char gbit[4];
+	GetFormatBit(surfacePtr->format, gbit);
+
+	for (int y = 0; y < surfacePtr->h; y++) {
+		Uint8 *buf = (Uint8*)surfacePtr->pixels + y * surfacePtr->pitch;
+		for (int x = 0; x < surfacePtr->w; x++) {
+			dr = buf[gbit[0]] - cc->r;
+			dg = buf[gbit[1]] - cc->g;
+			db = buf[gbit[2]] - cc->b;
+			if (abs(dr) > diff || abs(dg) > diff || abs(db) > diff) {
+				cc->r = buf[gbit[0]];
+				cc->g = buf[gbit[1]];
+				cc->b = buf[gbit[2]];
+				return false;
+			}
+			buf += per;
+		}
+	}
+	return true;
+}

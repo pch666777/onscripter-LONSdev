@@ -866,7 +866,6 @@ int LOImageModule::gettextCommand(FunctionInterface *reader) {
 
 //检查指定区域是否全部为某种颜色，允许少量容差
 int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
-
 	int x, y, w, h, dw, dh;
 	x = reader->GetParamInt(0);
 	y = reader->GetParamInt(1);
@@ -882,35 +881,11 @@ int LOImageModule::chkcolorCommand(FunctionInterface *reader) {
 		color.r = (hex >> 16) & 0xff;
 		color.g = (hex >> 8) & 0xff;
 		color.b = hex & 0xff;
-
-	}
-	/*
-	LOSurface *su = nullptr;
-		//ScreenShot(&src, &dst);
-	if (su && v && v->GetStr()) { //
-		//if (reader->GetCurrentLine() == 644) {
-		//	int debugbreak = 0;
-		//	//SDL_SaveBMP(su->GetSurface(), "test.bmp");
-		//}
-
-		const char *buf = v->GetStr()->c_str();
-		if (buf[0] == '#')buf++;
-		int hex = v->GetStr()->GetHexInt(buf);
-		SDL_Color color;
-		color.r = (hex >> 16) & 0xff;
-		color.g = (hex >> 8) & 0xff;
-		color.b = hex & 0xff;
-		if (!su->checkColor(color, 3)) {
+		if (!tex->CheckColor(&color, 1)) {
 			LOString tmp = StringFormat(32, "#%02X%02X%02X", color.r, color.g, color.b);
 			v->SetValue(&tmp);
 		}
-		delete su;
 	}
-	else {
-		LOString s("screenshot faild or param error!");
-		v->SetValue(&s);
-	}
-	*/
 	return RET_CONTINUE;
 }
 
