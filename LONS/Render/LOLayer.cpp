@@ -525,7 +525,6 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 	}
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);
-		posPx = 20;
 		int ret = texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
 		if (ret == LOtexture::RET_ROLL_END) {
 			ai->setEnble(false);
@@ -534,6 +533,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 			ai->currentPos += posPx;
 		}
 		else if(ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;
+		ai->lastTime = curTime;
 	}
 }
 

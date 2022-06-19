@@ -516,7 +516,7 @@ int LOImageModule::windowbackCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::textCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 638) {
+	//if (reader->GetCurrentLine() == 185450) {
 	//	int debugbreak = 1;
 	//}
 

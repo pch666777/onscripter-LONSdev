@@ -641,6 +641,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 					//定位下一行
 					line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 					currentX = line->xx;
+					//printf("next line:%d\n", currentX);
 					//换算成相对有多少个字
 					//curCount = currentX / firstSize;
 					curCount = 0;

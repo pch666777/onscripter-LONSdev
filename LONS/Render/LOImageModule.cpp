@@ -1258,6 +1258,8 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 	LOActionText *ac = (LOActionText*)info->bak.GetAction(LOAction::ANIM_TEXT);
 	ac->initPos = lastPos;
+	//这个速度是每ms应该前进的像素，一个字的像素/时间
+	ac->perPix = (double)sayStyle.xsize / G_textspeed;
 	ac->setFlags(LOAction::FLAGS_INIT);
 	ac->hook.reset(LOEventHook::CreateTextHook(pageEnd, 0));
 	

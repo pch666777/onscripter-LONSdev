@@ -62,14 +62,12 @@ LOTextDescribe::~LOTextDescribe() {
 bool LOTextDescribe::CreateLocation(std::vector<LOWordElement*> *wordList, int xspace) {
 	minx = maxx = miny = maxy = 0;
 	if (!wordList || startIndex == endIndex || startIndex >= wordList->size() )  return false;
-
-	//空描述
 	//首先计算出X轴
 	//minx为负表示字形要提前，advance为字形的宽度
 	minx = wordList->at(startIndex)->minx;
-	maxx = minx;
 	//只需要处理字形提前
 	if (minx > 0) minx = 0;
+	maxx = minx;
 	//Y轴总是0，因为我需要屏幕坐标
 	miny = maxy = 0;
 	int topY = 0;
@@ -77,6 +75,7 @@ bool LOTextDescribe::CreateLocation(std::vector<LOWordElement*> *wordList, int x
 	for (int ii = startIndex; ii < wordList->size() && ii < endIndex; ii++) {
 		LOWordElement *el = wordList->at(ii);
 		el->left = maxx;
+		//printf("- %d -", el->left);
 		//虽然advance是应该增加的宽度，但是这个有时候不太准确，SDL的问题？
 		maxx += el->advance;
 		if (el->minx < 0) maxx += el->minx;
