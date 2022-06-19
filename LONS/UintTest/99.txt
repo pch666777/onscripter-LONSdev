@@ -10,6 +10,11 @@ delay 10
 gettimer %1
 debuglog %1
 
+lsp 20,":c;>200,100,#08EFA3",100,40
+print 10,5000
+btnwait %0
+
+
 debuglog "分辨率是否是1024*576？"
 
 ;gosub *window_test

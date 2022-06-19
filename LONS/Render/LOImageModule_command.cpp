@@ -736,6 +736,9 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 		sayStyle.flags |= LOTextStyle::STYLE_SHADOW;
 		sayStyle.xshadow = sayStyle.xsize / 30 + 1;
 		sayStyle.yshadow = sayStyle.ysize / 30 + 1;
+		//lsp的阴影效果跟对话框的一样
+		spStyle.xshadow = sayStyle.xshadow;
+		spStyle.yshadow = sayStyle.yshadow;
 	}
 	sayWindow.winstr = reader->GetParamStr(11);
 	sayState.setFlags(LOSayState::FLAGS_WINDOW_CHANGE);

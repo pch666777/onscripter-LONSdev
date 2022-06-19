@@ -77,7 +77,6 @@ void LOtextureBase::baseNew() {
 	ispng = false;
 	baseTexture = nullptr;
 	baseSurface = nullptr;
-	textTexture = nullptr;
 }
 
 LOtextureBase::~LOtextureBase() {
@@ -85,10 +84,8 @@ LOtextureBase::~LOtextureBase() {
 	if (baseSurface) FreeSurface(baseSurface);
 	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
 	if (baseTexture) DestroyTexture(baseTexture);
-	if (textTexture) delete textTexture;
 	baseSurface = nullptr;
 	baseTexture = nullptr;
-	textTexture = nullptr;
 }
 
 
@@ -628,6 +625,10 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				//当maxy大于FontAscent时，surface的Y位置为 FontAscent - maxy，当maxy小于等于FontAscent时，Y位置为0
 				//X方向上，minx即为X的位置，surface的宽度 = advance - minx，即下一个符号的位置
 				TTF_GlyphMetrics(wordFont->font, el->unicode, &el->minx, &el->maxx, &el->miny, &el->maxy, &el->advance);
+				//虽然advance应该是增加的宽度，但是这个有时候不太准确，SDL的问题？
+				if (el->maxx == 0) el->maxx = el->advance;
+				else if (el->maxx <= firstSize && el->advance > firstSize) el->advance = firstSize;
+				
 				el->surface = LTTF_RenderGlyph_Shaded(wordFont->font, el->unicode, fsColor, bgColor);
 				//检查是否需要新行了
 				if (curCount >= maxCount) {

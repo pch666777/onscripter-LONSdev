@@ -82,6 +82,8 @@ public:
 		FUN_LAYERANSWER,
 		FUN_TEXT_ACTION,
 		FUN_SCREENSHOT,
+		FUN_PRE_EFFECT,
+		FUN_CONTINUE_EFF,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
@@ -121,11 +123,14 @@ public:
 	std::vector<LOVariant*> &GetParamList() { return paramList; }
 	void PushParam(LOVariant *var);
 	void ClearParam();
+	int GetState() { return state; }
 
 	//创建一个等待事件
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
 	static LOEventHook* CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName);
+	//创建一个print事件
+	static LOEventHook* CreatePrintHook(LOEventHook *e, void *ef, const char *printName);
 	//创建一个截图事件
 	static LOEventHook* CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh);
 	//创建一个btnwait事件
@@ -165,8 +170,8 @@ public:
 	~LOEventQue();
 
 	enum {
-		LEVEL_NORMAL,
-		LEVEL_HIGH,
+		LEVEL_NORMAL = 1,
+		LEVEL_HIGH = 2,
 	};
 
 	void push_back(LOShareEventHook &e, int level);

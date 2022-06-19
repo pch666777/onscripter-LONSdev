@@ -139,7 +139,19 @@ LOEventHook* LOEventHook::CreateTimerWaitHook(LOString *scripter, bool isclickNe
 LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const char *printName) {
 	e->ClearParam();
 	e->timeStamp = SDL_GetTicks();
-	e->param2 = 0;
+	e->param2 = FUN_PRE_EFFECT;
+	e->paramList.push_back(new LOVariant(ef));
+	e->paramList.push_back(new LOVariant(printName, strlen(printName)));
+	return e;
+}
+
+
+LOEventHook* LOEventHook::CreatePrintHook(LOEventHook *e, void *ef, const char *printName) {
+	e->ClearParam();
+	e->timeStamp = SDL_GetTicks();
+	e->catchFlag |= ANSWER_LEFTCLICK | ANSWER_PRINGJMP;
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_CONTINUE_EFF;
 	e->paramList.push_back(new LOVariant(ef));
 	e->paramList.push_back(new LOVariant(printName, strlen(printName)));
 	return e;

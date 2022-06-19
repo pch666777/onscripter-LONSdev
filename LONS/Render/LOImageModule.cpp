@@ -255,7 +255,6 @@ int LOImageModule::MainLoop() {
 	double posTime;   //从上一帧后，当前帧花费的时间
 	SDL_Event ev;
 	Uint64 lastTime = 0;
-	//Uint64 lastTime = 0;
 	bool minisize = false;
 	moduleState = MODULE_STATE_RUNNING;
 
@@ -331,6 +330,9 @@ int LOImageModule::MainLoop() {
 		
 	}
 	
+	//退出前终止效果
+	CutPrintEffect(nullptr, nullptr);
+
 	moduleState = MODULE_STATE_NOUSE;
 	//等待其他模块退出
 	lastTime = SDL_GetPerformanceCounter();
@@ -381,7 +383,6 @@ int LOImageModule::RefreshFrame(double postime) {
 			SDL_RenderCopy(render, effectTex->GetTexture(), NULL, NULL);
 			//LOLog_i("prepare ok!") ;
 			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
-			printPreHook->catchFlag = PRE_EVENT_PREPRINTOK;
 			preEventList.push_back(printPreHook);
 			//LOEventHook *ev = new LOEventHook;
 			//ev->catchFlag = PRE_EVENT_PREPRINTOK;
@@ -409,7 +410,6 @@ int LOImageModule::RefreshFrame(double postime) {
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (printHook->enterEdit()) {
 			//printf("main thread:%d\n", SDL_GetTicks());
-			printHook->catchFlag = PRE_EVENT_EFFECTCONTIUE;
 			preEventList.push_back(printHook);
 		}
 		return 0;
@@ -498,13 +498,9 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	loadSpCore(info, ntemp, 0, 0, -1, true);
 	//需要马上使用
 	info->cur.texture = info->bak.texture;
-	/*
-	info->SetVisable(1);
-	//至少加载一次，不然首次加载会失败
-	info->texture->activeFirstTexture(); 
 	//缩放模式  
 	if (IsGameScale()) {
-		info->SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
+		info->bak.SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
 	}
 
 	//加载遮片
@@ -519,7 +515,6 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 		}
 	}
 
-	*/
 	ef->ReadyToRun();
 	//准备好第一帧的运行
 	ef->RunEffect(render, info, effectTex, effmakTex, 0);
@@ -596,83 +591,9 @@ bool LOImageModule::InitFps() {
 		SDL_Rect rect = { 0,0,w,h };
 		fpstex[ii].activeTexture(&rect, true);
 	}
-
-	/*
-	fpsconfig.fontName = "*#?";
-	fpsconfig.xsize = G_viewRect.h * 14 / 400;
-	fpsconfig.ysize = fpsconfig.xsize;
-	if (!fpsconfig.Openfont()) {
-		SDL_LogError(0, "fps init faild!\n");
-		return false;
-	}
-
-	fpstex = new LOtextureBase[10];
-	SDL_Color cc = { 0, 255, 0 };
-	for (int ii = 0; ii < 10; ii++) {
-		SDL_Surface *su = LTTF_RenderGlyph_Blended(fpsconfig.font, 0x30 + ii, cc);
-		//LOLog_i("fps surface is:%x",su) ;
-		if (su) {
-			fpstex[ii].SetSurface(su);
-		}
-	}
-	fpsconfig.Closefont();
-	*/
 	return true;
 }
 
-
-/*
-LOtextureBase* LOImageModule::RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount) {
-	//如果画面处于放大模式则缩放参数
-	if (G_gameScaleX > 1.0001 || G_gameScaleY > 1.0001) ScaleTextParam(info, fontwin);
-
-	//LOStack<LineComposition> *lines = fontManager.RenderTextCore(su, fontwin, s, color, cellcount, 0);
-
-	//LOString out = writeDir + "/test.bmp" ;
-	//SDL_SaveBMP(su->GetSurface(), out.c_str());
-	//if(su) LOLog_i("surface is:%x,%d,%d",su,su->W(),su->H()) ;
-	//else LOLog_i("surface is NULL!") ;
-
-	return new LOtextureBase();
-}
-*/
-
-/*
-LOtextureBase* LOImageModule::RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx) {
-	//如果画面处于放大模式则缩放参数
-	
-	if (G_gameScaleX > 1.0001 || G_gameScaleY > 1.0001) {
-		ScaleTextParam(info, fontwin);
-		startx = (int)(G_gameScaleX * startx);
-	}
-	double perpix = (double)fontwin->xsize / G_textspeed;  //文字每毫秒应显示的像素
-
-	LOSurface *su = nullptr;
-	LOStack<LineComposition> *lines = fontManager.RenderTextCore(su, fontwin, s, NULL, 1, startx);
-
-	LOtextureBase *base = nullptr;
-	if (su) {
-		base = new LOtextureBase;
-		base->SetSurface(su);
-		LOAnimationText *tai = new LOAnimationText;
-		tai->lineInfo = lines;
-		//调整最后一行的高度，以便复制整个纹理
-		LineComposition *line = lines->top();
-		line->height = su->H() - line->y;
-
-		tai->isEnble = true;
-		tai->loopdelay = -1;
-		tai->perpix = perpix;
-		//释放掉所有的字形
-		fontManager.FreeAllGlyphs(lines);
-		info->ReplaceAction(tai);
-		//更新控制信息
-		tai->control = LOAnimation::CON_REPLACE;
-	}
-	
-	return nullptr;
-}
-*/
 
 void LOImageModule::ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin) {
 	fontwin->xsize = G_gameScaleX * fontwin->xsize;

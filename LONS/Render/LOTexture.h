@@ -73,7 +73,6 @@ private:
 	// «∑Ò≥¨¥ÛŒ∆¿Ì
 	SDL_Surface *baseSurface;
 	SDL_Texture *baseTexture;
-	LOTextTexture *textTexture;
 	void baseNew();
 };
 typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;

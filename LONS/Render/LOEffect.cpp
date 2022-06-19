@@ -210,29 +210,22 @@ void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 			char *dstbuf = (char*)pixbuf + yy * pitch;
 			memset(dstbuf, 255, pitch);
 		}
-		
-		//
-		int minw =0;
-		int minh = 0;
-		if (w < minw) minw = w;
-		if (h < minh) minh = h;
-		
 
 		//改写每个像素的透明度
+		//将遮片覆盖上去，尺寸不足的时候按平铺处理
 		SDL_Surface *tsu = masksu->GetSurface();
-
 		int mbyte = tsu->format->BytesPerPixel;
-		for (int line = 0; line < h; line += tsu->h) {
-			for (int yy = 0; yy < minh && line + yy < h; yy++) {
-				for (int xx = 0; xx < w; xx += tsu->w) {
-					char *src = (char*)tsu->pixels + yy * tsu->pitch;  //遮片应该是8位索引色的
-					char *dst = (char*)pixbuf + (line + yy) * pitch + xx * 4;  //目标应该是32位色的
-					for (int ii = 0; ii < minw && xx + ii < w; ii++) {
-						dst[G_Bit[3]] = gray[(Uint8)(src[0])];
-						dst += 4;
-						src++;
-					}
-				}
+
+		//逐行覆盖
+		for (int y = 0; y < h; y ++) {
+			char *dst = (char*)pixbuf + y * pitch;
+			char *src = nullptr;
+			//逐像素计算
+			for (int x = 0; x < w; x++) {
+				if(x % tsu->w == 0) src = (char*)tsu->pixels + (y % tsu->h) * tsu->pitch;
+				dst[G_Bit[3]] = gray[(Uint8)(src[0])];
+				dst += 4;
+				src++;
 			}
 		}
 		delete []gray;

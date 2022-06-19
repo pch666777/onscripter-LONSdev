@@ -19,23 +19,23 @@ void LOImageModule::DoPreEvent(double postime) {
 	for (int ii = 0; ii < preEventList.size(); ii++){
 		LOShareEventHook e = preEventList[ii];
 
-		if (e->catchFlag == PRE_EVENT_PREPRINTOK) {  //print准备完成
-			if (e->param2 == LOEventHook::FUN_SCREENSHOT) {
-				ScreenShotCountinue(e.get());
-			}
-			else {
-				LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
-				const char *printName = e->GetParam(1)->GetChars(nullptr);
-				PrepareEffect(ef, printName);
-			}
+		if (e->param2 == LOEventHook::FUN_PRE_EFFECT) {  //print准备完成
+			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+			const char *printName = e->GetParam(1)->GetChars(nullptr);
+			PrepareEffect(ef, printName);
 			e->FinishMe();
 		}
-		else if (e->catchFlag == PRE_EVENT_EFFECTCONTIUE) { //继续运行
+		else if (e->param2 == LOEventHook::FUN_CONTINUE_EFF) { //继续运行
+			//printf("%d\n", e->catchFlag);
 			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
 			const char *printName = e->GetParam(1)->GetChars(nullptr);
 			if (ContinueEffect(ef, printName , postime)) e->FinishMe();
 			else e->closeEdit();
-			//printf("main thread finish:%d\n", SDL_GetTicks());
+			//printf("state is:%d\n", e->GetState());
+		}
+		else if (e->param2 == LOEventHook::LOEventHook::FUN_SCREENSHOT) {
+			ScreenShotCountinue(e.get());
+			e->FinishMe();
 		}
 		else if (e->param2 == LOEventHook::FUN_TEXT_ACTION) {
 			//文字处理完成
@@ -67,6 +67,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		printPreHook->ResetMe();
 		//提交到等待位置
 		printPreHook->waitEvent(1, -1);
+		printPreHook->InvalidMe();
 		//遇到程序退出
 		if (moduleState >= MODULE_STATE_EXIT) return 0;
 	}
@@ -105,26 +106,20 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//等待print完成才继续
 	LOEventHook *ep = NULL;
 	if (iswait) {
-		ep = LOEventHook::CreatePrintPreHook(printHook.get(), ef, print_name);
+		ep = LOEventHook::CreatePrintHook(printHook.get(), ef, print_name);
 		//提交到等待位置
 		ep->ResetMe();
 		//printf("script thread:%d\n", SDL_GetTicks());
 	}
 	SDL_UnlockMutex(layerQueMutex);
-	//layerTestMute.unlock();
-
 	if (ep) {
-		//LOLog_i("uppos2-1:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
-		//printf("script thread wait befor:%d\n", SDL_GetTicks());
+		//print2-18会响应点击事件
+		if (ef) G_hookQue.push_back(printHook, LOEventQue::LEVEL_HIGH);
 		ep->waitEvent(1, -1);
-		//printf("script thread wait finish:%d\n", SDL_GetTicks());
-		//LOLog_i("uppos2-2:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
-		//if (moduleState >= MODULE_STATE_EXIT) return 0;
+		//无效化，这样放入其他队列后才有机会整理
+		ep->InvalidMe();
 	}
 	SDL_UnlockMutex(doQueMutex);
-
-	//LOLog_i("uppos3:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
-
 	return 0;
 }
 
@@ -165,10 +160,14 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			ev->PushParam(new LOVariant(mouseXY[1]));
 			//队列没有响应按键事件，那么就发送到图层响应
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
-			if (SendEventToHooks(ev.get()) == LOEventHook::RUNFUNC_CONTINUE) {
-				if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
-				else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
-				SendEventToLayer(ev.get());
+			//这里要注意检查事件类型是否被改变
+			int old = ev->catchFlag;
+			if (SendEventToHooks(ev.get(), LOEventQue::LEVEL_HIGH | LOEventQue::LEVEL_NORMAL) == LOEventHook::RUNFUNC_CONTINUE) {
+				if(ev->catchFlag == old) {
+					if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
+					else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
+					SendEventToLayer(ev.get());
+				}
 			}
 		}
 		break;
@@ -183,27 +182,46 @@ void LOImageModule::HandlingEvents() {
 			LOShareEventHook ev = waitEventQue.GetEventHook(index, level, false);
 			if (!ev) break;
 			//将事件传递给钩子列表处理
-			SendEventToHooks(ev.get());
+			SendEventToHooks(ev.get(), LOEventQue::LEVEL_HIGH | LOEventQue::LEVEL_NORMAL);
 		}
 	}
 
 	waitEventQue.clear();
 }
 
-int LOImageModule::SendEventToHooks(LOEventHook *e) {
-	int state = LOEventHook::RUNFUNC_CONTINUE;
-	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
-		int index = 0;
-		while (state == LOEventHook::RUNFUNC_CONTINUE) {
-			LOShareEventHook hook = G_hookQue.GetEventHook(index, level, true);
-			if (!hook) break;
-			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
 
+//单独立即处理某个事件
+int LOImageModule::SendEventToHooks(LOEventHook *e, int flags) {
+	int state = LOEventHook::RUNFUNC_CONTINUE;
+	int listID[2] = {flags & LOEventQue::LEVEL_NORMAL,flags & LOEventQue::LEVEL_HIGH };
+
+	for (int level = 1; level >= 0; level--) {
+		int index = 0;
+		while (listID[level] && state == LOEventHook::RUNFUNC_CONTINUE) {
+			LOShareEventHook hook = G_hookQue.GetEventHook(index, listID[level], true);
+			if (!hook) break;
+			//printf("%x\n", hook.get());
+			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
 			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
 		}
 	}
 	return state;
 }
+
+//int LOImageModule::SendEventToHooks(LOEventHook *e) {
+//	int state = LOEventHook::RUNFUNC_CONTINUE;
+//	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+//		int index = 0;
+//		while (state == LOEventHook::RUNFUNC_CONTINUE) {
+//			LOShareEventHook hook = G_hookQue.GetEventHook(index, level, true);
+//			if (!hook) break;
+//			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
+//
+//			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
+//		}
+//	}
+//	return state;
+//}
 
 
 //转换鼠标位置，超出视口位置等于事件没有发生
@@ -239,25 +257,47 @@ void LOImageModule::ClearDialogText(char flag) {
 
 //立即完成对话文字
 void LOImageModule::CutDialogueAction() {
-	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	//LOLayer *layer = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
-	//if (layer) {
-	//	//LOAnimation *aib = layer->GetAnimation(LOAnimation::ANIM_TEXT);
-	//	//if (aib) {
-	//	//	LOAnimationText *ai = (LOAnimationText*)(aib);
-	//	//	layer->DoTextAnima(layer->curInfo, ai, ai->lastTime + 0xfffff);
-	//	//}
-	//}
+	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
+	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
+	if (lyr && lyr->data->cur.isForce()) {
+		LOActionText *ac = (LOActionText*)lyr->data->cur.GetAction(LOAction::ANIM_TEXT);
+		if (ac) {
+			lyr->DoTextAction(lyr->data.get(), ac, 0x7ffffff);
+		}
+	}
+}
+
+//立即完成print事件
+int LOImageModule::CutPrintEffect(LOEventHook *hook, LOEventHook *e) {
+	if (!hook) hook = printHook.get();
+
+	if (hook->enterEdit() || hook->isState(LOEventHook::STATE_EDIT)) {
+		LOEffect *ef = (LOEffect*)hook->GetParam(0)->GetPtr();
+		const char *printName = hook->GetParam(1)->GetChars(nullptr);
+		ContinueEffect(ef, printName, 0x7ffffff);
+		hook->FinishMe();
+		//转换事件类型
+		if (e && e->catchFlag == LOEventHook::ANSWER_LEFTCLICK) e->catchFlag = LOEventHook::ANSWER_PRINGJMP;
+		else return LOEventHook::RUNFUNC_FINISH;
+	}
+	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
 
 int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	if (hook->param2 == LOEventHook::FUN_SPSTR) return RunFuncSpstr(hook, e);
-	else if (hook->param2 == LOEventHook::FUN_INVILIDE) {
+	switch (hook->param2){
+	case LOEventHook::FUN_SPSTR:
+		return RunFuncSpstr(hook, e);
+	case LOEventHook::FUN_INVILIDE:
 		hook->InvalidMe();
 		return LOEventHook::RUNFUNC_FINISH;
+	case LOEventHook::FUN_TEXT_ACTION:
+		return RunFuncText(hook, e);
+	case LOEventHook::FUN_CONTINUE_EFF:
+		return CutPrintEffect(hook, e);
+	default:
+		break;
 	}
-	else if (hook->param2 == LOEventHook::FUN_TEXT_ACTION) return RunFuncText(hook, e);
 
 	return LOEventHook::RUNFUNC_CONTINUE;
 }

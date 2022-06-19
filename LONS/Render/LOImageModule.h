@@ -32,11 +32,11 @@ public:
 		//TEXTURE_DESCRIBE,
 	};
 
-	enum {
-		PRE_EVENT_PREPRINTOK = 1,
-		PRE_EVENT_EFFECTCONTIUE,
-		PRE_EVENT_TEXTFINISH,
-	};
+	//enum {
+	//	PRE_EVENT_PREPRINTOK = 1,
+	//	PRE_EVENT_EFFECTCONTIUE,
+	//	PRE_EVENT_TEXTFINISH,
+	//};
 
 	enum {
 		IMG_EFFECT_NONE,
@@ -356,8 +356,10 @@ private:
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	void HandlingEvents();
+	int SendEventToHooks(LOEventHook *e, int flags);
 	int SendEventToLayer(LOEventHook *e);
-	int SendEventToHooks(LOEventHook *e);
+	//int SendEventToHooks(LOEventHook *e);
 	bool TranzMousePos(int xx, int yy);
 	void CutDialogueAction();
+	int CutPrintEffect(LOEventHook *hook, LOEventHook *e);
 };
