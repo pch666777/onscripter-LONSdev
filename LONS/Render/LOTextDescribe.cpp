@@ -105,6 +105,7 @@ bool LOTextDescribe::CreateLocation(std::vector<LOWordElement*> *wordList, int x
 	//忽略最后一个间隔
 	maxx -= xspace;
 
+	//printf("x:%d minx:%d maxx:%d\n", xx, minx, maxx);
 	return true;
 }
 

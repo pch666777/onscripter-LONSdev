@@ -127,6 +127,17 @@ public:
 		void ClearWords();
 	};
 
+	struct TextRoll{
+		enum {
+			FLAGS_LINE_START = 1,
+			FLAGS_LINE_END = 2
+		};
+		int16_t index = 0;
+		int16_t startPos = 0;
+		int16_t endPos = 0;
+		int16_t flags = 0;
+	};
+
 
 	LOtexture();
 	LOtexture(LOShareBaseTexture &base);

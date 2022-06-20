@@ -870,11 +870,15 @@ int LOtexture::RollTextTexture(int start, int end) {
 		//计算出两个点的位置
 		p1.x = line->xx + abs(Xfix);
 		p1.y = line->yy + abs(Yfix);
-		p2.x = p1.x + line->width() + textData->style.xshadow;
 		p2.y = p1.y + line->height() + textData->style.yshadow;
-
+		//确定右下角X位置
+		if (ii == endLine) {
+			if(isend) p2.x = p1.x + line->width() + textData->style.xshadow;
+			else p2.x = p1.x + endPos;
+		}
+		else p2.x = p1.x + line->width() + textData->style.xshadow;
+		//最后才修正左上角的位置，因为前面要用到
 		if (ii == startLine) p1.x += startPos;
-		if (ii == endLine) p2.x = p1.x + endPos + textData->style.xshadow;
 
 		re = { p1.x, p1.y , p2.x - p1.x, p2.y - p1.y };
 		CopySurfaceToTexture(texturePtr, surfacePtr, re);
