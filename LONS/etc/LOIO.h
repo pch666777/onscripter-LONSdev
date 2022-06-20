@@ -18,6 +18,7 @@ public:
 	static void GetPathForWrite(LOString &s);
 	static FILE* GetReadHandle(LOString fn, const char *mode);
 	static FILE* GetWriteHandle(LOString fn, const char *mode);
+	static FILE* GetSaveHandle(LOString fn, const char *mode);
 	static BinArray* ReadAllBytes(LOString &fn);
 	static void ReadBytes(BinArray *&bin, FILE *f, int position, int length);
 	static bool WriteAllBytes(LOString &fn, BinArray *bin);
@@ -25,6 +26,7 @@ public:
 	static LOString ioReadDir;
 	static LOString ioWriteDir;
 	static LOString ioWorkDir;
+	static LOString ioSaveDir;
 private:
 
 };

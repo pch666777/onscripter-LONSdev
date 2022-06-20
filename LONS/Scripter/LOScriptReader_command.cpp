@@ -2,6 +2,7 @@
 //基本的命令实现
 */
 #include "LOScriptReader.h"
+#include "../etc/LOIO.h"
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -833,30 +834,29 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 
 //将全局变量写入到全局变量流中
 void LOScriptReader::UpdataGlobleVariable() {
-	if (!st_globalon) return;  //没有启用全局变量
 	//初始化格式
 	InitSaveStream(GloVariableFS);
-	GloVariableFS->WriteInt(0x52415647);   //GVAR
-	GloVariableFS->WriteInt(1);            //GVAR version
-	GloVariableFS->WriteInt(0);           //起点
-	GloVariableFS->WriteInt(gloableMax);  //数量
+	//GVAR
+	GloVariableFS->WriteInt(0x52415647);
+	//GVAR version
+	GloVariableFS->WriteInt(1);
+	//起点
+	GloVariableFS->WriteInt(0);
+	//数量
+	GloVariableFS->WriteInt(gloableMax);
 	for (int ii = 0; ii < gloableMax; ii++) {
-		GloVariableFS->WriteInt(0x524156);  //VAR
-		GloVariableFS->WriteInt(ii);   //id
-		GNSvariable[ii].Serialization(GloVariableFS);
+		GNSvariable[ii].Serialization(GloVariableFS, ii);
 	}
 }
 
 void LOScriptReader::SaveGlobleVariable() {
-	/*
-	if (!st_globalon) return;  //没有启用全局变量
-	FILE *f = OpenFileForWrite("gloval.savl", "wb");
+	LOString fn("gloval.savl");
+	FILE *f = LOIO::GetSaveHandle(fn, "wb");
 	if (f) {
 		fwrite(GloVariableFS->bin, 1, GloVariableFS->Length(), f);
 		fflush(f);
 		fclose(f);
 	}
-	*/
 }
 
 
@@ -876,20 +876,6 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 	//	
 	//}
 	//else LOLog_e("open file to write faild:%s \n", fn.c_str());
-	return RET_CONTINUE;
-}
-
-int LOScriptReader::savedirCommand(FunctionInterface *reader) {
-	/*
-	saveDir = reader->GetParamStr(0);
-	LOString s;
-	if (writeDir.length() > 0) s = writeDir + "/" + saveDir;
-	else s = saveDir;
-	//创建文件夹的具体代码跟平台有关
-	#ifdef WIN32
-		CreateDirectoryA(saveDir.c_str(), NULL);
-	#endif
-	*/
 	return RET_CONTINUE;
 }
 
@@ -919,5 +905,11 @@ int LOScriptReader::defineresetCommand(FunctionInterface *reader) {
 int LOScriptReader::labellogCommand(FunctionInterface *reader) {
 	st_labellog = true;
 	ReadLog(LOGSET_LABELLOG);
+	return RET_CONTINUE;
+}
+
+
+int LOScriptReader::globalonCommand(FunctionInterface *reader) {
+	st_globalon = true;
 	return RET_CONTINUE;
 }

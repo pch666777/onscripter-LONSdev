@@ -169,7 +169,6 @@ public:
 	double GetParamDoublePer(int index);
 	int GetParamCount();
 	bool CheckTimer(LOEventHook *e, int waittmer);
-	
 
 	void InitSaveStream(BinArray *bin);
 	static LOString StringFormat(int max, const char *format, ...);
@@ -196,7 +195,6 @@ public:
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
 	void WriteLog(int logt);
-
 	
 
 	//===== scripter virtual  ========
@@ -267,6 +265,7 @@ public:
 	virtual int resetCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int defineresetCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int labellogCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int globalonCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int lspCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int printCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
@@ -340,8 +339,8 @@ public:
 	virtual int nsaCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	//static std::vector<LOString> workDirs;        //搜索目录，因为接口类到处都在使用，干脆把io部分挪到这里来
-	static std::atomic_int flagPrepareEffect;        //print时要求截取当前画面
-	static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
+	//static std::atomic_int flagPrepareEffect;        //print时要求截取当前画面
+	//static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
 	static LOShareEventHook printPreHook;    //要求抓取图像
 	static LOShareEventHook printHook;       //要求等待print完成
 

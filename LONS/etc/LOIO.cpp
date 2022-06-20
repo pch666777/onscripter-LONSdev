@@ -8,6 +8,7 @@
 LOString LOIO::ioReadDir;
 LOString LOIO::ioWriteDir;
 LOString LOIO::ioWorkDir;
+LOString LOIO::ioSaveDir;
 
 LOIO::LOIO() {
 }
@@ -29,7 +30,18 @@ FILE* LOIO::GetReadHandle(LOString fn, const char *mode) {
 	return fopen(fn.c_str(), mode);
 }
 
+//这里要注意加入fn有由脚本提供的全角文件名，那么可能有编码问题
 FILE* LOIO::GetWriteHandle(LOString fn, const char *mode) {
+	GetPathForWrite(fn);
+	return fopen(fn.c_str(), mode);
+}
+
+FILE* LOIO::GetSaveHandle(LOString fn, const char *mode) {
+	if (ioSaveDir.length() > 0) {
+		auto coder = fn.GetEncoder();
+		fn = ioSaveDir + "/" + fn;
+		fn.SetEncoder(coder);
+	}
 	GetPathForWrite(fn);
 	return fopen(fn.c_str(), mode);
 }

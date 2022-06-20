@@ -5,6 +5,9 @@
 #include "LOCompressInfo.h"
 #include "LOFileModule.h"
 #include "../etc/LOIO.h"
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 
 //BinArray *LOFileModule::built_in_font = NULL;
@@ -197,4 +200,16 @@ BinArray* LonsGetBuiltMem(int type) {
 		return it->GetBuiltMem(type);
 	}
 	else return nullptr;
+}
+
+
+int LOFileModule::savedirCommand(FunctionInterface *reader) {
+	LOIO::ioSaveDir = reader->GetParamStr(0);
+	LOString fpath = LOIO::ioSaveDir;
+	LOIO::GetPathForWrite(fpath);
+	//创建文件夹的具体代码跟平台有关
+#ifdef WIN32
+	CreateDirectoryA(fpath.c_str(), NULL);
+#endif
+	return RET_CONTINUE;
 }

@@ -13,8 +13,8 @@ FunctionInterface *FunctionInterface::scriptModule = NULL;
 FunctionInterface *FunctionInterface::fileModule = NULL;    //文件系统
 BinArray *FunctionInterface::GloVariableFS = new BinArray(1024, true);
 BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
-std::atomic_int FunctionInterface::flagPrepareEffect{};
-std::atomic_int FunctionInterface::flagRenderNew{};
+//std::atomic_int FunctionInterface::flagPrepareEffect{};
+//std::atomic_int FunctionInterface::flagRenderNew{};
 
 LOShareEventHook FunctionInterface::printPreHook(new LOEventHook());
 LOShareEventHook FunctionInterface::printHook(new LOEventHook());
@@ -107,6 +107,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"reset",      "\0",      "\0",        &FunctionInterface::resetCommand},
 	{"definereset","\0",      "\0",        &FunctionInterface::defineresetCommand},
 	{"labellog",   "\0",      "\0",        &FunctionInterface::labellogCommand},
+	{"globalon",   "\0",      "\0",        &FunctionInterface::globalonCommand},
 
 
 	{"pretextgosub", "L",     "Y",         &FunctionInterface::usergosubCommand},
@@ -525,3 +526,4 @@ int FunctionInterface::RunFuncBase(LOEventHook *hook, LOEventHook *e) {
 	else if (hook->param1 == LOEventHook::MOD_AUDIO)return audioModule->RunFunc(hook, e);
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
+

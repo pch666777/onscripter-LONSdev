@@ -199,8 +199,10 @@ int LOScriptReader::MainTreadRunning() {
 
 	//退出之前保存全局变量、文件读取列表等
 	if(st_labellog) WriteLog(FunctionInterface::LOGSET_LABELLOG);
-	UpdataGlobleVariable();
-	SaveGlobleVariable();
+	if (st_globalon) {
+		UpdataGlobleVariable();
+		SaveGlobleVariable();
+	}
 
 	if (moduleState & MODULE_STATE::MODULE_STATE_ERROR) return -1;
 	else {

@@ -34,6 +34,7 @@ public:
 	int nsaCommand(FunctionInterface *reader);
 	int fileexistCommand(FunctionInterface *reader);
 	int readfileCommand(FunctionInterface *reader);
+	int savedirCommand(FunctionInterface *reader);
 private:
 	//static BinArray *built_in_font;
 	LOString nsaDir;

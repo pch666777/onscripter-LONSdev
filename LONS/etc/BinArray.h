@@ -76,7 +76,7 @@ private:
 		BIN_PREPLEN = 20
 	};
 
-	uint32_t realLen;  //实际使用的长度
+	uint32_t realLen;  //实际使用的长度，指读写到的位置
 	uint32_t prepLen;  //准备使用的长度
 	bool isStream;     //流模式每次准备长度翻倍，非流模式每次准备长度+20
 	const char *errerinfo;   //上一次错误信息

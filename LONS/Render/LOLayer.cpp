@@ -525,17 +525,19 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 	}
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);
-		posPx = 1;
-		int ret = texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
-		//printf("currentPos:%d\n", ai->currentPos);
-		if (ret == LOtexture::RET_ROLL_END) {
-			ai->setEnble(false);
-			//添加帧刷新后事件
-			AddPreEvent(ai->hook);
-			ai->currentPos += posPx;
+		if (posPx > 1) {
+			//posPx = 1;
+			int ret = texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
+			//printf("currentPos:%d\n", ai->currentPos);
+			if (ret == LOtexture::RET_ROLL_END) {
+				ai->setEnble(false);
+				//添加帧刷新后事件
+				AddPreEvent(ai->hook);
+				ai->currentPos += posPx;
+			}
+			else if (ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;
+			ai->lastTime = curTime;
 		}
-		else if(ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;
-		ai->lastTime = curTime;
 	}
 }
 

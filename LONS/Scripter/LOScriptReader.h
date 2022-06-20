@@ -255,10 +255,10 @@ public:
 	int savefileexistCommand(FunctionInterface *reader);
 	int savepointCommand(FunctionInterface *reader);
 	int savegameCommand(FunctionInterface *reader);
-	int savedirCommand(FunctionInterface *reader);
 	int resetCommand(FunctionInterface *reader);
 	int defineresetCommand(FunctionInterface *reader);
 	int labellogCommand(FunctionInterface *reader);
+	int globalonCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里

@@ -162,15 +162,28 @@ int ONSVariableBase::ArrayCount() {
 
 
 //序列化
-void ONSVariableBase::Serialization(BinArray *bin) {
-	bin->WriteDouble(value);         //value
-	bin->WriteLOString(strValue);      //string
+void ONSVariableBase::Serialization(BinArray *bin, int vid) {
+	//写入标记 onsv
+	bin->WriteInt(0x76736E6F);
+	//要写入长度
+	int pos = bin->Length();
+	bin->WriteInt(0);
+	//写入ID
+	bin->WriteInt(vid);
+	//value
+	bin->WriteDouble(value);
+	//string
+	bin->WriteLOString(strValue);  
+	//数组
 	int count = ArrayCount();
 	bin->WriteInt(count);  //array count
 	if (count > 0) {       //array data
 		count += MAXVARIABLE_ARRAY;
 		bin->Append((char*)arrayData, count * 4);
 	}
+
+	//收尾长度，这样及时之后有改也能顺利到底下一个位置
+	bin->WriteInt(bin->Length() - pos, &pos);
 }
 
 //反序列化
