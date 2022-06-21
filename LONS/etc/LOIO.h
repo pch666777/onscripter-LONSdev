@@ -22,6 +22,8 @@ public:
 	static BinArray* ReadAllBytes(LOString &fn);
 	static void ReadBytes(BinArray *&bin, FILE *f, int position, int length);
 	static bool WriteAllBytes(LOString &fn, BinArray *bin);
+	static void InitLPKStream(BinArray *bin);
+	static bool CheckLPKHeader(BinArray *bin, int *pos);
 
 	static LOString ioReadDir;
 	static LOString ioWriteDir;
@@ -39,4 +41,9 @@ extern BinArray* LonsReadFileFromPack(LOString &fn);
 
 //获取一些内建的文件，函数主体不在IO中实现，只是在这里声明，方便使用
 extern BinArray* LonsGetBuiltMem(int type);
+
+//保存环境
+extern void LonsSaveEnvData();
+//读取环境
+extern void LonsReadEnvData();
 #endif // !__LOIO_H__

@@ -1,5 +1,5 @@
 #include "LOScriptReader.h"
-//#include "../Render/LOLayerData.h"
+#include "../etc/LOIO.h"
 #include "Buil_in_script.h"
 #include <stdarg.h>
 //#include <SDL.h>
@@ -203,6 +203,8 @@ int LOScriptReader::MainTreadRunning() {
 		UpdataGlobleVariable();
 		SaveGlobleVariable();
 	}
+	//保存环境
+	LonsSaveEnvData();
 
 	if (moduleState & MODULE_STATE::MODULE_STATE_ERROR) return -1;
 	else {

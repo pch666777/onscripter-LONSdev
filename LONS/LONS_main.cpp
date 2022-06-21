@@ -28,7 +28,7 @@
 //#endif // 
 
 
-//ONScripter ons;
+extern void LonsReadEnvData();
 
 void GetIntSet(int *a, int *b, char *buf) {
 	//int c = *a >> 16;
@@ -76,6 +76,8 @@ void GlobalInit() {
 		int fullid = GetFullID(LOLayer::LAYER_CC_USE, ii, 255, 255);
 		G_baseLayer[ii] = LOLayer::CreateLayer(fullid);
 	}
+	//读取基本环境
+	LonsReadEnvData();
 }
 
 
@@ -87,6 +89,9 @@ void GlobalFree() {
 	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
 		delete G_baseLayer[ii];
 	}
+
+	//保存环境
+	
 }
 
 

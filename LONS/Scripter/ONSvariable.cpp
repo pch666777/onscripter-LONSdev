@@ -190,7 +190,7 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
 	value = bin->GetDouble(pos);
 	if (strValue) delete strValue;
-	strValue = bin->GetLOString(pos);
+	//strValue = bin->GetLOString(pos);
 
 	if (arrayData) delete[] arrayData;
 	int count = bin->GetInt(pos);

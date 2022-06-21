@@ -375,15 +375,6 @@ BinArray* LonsReadFile(LOString &fn) {
 }
 
 
-//初始化存储流
-void FunctionInterface::InitSaveStream(BinArray *bin) {
-	bin->Clear(false);
-	bin->WriteInt(0x534B504C);  //LPKS
-	bin->WriteInt(1);           //version
-	bin->WriteInt(0);   //预留
-	bin->WriteInt(0);   //预留
-}
-
 //error以后程序会终止运行
 void FunctionInterface::PrintErrorStatic(LOString *err) {
 	//先输出错误信息

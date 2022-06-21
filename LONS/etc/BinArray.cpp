@@ -178,11 +178,11 @@ void BinArray::GetString(std::string &s, int *pos){
 }
 
 
-LOString* BinArray::GetLOString(int *pos) {
-	LOString *s = new LOString();
-	GetString(*s, pos);
+LOString BinArray::GetLOString(int *pos) {
+	LOString s;
+	GetString(s, pos);
 	if (pos >= 0) {
-		s->SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
+		s.SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
 	}
 	return s;
 }

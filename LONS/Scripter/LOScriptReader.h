@@ -182,6 +182,7 @@ public:
 	LOString GetReport();
 	void PrintError(const char *fmt, ...);
 	void UpdataGlobleVariable();
+	void ReadGlobleVariable();
 	void SaveGlobleVariable();
 	void Serialize(BinArray *bin);
 

@@ -39,7 +39,7 @@ public:
 	int64_t GetInt64(int pos, bool isbig = false) { return GetInt64(&pos, isbig); }
 	void GetString(std::string &s, int *pos);
 	//std::string GetString(int pos) { return GetString(&pos); }
-	LOString* GetLOString(int *pos);
+	LOString GetLOString(int *pos);
 	bool GetBool(int *pos);
 	bool GetBool(int pos) { return GetBool(&pos); }
 	float GetFloat(int *pos, bool isbig = false);

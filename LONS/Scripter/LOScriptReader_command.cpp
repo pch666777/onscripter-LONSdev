@@ -835,7 +835,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 //将全局变量写入到全局变量流中
 void LOScriptReader::UpdataGlobleVariable() {
 	//初始化格式
-	InitSaveStream(GloVariableFS);
+	LOIO::InitLPKStream(GloVariableFS);
 	//GVAR
 	GloVariableFS->WriteInt(0x52415647);
 	//GVAR version
@@ -846,6 +846,34 @@ void LOScriptReader::UpdataGlobleVariable() {
 	GloVariableFS->WriteInt(gloableMax);
 	for (int ii = 0; ii < gloableMax; ii++) {
 		GNSvariable[ii].Serialization(GloVariableFS, ii);
+	}
+}
+
+
+void LOScriptReader::ReadGlobleVariable() {
+	LOString fn("gloval.savl");
+	FILE *f = LOIO::GetSaveHandle(fn, "rb");
+	if (!f) return;
+
+	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, 0x7ffffff));
+	fclose(f);
+	if (bin) {
+		int pos = 0;
+		if (!LOIO::CheckLPKHeader(bin.get(), &pos)) {
+			LOLog_i("[gloval.savl] not 'LPKS' flag!");
+			return;
+		}
+		if (!bin->GetInt(&pos) != 0x52415647) {
+			LOLog_i("[gloval.savl] not 'GVAR' flag!");
+			return;
+		}
+		bin->GetInt(&pos); //version
+		int from = bin->GetInt(&pos);
+		int count = bin->GetInt(&pos);
+		
+		for (int ii = from; ii < count; ii++) {
+			GNSvariable[ii].Deserialization(bin.get(), &pos);
+		}
 	}
 }
 

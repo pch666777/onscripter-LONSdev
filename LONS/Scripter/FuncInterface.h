@@ -170,7 +170,6 @@ public:
 	int GetParamCount();
 	bool CheckTimer(LOEventHook *e, int waittmer);
 
-	void InitSaveStream(BinArray *bin);
 	static LOString StringFormat(int max, const char *format, ...);
 
 	static FunctionInterface *imgeModule;    //图像模块
