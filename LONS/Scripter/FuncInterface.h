@@ -265,6 +265,7 @@ public:
 	virtual int defineresetCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int labellogCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int globalonCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int testcmdsCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int lspCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int printCommand(FunctionInterface *reader) { return RET_VIRTUAL; };

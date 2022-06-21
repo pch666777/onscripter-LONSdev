@@ -913,23 +913,34 @@ _mouseclick_ 350,350,1
 return
 
 *save_test
-dim ?2[10][10][10]
-mov %4,1
-for %1 = 0 to 10
-	for %2 = 0 to 10
-		for %3 = 0 to 10
-			mov ?2[%1][%2][%3],%4
-			inc %4
-		next
+;首先检查全局变量
+dim ?2[10][10]
+;赋值数字变量和文字变量
+for %600 = 0 to 499
+	mov %%600,%600
+	itoa $%600,%600
+next
+;赋值数组
+mov %602,0
+for %600 = 0 to 10
+	for %601 = 0 to 10
+	 mov ?2[%600][%601],%602
+	 inc %602
 	next
 next
-mov $0,"我的abc"
-for %1000 = 2 to 499
-	mov %%1000,%1000+1
-	itoa $%1000,%%1000
+
+;存储进入全局存储区
+_testcmd_s "globalon_save"
+
+;从存储区恢复变量
+_testcmd_s "globalon_load"
+
+;比较变量
+for %600 = 0 to 499
+	if %%600 != %600 debuglog "全局变量存储测试未通过！",%%600 :break
+	itoa $600,%600
+	if $%600 != $600 debuglog "全局变量存储测试未通过！",$%600 :break
 next
-savepoint
-savedir "Lsav"
 
 return
 

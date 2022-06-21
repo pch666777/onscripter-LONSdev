@@ -850,7 +850,7 @@ void LOScriptReader::UpdataGlobleVariable() {
 }
 
 
-void LOScriptReader::ReadGlobleVariable() {
+void LOScriptReader::ReadGlobleVarFile() {
 	LOString fn("gloval.savl");
 	FILE *f = LOIO::GetSaveHandle(fn, "rb");
 	if (!f) return;
@@ -859,20 +859,26 @@ void LOScriptReader::ReadGlobleVariable() {
 	fclose(f);
 	if (bin) {
 		int pos = 0;
-		if (!LOIO::CheckLPKHeader(bin.get(), &pos)) {
-			LOLog_i("[gloval.savl] not 'LPKS' flag!");
-			return;
-		}
-		if (!bin->GetInt(&pos) != 0x52415647) {
-			LOLog_i("[gloval.savl] not 'GVAR' flag!");
-			return;
-		}
-		bin->GetInt(&pos); //version
-		int from = bin->GetInt(&pos);
-		int count = bin->GetInt(&pos);
-		
-		for (int ii = from; ii < count; ii++) {
-			GNSvariable[ii].Deserialization(bin.get(), &pos);
+		ReadGlobleVariable(bin.get(), &pos);
+	}
+}
+
+void LOScriptReader::ReadGlobleVariable(BinArray *bin, int *pos) {
+	if (!LOIO::CheckLPKHeader(bin, pos)) {
+		LOLog_i("[gloval.savl] not 'LPKS' flag!");
+		return;
+	}
+	if (!bin->GetInt(pos) != 0x52415647) {
+		LOLog_i("[gloval.savl] not 'GVAR' flag!");
+		return;
+	}
+	bin->GetInt(pos); //version
+	int from = bin->GetInt(pos);
+	int count = bin->GetInt(pos);
+	for (int ii = from; ii < count; ii++) {
+		if (!GNSvariable[ii].Deserialization(bin, pos)) {
+			LOLog_i("GNSvariable[ii].Deserialization() faild!");
+			break;
 		}
 	}
 }
@@ -939,5 +945,18 @@ int LOScriptReader::labellogCommand(FunctionInterface *reader) {
 
 int LOScriptReader::globalonCommand(FunctionInterface *reader) {
 	st_globalon = true;
+	return RET_CONTINUE;
+}
+
+//自动测试命令
+int LOScriptReader::testcmdsCommand(FunctionInterface *reader) {
+	LOString cmd = reader->GetParamStr(0);
+	if (cmd == "globalon_save") {
+		UpdataGlobleVariable();
+	}
+	else if (cmd == "globalon_load") {
+		int pos = 0;
+		ReadGlobleVariable(GloVariableFS, &pos);
+	}
 	return RET_CONTINUE;
 }

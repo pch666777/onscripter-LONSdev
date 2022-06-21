@@ -108,6 +108,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"definereset","\0",      "\0",        &FunctionInterface::defineresetCommand},
 	{"labellog",   "\0",      "\0",        &FunctionInterface::labellogCommand},
 	{"globalon",   "\0",      "\0",        &FunctionInterface::globalonCommand},
+	{"_testcmd_s", "s",       "Y",         &FunctionInterface::testcmdsCommand},
 
 
 	{"pretextgosub", "L",     "Y",         &FunctionInterface::usergosubCommand},

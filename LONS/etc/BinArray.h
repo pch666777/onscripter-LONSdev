@@ -40,6 +40,7 @@ public:
 	void GetString(std::string &s, int *pos);
 	//std::string GetString(int pos) { return GetString(&pos); }
 	LOString GetLOString(int *pos);
+	LOString* GetLOStrPtr(int *pos);
 	bool GetBool(int *pos);
 	bool GetBool(int pos) { return GetBool(&pos); }
 	float GetFloat(int *pos, bool isbig = false);

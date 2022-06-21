@@ -188,10 +188,17 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 
 //反序列化
 bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
+	if (bin->GetInt(pos) != 0x76736E6F) return false;
+	//本段的长度
+	int oldpos = *pos;
+	//id
+	bin->GetInt(pos);
+	//value
 	value = bin->GetDouble(pos);
+	//string
 	if (strValue) delete strValue;
-	//strValue = bin->GetLOString(pos);
-
+	strValue = bin->GetLOStrPtr(pos);
+	//数组
 	if (arrayData) delete[] arrayData;
 	int count = bin->GetInt(pos);
 	if (count > 0) {
@@ -201,6 +208,8 @@ bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
 		pos += count * 4;
 	}
 	else arrayData = nullptr;
+	//指向下一段
+	*pos = oldpos + bin->GetInt(oldpos);
 	return true;
 }
 

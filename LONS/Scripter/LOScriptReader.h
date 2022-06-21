@@ -182,7 +182,8 @@ public:
 	LOString GetReport();
 	void PrintError(const char *fmt, ...);
 	void UpdataGlobleVariable();
-	void ReadGlobleVariable();
+	void ReadGlobleVarFile();
+	void ReadGlobleVariable(BinArray *bin, int *pos);
 	void SaveGlobleVariable();
 	void Serialize(BinArray *bin);
 
@@ -260,6 +261,7 @@ public:
 	int defineresetCommand(FunctionInterface *reader);
 	int labellogCommand(FunctionInterface *reader);
 	int globalonCommand(FunctionInterface *reader);
+	int testcmdsCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
