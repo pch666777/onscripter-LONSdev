@@ -868,7 +868,7 @@ void LOScriptReader::ReadGlobleVariable(BinArray *bin, int *pos) {
 		LOLog_i("[gloval.savl] not 'LPKS' flag!");
 		return;
 	}
-	if (!bin->GetInt(pos) != 0x52415647) {
+	if (bin->GetInt(pos) != 0x52415647) {
 		LOLog_i("[gloval.savl] not 'GVAR' flag!");
 		return;
 	}
@@ -955,6 +955,7 @@ int LOScriptReader::testcmdsCommand(FunctionInterface *reader) {
 		UpdataGlobleVariable();
 	}
 	else if (cmd == "globalon_load") {
+		ONSVariableBase::ResetAll();
 		int pos = 0;
 		ReadGlobleVariable(GloVariableFS, &pos);
 	}

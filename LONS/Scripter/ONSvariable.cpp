@@ -189,8 +189,9 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 //反序列化
 bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
 	if (bin->GetInt(pos) != 0x76736E6F) return false;
-	//本段的长度
-	int oldpos = *pos;
+	//下一个的位置
+	int nextpos = *pos;
+	nextpos += bin->GetInt(pos);
 	//id
 	bin->GetInt(pos);
 	//value
@@ -202,14 +203,15 @@ bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
 	if (arrayData) delete[] arrayData;
 	int count = bin->GetInt(pos);
 	if (count > 0) {
+		//虽然看起来 MAXVARIABLE_ARRAY 是可调的，其实是已经限制住了最大4维
 		count += MAXVARIABLE_ARRAY;
 		arrayData = new int[count];
 		memcpy(arrayData, bin->bin + (*pos), count * 4);
-		pos += count * 4;
+		*pos += count * 4;
 	}
 	else arrayData = nullptr;
 	//指向下一段
-	*pos = oldpos + bin->GetInt(oldpos);
+	*pos = nextpos;
 	return true;
 }
 

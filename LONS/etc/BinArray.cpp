@@ -191,7 +191,7 @@ LOString BinArray::GetLOString(int *pos) {
 LOString* BinArray::GetLOStrPtr(int *pos) {
 	LOString *s = new LOString();
 	GetString(*s, pos);
-	if (pos >= 0) {
+	if (pos && *pos >= 0) {
 		s->SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
 	}
 	return s;

@@ -142,6 +142,8 @@ int LOScriptReader::MainTreadRunning() {
 		PrintError("LOScriptReader::MainTreadRunning() must run at main scriptReader!");
 		return -1;
 	}
+	//开始之前先读取全局变量
+	ReadGlobleVarFile();
 
 	moduleState = MODULE_STATE::MODULE_STATE_RUNNING;
 	const char* lables[] = { "define" , "start" };

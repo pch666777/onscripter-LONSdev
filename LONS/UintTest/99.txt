@@ -10,11 +10,8 @@ delay 10
 gettimer %1
 debuglog %1
 
-lsp 20,":c;>200,100,#08EFA3",100,40
-print 10,5000
+gosub *save_test
 btnwait %0
-setwindow 25,368,22,3,24,24,1,4,200,0,1,"sys\duihuaka2.png",0,0
-[由梦 /yme06] 「真是的，哥哥你打算睡懒觉到什么时候啊。真是贪睡鬼」 \
 
 debuglog "分辨率是否是1024*576？"
 
@@ -941,8 +938,20 @@ for %600 = 0 to 499
 	itoa $600,%600
 	if $%600 != $600 debuglog "全局变量存储测试未通过！",$%600 :break
 next
+;比较数组
+mov %602,0
+for %600 = 0 to 10
+	for %601 = 0 to 10
+		if ?2[%600][%601] != %602 debuglog "全局变量存储测试未通过！",?2[%600][%601] :break
+		inc %602
+	next
+next
+
 
 return
+
+
+
 
 *testScript
 debuglog "thread has run"
