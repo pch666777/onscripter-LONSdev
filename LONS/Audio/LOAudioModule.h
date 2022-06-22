@@ -23,9 +23,21 @@ public:
 		INDEX_WAVE = 50,
 		INDEX_MUSIC = 51,
 	};
+	enum {
+		FLAGS_SEPLAY_BGMDOWN = 1,
+		//是否产生se播放完成的回调信号，有捕获事件需求时才产生回调信号
+		FLAGS_SEND_PALYFINISH = 2,
+		//是否所有的channel都产生回调信号，默认只有0通道才产生
+		FLAGS_SEND_ALLChANNEL = 4,
+	};
+
 	LOString afterBgmName;
 	int InitAudioModule();
 
+	void SetFlags(int f) { flags |= f; }
+	void UnsetFlags(int f) { flags &= (~f); }
+	bool isSeCallBack() { return flags & FLAGS_SEND_PALYFINISH; }
+	bool isAllChannelCallBack() { return flags & FLAGS_SEND_ALLChANNEL; }
 	void ResetMe();
 	void ResetMeFinish();
 	void PlayAfter();
@@ -54,7 +66,8 @@ private:
 	int bgmFadeInTime;
 	int bgmFadeOutTime;
 	int currentChannel;
-	bool bgmDownFlag;
+	//bool bgmDownFlag;
+	int flags;
 
 	//每次播放都新建一个LOAudioElement，因此设置，读取时必须加锁
 	LOAudioElement *_audioPtr[INDEX_MUSIC + 1];  //不要直接操作

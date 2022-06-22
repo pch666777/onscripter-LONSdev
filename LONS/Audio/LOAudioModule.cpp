@@ -11,7 +11,7 @@ LOAudioModule::LOAudioModule() {
 	bgmFadeInTime = 0;
 	bgmFadeOutTime = 0;
 	currentChannel = 0;
-	bgmDownFlag = false;
+	flags = 0;
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) _audioVol[ii] = 100;
 }
 
@@ -106,7 +106,7 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 
 	SetSevol(channel, _audioVol[channel]);
 	//播放声音时降低音量
-	if (bgmDownFlag && aue->isAvailable()) SetBGMvol(_audioVol[INDEX_MUSIC], 0.6);
+	if ((flags & FLAGS_SEPLAY_BGMDOWN) && aue->isAvailable()) SetBGMvol(_audioVol[INDEX_MUSIC], 0.6);
 	SetAudioElAndPlay(channel, aue);
 }
 
@@ -133,16 +133,15 @@ void channelFinish(int channel) {
 	LOAudioModule *au = (LOAudioModule*)(FunctionInterface::audioModule);
 	au->channelFinish_t(channel);
 	//0频道绑定了按钮超时事件
-	if (channel == 0) {
-		//LOEvent1 *e = G_GetEvent(LOEvent1::EVENT_SEZERO_FINISH);
-		//if (e) e->InvalidMe();  //直接失效事件
+	if (au->isSeCallBack() && (channel == 0 || au->isAllChannelCallBack() )) {
+
 	}
 }
 
 void LOAudioModule::channelFinish_t(int channel) {
 	LOAudioElement *aue = GetAudioEl(channel);
 	if (aue) delete aue;
-	if (bgmDownFlag) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
+	if (flags & FLAGS_SEPLAY_BGMDOWN) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
 }
 
 
@@ -242,8 +241,9 @@ void LOAudioModule::SetAudioElAndPlay(int index, LOAudioElement *aue) {
 }
 
 int LOAudioModule::bgmdownmodeCommand(FunctionInterface *reader) {
-	bgmDownFlag = reader->GetParamInt(0);
-	if (!bgmDownFlag) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0); //恢复已经被设置的音量 
+	if( reader->GetParamInt(0)) SetFlags(FLAGS_SEPLAY_BGMDOWN) ;
+	else UnsetFlags(FLAGS_SEPLAY_BGMDOWN);
+	if (!(flags & FLAGS_SEPLAY_BGMDOWN)) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0); //恢复已经被设置的音量 
 	return RET_CONTINUE;
 }
 

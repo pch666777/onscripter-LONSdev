@@ -828,6 +828,8 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
+	//暂停渲染
+
 	UpdataGlobleVariable();
 	return RET_VIRTUAL;   //返回这个值可以继续调用其他模块的同名重载函数
 }
@@ -851,6 +853,8 @@ void LOScriptReader::UpdataGlobleVariable() {
 
 
 void LOScriptReader::ReadGlobleVarFile() {
+	ONSVariableBase::ResetAll();
+
 	LOString fn("gloval.savl");
 	FILE *f = LOIO::GetSaveHandle(fn, "rb");
 	if (!f) return;
