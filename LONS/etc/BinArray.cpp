@@ -243,6 +243,15 @@ int BinArray::WriteInt(int v, int *pos, bool isbig) {
 	return sizeof(v);
 }
 
+
+int BinArray::WriteInt3(int v1, int v2, int v3, int *pos, bool isbig) {
+	int tpos = realLen;
+	if (!pos) pos = &tpos;
+	int val[] = { v1,v2,v3 };
+	WriteCharIntArray((char*)(val), sizeof(int) * 3, pos, isbig);
+	return sizeof(int) * 3;
+}
+
 int BinArray::WriteInt16(int16_t v, int *pos, bool isbig) {
 	int tpos = realLen;
 	if (!pos) pos = &tpos;

@@ -256,7 +256,8 @@ int LOImageModule::MainLoop() {
 	SDL_Event ev;
 	Uint64 lastTime = 0;
 	bool minisize = false;
-	moduleState = MODULE_STATE_RUNNING;
+	
+	ChangeRunState(MODULE_STATE_RUNNING);
 
 	//第一帧要锁住print信号
 	printHook->FinishMe();
@@ -273,15 +274,25 @@ int LOImageModule::MainLoop() {
 				DoPreEvent(posTime);
 				//在进入事件处理之前，先整理一下钩子队列
 				G_hookQue.arrangeList();
-				//DoDelayEvent(posTime);
 				lastTime = hightTimeNow;
-				if(moduleState >= MODULE_STATE_EXIT) break;
-				else if (moduleState & MODULE_STATE_RESET) {
-					ResetMe();
-				}
 			}
 			else {
 				LOLog_i("RefreshFrame faild!");
+			}
+		}
+
+		//检查模块状态变化
+		if (isStateChange()) {
+			if (isModuleExit()) break;
+			else if (isModuleSaving()) {
+				ChangeRunState(MODULE_STATE_SAVING);
+				//进入存档函数
+			}
+			else if (isModuleLoading()) {
+
+			}
+			else if (isModuleReset()) {
+				ResetMe();
 			}
 		}
 		
@@ -290,7 +301,8 @@ int LOImageModule::MainLoop() {
 			switch (ev.type) {
 			case SDL_QUIT:
 				loopflag = false;
-				SetExitFlag(MODULE_STATE_EXIT);
+				//这个函数要改写
+				SetExitFlag(MODULE_FLAGE_EXIT);
 				break;
 			case SDL_WINDOWEVENT:
 				if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
@@ -333,7 +345,8 @@ int LOImageModule::MainLoop() {
 	//退出前终止效果
 	CutPrintEffect(nullptr, nullptr);
 
-	moduleState = MODULE_STATE_NOUSE;
+	ChangeRunState(MODULE_STATE_NOUSE);
+
 	//等待其他模块退出
 	lastTime = SDL_GetPerformanceCounter();
 	posTime = 0.0;
@@ -1310,4 +1323,84 @@ LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printNam
 	}
 	backDataMaps.push_back(std::make_unique<PrintNameMap>(printName));
 	return backDataMaps[backDataMaps.size() - 1].get();
+}
+
+void LonsSaveImageModule(BinArray *bin) {
+	LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
+	img->SerializePrintQue(bin);
+	img->SerializeState(bin);
+}
+
+
+void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
+	int len = bin->Length();
+	//'pque', len, version
+	bin->WriteInt3(0x65757170, 0, 1);
+	bin->WriteString(mapName->c_str());
+	bin->WriteInt(map->size());
+	//写入fullid
+	for (auto iter = map->begin(); iter != map->end(); iter++) bin->WriteInt(iter->first);
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+void LOImageModule::SerializePrintQue(BinArray *bin) {
+	for (int ii = 0; ii < backDataMaps.size(); ii++) {
+		PrintNameMap *map = backDataMaps[ii].get();
+		if (map->map->size() > 0) map->Serialize(bin);
+	}
+}
+
+
+void LOImageModule::SerializeState(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//imgo, len, version
+	bin->WriteInt3(0x6F676D69, 0, 1);
+
+	spStyle.Serialize(bin);
+	bin->WriteLOString(&spFontName);
+	sayStyle.Serialize(bin);
+	bin->WriteLOString(&sayFontName);
+	//对话框
+	sayWindow.Serialize(bin);
+	sayState.Serialize(bin);
+	//其他
+	bin->WriteLOString(&btndefStr);
+	bin->WriteInt(btnOverTime);
+	bin->WriteInt(btnUseSeOver);
+	//all sp操作
+	if (allSpList) {
+		bin->WriteInt(allSpList->size());
+		for (int ii = 0; ii < allSpList->size(); ii++) bin->WriteInt(allSpList->at(ii));
+	}
+	else bin->WriteInt(0);
+	if (allSpList2) {
+		bin->WriteInt(allSpList2->size());
+		for (int ii = 0; ii < allSpList2->size(); ii++) bin->WriteInt(allSpList2->at(ii));
+	}
+	else bin->WriteInt(0);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+void LOImageModule::LOSayWindow::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//winn, len, version
+	bin->WriteInt3(0x6E6E6977, 0, 1);
+	bin->WriteInt3(x, y, w);
+	bin->WriteInt3(h, textX, textY);
+	bin->WriteLOString(&winstr);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+void LOImageModule::LOSayState::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//wins, len, version
+	bin->WriteInt3(0x736E6977, 0, 1);
+	bin->WriteLOString(&say);
+	bin->WriteInt(flags);
+	bin->WriteInt(pageEnd);
+	//z_order和winEffect不会记录，这两个应该要跟随define的时候设置
+
+	bin->WriteInt(bin->Length() - len, &len);
 }

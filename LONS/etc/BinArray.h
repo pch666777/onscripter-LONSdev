@@ -54,6 +54,7 @@ public:
 	int WriteChar(char v,int *pos = NULL);
 	int WriteShortInt(short int v, int *pos = NULL, bool isbig = false);
 	int WriteInt(int v, int *pos = NULL, bool isbig = false);
+	int WriteInt3(int v1, int v2, int v3, int *pos = NULL, bool isbig = false);
 	int WriteInt16(int16_t v, int *pos = NULL, bool isbig = false);
 	int WriteInt32(int32_t v, int *pos = NULL, bool isbig = false);
 	int WriteInt64(int64_t v, int *pos = NULL, bool isbig = false);

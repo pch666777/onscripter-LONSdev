@@ -145,6 +145,7 @@ public:
 	static LOLayer* FindLayerInCenter(int fullid);
 	static LOLayer* GetLayer(int fullid);
 	static LOLayer* LinkLayerLeve(LOLayer *lyr);
+	static void SaveLayer(BinArray *bin);
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 

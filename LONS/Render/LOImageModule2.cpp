@@ -69,7 +69,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		printPreHook->waitEvent(1, -1);
 		printPreHook->InvalidMe();
 		//遇到程序退出
-		if (moduleState >= MODULE_STATE_EXIT) return 0;
+		if (isModuleExit()) return 0;
 	}
 	//LOLog_i("uppos0:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.

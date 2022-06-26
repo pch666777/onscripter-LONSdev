@@ -387,7 +387,7 @@ void FunctionInterface::PrintErrorStatic(LOString *err) {
 #endif
 	//显示错误信息，需要注意渲染模块不能已经退出
 	if (imgeModule && imgeModule->moduleState == MODULE_STATE_RUNNING) imgeModule->PrintError(err);
-	SetExitFlag(MODULE_STATE_ERROR);
+	//SetExitFlag(MODULE_STATE_ERROR);
 }
 
 
@@ -519,3 +519,15 @@ int FunctionInterface::RunFuncBase(LOEventHook *hook, LOEventHook *e) {
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
+
+void FunctionInterface::ChangeRunState(int s) {
+	//低4位置0
+	int high = moduleState & 0xFFFFFFF0;
+	moduleState = high | s;
+}
+
+
+void FunctionInterface::ChangeFlagState(int f) {
+	int low = moduleState & 0xf;
+	moduleState = low | f;
+}

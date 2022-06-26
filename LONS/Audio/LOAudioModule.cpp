@@ -106,7 +106,7 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 
 	SetSevol(channel, _audioVol[channel]);
 	//播放声音时降低音量
-	if ((flags & FLAGS_SEPLAY_BGMDOWN) && aue->isAvailable()) SetBGMvol(_audioVol[INDEX_MUSIC], 0.6);
+	if (isSePalyBgmDown() && aue->isAvailable()) SetBGMvol(_audioVol[INDEX_MUSIC], 0.6);
 	SetAudioElAndPlay(channel, aue);
 }
 
@@ -132,16 +132,23 @@ void musicFinished() {
 void channelFinish(int channel) {
 	LOAudioModule *au = (LOAudioModule*)(FunctionInterface::audioModule);
 	au->channelFinish_t(channel);
-	//0频道绑定了按钮超时事件
-	if (au->isSeCallBack() && (channel == 0 || au->isAllChannelCallBack() )) {
-
-	}
 }
 
+
 void LOAudioModule::channelFinish_t(int channel) {
+	//注意回调既不在脚本线程，也不在渲染线程，是另外的线程，线程安全比较重要
 	LOAudioElement *aue = GetAudioEl(channel);
 	if (aue) delete aue;
-	if (flags & FLAGS_SEPLAY_BGMDOWN) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
+	if (isSePalyBgmDown()) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
+
+	//0频道绑定了按钮超时事件
+	if ((isChannelZeroEv() && channel == 0) || isChannelALLEv()) {
+		LOShareEventHook ev(LOEventHook::CreateSePalyFinishEvent(channel));
+		if (moduleState == MODULE_STATE_SUSPEND) {
+
+		}
+	}
+
 }
 
 

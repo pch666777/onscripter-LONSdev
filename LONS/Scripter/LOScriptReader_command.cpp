@@ -11,6 +11,8 @@
 #define M_PI 3.14159265358979323846264338327950288   /**< pi */
 #endif // !M_PI
 
+extern void LonsSaveLayer(BinArray *bin);
+extern void LonsSaveImageModule(BinArray *bin);
 
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -143,9 +145,9 @@ int LOScriptReader::defsubCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::endCommand(FunctionInterface *reader) {
-	scriptModule->moduleState = MODULE_STATE_EXIT;
-	audioModule->ResetMe();
-	imgeModule->moduleState = MODULE_STATE_EXIT;
+	//scriptModule->moduleState = MODULE_STATE_EXIT;
+	//audioModule->ResetMe();
+	//imgeModule->moduleState = MODULE_STATE_EXIT;
 	return RET_RETURN;
 }
 
@@ -828,27 +830,42 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
-	//暂停渲染
+	//音频、渲染模块进入save模式，不要调整这几个的顺序
+	audioModule->ChangeFlagState(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+	imgeModule->ChangeFlagState(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+	scriptModule->ChangeRunState(MODULE_STATE_SAVING);
 
-	UpdataGlobleVariable();
-	return RET_VIRTUAL;   //返回这个值可以继续调用其他模块的同名重载函数
+	//做一些初始化工作
+	LOIO::InitLPKStream(GloSaveFS);
+
+	//等待img进入saving
+	while (!imgeModule->isStateSaving()) {
+		//延迟1ms
+		G_PrecisionDelay(1);
+	}
+
+	//更新全局变量
+	if (st_globalon) UpdataGlobleVariable();
+	//存储变量
+	if(st_globalon) ONSVariableBase::SaveOnsVar(GloSaveFS, gloableMax, MAXVARIABLE_COUNT - gloableMax);
+	else ONSVariableBase::SaveOnsVar(GloSaveFS, 0, MAXVARIABLE_COUNT);
+	//存储图层
+	LonsSaveLayer(GloSaveFS);
+	//存储渲染模块
+	LonsSaveImageModule(GloSaveFS);
+	//存储脚本模块
+
+	//存储音频模块
+
+	//UpdataGlobleVariable();
+	return RET_CONTINUE;   //返回这个值可以继续调用其他模块的同名重载函数
 }
 
 //将全局变量写入到全局变量流中
 void LOScriptReader::UpdataGlobleVariable() {
 	//初始化格式
 	LOIO::InitLPKStream(GloVariableFS);
-	//GVAR
-	GloVariableFS->WriteInt(0x52415647);
-	//GVAR version
-	GloVariableFS->WriteInt(1);
-	//起点
-	GloVariableFS->WriteInt(0);
-	//数量
-	GloVariableFS->WriteInt(gloableMax);
-	for (int ii = 0; ii < gloableMax; ii++) {
-		GNSvariable[ii].Serialization(GloVariableFS, ii);
-	}
+	ONSVariableBase::SaveOnsVar(GloVariableFS, 0, gloableMax);
 }
 
 
@@ -920,14 +937,14 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 
 //reset的时候必须小心切断所有模块之间的联系
 int LOScriptReader::resetCommand(FunctionInterface *reader) {
-	scriptModule->moduleState |= MODULE_STATE_RESET;
-	imgeModule->moduleState |= MODULE_STATE_RESET;
-	audioModule->ResetMe();
-	//这里需要等待一下渲染线程置为nouse，不然有可能渲染线程还在尝试读取文件
-	while (imgeModule->moduleState != MODULE_STATE_NOUSE) {
-		SDL_Delay(1);
-	}
-	fileModule->ResetMe();
+	//scriptModule->moduleState |= MODULE_STATE_RESET;
+	//imgeModule->moduleState |= MODULE_STATE_RESET;
+	//audioModule->ResetMe();
+	////这里需要等待一下渲染线程置为nouse，不然有可能渲染线程还在尝试读取文件
+	//while (imgeModule->moduleState != MODULE_STATE_NOUSE) {
+	//	SDL_Delay(1);
+	//}
+	//fileModule->ResetMe();
 	return RET_CONTINUE;
 }
 

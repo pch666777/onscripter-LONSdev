@@ -31,6 +31,18 @@ void LOTextStyle::reset() {
 	fontColor = { 255,255,255,255 };
 }
 
+void LOTextStyle::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//styl, len, version
+	bin->WriteInt3(0x6C797473, 0, 1);
+	int16_t temp[] = {xcount ,ycount ,xsize ,ysize ,xspace ,yspace ,textIndent ,xshadow ,yshadow ,xruby ,yruby };
+	bin->Append((char*)temp, sizeof(int16_t) * 11);
+	bin->WriteInt(flags);
+	bin->Append((char*)(&fontColor.r), 4);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
 //================================================
 
 //LOTextDescribe::LOTextDescribe() {

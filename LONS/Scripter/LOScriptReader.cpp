@@ -142,22 +142,23 @@ int LOScriptReader::MainTreadRunning() {
 		PrintError("LOScriptReader::MainTreadRunning() must run at main scriptReader!");
 		return -1;
 	}
+
+	ChangeRunState(MODULE_STATE_RUNNING);
 	//开始之前先读取全局变量
 	ReadGlobleVarFile();
 
-	moduleState = MODULE_STATE::MODULE_STATE_RUNNING;
 	const char* lables[] = { "define" , "start" };
-
 	int ret = RET_CONTINUE;
 	sectionState = SECTION_DEFINE;
 	activeReader = this;
-	while (moduleState <= MODULE_STATE::MODULE_STATE_RESET) {
+
+	//section循环
+	while (!isModuleExit()) {
 		LOString lable(lables[sectionState]);
 		if (!ReadyToRun(&lable, LOScriptPoint::CALL_BY_NORMAL))return -1;
 
-		//轮询脚本
-		//isAddLine = true;
-		while (moduleState < MODULE_STATE::MODULE_STATE_RESET) {
+		//============轮询循环===========================
+		while (!isModuleExit() && !isModuleReset()) {
 
 			ret = activeReader->ContinueRun();
 			if (ret == RET_RETURN && activeReader->isEndSub()) {  //某个脚本返回
@@ -172,23 +173,23 @@ int LOScriptReader::MainTreadRunning() {
 
 			if (!activeReader) activeReader = this;
 		}
+		//============轮询循环==结束=======================
 
-		//=*****************==//
-
-		if (moduleState & MODULE_STATE_RESET) { //重置，到这一步说明其他模块已经重置完成了
-			ResetMe();
-			//清理所有的事件队列
-			//G_ClearAllEventSlots();
-			//清理所有的变量
-			ONSVariableBase::ResetAll();
-			moduleState = MODULE_STATE_NOUSE;
-			//等待渲染模块重置
-			while (imgeModule->moduleState != MODULE_STATE_RUNNING) {
-				SDL_Delay(1);
-			}
-			//完成重置，恢复其他模块的可操作性
-			audioModule->ResetMeFinish();
-			moduleState = MODULE_STATE_RUNNING;
+		//决定下一步的操作模式，是下一个section，还是重置，还是退出
+		if (isModuleReset()) { //重置，到这一步说明其他模块已经重置完成了
+			//ResetMe();
+			////清理所有的事件队列
+			////G_ClearAllEventSlots();
+			////清理所有的变量
+			//ONSVariableBase::ResetAll();
+			//moduleState = MODULE_STATE_NOUSE;
+			////等待渲染模块重置
+			//while (imgeModule->moduleState != MODULE_STATE_RUNNING) {
+			//	SDL_Delay(1);
+			//}
+			////完成重置，恢复其他模块的可操作性
+			//audioModule->ResetMeFinish();
+			//moduleState = MODULE_STATE_RUNNING;
 			sectionState = SECTION_DEFINE;
 		}
 		else {
@@ -198,8 +199,11 @@ int LOScriptReader::MainTreadRunning() {
 
 		//=*****************==//
 	}
-
+	//--------------------------------------//
 	//退出之前保存全局变量、文件读取列表等
+	//没有错误才保存
+	if (isModuleError()) return  -1;
+
 	if(st_labellog) WriteLog(FunctionInterface::LOGSET_LABELLOG);
 	if (st_globalon) {
 		UpdataGlobleVariable();
@@ -207,11 +211,7 @@ int LOScriptReader::MainTreadRunning() {
 	}
 	//保存环境
 	LonsSaveEnvData();
-
-	if (moduleState & MODULE_STATE::MODULE_STATE_ERROR) return -1;
-	else {
-		return 0;
-	}
+	return 0;
 } 
 
 

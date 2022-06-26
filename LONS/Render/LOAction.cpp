@@ -18,6 +18,12 @@ void LOAction::setEnble(bool enble) {
 	else flags &= (~FLAGS_ENBLE);
 }
 
+void LOAction::Serialize(BinArray *bin) {
+	//animi, acType, loopmode
+	bin->WriteInt3(0x6D696E61, acType, loopMode);
+	bin->WriteInt3(lastTime, gVal, flags);
+}
+
 //=========================
 
 LOActionNS::LOActionNS() {
@@ -33,6 +39,15 @@ void LOActionNS::setSameTime(int32_t t, int count) {
 	for (int ii = 0; ii < count; ii++) cellTimes.push_back(t);
 }
 
+void LOActionNS::Serialize(BinArray *bin) {
+	LOAction::Serialize(bin);
+	bin->WriteShortInt(cellCount);
+	bin->WriteChar((char)cellForward);
+	bin->WriteChar((char)cellCurrent);
+	bin->WriteInt(cellTimes.size());
+	for (int ii = 0; ii < cellTimes.size(); ii++) bin->WriteInt(cellTimes.at(ii));
+}
+
 //========================
 
 LOActionText::LOActionText() {
@@ -40,4 +55,16 @@ LOActionText::LOActionText() {
 }
 
 LOActionText::~LOActionText() {
+}
+
+void LOActionText::Serialize(BinArray *bin) {
+	//animi, acType, loopmode
+	LOAction::Serialize(bin);
+	bin->WriteShortInt(currentPos);
+	bin->WriteShortInt(initPos);
+	bin->WriteShortInt(loopDelay);
+	bin->WriteDouble(perPix);
+	//hook只记录必要的内容
+	//bin->WriteInt(hook->GetParam(0)->GetInt());
+	bin->WriteInt(0);
 }

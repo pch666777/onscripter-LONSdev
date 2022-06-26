@@ -32,24 +32,12 @@ public:
 		//TEXTURE_DESCRIBE,
 	};
 
-	//enum {
-	//	PRE_EVENT_PREPRINTOK = 1,
-	//	PRE_EVENT_EFFECTCONTIUE,
-	//	PRE_EVENT_TEXTFINISH,
-	//};
-
 	enum {
 		IMG_EFFECT_NONE,
 		IMG_EFFECT_MONO,  //黑白
 		IMG_EFFECT_INVERT, //反色
 		IMG_EFFECT_USECOLOR  //着色
 	};
-
-	//enum {
-	//	DISPLAY_MODE_NORMAL = 0,
-	//	DISPLAY_MODE_TEXT = 1,
-	//	//DISPLAY_MODE_AFTERCLEAR = 4,
-	//};
 
 	enum {
 		PARAM_BGCOPY = 1723 ,
@@ -74,6 +62,8 @@ public:
 			delete mapName;
 			delete map;
 		}
+
+		void Serialize(BinArray *bin);
 	};
 
 	//对话框描述
@@ -91,6 +81,9 @@ public:
 			h = G_gameHeight;
 			winstr.clear();
 		}
+
+		void Serialize(BinArray *bin);
+
 	};
 
 	//对话框的状态
@@ -136,6 +129,7 @@ public:
 		bool isWindowChange() { return flags & FLAGS_WINDOW_CHANGE; }
 		void setFlags(int f) { flags |= f; }
 		void unSetFlags(int f) { flags &= (~f); }
+		void Serialize(BinArray *bin);
 	};
 
 
@@ -155,9 +149,6 @@ public:
 	std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
 
 	bool breakflag = false;
-	//bool dialogWinHasChange;
-	//bool dialogTextHasChange;
-	//LOString dialogText; //当前显示的文本
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 		//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
 	std::vector<LOShareEventHook> preEventList;
@@ -165,15 +156,6 @@ public:
 	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
 
 	void ClearBtndef(const char *printName);
-
-	
-
-	//新建一个图层数据
-	//LOLayerData* CreateLayerData(int fullid, const char *printName);
-	//LOLayerData* GetOrCreateLayerData(int fullid, const char *printName);
-	//LOLayerData* GetLayerData(int fullid, const char *printName);
-	////要读取数据，因此获取图层信息时，没有新文件则取前台，否则取后台
-	//LOLayerData* GetInfoLayerData(int fullid, const char *printName);
 
 	LOLayerData* CreateNewLayerData(int fullid, const char *printName);
 	LOLayerData* CreateLayerBakData(int fullid, const char *printName);
@@ -184,8 +166,6 @@ public:
 
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
 	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);
-
-
 
 	LOtexture* ScreenShot(int x, int y, int w, int h, int dw, int dh);
 	void ScreenShotCountinue(LOEventHook *e);
@@ -225,7 +205,10 @@ public:
 	intptr_t GetSDLRender() { return (intptr_t)render; }
 	void PrintError(LOString *err);
 	void ResetMe();
-	//void InfoCaheSerialize(BinArray *sbin);
+	//序列化print执行队列
+	void SerializePrintQue(BinArray *bin);
+	//序列化渲染模块的状态
+	void SerializeState(BinArray *bin);
 
 	int lspCommand(FunctionInterface *reader);
 	int printCommand(FunctionInterface *reader);

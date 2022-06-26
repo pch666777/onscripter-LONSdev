@@ -443,19 +443,13 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 
 void LOLayer::Serialize(BinArray *sbin) {
-	//fullid--当前信息--childs数量--child
-	/*
-	sbin->WriteString("layer");
-	sbin->WriteInt(layerType);
-	sbin->WriteInt(id[0]);
-	sbin->WriteInt(id[1]);
-	sbin->WriteInt(id[2]);
-	curInfo->Serialize(sbin);
-	sbin->WriteInt(childs->size());
-	for (auto iter = childs->begin(); iter != childs->end(); iter++) {
-		iter->second->Serialize(sbin);
-	}
-	*/
+	//'lyr ',version, fullid
+	sbin->WriteInt3(0x2072796C, 1, data->fullid);
+	//是否link
+	if (parent) sbin->WriteInt(1);
+	else sbin->WriteInt(0);
+	//data
+	data->Serialize(sbin);
 }
 
 
@@ -835,3 +829,28 @@ int LOLayer::GetSelfChildID() {
 //bool LOLayer::setActive(bool isactive) {
 //
 //}
+
+//操作接口
+void LonsSaveLayer(BinArray *bin) {
+	LOLayer::SaveLayer(bin);
+}
+
+//存储所有layerCenter中的文件
+void LOLayer::SaveLayer(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//LYRS,len, version
+	bin->WriteInt3(0x5352594C, 0, 1);
+	bin->WriteInt(layerCenter.size());
+
+	//从图层中心获取图层
+	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
+		auto childs = iter->second->childs;
+		if (childs) {
+			for (auto iter = childs->begin(); iter != childs->end(); iter++) {
+				iter->second->Serialize(bin);
+			}
+		}
+	}
+
+	bin->WriteInt(bin->Length() - len, &len);
+}

@@ -259,6 +259,15 @@ LOEventHook* LOEventHook::CreateLayerAnswer(int answer, void *lyr) {
 }
 
 
+LOEventHook* LOEventHook::CreateSePalyFinishEvent(int channel) {
+	auto *e = CreateHookBase();
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_SE_PLAYFINISH;
+	e->PushParam(new LOVariant(channel));
+	return e;
+}
+
+
 //高精度延迟，阻塞线程，CPU维持在高使用率
 void G_PrecisionDelay(double t) {
 	Uint64 hightTimeNow, perHtickTime = SDL_GetPerformanceFrequency() / 1000;

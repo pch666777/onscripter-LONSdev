@@ -160,6 +160,7 @@ public:
 	void setFlags(int f) { useflag |= f; }
 	void unSetFlags(int f) { useflag &= (~f); }
 	bool isTextAction() { return useflag & USE_TEXTACTION_MOD; }
+	bool isTextTexture() { if (textData) return true; else return false; }
 	void SaveSurface(LOString *fname) ;  //debug use
 
 	SDL_Surface *getSurface();

@@ -161,15 +161,26 @@ int ONSVariableBase::ArrayCount() {
 }
 
 
+void ONSVariableBase::SaveOnsVar(BinArray *bin, int from, int count) {
+	//GVAR
+	bin->WriteInt(0x52415647);
+	//GVAR version
+	bin->WriteInt(1);
+	//起点
+	bin->WriteInt(from);
+	//数量
+	bin->WriteInt(count);
+	for (int ii = from; ii < count; ii++) {
+		GNSvariable[ii].Serialization(bin, ii);
+	}
+}
+
+
 //序列化
 void ONSVariableBase::Serialization(BinArray *bin, int vid) {
-	//写入标记 onsv
-	bin->WriteInt(0x76736E6F);
-	//要写入长度
-	int pos = bin->Length();
-	bin->WriteInt(0);
-	//写入ID
-	bin->WriteInt(vid);
+	int len = bin->Length() + 4;
+	//onsv,len,vid
+	bin->WriteInt3(0x76736E6F, 0, vid);
 	//value
 	bin->WriteDouble(value);
 	//string
@@ -183,7 +194,7 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 	}
 
 	//收尾长度，这样及时之后有改也能顺利到底下一个位置
-	bin->WriteInt(bin->Length() - pos, &pos);
+	bin->WriteInt(bin->Length() - len, &len);
 }
 
 //反序列化

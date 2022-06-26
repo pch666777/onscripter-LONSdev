@@ -95,9 +95,8 @@ void LOIO::ReadBytes(BinArray *&bin, FILE *f, int position, int length) {
 
 void LOIO::InitLPKStream(BinArray *bin) {
 	bin->Clear(false);
-	bin->WriteInt(0x534B504C);  //LPKS
-	bin->WriteInt(1);           //version
-	bin->WriteInt(0);   //预留
+	//LPKS,version,预留
+	bin->WriteInt3(0x534B504C, 1, 0);
 	bin->WriteInt(0);   //预留
 }
 

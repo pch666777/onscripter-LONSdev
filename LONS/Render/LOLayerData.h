@@ -47,6 +47,7 @@ public:
 	void resetBase();
 	LOAction* GetAction(int t);
 	int GetCellCount();
+	void Serialize(BinArray *bin);
 
 	//属性设置的目标应该是明确的
 	inline bool isShowScale() { return showType & SHOW_SCALE; }
@@ -242,6 +243,8 @@ public:
 
 	//将动画的初始信息同步到layerinfo上
 	void UpdataToForce();
+
+	void Serialize(BinArray *bin);
 private:
 	bool isinit;
 };

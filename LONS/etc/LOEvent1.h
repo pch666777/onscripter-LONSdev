@@ -84,6 +84,7 @@ public:
 		FUN_SCREENSHOT,
 		FUN_PRE_EFFECT,
 		FUN_CONTINUE_EFF,
+		FUN_SE_PLAYFINISH,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
@@ -149,6 +150,8 @@ public:
 	static LOEventHook* CreateTextHook(int pageEnd, int hash);
 	//创建一个图层相应事件
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
+	//创建一个se播放完成事件
+	static LOEventHook* CreateSePalyFinishEvent(int channel);
 private:
 	bool upState(int sa);
 	//参数表

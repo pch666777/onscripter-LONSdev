@@ -76,13 +76,29 @@ public:
 
 	//用比特位表示各个模块的状态
 	enum MODULE_STATE {
+		//低4表示运行状态，0为没有在使用，1正在运行，2正在saving，4已经挂起
 		MODULE_STATE_NOUSE = 0,
 		MODULE_STATE_RUNNING = 1,
-		MODULE_STATE_SUSPEND = 2,     //挂起，多表示在脚本模块中，表示正则轮询其他脚本线程，脚本本身还是在工作的
-		MODULE_STATE_LOAD = 0x08000000, 
-		MODULE_STATE_RESET = 0x10000000,
-		MODULE_STATE_EXIT = 0x20000000,
-		MODULE_STATE_ERROR = 0x40000000
+		MODULE_STATE_SAVING = 2,
+		//模块已经挂起，对于不同的模块有不同的意义
+		//对于脚本模块，表示正在轮询其他脚本线程
+		//对于渲染模块，表示已经暂停染指，正在处理save事件
+		//对于音频模块，将不在发生任何播放完成事件，
+		MODULE_STATE_SUSPEND = 4,
+
+		//其他为功能性标记位
+		//状态切换标记，模块检查到此标记将会转到状态切换函数
+		MODULE_FLAGE_CHANNGE = 0x400,
+		//读取存档标记
+		MODULE_FLAGE_LOAD = 0x800,
+		//存档标记
+		MODULE_FLAGE_SAVE = 0x1000,
+		//重置标记
+		MODULE_FLAGE_RESET = 0x2000,
+		//退出标记
+		MODULE_FLAGE_EXIT = 0x4000,
+		//错误标记
+		MODULE_FLAGE_ERROR = 0x8000
 	};
 
 	////本质上就是一个大型状态机，将需要设置的状态集中起来，便于管理
@@ -169,6 +185,17 @@ public:
 	double GetParamDoublePer(int index);
 	int GetParamCount();
 	bool CheckTimer(LOEventHook *e, int waittmer);
+
+	void ChangeRunState(int s);
+	void ChangeFlagState(int f);
+	bool isStateChange() { return moduleState & MODULE_FLAGE_CHANNGE; }
+	bool isModuleExit() { return moduleState & MODULE_FLAGE_EXIT; }
+	bool isModuleReset() { return moduleState & MODULE_FLAGE_RESET; }
+	bool isModuleSaving() { return moduleState & MODULE_FLAGE_SAVE; }
+	bool isStateSaving() { return moduleState & MODULE_STATE_SAVING; }
+	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
+	bool isModuleNoUse() { return moduleState & MODULE_STATE_NOUSE; }
+	bool isModuleError() { return moduleState & MODULE_FLAGE_ERROR; }
 
 	static LOString StringFormat(int max, const char *format, ...);
 

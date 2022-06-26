@@ -51,6 +51,7 @@ public:
 	~LOTextStyle();
 
 	void reset();
+	void Serialize(BinArray *bin);
 
 	int16_t xcount; //横向文字数
 	int16_t ycount; //纵向文字数

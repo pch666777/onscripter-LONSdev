@@ -25,10 +25,10 @@ public:
 	};
 	enum {
 		FLAGS_SEPLAY_BGMDOWN = 1,
-		//是否产生se播放完成的回调信号，有捕获事件需求时才产生回调信号
-		FLAGS_SEND_PALYFINISH = 2,
-		//是否所有的channel都产生回调信号，默认只有0通道才产生
-		FLAGS_SEND_ALLChANNEL = 4,
+		//0通道播放完成事件
+		FLAGS_SE_SIGNAL_ZERO = 2,
+		//所有通道播放完成事件
+		FLAGS_SE_SIGNAL_ALL = 4,
 	};
 
 	LOString afterBgmName;
@@ -36,10 +36,14 @@ public:
 
 	void SetFlags(int f) { flags |= f; }
 	void UnsetFlags(int f) { flags &= (~f); }
-	bool isSeCallBack() { return flags & FLAGS_SEND_PALYFINISH; }
-	bool isAllChannelCallBack() { return flags & FLAGS_SEND_ALLChANNEL; }
+	bool isChannelZeroEv() { return flags & FLAGS_SE_SIGNAL_ZERO; }
+	bool isChannelALLEv() { return flags & FLAGS_SE_SIGNAL_ALL; }
+	bool isSePalyBgmDown() { return flags & FLAGS_SEPLAY_BGMDOWN; }
+
 	void ResetMe();
 	void ResetMeFinish();
+
+
 	void PlayAfter();
 	void channelFinish_t(int channel);
 	
@@ -66,7 +70,6 @@ private:
 	int bgmFadeInTime;
 	int bgmFadeOutTime;
 	int currentChannel;
-	//bool bgmDownFlag;
 	int flags;
 
 	//每次播放都新建一个LOAudioElement，因此设置，读取时必须加锁

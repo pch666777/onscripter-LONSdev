@@ -272,6 +272,43 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 	dst->w = texture->baseW(); dst->h = texture->baseH();
 }
 
+void LOLayerDataBase::Serialize(BinArray *bin) {
+	//长度记录在标记之后
+	int len = bin->Length() + 4;
+	//base,len,version
+	bin->WriteInt3(0x65736162, 0, 1);
+
+	bin->WriteInt3(flags, upflags, upaction);
+	bin->WriteInt(btnval);
+
+	int16_t vals[] = {offsetX ,offsetY ,alpha ,centerX ,centerY ,showSrcX ,showSrcY,(int16_t)showWidth ,(int16_t)showHeight };
+	bin->Append((char*)vals, 9 * 2);
+	uint8_t bytes[] = { cellNum ,alphaMode ,texType ,showType };
+	bin->Append((char*)bytes, 4);
+
+	bin->WriteDouble(scaleX);
+	bin->WriteDouble(scaleY);
+	bin->WriteDouble(rotate);
+
+	bin->WriteLOString(btnStr.get());
+	bin->WriteLOString(buildStr.get());
+	//文字纹理需要存储样式
+	if (texture && texture->isTextTexture()) {
+		texture->textData->style.Serialize(bin);
+	}
+	bin->WriteInt(0);
+
+	//action
+	if (actions) {
+		bin->WriteInt(actions->size());
+		for (int ii = 0; ii < actions->size(); ii++) actions->at(ii)->Serialize(bin);
+	}
+	else bin->WriteInt(0);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
 //=================================
 
 LOLayerData::LOLayerData() {
@@ -449,4 +486,17 @@ void LOLayerData::UpdataToForce() {
 	if (bak.upflags & LOLayerDataBase::UP_VISIABLE) cur.SetVisable(bak.isVisiable());
 	cur.flags |= LOLayerDataBase::FLAGS_ISFORCE;
 	bak.resetBase();
+}
+
+
+void LOLayerData::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//data, len, version
+	bin->WriteInt3(0x61746164, 0, 1);
+	//fullid
+	bin->WriteInt(fullid);
+	cur.Serialize(bin);
+	bak.Serialize(bin);
+
+	bin->WriteInt(bin->Length() - len, &len);
 }
