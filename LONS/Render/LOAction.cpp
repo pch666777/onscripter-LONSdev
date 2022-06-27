@@ -41,7 +41,7 @@ void LOActionNS::setSameTime(int32_t t, int count) {
 
 void LOActionNS::Serialize(BinArray *bin) {
 	LOAction::Serialize(bin);
-	bin->WriteShortInt(cellCount);
+	bin->WriteInt16(cellCount);
 	bin->WriteChar((char)cellForward);
 	bin->WriteChar((char)cellCurrent);
 	bin->WriteInt(cellTimes.size());
@@ -60,9 +60,9 @@ LOActionText::~LOActionText() {
 void LOActionText::Serialize(BinArray *bin) {
 	//animi, acType, loopmode
 	LOAction::Serialize(bin);
-	bin->WriteShortInt(currentPos);
-	bin->WriteShortInt(initPos);
-	bin->WriteShortInt(loopDelay);
+	bin->WriteInt16(currentPos);
+	bin->WriteInt16(initPos);
+	bin->WriteInt16(loopDelay);
 	bin->WriteDouble(perPix);
 	//hook只记录必要的内容
 	//bin->WriteInt(hook->GetParam(0)->GetInt());

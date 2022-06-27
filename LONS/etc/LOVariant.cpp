@@ -174,3 +174,9 @@ void* LOVariant::GetPtr() {
 	if (sizeof(intptr_t) == 4) return (void*)(val & 0xffffffff);
 	else return (void*)val;
 }
+
+
+int LOVariant::GetDataLen() {
+	if (!bytes) return 0;
+	return *(int32_t*)bytes;
+}

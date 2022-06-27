@@ -1,5 +1,15 @@
 #include "BinArray.h"
 
+char BinArray::litte[2] = { 1,2 };
+
+//大端顺位，小端逆位
+#define ISBIG *(int16_t*)litte==0x0102
+
+//快速交换
+#define XCHANGE2 val=((val&0xff)<<8)|((val&0xff00)>>8)
+#define XCHANGE3 val=((val&0xff)<<16)|((val&0xff0000)>>16)|(val&0xff00)
+#define XCHANGE4 val=((val&0xff)<<24)|((val&0xff00)<<8)|(val>>24)|((val&0x00ff0000)>>8)
+
 BinArray::BinArray(int prepsize, bool isstream){
 	NewSelf(prepsize, isstream);
 }
@@ -75,17 +85,25 @@ void BinArray::GetCharIntArray(char *buf, int len, int *pos, bool isbig) {
 
 //将数据写入字节集
 void BinArray::WriteCharIntArray(char *buf, int len, int *pos, bool isbig) {
-	if (len > 1) {
-		bool machineBigen = false;
-		char test[] = { 11,22 };
-		if (*(uint16_t*)(test) == 0x1122) machineBigen = true;
-		if (!isbig && machineBigen) ReverseBytes(buf, len); //机器是大端要求写小端
-		if (isbig && !machineBigen) ReverseBytes(buf, len);  //机器是小端要求写大端
+	int tpos = realLen;
+	if (!pos) pos = &tpos;
+	char *nbuf = nullptr;
+
+	//检查是否需要交换值，大小端设置不匹配均需要交换值
+	if (len > 1 && isbig != (ISBIG)) {
+		//反正字节
+		nbuf = new char[len];
+		for (int ii = 0; ii < len; ii++) nbuf[ii] = buf[(len - 1) - ii];
 	}
+
+	//检查长度，复制
 	if ( (*pos) + len > prepLen) AddMemory(len);
-	memcpy(bin + (*pos), buf, len);
+	if(nbuf) memcpy(bin + (*pos), nbuf, len);
+	else memcpy(bin + (*pos), buf, len);
 	(*pos) += len;
 	if ( *pos > realLen) realLen = *pos;
+
+	if (nbuf) delete[] nbuf;
 }
 
 
@@ -223,95 +241,52 @@ void BinArray::Append(BinArray *v) {
 
 
 int BinArray::WriteChar(char v, int *pos) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
 	WriteCharIntArray(&v, 1, pos, false);
 	return 1;
 }
 
-int BinArray::WriteShortInt(short int v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
-}
-
 int BinArray::WriteInt(int v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
 	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
 	return sizeof(v);
 }
 
 
 int BinArray::WriteInt3(int v1, int v2, int v3, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
 	int val[] = { v1,v2,v3 };
 	WriteCharIntArray((char*)(val), sizeof(int) * 3, pos, isbig);
 	return sizeof(int) * 3;
 }
 
 int BinArray::WriteInt16(int16_t v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
+	WriteCharIntArray((char*)(&v), 2, pos, isbig);
+	return 2;
 }
 
 int BinArray::WriteInt32(int32_t v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
+	WriteCharIntArray((char*)(&v), 4, pos, isbig);
+	return 4;
 }
 
 int BinArray::WriteInt64(int64_t v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
+	WriteCharIntArray((char*)(&v), 8, pos, isbig);
+	return 8;
 }
 
 int BinArray::WriteFloat(float v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
 	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
 	return sizeof(v);
 }
 
 int BinArray::WriteDouble(double v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
 	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
 	return sizeof(v);
 }
 
 int BinArray::WriteBool(bool v, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
+	WriteCharIntArray((char*)(&v), 1, pos, isbig);
+	return 1;
 }
 
-//int BinArray::WriteString(std::string *v, int *pos, bool isbig) {
-//	int tpos = realLen;
-//	if (!pos) pos = &tpos;
-//
-//	int len;
-//	if (!v || v->length() == 0) { //空字符串或者长度为0
-//		WriteChar(0, pos);
-//		len = 1; 
-//	}
-//	else {
-//		len = v->length() + 1;
-//		if (*pos + len > prepLen) AddMemory(len);
-//		memcpy(bin + (*pos), v->c_str(), len);
-//		*pos += len;
-//		if (*pos > realLen) realLen = *pos;
-//	}
-//	return len;
-//}
 
 int BinArray::WriteString(const char *buf, int *pos, bool isbig) {
 	int tpos = realLen;
@@ -344,23 +319,27 @@ int BinArray::WriteLOString(LOString *v, int *pos) {
 }
 
 
-/*
-BinArray* BinArray::ReadFromFile(const char* name) {
-	FILE *f = fopen(name, "rb");
-	if (!f) return NULL;
-	fseek(f, 0, SEEK_END);
-	int len = ftell(f);
-	BinArray *sbin = new BinArray(len + BIN_PREPLEN, false);
-	int clen = 0;
-	while (clen < len) {
-		fseek(f, clen, SEEK_SET);
-		clen += fread(sbin->bin + clen, 1, len - clen, f);
+int BinArray::WriteLOVariant(LOVariant *v, int *pos) {
+	int tpos = realLen;
+	if (!pos) pos = &tpos;
+
+	int len = 0;
+	if (v) len = v->GetDataLen();
+	//空
+	if (len == 0) {
+		WriteChar(0, pos);
+		return 1;
 	}
-	fclose(f);
-	sbin->realLen = len;
-	return sbin;
+	else {
+		if (*pos + len > prepLen) AddMemory(len);
+		memcpy(bin + (*pos), v->GetDataPtr(), len);
+		*pos += len;
+		if (*pos > realLen) realLen = *pos;
+	}
+	return len;
 }
-*/
+
+
 BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
 	//长度不因大于文件的长度
 	fseek(f, 0, SEEK_END);

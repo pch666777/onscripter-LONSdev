@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string>
 #include "LOString.h"
+#include "LOVariant.h"
 
 //默认是Little Endian模式的
 class BinArray
@@ -52,7 +53,6 @@ public:
 	void Append(BinArray *v);
 
 	int WriteChar(char v,int *pos = NULL);
-	int WriteShortInt(short int v, int *pos = NULL, bool isbig = false);
 	int WriteInt(int v, int *pos = NULL, bool isbig = false);
 	int WriteInt3(int v1, int v2, int v3, int *pos = NULL, bool isbig = false);
 	int WriteInt16(int16_t v, int *pos = NULL, bool isbig = false);
@@ -64,6 +64,7 @@ public:
 	//int WriteString(std::string *v, int *pos = NULL, bool isbig = false);
 	int WriteString(const char *buf, int *pos = NULL, bool isbig = false);
 	int WriteLOString(LOString *v, int *pos = NULL);
+	int WriteLOVariant(LOVariant *v, int *pos = NULL);
 
 
 	int WriteFillEmpty(int len, int *pos = NULL);
@@ -77,6 +78,8 @@ private:
 	enum {
 		BIN_PREPLEN = 20
 	};
+	//检测是大端还是小端的标记
+	static char litte[2];
 
 	uint32_t realLen;  //实际使用的长度，指读写到的位置
 	uint32_t prepLen;  //准备使用的长度

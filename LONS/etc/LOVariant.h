@@ -9,6 +9,8 @@
 #include <string>
 #include "LOString.h"
 
+//前4字节：总长度，第5字节：类型 ，第6字节：数据
+
 class LOVariant{
 public:
 	enum {
@@ -65,6 +67,10 @@ public:
 	std::string GetString();
 	LOString GetLOString();
 	void* GetPtr();
+
+	//获取原始数据及长度
+	uint8_t* GetDataPtr() { return bytes; }
+	int GetDataLen();
 private:
 	enum {
 		CFG_RECORED = 4,   //类型
