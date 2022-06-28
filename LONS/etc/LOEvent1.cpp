@@ -372,3 +372,9 @@ void LOEventQue::clear() {
 	highList.clear();
 	_mutex.unlock();
 }
+
+
+//存储全局的hook
+void LonsSaveGHook(BinArray *bin) {
+
+}

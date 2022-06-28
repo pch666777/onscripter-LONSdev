@@ -87,23 +87,23 @@ void BinArray::GetCharIntArray(char *buf, int len, int *pos, bool isbig) {
 void BinArray::WriteCharIntArray(char *buf, int len, int *pos, bool isbig) {
 	int tpos = realLen;
 	if (!pos) pos = &tpos;
-	char *nbuf = nullptr;
+
+	//检查长度，增加长度
+	if ((*pos) + len > prepLen) AddMemory(len);
 
 	//检查是否需要交换值，大小端设置不匹配均需要交换值
 	if (len > 1 && isbig != (ISBIG)) {
+		//最多应该是8个字节
+		char nbuf[8];
 		//反正字节
-		nbuf = new char[len];
 		for (int ii = 0; ii < len; ii++) nbuf[ii] = buf[(len - 1) - ii];
+		memcpy(bin + (*pos), nbuf, len);
 	}
-
-	//检查长度，复制
-	if ( (*pos) + len > prepLen) AddMemory(len);
-	if(nbuf) memcpy(bin + (*pos), nbuf, len);
 	else memcpy(bin + (*pos), buf, len);
+
+
 	(*pos) += len;
 	if ( *pos > realLen) realLen = *pos;
-
-	if (nbuf) delete[] nbuf;
 }
 
 
