@@ -120,6 +120,27 @@ void LOEventHook::ClearParam() {
 }
 
 
+void LOEventHook::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//even,len, version
+	bin->WriteInt3(0x6E657665, 0, 1);
+	//自身的指针作为识别ID，在反序列化时有用
+	bin->WriteInt64((int64_t)this);
+	bin->WriteInt32(catchFlag);
+	bin->WriteInt32(evType);
+	//时间记录的是时间戳跟当前的差值
+	bin->WriteInt32((int32_t)(SDL_GetTicks() - timeStamp));
+	bin->WriteInt16(param1);
+	bin->WriteInt16(param2);
+	bin->WriteInt(state.load());
+	//参数列表
+	bin->WriteInt(paramList.size());
+	for (int ii = 0; ii < paramList.size(); ii++) bin->WriteLOVariant(paramList.at(ii));
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
 	e->timeStamp = SDL_GetTicks();
@@ -374,7 +395,17 @@ void LOEventQue::clear() {
 }
 
 
-//存储全局的hook
-void LonsSaveGHook(BinArray *bin) {
+void LOEventQue::SaveHooks(BinArray *bin) {
+	_mutex.lock();
+	//'hque',len, version
+	int len = bin->Length() + 4;
+	bin->WriteInt3(0x65757168, 0, 1);
 
+	bin->WriteInt(highList.size());
+	for (int ii = 0; ii < highList.size(); ii++) highList.at(ii)->Serialize(bin);
+	bin->WriteInt(normalList.size());
+	for (int ii = 0; ii < normalList.size(); ii++) normalList.at(ii)->Serialize(bin);
+
+	bin->WriteInt(bin->Length() - len, &len);
+	_mutex.unlock();
 }

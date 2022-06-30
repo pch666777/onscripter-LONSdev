@@ -6,9 +6,9 @@ char BinArray::litte[2] = { 1,2 };
 #define ISBIG *(int16_t*)litte==0x0102
 
 //快速交换
-#define XCHANGE2 val=((val&0xff)<<8)|((val&0xff00)>>8)
-#define XCHANGE3 val=((val&0xff)<<16)|((val&0xff0000)>>16)|(val&0xff00)
-#define XCHANGE4 val=((val&0xff)<<24)|((val&0xff00)<<8)|(val>>24)|((val&0x00ff0000)>>8)
+//#define XCHANGE2 val=((val&0xff)<<8)|((val&0xff00)>>8)
+//#define XCHANGE3 val=((val&0xff)<<16)|((val&0xff0000)>>16)|(val&0xff00)
+#define XCHANGE4(X) ((X&0xff)<<24)|((X&0xff00)<<8)|(X>>24)|((X&0x00ff0000)>>8)
 
 BinArray::BinArray(int prepsize, bool isstream){
 	NewSelf(prepsize, isstream);
@@ -93,8 +93,8 @@ void BinArray::WriteCharIntArray(char *buf, int len, int *pos, bool isbig) {
 
 	//检查是否需要交换值，大小端设置不匹配均需要交换值
 	if (len > 1 && isbig != (ISBIG)) {
-		//最多应该是8个字节
-		char nbuf[8];
+		//最多支持4个4字节
+		char nbuf[16];
 		//反正字节
 		for (int ii = 0; ii < len; ii++) nbuf[ii] = buf[(len - 1) - ii];
 		memcpy(bin + (*pos), nbuf, len);
@@ -252,8 +252,14 @@ int BinArray::WriteInt(int v, int *pos, bool isbig) {
 
 
 int BinArray::WriteInt3(int v1, int v2, int v3, int *pos, bool isbig) {
+	//预先交换值
+	if (isbig != (ISBIG)) {
+		v1 = XCHANGE4(v1);
+		v2 = XCHANGE4(v2);
+		v3 = XCHANGE4(v3);
+	}
 	int val[] = { v1,v2,v3 };
-	WriteCharIntArray((char*)(val), sizeof(int) * 3, pos, isbig);
+	WriteCharIntArray((char*)(val), sizeof(int) * 3, pos, ISBIG);
 	return sizeof(int) * 3;
 }
 

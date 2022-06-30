@@ -1602,45 +1602,9 @@ int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 
 
 void LOScriptReader::Serialize(BinArray *bin) {
-	bin->WriteInt(0x49524353);  //SCRI
-	bin->WriteInt(1);  //version
-	bin->WriteInt(0);  //预留
-	bin->WriteInt(0);   //预留
-
-	bin->WriteLOString(&this->Name);  //脚本名称
-	bin->WriteLOString(&this->printName); //显示队列名称
-
-	bin->WriteInt(0x4B415453); //STAK
-	bin->WriteInt(subStack->size()); //count
-
-	int positon = 0;
-	int callcount = 0;
-	while (callcount < subStack->size()) {
-		bin->WriteInt(0x4C4C4143); //CALL
-
-		intptr_t callby = (intptr_t)subStack->at(callcount); 
-		bool iseval = false;
-		LOScriptPoint *p = nullptr;
-		//什么样的call
-		if (callby < 0x10) {
-			bin->WriteInt(callby);
-			if (callby == LOScriptPoint::CALL_BY_EVAL) iseval = true;
-			callcount++;
-			p = subStack->at(callcount);
-		}
-		else {
-			bin->WriteInt(LOScriptPoint::CALL_BY_NORMAL);
-			p = (LOScriptPoint*)callby;
-		}
-
-		positon = 0;
-		bin->WriteLOString(&p->name);  //标签名
-		bin->WriteLOString(&p->file->Name); //文件名，暂时没什么用
-		bin->WriteInt(p->file->GetPointLineAndPosition(p, &positon)); //当前位置位于相对于标签有多少行
-		bin->WriteInt(positon);  //相对于行有多少偏移
-	}
-
-	//逻辑判断
+	int len = bin->Length() + 4;
+	//'scri',len, version
+	bin->WriteInt3(0x69726373, 0, 1);
 
 }
 

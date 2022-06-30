@@ -25,7 +25,7 @@
 
 //定义你想要的log输出函数
 #define LOG_PRINT printf
-#define SCRIPT_VERSION 20210626
+#define SCRIPT_VERSION 20220630
 #define MAINSCRIPTER_NAME "_mainscript"
 
 class LOScriptReader :public FunctionInterface

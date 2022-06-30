@@ -849,6 +849,8 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	//存储变量
 	if(st_globalon) ONSVariableBase::SaveOnsVar(GloSaveFS, gloableMax, MAXVARIABLE_COUNT - gloableMax);
 	else ONSVariableBase::SaveOnsVar(GloSaveFS, 0, MAXVARIABLE_COUNT);
+	//存储hook钩子列表
+	G_hookQue.SaveHooks(GloSaveFS);
 	//存储图层
 	LonsSaveLayer(GloSaveFS);
 	//存储渲染模块
