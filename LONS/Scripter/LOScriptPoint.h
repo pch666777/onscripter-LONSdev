@@ -22,17 +22,33 @@ public:
 		CALL_BY_LOAD_GOSUB,
 		CALL_BY_EVAL,
 	};
-	LOScriptPoint(int t, bool canf);
-	~LOScriptPoint();
+	LOScriptPoint();
+	virtual ~LOScriptPoint();
 
-	//LOScriptPoint *CopyMe();
-
-	LOString name;  //标签名称
-	const char* s_buf;    //运行点实际开始的位置
-	const char* c_buf;    //运行点当前运行的行
-	int s_line;     //运行点开始的行
-	int c_line;     //运行点当前运行的位置
+	//标签名称
+	LOString name;
+	//运行点实际开始的位置
+	const char* s_buf;
+	//运行点开始的行
+	int s_line;
 	LOScripFile* file;  //位于哪个脚本中
+};
+
+
+//call类型，同一个LOScriptPoint可能有不同的call类型
+class LOScriptPointCall :public LOScriptPoint {
+public:
+	LOScriptPointCall();
+	LOScriptPointCall(LOScriptPoint *p);
+	~LOScriptPointCall();
+
+	void Serialize(BinArray *bin);
+
+	int callType;
+	//当前执行到的行
+	int c_line;
+	//当前执行到的位置
+	const char* c_buf;
 };
 
 
@@ -49,7 +65,6 @@ public:
 		TYPE_ELSE,
 		TYPE_WHILE
 	};
-	//char *adress; //运行点的位置，判断逻辑之后
 	int relAdress; //相对于标签的地址
 	int startLine;  //adress起始的行
 	int step;   //for循环step递增的数量
@@ -65,6 +80,12 @@ private:
 
 class LOScripFile {
 public:
+	//行跟buf的关系
+	struct LineData{
+		int lineID = -1;
+		const char* buf = nullptr;
+	};
+
 	LOScripFile(const char *cbuf, int len, const char *filename);
 	LOScripFile(LOString *s, const char *filename);
 	~LOScripFile();
@@ -74,9 +95,12 @@ public:
 	LOScriptPoint *FindLable(const char *lname);
 	LOString *GetBuf() { return &scriptbuf; }
 	void InitLables(bool lableRe = false);
-	int GetPointLineAndPosition(LOScriptPoint *p, int *position);
+	//int GetPointLineAndPosition(LOScriptPoint *p, int *position);
+	void GetBufLine(const char *buf, int *lineID, const char* &lineStart);
 private:
 	LOString scriptbuf;
+	//每100行打一个记录点
+	std::vector<LineData> lineInfo;
 	std::unordered_map<std::string, LOScriptPoint*> labels;
 
 	void ClearLables();

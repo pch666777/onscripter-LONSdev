@@ -101,7 +101,7 @@ public:
 
 	//1为else，2为endif -1表示出现错误
 	int LogicJump(bool iselse); 
-	int SubDeep() { return subStack->size() - 1; }
+	//int SubDeep() { return subStack->size() - 1; }
 	bool ChangePointer(int esp);
 	bool ChangePointer(LOScriptPoint *label);
 
@@ -155,7 +155,7 @@ public:
 	bool ReadyToRun(LOString *lname, int callby = LOScriptPoint::CALL_BY_NORMAL);
 	int ReadyToBack();
 
-	LOScriptPoint *currentLable;
+	LOScriptPointCall *currentLable;
 	LOString *scriptbuf;
 	LOString word;
 	LOString curCmd;    //当前运行的命令
@@ -275,19 +275,22 @@ private:
 	static bool st_globalon; //是否使用全局变量
 	static bool st_labellog; //是否使用标签变量
 	static bool st_errorsave; //是否使用错误自动保存
-
+	static int gloableMax;
 
 	//bool isAddLine;
 	int  parseDeep;    //startparse进入多少个嵌套了
-	LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
+	//LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
+	//运行点堆栈，gosub sub用
+	std::vector<LOScriptPointCall> subStack;
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
 	std::vector<LOString> cselList;
-	int gloableMax;
+	
 	
 	
 	LOScriptPoint* GetScriptPoint(LOString lname);
+	int GetCurrentLableIndex();
 	int ContinueRun();
 	int ContinueEvent();
 	void InserCommand(LOString *incmd);   //插入命令，比如 $xxx ，eval "xxx"

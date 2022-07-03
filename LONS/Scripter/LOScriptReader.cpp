@@ -16,6 +16,7 @@ int LOScriptReader::sectionState ;
 bool LOScriptReader::st_globalon; //是否使用全局变量
 bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
+int LOScriptReader::gloableMax = 200;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
@@ -123,7 +124,6 @@ LOScriptReader::LOScriptReader()
 	//RegisterBaseFunc();
 	sctype = SCRIPT_TYPE::SCRIPT_TYPE_NORMAL;
 	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
-	subStack = new LOStack<LOScriptPoint>;
 	loopStack = new LOStack<LogicPointer>;
 	ResetBaseConfig();
 }
@@ -133,7 +133,6 @@ LOScriptReader::~LOScriptReader()
 	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
 	delete nslogic;
-	if(subStack) delete subStack;
 	if(loopStack) delete loopStack;
 }
 
@@ -217,21 +216,17 @@ int LOScriptReader::MainTreadRunning() {
 
 //是否运行到RunScript应该返回的位置
 bool LOScriptReader::isEndSub() {
-	return subStack->size() == 0;
-	//uintptr_t ptr = (uintptr_t)subStack->top();
-	//if (ptr < 0x8) return true;
-	//else return false;
+	return subStack.size() == 0;;
 }
 
 //准备转到下一个运行点
 void LOScriptReader::ReadyToRun(LOScriptPoint *label, int callby) {
     //LOLog_i("ReadyToRun: %s,%x",label->name.c_str(),callby) ;
-	if (callby != LOScriptPoint::CALL_BY_NORMAL) subStack->push((LOScriptPoint*)callby);
-	subStack->push(label);
-	scriptbuf = label->file->GetBuf();
-	currentLable = subStack->top();
-	currentLable->c_buf = currentLable->s_buf;
-	currentLable->c_line = currentLable->s_line;
+	LOScriptPointCall call(label);
+	call.callType = callby;
+	subStack.push_back(call);
+	currentLable = &subStack.at(subStack.size() - 1);
+	scriptbuf = currentLable->file->GetBuf();
 }
 
 bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
@@ -247,23 +242,21 @@ bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
 
 //准备返回上一个运行点，同时抛弃本个运行点
 int LOScriptReader::ReadyToBack() {
-	uintptr_t callby = 0;
-	LOScriptPoint *last = subStack->pop();
-	currentLable = NULL;
-	if (!isEndSub()) {
-		callby = (uintptr_t)subStack->top();
-		if (callby < 0x10) subStack->pop();
-		else callby = LOScriptPoint::CALL_BY_NORMAL;
-		currentLable = subStack->top();
-		scriptbuf = currentLable->file->GetBuf();
+	LOScriptPointCall lastCall = subStack.at(subStack.size() - 1);
+	subStack.pop_back();
 
-		if (callby == LOScriptPoint::CALL_BY_EVAL) {//删除eval的点
-			RemoveScript(last->file);
-			delete last->file;
+	if (!isEndSub()) {
+		currentLable = &subStack.at(subStack.size() - 1);
+		scriptbuf = currentLable->file->GetBuf();
+		//删除eval
+		if (lastCall.callType == LOScriptPoint::CALL_BY_EVAL) {
+			RemoveScript(lastCall.file);
+			delete lastCall.file;
 		}
 	}
+	else currentLable = nullptr;
 
-	int ret = RET_RETURN | ((callby & 0xff) << 8);
+	int ret = RET_RETURN | ((lastCall.callType & 0xff) << 8);
 	return ret;
 }
 
@@ -278,6 +271,15 @@ LOScriptPoint* LOScriptReader::GetScriptPoint(LOString lname) {
 	return p;
 }
 
+int LOScriptReader::GetCurrentLableIndex() {
+	int index = 0;
+	while (index < subStack.size()) {
+		if (currentLable == &subStack.at(subStack.size() - 1 - index)) return index;
+		index++;
+	}
+	return index;
+}
+
 LOScriptPoint  *LOScriptReader::GetParamLable(int index) {
 	LOString s = GetParamStr(index);
 	if (s.length() == 0) return NULL;
@@ -287,17 +289,9 @@ LOScriptPoint  *LOScriptReader::GetParamLable(int index) {
 
 //转移运行点位置，0表示转到top，1表示top的前一个
 bool LOScriptReader::ChangePointer(int esp) {
-	//寻找真正的位置
-	int index = subStack->size() - 1;
-	int available = 0;
-	while (index >= 0 && available < esp) {
-		//Beware of negative and positive problems
-		if (((uintptr_t)subStack->at(index)) > 0x10) available++;
-		index--;
-	}
-	if (index < 0) return false;
-
-	currentLable = subStack->at(index);
+	int index = subStack.size() - 1 - esp;
+	if (index < 0 || index > subStack.size() - 1) return false;
+	currentLable = &subStack.at(index);
 	scriptbuf = currentLable->file->GetBuf();
 	return true;
 }
@@ -1177,7 +1171,7 @@ void LOScriptReader::NextLineStart() {
 
 //用于goto等强制跳转
 bool LOScriptReader::ChangePointer(LOScriptPoint *label) {
-	subStack->pop();
+	subStack.pop_back();
 	ReadyToRun(label);
 	return true;
 }
@@ -1472,11 +1466,10 @@ void LOScriptReader::ResetMe() {
 	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
 	delete nslogic;
-	if (subStack) delete subStack;
 	if (loopStack) delete loopStack;
+	subStack.clear();
 
 	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
-	subStack = new LOStack<LOScriptPoint>;
 	loopStack = new LOStack<LogicPointer>;
 
 	//清理def设置
@@ -1605,7 +1598,37 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	int len = bin->Length() + 4;
 	//'scri',len, version
 	bin->WriteInt3(0x69726373, 0, 1);
+	//
+	bin->WriteInt(lastCmdCheckFlag);
+	bin->WriteInt((int)sctype);
+	//脚本名称
+	bin->WriteLOString(&Name);
+	//脚本print名称
+	bin->WriteLOString(&printName);
+	//tagstring
+	bin->WriteLOString(&TagString);
+	//当前的命令
+	bin->WriteLOString(&curCmd);
+	//上一个命令
+	bin->WriteLOString(&lastCmd);
+	//parse嵌套
+	bin->WriteInt(parseDeep);
+	//高精度计时器，差值
+	bin->WriteInt64((int64_t)(SDL_GetPerformanceCounter() - ttimer));
+	//nextReader不需要
+	//当前的运行点在堆栈中的序号
+	bin->WriteInt(GetCurrentLableIndex());
+	//运行点堆栈
+	bin->WriteInt(subStack.size());
+	for (int ii = 0; ii < subStack.size(); ii++) subStack.at(ii).Serialize(bin);
+	//逻辑堆栈
+	bin->WriteInt(loopStack->size());
 
+	//预留
+	bin->WriteInt3(0, 0, 0);
+	bin->WriteInt3(0, 0, 0);
+	bin->WriteString(nullptr);
+	bin->WriteString(nullptr);
 }
 
 
