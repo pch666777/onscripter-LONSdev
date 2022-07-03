@@ -1,5 +1,9 @@
 #include "LOScriptPoint.h"
 
+//每隔LINEINTERVAL做一个记录，方便任意buf查询位于哪一行
+#define LINEINTERVAL 80
+
+
 LOScriptPoint::LOScriptPoint() {
 	file = NULL;
 	s_buf = 0;
@@ -131,7 +135,7 @@ void LOScripFile::InitLables(bool lableRe) {
 	while (buf < ebuf - 1) {
 		buf = scriptbuf.SkipSpace(buf);
 		//记录点
-		if (linecount % 100 == 0) {
+		if (linecount % LINEINTERVAL == 0) {
 			LineData it;
 			it.buf = buf;
 			it.lineID = linecount;
@@ -163,6 +167,12 @@ void LOScripFile::InitLables(bool lableRe) {
 			linecount++;
 		}
 	}
+
+	//增加最后一行，方便搜索
+	LineData it;
+	it.buf = buf + 1;
+	it.lineID = linecount + 1;
+	lineInfo.push_back(it);
 }
 
 LOScriptPoint *LOScripFile::FindLable(std::string &lname) {
@@ -183,30 +193,45 @@ void LOScripFile::GetBufLine(const char *buf, int *lineID, const char* &lineStar
 	if (lineStart) lineStart = nullptr;
 	const char *startbuf = scriptbuf.c_str();
 	const char *endbuf = startbuf + scriptbuf.length();
+	if (buf < startbuf || buf >= endbuf) return;
 
-	if (buf > startbuf && buf < endbuf) {
-		//定位搜索起始行
-		int startLine = 0;
-		for (int ii = 0; ii < lineInfo.size() - 1; ii++) {
-			startLine = lineInfo.at(ii).lineID;
-			if (buf >= lineInfo.at(ii).buf && buf < lineInfo.at(ii + 1).buf) {
-				startbuf = lineInfo.at(ii).buf;
-				break;
-			}
-		}
-		//定位到具体的某一行
-		const char *nextbuf = scriptbuf.NextLine(startbuf);
-		while (buf < endbuf) {
-			if (buf >= startbuf && buf < nextbuf) {
-				if (lineID) *lineID = startLine;
-				if (lineStart) lineStart = startbuf;
-				return;
+	//二分法定位搜索起始行
+	int startLine = 0;
+	if (lineInfo.size() > 1) {
+		int left = 0;
+		int right = lineInfo.size() - 1;
+		int mid = right / 2;
+		while (true) {
+			auto *line = &lineInfo.at(mid);
+			startLine = line->lineID;
+			startbuf = line->buf;
+			//落在右边
+			if (buf >= startbuf) {
+				if (right - mid <= 1) break;
+				left = mid;
 			}
 			else {
-				startbuf = nextbuf;
-				nextbuf = scriptbuf.NextLine(startbuf);
-				lineStart++;
+				//落在左边
+				right = mid;
 			}
+
+			mid = (left + right) / 2;
+		}
+	}
+
+
+	//定位到具体的某一行
+	const char *nextbuf = scriptbuf.NextLine(startbuf);
+	while (buf < endbuf) {
+		if (buf >= startbuf && buf < nextbuf) {
+			if (lineID) *lineID = startLine;
+			if (lineStart) lineStart = startbuf;
+			return;
+		}
+		else {
+			startbuf = nextbuf;
+			nextbuf = scriptbuf.NextLine(startbuf);
+			lineStart++;
 		}
 	}
 }
