@@ -65,19 +65,30 @@ LOScriptPointCall::~LOScriptPointCall() {
 
 // *** ================ *** //
 LogicPointer::LogicPointer(int t) {
-	//adress = nullptr;
-	startLine = -1;
-	relAdress = 0;
-	dstvar = nullptr;
-	step = 1;   //默认递增量
-	var = nullptr;
-	type = t;
-	lableName = nullptr;
+	forVar = nullptr;
+	dstVar = nullptr;
+	reset();
+	flags = t;
 }
 
 LogicPointer::~LogicPointer() {
-	if (var) delete var;
-	if (dstvar)delete dstvar;
+	reset();
+}
+
+void LogicPointer::reset() {
+	flags = 0;
+	step = 1;
+	if (forVar) delete forVar;
+	if (dstVar) delete dstVar;
+	forVar = nullptr;
+	dstVar = nullptr;
+	point = nullptr;
+	label = nullptr;
+}
+
+void LogicPointer::SetRet(bool it) {
+	if (it) flags |= TYPE_RESULT_TRUE;
+	else flags &= (~TYPE_RESULT_TRUE);
 }
 
 //最后一个参数表示如果有重复的标签是否用重复标签替代，默认为第一个标签生效

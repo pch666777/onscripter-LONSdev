@@ -162,8 +162,11 @@ public:
 	LOString lastCmd;   //上一个命令
 	const char* curCmdbuf;  //当前运行的命令数据
 	
-	LOStack<LogicPointer> *loopStack; //循环堆栈 for while用
-	LogicPointer *nslogic;     //ns默认的if else模式
+	//循环堆栈 for while用
+	std::vector<LogicPointer> loopStack;
+	//ns默认的if else模式
+	LogicPointer normalLogic;
+	
 
 	LOString Name;      //脚本线程的名称
 	LOString printName;  //图像信息加载到的队列名称

@@ -120,11 +120,9 @@ void LOScriptReader::InitScriptLabels() {
  // ================ class =========================== //
 
 LOScriptReader::LOScriptReader()
+:normalLogic(LogicPointer::TYPE_IF)
 {
-	//RegisterBaseFunc();
 	sctype = SCRIPT_TYPE::SCRIPT_TYPE_NORMAL;
-	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
-	loopStack = new LOStack<LogicPointer>;
 	ResetBaseConfig();
 }
 
@@ -132,8 +130,6 @@ LOScriptReader::~LOScriptReader()
 {
 	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
-	delete nslogic;
-	if(loopStack) delete loopStack;
 }
 
 int LOScriptReader::MainTreadRunning() {
@@ -144,7 +140,7 @@ int LOScriptReader::MainTreadRunning() {
 
 	ChangeRunState(MODULE_STATE_RUNNING);
 	//开始之前先读取全局变量
-	ReadGlobleVarFile();
+	//ReadGlobleVarFile();
 
 	const char* lables[] = { "define" , "start" };
 	int ret = RET_CONTINUE;
@@ -1465,12 +1461,10 @@ void LOScriptReader::ResetMe() {
 	//重置必要的属性
 	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
-	delete nslogic;
-	if (loopStack) delete loopStack;
 	subStack.clear();
 
-	nslogic = new LogicPointer(LogicPointer::TYPE_IF);
-	loopStack = new LOStack<LogicPointer>;
+	normalLogic.reset();
+	loopStack.clear();
 
 	//清理def设置
 	defsubMap.clear();
@@ -1622,7 +1616,7 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	bin->WriteInt(subStack.size());
 	for (int ii = 0; ii < subStack.size(); ii++) subStack.at(ii).Serialize(bin);
 	//逻辑堆栈
-	bin->WriteInt(loopStack->size());
+
 
 	//预留
 	bin->WriteInt3(0, 0, 0);

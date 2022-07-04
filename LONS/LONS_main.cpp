@@ -139,11 +139,6 @@ int main(int argc, char **argv) {
 
 	GlobalInit();
 
-	//BinArray bin;
-	//bin.WriteInt3(0x1122, 0x3344, 0x5566, nullptr, false);
-	//bin.WriteInt16(0x1122,nullptr,true);
-	//bin.WriteInt32(0x11223344, nullptr, true);
-	//bin.WriteInt64(0x11223344, nullptr, true);
 
 	//初始化IO，必须优先进行IO，因为后面要读文件
 	filemodule = new LOFileModule;

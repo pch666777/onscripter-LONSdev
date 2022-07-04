@@ -59,21 +59,38 @@ public:
 	LogicPointer(int t);
 	~LogicPointer();
 	enum {
-		TYPE_FOR,
-		TYPE_IF,
-		TYPE_IFTHEN,
-		TYPE_ELSE,
-		TYPE_WHILE
+		TYPE_FOR = 1,
+		TYPE_IF = 2,
+		TYPE_IFTHEN = 4,
+		TYPE_ELSE = 8,
+		TYPE_WHILE = 16,
+		//if的判断结果，有这个符号为真，没有这个符号为假
+		TYPE_RESULT_TRUE = 32
 	};
-	int relAdress; //相对于标签的地址
-	int startLine;  //adress起始的行
-	int step;   //for循环step递增的数量
-	int type;   //类型
-	bool ifret; //if then 的判断结果
-	ONSVariableRef *var;  //for循环的递增变量
-	ONSVariableRef *dstvar;  //for的目标增量，可以被动态改变
-	LOString *lableName;
+
+	void SetFlags(int f) { flags |= f; }
+	void UnSetFlags(int f) { flags &= (~f); }
+	bool isFor() { return flags & TYPE_FOR; }
+	bool isIF() { return flags & TYPE_IF; }
+	bool isIFthen(){ return flags & TYPE_IFTHEN; }
+	bool isElse() { return flags & TYPE_ELSE; }
+	bool isWhile() { return flags & TYPE_WHILE; }
+	bool isRetTrue() { return flags & TYPE_RESULT_TRUE; }
+	void reset();
+	void SetRet(bool it);
+
+	//循环的起点，存档的时候转换为行位置
+	const char *point;
+	//for循环step递增的数量
+	int step;
+	//for %1 = 1 to %2 step n中的%1
+	ONSVariableRef *forVar;
+	//for 中的 %2，可以被动态改变
+	ONSVariableRef *dstVar;
+	//循环在哪个标签中
+	LOScriptPoint *label;
 private:
+	int flags;
 };
 
 
