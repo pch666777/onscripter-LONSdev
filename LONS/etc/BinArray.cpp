@@ -199,17 +199,19 @@ void BinArray::GetString(std::string &s, int *pos){
 LOString BinArray::GetLOString(int *pos) {
 	LOString s;
 	GetString(s, pos);
-	if (pos >= 0) {
-		s.SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
-	}
+	s.SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
 	return s;
 }
 
 
 LOString* BinArray::GetLOStrPtr(int *pos) {
-	LOString *s = new LOString();
-	GetString(*s, pos);
-	if (pos && *pos >= 0) {
+	LOString *s = nullptr;
+	if (GetChar(*pos) == 0) {
+		*pos += 2;
+	}
+	else {
+		s = new LOString();
+		GetString(*s, pos);
 		s->SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
 	}
 	return s;
@@ -311,8 +313,11 @@ int BinArray::WriteLOString(LOString *v, int *pos) {
 
 	int len;
 	if (!v || v->length() == 0) { //空字符串或者长度为0
+		//字符串
 		WriteChar(0, pos);
-		len = 1; 
+		//编码
+		WriteChar(0, pos);
+		len = 2; 
 	}
 	else {
 		//字符串，包括了 \0

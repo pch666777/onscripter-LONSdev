@@ -140,7 +140,7 @@ int LOScriptReader::MainTreadRunning() {
 
 	ChangeRunState(MODULE_STATE_RUNNING);
 	//开始之前先读取全局变量
-	//ReadGlobleVarFile();
+	ReadGlobleVarFile();
 
 	const char* lables[] = { "define" , "start" };
 	int ret = RET_CONTINUE;

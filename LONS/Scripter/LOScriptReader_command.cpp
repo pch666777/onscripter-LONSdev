@@ -213,8 +213,7 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 		return RET_CONTINUE;
 	}
 	else {
-		p = nslogic;
-		if (p->ifret) NextLineStart();  //条件成立时不执行
+		if (normalLogic.isRetTrue()) NextLineStart();  //条件成立时不执行
 		return RET_CONTINUE;
 	}
 	return RET_CONTINUE;
