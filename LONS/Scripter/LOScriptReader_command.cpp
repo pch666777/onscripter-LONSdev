@@ -186,36 +186,30 @@ int LOScriptReader::resettimerCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::endifCommand(FunctionInterface *reader) {
-	/*
-	LogicPointer *p = loopStack->pop();
-	if (!p || p->type != LogicPointer::TYPE_IFTHEN) {
+	std::unique_ptr<LogicPointer> p(loopStack.pop());
+	if (!p || !p->isIFthen()) {
 		SimpleError("if...then...else....endif Mismatch!");
 		return RET_ERROR;
 	}
-	delete p;
-	*/
 	return RET_CONTINUE;
 }
 
 int LOScriptReader::elseCommand(FunctionInterface *reader) {
-	/*
-	LogicPointer *p;
 	if (NextStartFrom('\n')) { //标准ns else 会接命令
-		
-
-		p = &loopStack.at(loopStack.size() - 1);
-		if (!p || p->type != LogicPointer::TYPE_IFTHEN) {
-			SimpleError("if...then...else ....endif Mismatch!");
+		LogicPointer *p = loopStack.top();
+		if (!p || !p->isIFthen()) {
+			LOLog_e("if...then...else ....endif Mismatch!");
 			return RET_ERROR;
 		}
-		if (!p->ifret) return RET_CONTINUE;
+		//else 要执行假的部分，所以返回继续执行
+		if (!p->isRetTrue()) return RET_CONTINUE;
 		//逻辑跳过
 		int jump = LogicJump(false);
 		if (jump < 0) {
 			SimpleError("if...then...else...endif Mismatch!");
 			return RET_ERROR;
 		}
-		loopStack->pop();
+		loopStack.pop(true);
 		return RET_CONTINUE;
 	}
 	else {
@@ -223,7 +217,6 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 		if (p->ifret) NextLineStart();  //条件成立时不执行
 		return RET_CONTINUE;
 	}
-	*/
 	return RET_CONTINUE;
 }
 
@@ -235,9 +228,8 @@ int LOScriptReader::ifCommand(FunctionInterface *reader) {
 	bool ret = ParseLogicExp();
 	if (isName("notif")) ret = !ret;
 	if (NextStartFrom("then")) {
-		LogicPointer p(LogicPointer::TYPE_IFTHEN);
-		p.SetRet(ret);
-		loopStack.push_back(LogicPointer(LogicPointer::TYPE_IFTHEN));
+		LogicPointer *p = loopStack.push(new LogicPointer(LogicPointer::TYPE_IFTHEN));
+		p->SetRet(ret);
 		//条件成立继续执行，直到else或者endif
 		if (ret) return RET_CONTINUE;  
 		//不成立跳到else 或者endif
@@ -248,7 +240,7 @@ int LOScriptReader::ifCommand(FunctionInterface *reader) {
 		}
 		if (jump == 1) return elseCommand(reader); //有else执行else
 		 //没有直接释放
-		loopStack.pop_back();
+		loopStack.pop(true);
 		return RET_CONTINUE;
 	}
 	else {  //
@@ -260,47 +252,40 @@ int LOScriptReader::ifCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::breakCommand(FunctionInterface *reader) {
-	/*
-	LogicPointer *p = loopStack->pop();
-	if (p->type != LogicPointer::TYPE_FOR) {
+	std::unique_ptr<LogicPointer> p(loopStack.pop());
+	if (!p || (!p->isFor() && !p->isWhile()) ) {
 		SimpleError("[break] Not used in the [for] loop!\n");
 		return RET_ERROR;
 	}
-	delete p;
 	JumpNext();
-	*/
 	return RET_CONTINUE;
 }
 
 int LOScriptReader::nextCommand(FunctionInterface *reader) {
-	/*
-	LogicPointer *p = loopStack->top();
-	if (p->type != LogicPointer::TYPE_FOR) {
-		SimpleError("[next] and [for] command not match!");
+	LogicPointer *p = loopStack.top();
+	if (!p || !p->isFor()) {
+		LOLog_e("[next] and [for] command not match!");
 		return RET_ERROR;
 	}
 	//递增变量
-	p->var->SetValue(p->var->GetReal() + p->step);
+	p->forVar->SetValue(p->forVar->GetReal() + p->step);
 
 	//比较条件
 	int comparetype = ONSVariableRef::LOGIC_LESSANDEQUAL;
 	if (p->step < 0) comparetype = ONSVariableRef::LOGIC_BIGANDEQUAL;
 
-	if (p->var->Compare(p->dstvar, comparetype,false)) {
-		currentLable->c_buf = currentLable->s_buf + p->relAdress;
-		currentLable->c_line = p->startLine;
+	if (p->forVar->Compare(p->dstVar, comparetype,false)) {
+		currentLable->c_buf = p->point;
+		currentLable->c_line = p->pointLine;
 	}
 	else {
-		delete p;
-		loopStack->pop();
+		loopStack.pop(true);
 	}
-	*/
 	return RET_CONTINUE;
 }
 
 int LOScriptReader::forCommand(FunctionInterface *reader) {
-	loopStack.push_back(LogicPointer(LogicPointer::TYPE_FOR));
-	LogicPointer *p = &loopStack[loopStack.size() - 1];
+	LogicPointer *p = loopStack.push(new LogicPointer(LogicPointer::TYPE_FOR));
 
 	p->forVar = ParseVariableBase(); //%
 
@@ -327,10 +312,11 @@ int LOScriptReader::forCommand(FunctionInterface *reader) {
 	if (p->step < 0) comparetype = ONSVariableRef::LOGIC_BIGANDEQUAL;
 	if (p->forVar->Compare(p->dstVar, comparetype,false)) {
 		p->point = currentLable->c_buf;
+		p->pointLine = currentLable->c_line;
 		p->label = currentLable;
 	}
 	else { //跳过不执行的部分
-		loopStack.pop_back();
+		loopStack.pop(true);
 		JumpNext();
 	}
 	

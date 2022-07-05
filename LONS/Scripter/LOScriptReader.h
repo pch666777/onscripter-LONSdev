@@ -163,7 +163,7 @@ public:
 	const char* curCmdbuf;  //当前运行的命令数据
 	
 	//循环堆栈 for while用
-	std::vector<LogicPointer> loopStack;
+	LOStack<LogicPointer> loopStack;
 	//ns默认的if else模式
 	LogicPointer normalLogic;
 	

@@ -81,6 +81,7 @@ public:
 
 	//循环的起点，存档的时候转换为行位置
 	const char *point;
+	int pointLine;
 	//for循环step递增的数量
 	int step;
 	//for %1 = 1 to %2 step n中的%1

@@ -71,9 +71,13 @@ public:
 
 
 	//弹出堆栈
-	T* pop() {
+	T* pop(bool isdel = false) {
 		if (length > 0) {
 			length--;
+			if (isdel) {
+				delete (T*)elems[length];
+				return NULL;
+			}
 			return (T*)elems[length];
 		}
 		else return NULL;

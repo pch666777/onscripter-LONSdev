@@ -128,8 +128,8 @@ LOScriptReader::LOScriptReader()
 
 LOScriptReader::~LOScriptReader()
 {
-	//blocksEvent.InvalidAll();
 	while (!isEndSub()) ReadyToBack();
+	loopStack.clear(true);
 }
 
 int LOScriptReader::MainTreadRunning() {

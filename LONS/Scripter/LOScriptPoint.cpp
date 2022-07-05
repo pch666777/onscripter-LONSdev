@@ -77,6 +77,7 @@ LogicPointer::~LogicPointer() {
 
 void LogicPointer::reset() {
 	flags = 0;
+	pointLine = 0;
 	step = 1;
 	if (forVar) delete forVar;
 	if (dstVar) delete dstVar;
