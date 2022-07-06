@@ -1616,71 +1616,16 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	bin->WriteInt(subStack.size());
 	for (int ii = 0; ii < subStack.size(); ii++) subStack.at(ii).Serialize(bin);
 	//逻辑堆栈
-
-
+	bin->WriteInt(loopStack.size());
+	for (int ii = 0; ii < loopStack.size(); ii++)loopStack.at(ii)->Serialize(bin);
+	normalLogic.Serialize(bin);
 	//预留
 	bin->WriteInt3(0, 0, 0);
 	bin->WriteInt3(0, 0, 0);
 	bin->WriteString(nullptr);
 	bin->WriteString(nullptr);
+	bin->WriteInt(bin->Length() - len, &len);
+
+	//如果链表继续延长
+	if(nextReader) nextReader->Serialize(bin);
 }
-
-
-
-
-
-//void LOScriptReader::Serialize(BinArray *sbin) {
-//	sbin->WriteString("scriptStart");
-//	sbin->WriteString(&Name);
-//	sbin->WriteString(&printName);
-//	sbin->WriteInt32((int32_t)interval);
-//	sbin->WriteString(&curCmd);
-//	SerializeScriptPoint(sbin, currentLable);
-//	sbin->WriteInt(subStack->size());
-//	for (int ii = 0; ii < subStack->size(); ii++) {
-//		SerializeScriptPoint(sbin, subStack->at(ii));
-//	}
-//	sbin->WriteInt(loopStack->size());
-//	for (int ii = 0; ii < loopStack->size(); ii++) {
-//		SerializeLogicPoint(sbin, loopStack->at(ii));
-//	}
-//}
-//
-//void LOScriptReader::SerializeScriptPoint(BinArray *sbin, ScriptPoint *p) {
-//	sbin->WriteString("scp");
-//	if ((uintptr_t)(p) < 10) {
-//		sbin->WriteInt(-1);
-//		//sbin->WriteInt((int)(p));
-//	}
-//	else {
-//		sbin->WriteInt(p->type);
-//		sbin->WriteString(&p->fileName);
-//		sbin->WriteString(&p->name);
-//		//sbin->WriteInt(p->current_line - p->start_line);
-//		sbin->WriteInt(p->current_address - p->start_address);  //相对于标签开始的位置
-//		sbin->WriteBool(p->canfree);
-//	}
-//}
-//
-//void LOScriptReader::SerializeLogicPoint(BinArray *sbin, LogicPointer *p) {
-//	sbin->WriteString("lcp");
-//	sbin->WriteInt(p->type);
-//	if (p->type == LogicPointer::TYPE_FOR || p->type == LogicPointer::TYPE_WHILE) {
-//		sbin->WriteInt(p->relAdress);
-//		sbin->WriteString(p->lableName);
-//		sbin->WriteInt(p->step);
-//		if (p->var) {
-//			sbin->WriteBool(true);
-//			//p->var->Serialize(sbin);
-//		}
-//		else sbin->WriteBool(false);
-//		if (p->dstvar) {
-//			sbin->WriteBool(true);
-//			//p->dstvar->Serialize(sbin);
-//		}
-//		else sbin->WriteBool(false);
-//	}
-//	else {
-//		sbin->WriteBool(p->ifret);
-//	}
-//}

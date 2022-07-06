@@ -7,23 +7,24 @@
 
 LOAudioModule::LOAudioModule() {
 	audioModule = this;
-	memset(_audioPtr, NULL, sizeof(LOAudioElement*) * (INDEX_MUSIC + 1));
+	memset(audioPtr, NULL, sizeof(LOAudioElement*) * (INDEX_MUSIC + 1));
 	bgmFadeInTime = 0;
 	bgmFadeOutTime = 0;
 	currentChannel = 0;
+	bgmVol = 100;
 	flags = 0;
-	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) _audioVol[ii] = 100;
 }
 
 LOAudioModule::~LOAudioModule() {
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
-		if(_audioPtr[ii]) delete _audioPtr[ii];
+		if(audioPtr[ii]) delete audioPtr[ii];
 	}
 }
 
 
 //重置音频模块
 void LOAudioModule::ResetMe() {
+	/*
 	ptrMutex.lock();
 	//先解除播放回调
 	Mix_ChannelFinished(NULL);
@@ -42,27 +43,28 @@ void LOAudioModule::ResetMe() {
 	moduleState = MODULE_STATE_NOUSE;
 	LOAudioElement::silenceFlag = true;    //注意之后将状态重新设为false
 	ptrMutex.unlock();
+	*/
 }
 
 
-void LOAudioModule::SetBGMvol(int vol, double ratio) {
-	vol = ratio * vol / 100 * MIX_MAX_VOLUME;
-	Mix_VolumeMusic(vol);
-}
-
-void LOAudioModule::SetSevol(int channel, int vol) {
-	vol = (double)vol / 100 * MIX_MAX_VOLUME;
-	Mix_Volume(channel, vol);
-}
-
-void LOAudioModule::FreeAudioEl(int index) {
-	LOAudioElement *aue = GetAudioEl(index);
-	if (aue) {
-		if (aue->isBGM()) aue->Stop(bgmFadeOutTime);
-		else aue->Stop(0);
-		delete aue;
-	}
-}
+//void LOAudioModule::SetBGMvol(int vol, double ratio) {
+//	vol = ratio * vol / 100 * MIX_MAX_VOLUME;
+//	Mix_VolumeMusic(vol);
+//}
+//
+//void LOAudioModule::SetSevol(int channel, int vol) {
+//	vol = (double)vol / 100 * MIX_MAX_VOLUME;
+//	Mix_Volume(channel, vol);
+//}
+//
+//void LOAudioModule::FreeAudioEl(int index) {
+//	LOAudioElement *aue = GetAudioEl(index);
+//	if (aue) {
+//		if (aue->isBGM()) aue->Stop(bgmFadeOutTime);
+//		else aue->Stop(0);
+//		delete aue;
+//	}
+//}
 
 bool LOAudioModule::CheckChannel(int channel, const char* info) {
 	if (channel < 0 || channel > 49) {
@@ -85,21 +87,27 @@ int LOAudioModule::bgmonceCommand(FunctionInterface *reader) {
 }
 
 void LOAudioModule::BGMCore(LOString &s, int looptimes) {
-	FreeAudioEl(INDEX_MUSIC);
-
+	LOAudioElement *aue = GetChannel(INDEX_MUSIC);
+	aue->Stop(bgmFadeOutTime);
 	BinArray *bin = fileModule->ReadFile(&s, false);
-	LOAudioElement* aue = new LOAudioElement;
 	aue->SetData(bin, -1, looptimes);
-	aue->Name = s;
-
-	SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
-	SetAudioElAndPlay(INDEX_MUSIC, aue);
+	aue->buildStr = s;
+	aue->Play(bgmFadeInTime);
 }
 
 void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
-	FreeAudioEl(channel);
-
+	LOAudioElement *aue = GetChannel(channel);
+	aue->Stop(0);
 	BinArray *bin = fileModule->ReadFile(&s, false);
+	aue->SetData(bin, channel, looptimes);
+	aue->buildStr = s;
+
+	if (isSePalyBgmDown()) {
+		LOAudioElement *bgm = GetChannel(INDEX_MUSIC);
+		bgm->SetVolume(bgmVol * 0.6);
+	}
+	aue->Play(0);
+
 	LOAudioElement* aue = new LOAudioElement;
 	aue->SetData(bin, channel, looptimes);
 	aue->Name = s;
@@ -214,6 +222,12 @@ int LOAudioModule::waveCommand(FunctionInterface *reader) {
 		SeCore(INDEX_WAVE, s, looptime);
 	}
 	return RET_CONTINUE;
+}
+
+
+LOAudioElement* LOAudioModule::GetChannel(int channel) {
+	if (!audioPtr[channel]) audioPtr[channel] = new LOAudioElement();
+	return audioPtr[channel];
 }
 
 
@@ -368,3 +382,5 @@ int LOAudioModule::stopCommand(FunctionInterface *reader) {
 void LOAudioModule::SePlay(int channel, LOString s, int loopcount) {
 	SeCore(channel, s, loopcount);
 }
+
+

@@ -854,11 +854,10 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	//存储渲染模块
 	LonsSaveImageModule(GloSaveFS);
 	//存储脚本模块
-
+	((LOScriptReader*)scriptModule)->Serialize(GloSaveFS);
 	//存储音频模块
 
-	//UpdataGlobleVariable();
-	return RET_CONTINUE;   //返回这个值可以继续调用其他模块的同名重载函数
+	return RET_CONTINUE;
 }
 
 //将全局变量写入到全局变量流中

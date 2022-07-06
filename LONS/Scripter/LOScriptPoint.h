@@ -78,6 +78,7 @@ public:
 	bool isRetTrue() { return flags & TYPE_RESULT_TRUE; }
 	void reset();
 	void SetRet(bool it);
+	void Serialize(BinArray *bin);
 
 	//循环的起点，存档的时候转换为行位置
 	const char *point;

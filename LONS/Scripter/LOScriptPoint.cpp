@@ -92,6 +92,30 @@ void LogicPointer::SetRet(bool it) {
 	else flags &= (~TYPE_RESULT_TRUE);
 }
 
+void LogicPointer::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//'lpos', len, version
+	bin->WriteInt3(0x736F706C, 0 , 1);
+	int lineID = 0;
+	const char *lineStart = nullptr;
+	label->file->GetBufLine(point, &lineID, lineStart);
+	//属于哪个label的
+	bin->WriteLOString(&label->name);
+	//相对于label的位置
+	bin->WriteInt(lineID - label->s_line);
+	//相对于行首的位置
+	bin->WriteInt(point - lineStart);
+
+	bin->WriteInt(step);
+	if (forVar) bin->WriteInt(forVar->GetTypeRefid());
+	else bin->WriteInt(0);
+	if (dstVar) bin->WriteInt(dstVar->GetTypeRefid());
+	else bin->WriteInt(0);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
 //最后一个参数表示如果有重复的标签是否用重复标签替代，默认为第一个标签生效
 LOScripFile::LOScripFile(const char *cbuf, int len, const char *filename) {
 	scriptbuf.assign(cbuf, len);

@@ -5,37 +5,42 @@
 #define __LOAUDIOELEMENT_H__
 
 #include "../etc/BinArray.h"
+#include "../etc/LOString.h"
 #include <atomic>
 #include <string>
 #include <SDL.h>
 #include <SDL_mixer.h>
 
-class LOAudioElement
-{
-	//struct AudioBin{
-	//	BinArray *bin = NULL;
-	//	SDL_RWops *rwops = NULL;
-	//};
+class LOAudioElement{
 public:
+	enum {
+		//要么只播放一次，要么一直循环
+		FLAGS_LOOP_ONECE = 1,
+		FLAGS_IS_BGM = 2,
+	};
+
 	LOAudioElement();
 	~LOAudioElement();
-	std::string Name;
-	void FreeData();
-	void SetData(BinArray *bin, int chid, int loopcount);  //chid < 0为music，chid >= 0为se
-	bool Play(int fade);
-	bool isAvailable();
-	bool isBGM() { return channel < 0; }
-	void Stop(int fade);
-	int loopCount;
 
-	static bool silenceFlag;    //静默标记，为真则所有音乐都不可播放
+	LOString buildStr;
+	
+	bool isBGM() { flags & FLAGS_IS_BGM; }
+	bool isAvailable();
+	void FreeData();
+	void SetData(BinArray *bin, int channel, int loops);  //chid < 0为music，chid >= 0为se
+	void SetVolume(int vol);
+	bool Play(int fade);
+	void Stop(int fade);
 private:
 	void SetNull();
 	BinArray *rwbin;
 	SDL_RWops *rwpos;
 	Mix_Music *music;
 	Mix_Chunk *chunk;
+	int flags;
 	int channel;
+	int loopCount;
+	int volume;
 };
 
 

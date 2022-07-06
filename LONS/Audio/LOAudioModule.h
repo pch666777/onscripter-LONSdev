@@ -4,7 +4,8 @@
 #ifndef __LOAUDIO_H__
 #define __LOAUDIO_H__
 
-
+//音频播放有个比较重要的问题，播放完成的事件回调是在另一个线程里的
+//只有回调的通道是可靠的，不可以在回调线程里处理通道对象
 
 #include "../Scripter/FuncInterface.h"
 #include "LOAudioElement.h"
@@ -70,23 +71,24 @@ private:
 	int bgmFadeInTime;
 	int bgmFadeOutTime;
 	int currentChannel;
+	int bgmVol;
 	int flags;
 
-	//每次播放都新建一个LOAudioElement，因此设置，读取时必须加锁
-	LOAudioElement *_audioPtr[INDEX_MUSIC + 1];  //不要直接操作
-	int _audioVol[INDEX_MUSIC + 1];
+
+	LOAudioElement *audioPtr[INDEX_MUSIC + 1];
 	std::mutex ptrMutex;
 
+	LOAudioElement* GetChannel(int channel);
 	
-	void SetAudioEl(int index, LOAudioElement *aue);
-	void SetAudioElAndPlay(int index, LOAudioElement *aue);
-	LOAudioElement* GetAudioEl(int index);
-	void FreeAudioEl(int index);
+	//void SetAudioEl(int index, LOAudioElement *aue);
+	//void SetAudioElAndPlay(int index, LOAudioElement *aue);
+	//LOAudioElement* GetAudioEl(int index);
+	//void FreeAudioEl(int index);
 	void BGMCore(LOString &s, int looptimes);
 	void SeCore(int channel, LOString &s, int looptimes);
-	void SetBGMvol(int vol, double ratio);
-	void SetSevol(int channel, int vol);
-	bool CheckChannel(int channel,const char* info);
+	//void SetBGMvol(int vol, double ratio);
+	//void SetSevol(int channel, int vol);
+	//bool CheckChannel(int channel,const char* info);
 };
 
 
