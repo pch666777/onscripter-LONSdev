@@ -83,3 +83,14 @@ bool LOAudioElement::isAvailable() {
 	if (channel >= 0 && chunk) return true;
 	return false;
 }
+
+
+void LOAudioElement::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//'aude', len, version
+	bin->WriteInt3(0x65647561, 0, 1);
+	bin->WriteInt3(channel, flags, loopCount);
+	bin->WriteLOString(&buildStr);
+
+	bin->WriteInt(bin->Length() - len, &len);
+}

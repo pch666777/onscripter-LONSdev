@@ -21,11 +21,13 @@ public:
 
 	LOAudioElement();
 	~LOAudioElement();
+	void Serialize(BinArray *bin);
 
 	LOString buildStr;
 	
 	bool isBGM() { flags & FLAGS_IS_BGM; }
 	bool isAvailable();
+	bool isLoop() { return loopCount > 1; }
 	void FreeData();
 	void SetData(BinArray *bin, int channel, int loops);  //chid < 0为music，chid >= 0为se
 	void SetLoop(int l) { loopCount = l; }

@@ -31,6 +31,9 @@ public:
 		FLAGS_SE_SIGNAL_ZERO = 2,
 		//所有通道播放完成事件
 		FLAGS_SE_SIGNAL_ALL = 4,
+
+		//是否启用bgm播放完成事件
+		FLAGS_BGM_CALLBACK = 8
 	};
 	enum {
 		LOCK_OFF = 0,
@@ -45,10 +48,10 @@ public:
 	bool isChannelZeroEv() { return flags & FLAGS_SE_SIGNAL_ZERO; }
 	bool isChannelALLEv() { return flags & FLAGS_SE_SIGNAL_ALL; }
 	bool isSePalyBgmDown() { return flags & FLAGS_SEPLAY_BGMDOWN; }
+	bool isBgmCallback() { return flags & flags & FLAGS_BGM_CALLBACK; }
 
 	void ResetMe();
-	//void ResetMeFinish();
-
+	void Serialize(BinArray *bin);
 
 	void PlayAfter();
 	void channelFinish_t(int channel);

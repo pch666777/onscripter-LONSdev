@@ -204,23 +204,20 @@ int LOAudioModule::InitAudioModule() {
 	return true;
 }
 
-//void LOAudioModule::ResetMeFinish() {
-//	Mix_ChannelFinished(channelFinish);
-//	Mix_HookMusicFinished(musicFinished);
-//	LOAudioElement::silenceFlag = false;
-//}
 
 int LOAudioModule::loopbgmCommand(FunctionInterface *reader) {
 	LOString s1 = reader->GetParamStr(0);
 	afterBgmName = reader->GetParamStr(1);
 	BGMCore(s1, 1);
 	Mix_HookMusicFinished(musicFinished);
+	SetFlags(FLAGS_BGM_CALLBACK);
 	return RET_CONTINUE;
 }
 
 int LOAudioModule::loopbgmstopCommand(FunctionInterface *reader) {
 	afterBgmName.clear();
 	StopCore(INDEX_MUSIC);
+	UnsetFlags(FLAGS_BGM_CALLBACK);
 	return RET_CONTINUE;
 }
 
@@ -379,7 +376,7 @@ int LOAudioModule::stopCommand(FunctionInterface *reader) {
 		StopCore(ii);
 	}
 	Mix_ChannelFinished(channelFinish);
-	Mix_HookMusicFinished(musicFinished);
+	if(isBgmCallback()) Mix_HookMusicFinished(musicFinished);
 	return RET_CONTINUE;
 }
 
@@ -391,4 +388,30 @@ void LOAudioModule::SePlay(int channel, LOString s, int loopcount) {
 void LOAudioModule::PlayAfter() {
 	BGMCore(afterBgmName, -1);
 	afterBgmName.clear();
+	UnsetFlags(FLAGS_BGM_CALLBACK);
+	//检查bgm回调事件？
+	Mix_HookMusicFinished(NULL);
+}
+
+
+void LOAudioModule::Serialize(BinArray *bin) {
+	int len = bin->Length() + 4;
+	//'audo', len, version
+	bin->WriteInt3(0x6F647561, 0, 1);
+	bin->WriteInt(currentChannel);
+	bin->WriteInt(flags);
+	//音量
+	bin->Append((char*)audioVol, sizeof(int) * (INDEX_MUSIC + 1));
+	//循环的音乐才存储
+	for (int ii = 0; ii < INDEX_MUSIC; ii++) {
+		if (audioPtr[ii] && audioPtr[ii]->isLoop()) audioPtr[ii]->Serialize(bin);
+	}
+	bin->WriteLOString(&afterBgmName);
+	
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+void LonsSaveAudio(BinArray *bin) {
+
 }
