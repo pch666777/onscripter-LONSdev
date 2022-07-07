@@ -9,6 +9,7 @@
 
 #include "../Scripter/FuncInterface.h"
 #include "LOAudioElement.h"
+#include <atomic>
 #include <SDL.h>
 #include <SDL_mixer.h>
 
@@ -31,6 +32,10 @@ public:
 		//所有通道播放完成事件
 		FLAGS_SE_SIGNAL_ALL = 4,
 	};
+	enum {
+		LOCK_OFF = 0,
+		LOCK_ON = 1
+	};
 
 	LOString afterBgmName;
 	int InitAudioModule();
@@ -42,7 +47,7 @@ public:
 	bool isSePalyBgmDown() { return flags & FLAGS_SEPLAY_BGMDOWN; }
 
 	void ResetMe();
-	void ResetMeFinish();
+	//void ResetMeFinish();
 
 
 	void PlayAfter();
@@ -71,14 +76,25 @@ private:
 	int bgmFadeInTime;
 	int bgmFadeOutTime;
 	int currentChannel;
-	int bgmVol;
 	int flags;
 
+	//频道激活情况
+	int64_t channelActiveFlag;
+
+	//锁的时间都很短，采用自旋锁
+	std::atomic_int lockFlag;
+	void lock();
+	void unlock();
 
 	LOAudioElement *audioPtr[INDEX_MUSIC + 1];
-	std::mutex ptrMutex;
+	int audioVol[INDEX_MUSIC + 1];
 
-	LOAudioElement* GetChannel(int channel);
+	//取出音频，存储的指针北置为null
+	LOAudioElement* takeChannelSafe(int channel);
+
+	//置入音频，必须先取出，不会释放已有的音频，只是单纯的替换指针
+	void inputChannelSafe(int channel, LOAudioElement *aue);
+
 	
 	//void SetAudioEl(int index, LOAudioElement *aue);
 	//void SetAudioElAndPlay(int index, LOAudioElement *aue);
@@ -86,9 +102,11 @@ private:
 	//void FreeAudioEl(int index);
 	void BGMCore(LOString &s, int looptimes);
 	void SeCore(int channel, LOString &s, int looptimes);
-	//void SetBGMvol(int vol, double ratio);
-	//void SetSevol(int channel, int vol);
-	//bool CheckChannel(int channel,const char* info);
+	void StopCore(int channel);
+	void RebackBgmVol();
+	void SetBGMvol(int vol, double ratio);
+	void SetSevol(int channel, int vol);
+	bool CheckChannel(int channel,const char* info);
 };
 
 

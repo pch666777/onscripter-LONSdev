@@ -288,6 +288,14 @@ LOEventHook* LOEventHook::CreateSePalyFinishEvent(int channel) {
 	return e;
 }
 
+LOEventHook* LOEventHook::CreateSignal(int param1, int param2) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_NONE;
+	e->param1 = param1;
+	e->param2 = param2;
+	return e;
+}
+
 
 //高精度延迟，阻塞线程，CPU维持在高使用率
 void G_PrecisionDelay(double t) {

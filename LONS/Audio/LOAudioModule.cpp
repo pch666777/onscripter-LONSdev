@@ -11,8 +11,9 @@ LOAudioModule::LOAudioModule() {
 	bgmFadeInTime = 0;
 	bgmFadeOutTime = 0;
 	currentChannel = 0;
-	bgmVol = 100;
 	flags = 0;
+	channelActiveFlag = 0;
+	lockFlag.store(LOCK_OFF);
 }
 
 LOAudioModule::~LOAudioModule() {
@@ -21,11 +22,20 @@ LOAudioModule::~LOAudioModule() {
 	}
 }
 
+void LOAudioModule::lock() {
+	int nf = LOCK_OFF;
+	while (!lockFlag.compare_exchange_weak(nf, LOCK_ON));
+}
+
+void LOAudioModule::unlock() {
+	int nf = LOCK_ON;
+	while (!lockFlag.compare_exchange_weak(nf, LOCK_OFF));
+}
+
 
 //重置音频模块
 void LOAudioModule::ResetMe() {
-	/*
-	ptrMutex.lock();
+	lock();
 	//先解除播放回调
 	Mix_ChannelFinished(NULL);
 	Mix_HookMusicFinished(NULL);
@@ -33,29 +43,28 @@ void LOAudioModule::ResetMe() {
 	//blocksEvent.InvalidAll();
 
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
-		if (_audioPtr[ii]) {
-			_audioPtr[ii]->Stop(0);
-			delete _audioPtr[ii];
-			_audioPtr[ii] = nullptr;
-			_audioVol[ii] = MIX_MAX_VOLUME;
+		if (audioPtr[ii]) {
+			audioPtr[ii]->Stop(0);
+			delete audioPtr[ii];
+			audioPtr[ii] = nullptr;
+			audioVol[ii] = 100;
 		}
 	}
 	moduleState = MODULE_STATE_NOUSE;
-	LOAudioElement::silenceFlag = true;    //注意之后将状态重新设为false
-	ptrMutex.unlock();
-	*/
+	//LOAudioElement::silenceFlag = true;    //注意之后将状态重新设为false
+	unlock();
 }
 
 
-//void LOAudioModule::SetBGMvol(int vol, double ratio) {
-//	vol = ratio * vol / 100 * MIX_MAX_VOLUME;
-//	Mix_VolumeMusic(vol);
-//}
-//
-//void LOAudioModule::SetSevol(int channel, int vol) {
-//	vol = (double)vol / 100 * MIX_MAX_VOLUME;
-//	Mix_Volume(channel, vol);
-//}
+void LOAudioModule::SetBGMvol(int vol, double ratio) {
+	vol = ratio * vol / 100 * MIX_MAX_VOLUME;
+	Mix_VolumeMusic(vol);
+}
+
+void LOAudioModule::SetSevol(int channel, int vol) {
+	vol = (double)vol / 100 * MIX_MAX_VOLUME;
+	Mix_Volume(channel, vol);
+}
 //
 //void LOAudioModule::FreeAudioEl(int index) {
 //	LOAudioElement *aue = GetAudioEl(index);
@@ -83,57 +92,86 @@ int LOAudioModule::bgmCommand(FunctionInterface *reader) {
 int LOAudioModule::bgmonceCommand(FunctionInterface *reader) {
 	LOString s = reader->GetParamStr(0);
 	BGMCore(s, 0);
+	
 	return RET_CONTINUE;
 }
 
 void LOAudioModule::BGMCore(LOString &s, int looptimes) {
-	LOAudioElement *aue = GetChannel(INDEX_MUSIC);
-	aue->Stop(bgmFadeOutTime);
+	//停止播放时会触发Mix_ChannelFinished/Mix_HookMusicFinished回调
+	//先取出就不会在回调线程中再操作音频对象了
+	LOAudioElement *aue = takeChannelSafe(INDEX_MUSIC);
+	if (aue) {
+		aue->Stop(bgmFadeOutTime);
+		delete aue;
+	}
+
+	aue = new LOAudioElement();
 	BinArray *bin = fileModule->ReadFile(&s, false);
 	aue->SetData(bin, -1, looptimes);
 	aue->buildStr = s;
-	aue->Play(bgmFadeInTime);
+
+	inputChannelSafe(INDEX_MUSIC, aue);
+	if (aue->isAvailable()) {
+		aue->Play(bgmFadeInTime);
+	}
 }
 
 void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
-	LOAudioElement *aue = GetChannel(channel);
-	aue->Stop(0);
+	StopCore(channel);
+	LOAudioElement* aue = new LOAudioElement();
 	BinArray *bin = fileModule->ReadFile(&s, false);
 	aue->SetData(bin, channel, looptimes);
 	aue->buildStr = s;
 
 	if (isSePalyBgmDown()) {
-		LOAudioElement *bgm = GetChannel(INDEX_MUSIC);
-		bgm->SetVolume(bgmVol * 0.6);
+		SetBGMvol(audioVol[INDEX_MUSIC], 0.6);
 	}
-	aue->Play(0);
 
-	LOAudioElement* aue = new LOAudioElement;
-	aue->SetData(bin, channel, looptimes);
-	aue->Name = s;
-
-	SetSevol(channel, _audioVol[channel]);
-	//播放声音时降低音量
-	if (isSePalyBgmDown() && aue->isAvailable()) SetBGMvol(_audioVol[INDEX_MUSIC], 0.6);
-	SetAudioElAndPlay(channel, aue);
+	inputChannelSafe(channel, aue);
+	if (aue->isAvailable()) {
+		channelActiveFlag |= (1 << channel);
+		aue->Play(0);
+	}
+	else if (isSePalyBgmDown()) {
+		//播放失败应该尝试恢复bgm音量
+		channelActiveFlag &= (~(1 << channel));
+		RebackBgmVol();
+	}
 }
 
+
+void LOAudioModule::StopCore(int channel) {
+	//停止播放时会触发Mix_ChannelFinished/Mix_HookMusicFinished回调
+	//先取出就不会在回调线程中再操作音频对象了
+	LOAudioElement *aue = takeChannelSafe(channel);
+	if (aue) {
+		if(channel == INDEX_MUSIC) aue->Stop(bgmFadeOutTime);
+		else aue->Stop(0);
+		delete aue;
+		//channelActiveFlag &= (~(1 << channel));
+	}
+}
+
+void LOAudioModule::RebackBgmVol() {
+	if (channelActiveFlag == 0) {
+		SetBGMvol(audioVol[INDEX_MUSIC], 1.0);
+	}
+}
+
+
 int LOAudioModule::bgmstopCommand(FunctionInterface *reader) {
-	FreeAudioEl(INDEX_MUSIC);
+	StopCore(INDEX_MUSIC);
 	return RET_CONTINUE;
 }
 
 void musicFinished() {
 	//NEVER call SDL Mixer functions, nor SDL_LockAudio, from a callback function.
-	//让主脚本进程再回调LOAudioModule中的相关函数
+	//在主脚本进程再回调LOAudioModule中的相关函数
 	LOAudioModule *au = (LOAudioModule*)(FunctionInterface::audioModule);
+	//loopbgm播放第二段
 	if (au->afterBgmName.length() > 0) {
-		/*
-		LOEvent1 *e = new LOEvent1(FunctionInterface::SCRIPTER_BGMLOOP_NEXT, (int64_t)1 );
-		FunctionInterface::scriptModule->blocksEvent.SendToSlot(e);
-		*/
-		//LOEvent *e = new LOEvent(LOEvent::MSG_BGMLOOP_NEXT);
-		//FunctionInterface::scriptModule->AddNextEvent((intptr_t)e);
+		LOShareEventHook ev(LOEventHook::CreateSignal(LOEventHook::MOD_SCRIPTER, LOEventHook::FUN_BGM_AFTER));
+		FunctionInterface::scriptModule->waitEventQue.push_header(ev, LOEventQue::LEVEL_NORMAL);
 	}
 }
 
@@ -145,18 +183,17 @@ void channelFinish(int channel) {
 
 void LOAudioModule::channelFinish_t(int channel) {
 	//注意回调既不在脚本线程，也不在渲染线程，是另外的线程，线程安全比较重要
-	LOAudioElement *aue = GetAudioEl(channel);
-	if (aue) delete aue;
-	if (isSePalyBgmDown()) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0);
+	StopCore(channel);
+	channelActiveFlag &= (~(1 << channel));
+	if (isSePalyBgmDown()) RebackBgmVol();
 
-	//0频道绑定了按钮超时事件
+	//0频道绑定了按钮超时事件，频道播放完成事件
 	if ((isChannelZeroEv() && channel == 0) || isChannelALLEv()) {
 		LOShareEventHook ev(LOEventHook::CreateSePalyFinishEvent(channel));
 		if (moduleState == MODULE_STATE_SUSPEND) {
 
 		}
 	}
-
 }
 
 
@@ -167,36 +204,24 @@ int LOAudioModule::InitAudioModule() {
 	return true;
 }
 
-void LOAudioModule::ResetMeFinish() {
-	Mix_ChannelFinished(channelFinish);
-	Mix_HookMusicFinished(musicFinished);
-	LOAudioElement::silenceFlag = false;
-}
+//void LOAudioModule::ResetMeFinish() {
+//	Mix_ChannelFinished(channelFinish);
+//	Mix_HookMusicFinished(musicFinished);
+//	LOAudioElement::silenceFlag = false;
+//}
 
 int LOAudioModule::loopbgmCommand(FunctionInterface *reader) {
 	LOString s1 = reader->GetParamStr(0);
 	afterBgmName = reader->GetParamStr(1);
-
-	LOAudioElement *aue = GetAudioEl(INDEX_MUSIC);
-	aue->Stop(bgmFadeOutTime);
-	Mix_HookMusicFinished(musicFinished);
-
 	BGMCore(s1, 1);
+	Mix_HookMusicFinished(musicFinished);
 	return RET_CONTINUE;
 }
 
 int LOAudioModule::loopbgmstopCommand(FunctionInterface *reader) {
 	afterBgmName.clear();
-	FreeAudioEl(INDEX_MUSIC);
+	StopCore(INDEX_MUSIC);
 	return RET_CONTINUE;
-}
-
-
-void LOAudioModule::PlayAfter() {
-	//防止某些情况下出现死循环
-	LOString s = afterBgmName;
-	afterBgmName.clear();
-	if (s.length() > 0) BGMCore(s, -1);
 }
 
 int LOAudioModule::bgmfadeCommand(FunctionInterface *reader) {
@@ -213,7 +238,7 @@ int LOAudioModule::bgmfadeCommand(FunctionInterface *reader) {
 
 int LOAudioModule::waveCommand(FunctionInterface *reader) {
 	if (reader->isName("wavestop")) {
-		FreeAudioEl(INDEX_WAVE);
+		StopCore(INDEX_WAVE);
 	}
 	else {
 		int looptime = 0;
@@ -225,46 +250,30 @@ int LOAudioModule::waveCommand(FunctionInterface *reader) {
 }
 
 
-LOAudioElement* LOAudioModule::GetChannel(int channel) {
-	if (!audioPtr[channel]) audioPtr[channel] = new LOAudioElement();
-	return audioPtr[channel];
+//取出音频
+LOAudioElement* LOAudioModule::takeChannelSafe(int channel) {
+	lock();
+	LOAudioElement *aue = audioPtr[channel];
+	audioPtr[channel] = nullptr;
+	unlock();
+	return aue;
 }
 
-
-//get以后内容就被置空了，要注意
-LOAudioElement* LOAudioModule::GetAudioEl(int index) {
-	ptrMutex.lock();
-	LOAudioElement *ptr = _audioPtr[index];
-	_audioPtr[index] = nullptr;
-	ptrMutex.unlock();
-	return ptr;
+//置入音频，必须先取出，不会释放已有的音频，只是单纯的替换指针
+void LOAudioModule::inputChannelSafe(int channel, LOAudioElement *aue) {
+	lock();
+	audioPtr[channel] = aue;
+	unlock();
 }
 
-//set以后，原有的资源就被释放了，注意必须先暂停播放
-void LOAudioModule::SetAudioEl(int index, LOAudioElement *aue) {
-	ptrMutex.lock();
-	LOAudioElement *ptr = _audioPtr[index];
-	_audioPtr[index] = aue;
-	ptrMutex.unlock();
-	if (ptr) delete ptr;
-}
-
-void LOAudioModule::SetAudioElAndPlay(int index, LOAudioElement *aue) {
-	ptrMutex.lock();
-	LOAudioElement *ptr = _audioPtr[index];
-	_audioPtr[index] = aue;
-	if (aue) {
-		if (aue->isBGM()) aue->Play(bgmFadeInTime);
-		else aue->Play(0);
-	}
-	ptrMutex.unlock();
-	if (ptr) delete ptr;
-}
 
 int LOAudioModule::bgmdownmodeCommand(FunctionInterface *reader) {
 	if( reader->GetParamInt(0)) SetFlags(FLAGS_SEPLAY_BGMDOWN) ;
 	else UnsetFlags(FLAGS_SEPLAY_BGMDOWN);
-	if (!(flags & FLAGS_SEPLAY_BGMDOWN)) SetBGMvol(_audioVol[INDEX_MUSIC], 1.0); //恢复已经被设置的音量 
+	if (!isSePalyBgmDown()) {
+		channelActiveFlag = 0;
+		RebackBgmVol();
+	}
 	return RET_CONTINUE;
 }
 
@@ -275,16 +284,16 @@ int LOAudioModule::voicevolCommand(FunctionInterface *reader) {
 	if (vol < 0 || vol > 100) vol = 100;
 
 	if (reader->isName("bgmvol") || reader->isName("mp3vol")) {
-		_audioVol[INDEX_MUSIC] = vol;
+		audioVol[INDEX_MUSIC] = vol;
 		SetBGMvol(vol, 1.0);
 	}
 	else if (reader->isName("voicevol")) {
-		_audioVol[INDEX_WAVE] = vol;
+		audioVol[INDEX_WAVE] = vol;
 		SetSevol(INDEX_WAVE, vol);
 	}
 	else {
 		for (int ii = 0; ii < INDEX_WAVE; ii++) {
-			_audioVol[ii] = vol;
+			audioVol[ii] = vol;
 			SetSevol(ii, vol);
 		}
 	}
@@ -298,8 +307,8 @@ int LOAudioModule::chvolCommand(FunctionInterface *reader) {
 	if (vol < 0 || vol > 100) vol = 100;
 	if (!CheckChannel(channel, "[chvol] channel out of range:%d")) return RET_CONTINUE;
 
-	_audioVol[channel] = vol;
-	SetSevol(channel, _audioVol[channel]);
+	audioVol[channel] = vol;
+	SetSevol(channel, audioVol[channel]);
 
 	return RET_CONTINUE;
 }
@@ -323,11 +332,11 @@ int LOAudioModule::dwaveloadCommand(FunctionInterface *reader) {
 
 	if (!CheckChannel(channel, "[dwaveload] channel out of range:%d")) return RET_CONTINUE;
 
-	FreeAudioEl(channel);
+	StopCore(channel);
 	BinArray *bin = fileModule->ReadFile(&s, false);
 	LOAudioElement *aue = new LOAudioElement;
 	aue->SetData(bin, channel, 0);
-	SetAudioEl(channel, aue);
+	inputChannelSafe(channel, aue);
 
 	return RET_CONTINUE;
 
@@ -338,25 +347,26 @@ int LOAudioModule::dwaveplayCommand(FunctionInterface *reader) {
 	if (!CheckChannel(channel, "[dwaveplay] channel out of range:%d")) return RET_CONTINUE;
 	int looptime = 0;
 	if (reader->isName("dwaveplayloop"))  looptime = -1;
-	LOAudioElement *aue = GetAudioEl(channel);
+
+	LOAudioElement *aue = takeChannelSafe(channel);
 	if (aue) {
-		aue->loopCount = looptime;
-		SetAudioElAndPlay(channel, aue);
+		aue->SetLoop(looptime);
+		inputChannelSafe(channel, aue);
 	}
 	currentChannel = channel;
 	return RET_CONTINUE;
 }
 
 int LOAudioModule::dwavestopCommand(FunctionInterface *reader) {
-	FreeAudioEl(currentChannel);
+	StopCore(currentChannel);
 	return RET_CONTINUE;
 }
 
 int LOAudioModule::getvoicevolCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	int vol = _audioVol[INDEX_MUSIC];
-	if (reader->isName("getvoicevol")) vol = _audioVol[INDEX_WAVE];
-	else if (reader->isName("getsevol")) vol = _audioVol[currentChannel];
+	int vol = audioVol[INDEX_MUSIC];
+	if (reader->isName("getvoicevol")) vol = audioVol[INDEX_WAVE];
+	else if (reader->isName("getsevol")) vol = audioVol[currentChannel];
 	v->SetValue((double)vol);
 	return RET_CONTINUE;
 }
@@ -365,13 +375,8 @@ int LOAudioModule::stopCommand(FunctionInterface *reader) {
 	//禁用回调函数
 	Mix_ChannelFinished(NULL);
 	Mix_HookMusicFinished(NULL);
-	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
-		LOAudioElement *aue = GetAudioEl(ii);
-		if (aue) {
-			if (aue->isBGM()) aue->Stop(bgmFadeOutTime);
-			else aue->Stop(0);
-			delete aue;
-		}
+	for (int ii = 0; ii <= INDEX_MUSIC; ii++) {
+		StopCore(ii);
 	}
 	Mix_ChannelFinished(channelFinish);
 	Mix_HookMusicFinished(musicFinished);
@@ -383,4 +388,7 @@ void LOAudioModule::SePlay(int channel, LOString s, int loopcount) {
 	SeCore(channel, s, loopcount);
 }
 
-
+void LOAudioModule::PlayAfter() {
+	BGMCore(afterBgmName, -1);
+	afterBgmName.clear();
+}

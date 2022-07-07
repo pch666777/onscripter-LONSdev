@@ -85,6 +85,7 @@ public:
 		FUN_PRE_EFFECT,
 		FUN_CONTINUE_EFF,
 		FUN_SE_PLAYFINISH,
+		FUN_BGM_AFTER,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
@@ -153,6 +154,8 @@ public:
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 	//创建一个se播放完成事件
 	static LOEventHook* CreateSePalyFinishEvent(int channel);
+	//创建一个没有参数的信号
+	static LOEventHook* CreateSignal(int param1, int param2);
 private:
 	bool upState(int sa);
 	//参数表

@@ -28,7 +28,7 @@ public:
 	bool isAvailable();
 	void FreeData();
 	void SetData(BinArray *bin, int channel, int loops);  //chid < 0为music，chid >= 0为se
-	void SetVolume(int vol);
+	void SetLoop(int l) { loopCount = l; }
 	bool Play(int fade);
 	void Stop(int fade);
 private:
@@ -40,7 +40,6 @@ private:
 	int flags;
 	int channel;
 	int loopCount;
-	int volume;
 };
 
 

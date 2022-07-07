@@ -506,6 +506,12 @@ int LOScriptReader::ContinueEvent() {
 		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
 			if (CheckTimer(ev.get(), 5)) RunFuncBase(ev.get(), nullptr);
 		}
+		else if (ev->catchFlag == LOEventHook::ANSWER_NONE) {
+			if (ev->param2 == LOEventHook::FUN_BGM_AFTER) {
+				audioModule->PlayAfter();
+				ev->InvalidMe();
+			}
+		}
 
 		//这里有个小技巧，如果hook是 finish状态，表示需要由脚本线程处理余下的过程
 		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
@@ -1500,7 +1506,7 @@ LOString LOScriptReader::GetReport() {
 
 void LOScriptReader::PrintError(const char *fmt, ...) {
 	std::unique_ptr<BinArray> uptr(new BinArray(1024));
-	memset(uptr.get(), 0, 1024);
+	memset(uptr.get()->bin, 0, 1024);
 	va_list argptr;
 	va_start(argptr, fmt);
 	vsnprintf(uptr->bin, 1024, fmt, argptr);

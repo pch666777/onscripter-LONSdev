@@ -358,7 +358,7 @@ int LOImageModule::MainLoop() {
 		posTime = ((double)(hightTimeNow - lastTime)) / perHtickTime;
 	}
 	//
-	WriteLog(LOGSET_FILELOG);
+	//WriteLog(LOGSET_FILELOG);
 
 	LOLog_i("LONS::MainLoop exit.\n");
 	//LOLog_i("exit ok: %d", SDL_GetTicks());

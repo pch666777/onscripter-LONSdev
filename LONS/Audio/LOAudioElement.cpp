@@ -8,7 +8,6 @@ LOAudioElement::LOAudioElement() {
 	SetNull();
 	channel = 0;
 	loopCount = 0;
-	volume = 100;
 }
 
 LOAudioElement::~LOAudioElement() {
@@ -48,11 +47,8 @@ void LOAudioElement::SetData(BinArray *bin, int channel, int loops) {
 }
 
 bool LOAudioElement::Play(int fade) {
-	int vol = (double)volume / 100 * MIX_MAX_VOLUME;
-
 	if (channel < 0) {
 		if (music) {
-			Mix_VolumeMusic(vol);
 			if (fade > 0)  Mix_FadeInMusic(music, loopCount, fade);
 			else Mix_PlayMusic(music, loopCount);
 			return true;
@@ -61,7 +57,6 @@ bool LOAudioElement::Play(int fade) {
 	}
 	else if (channel >= 0) {
 		if (chunk) {
-			Mix_Volume(channel, vol);
 			if (fade > 0) Mix_FadeInChannel(channel, chunk, 0, fade);
 			else Mix_PlayChannel(channel, chunk, 0);
 			return true;
@@ -87,10 +82,4 @@ bool LOAudioElement::isAvailable() {
 	if (channel < 0 && music) return true;
 	if (channel >= 0 && chunk) return true;
 	return false;
-}
-
-
-void LOAudioElement::SetVolume(int vol) {
-	volume = vol;
-
 }
