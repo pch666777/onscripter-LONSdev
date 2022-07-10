@@ -30,22 +30,25 @@ bool LOPackFile::ReadFileIndexs(FILE *f, PACKTYPE t) {
 bool LOPackFile::ReadARCindexs() {
 	//读取基本信息
 	BinArray *bin = BinArray::ReadFile(filePtr, 0, 6);
-	int count = (uint16_t)bin->GetInt16(0, true);
-	dataStart = (uint32_t)bin->GetInt32(2, true);  //数据的起始地址
+	bin->SetOrder(true);
+
+	int count = (uint16_t)bin->GetInt16Auto(0);
+	dataStart = (uint32_t)bin->GetIntAuto(2);  //数据的起始地址
 	delete bin;
 
 	//读取索引目录
 	bin = BinArray::ReadFile(filePtr, 6, dataStart - 6);
+	bin->SetOrder(true);
 	PackIndex index;
 	std::string fname;
 	int current = 0;
 	for (int ii = 0; ii < count; ii++) {
-		bin->GetString(fname, &current);
+		fname = bin->GetString(&current);
 		//LOCodePage::baseEncoder->ToLower(&fname); 压缩工具应该要保证小写
 		index.flag = bin->GetChar(&current);
-		index.adress = dataStart + (uint32_t)bin->GetInt32(&current, true);
-		index.length = (uint32_t)bin->GetInt32(&current, true);
-		index.compresslen = (uint32_t)bin->GetInt32(&current, true);
+		index.adress = dataStart + (uint32_t)bin->GetInt32Auto(&current);
+		index.length = (uint32_t)bin->GetInt32Auto(&current);
+		index.compresslen = (uint32_t)bin->GetInt32Auto(&current);
 		indexMap[fname] = index;
 		//printf("%s", fname.c_str());
 	}
@@ -54,16 +57,17 @@ bool LOPackFile::ReadARCindexs() {
 }
 
 bool LOPackFile::ReadNS2index() {
+	int position = 0;
 	//the indexs lenght
 	BinArray *bin = BinArray::ReadFile(filePtr, 0, 4);
-	int lenght = bin->GetInt(0);
+	int lenght = bin->GetIntAuto(0);
 	delete bin;
 	bin = BinArray::ReadFile(filePtr, 0, lenght);
 
 	PackIndex index;
 	std::string fname;
 	int current = 4;
-	uint32_t srcAdress = (uint32_t)bin->GetInt(0);
+	uint32_t srcAdress = (uint32_t)bin->GetIntAuto(0);
 
 	while (current < lenght - 6) {
 
@@ -73,7 +77,7 @@ bool LOPackFile::ReadNS2index() {
 		current++;
 		fname.assign(bin->bin + tsart, current - tsart - 1);
 
-		index.length = (uint32_t)bin->GetInt(current);
+		index.length = (uint32_t)bin->GetIntAuto(current);
 		current += 4;
 		index.adress = srcAdress;
 		srcAdress += index.length;

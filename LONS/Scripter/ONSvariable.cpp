@@ -162,10 +162,7 @@ int ONSVariableBase::ArrayCount() {
 
 
 void ONSVariableBase::SaveOnsVar(BinArray *bin, int from, int count) {
-	//GVAR
-	bin->WriteInt(0x52415647);
-	//GVAR version
-	bin->WriteInt(1);
+	int len = bin->WriteLpksEntity("GVAR", 0, 1);
 	//起点
 	bin->WriteInt(from);
 	//数量
@@ -173,14 +170,15 @@ void ONSVariableBase::SaveOnsVar(BinArray *bin, int from, int count) {
 	for (int ii = from; ii < count; ii++) {
 		GNSvariable[ii].Serialization(bin, ii);
 	}
+	bin->WriteInt(bin->Length() - len, &len);
 }
 
 
 //序列化
 void ONSVariableBase::Serialization(BinArray *bin, int vid) {
-	int len = bin->Length() + 4;
-	//onsv,len,vid
-	bin->WriteInt3(0x76736E6F, 0, vid);
+	int len = bin->WriteLpksEntity("onsv", 0, 1);
+	//vid
+	//bin->WriteInt(vid);
 	//value
 	bin->WriteDouble(value);
 	//string
@@ -199,30 +197,25 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 
 //反序列化
 bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
-	if (bin->GetInt(pos) != 0x76736E6F) return false;
-	//下一个的位置
-	int nextpos = *pos;
-	nextpos += bin->GetInt(pos);
-	//id
-	bin->GetInt(pos);
+	int next = 0;
+	if (!bin->CheckEntity("onsv", &next, nullptr, pos)) return false;
 	//value
-	value = bin->GetDouble(pos);
+	value = bin->GetDoubleAuto(pos);
 	//string
 	if (strValue) delete strValue;
 	strValue = bin->GetLOStrPtr(pos);
 	//数组
 	if (arrayData) delete[] arrayData;
-	int count = bin->GetInt(pos);
+	int count = bin->GetIntAuto(pos);
 	if (count > 0) {
 		//虽然看起来 MAXVARIABLE_ARRAY 是可调的，其实是已经限制住了最大4维
 		count += MAXVARIABLE_ARRAY;
 		arrayData = new int[count];
-		memcpy(arrayData, bin->bin + (*pos), count * 4);
-		*pos += count * 4;
+		bin->GetArrayAuto(arrayData, count, 4, pos);
 	}
 	else arrayData = nullptr;
 	//指向下一段
-	*pos = nextpos;
+	*pos = next;
 	return true;
 }
 

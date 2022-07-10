@@ -22,8 +22,6 @@ public:
 	static BinArray* ReadAllBytes(LOString &fn);
 	static void ReadBytes(BinArray *&bin, FILE *f, int position, int length);
 	static bool WriteAllBytes(LOString &fn, BinArray *bin);
-	static void InitLPKStream(BinArray *bin);
-	static bool CheckLPKHeader(BinArray *bin, int *pos);
 
 	static LOString ioReadDir;
 	static LOString ioWriteDir;

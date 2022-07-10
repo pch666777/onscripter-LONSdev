@@ -1336,7 +1336,7 @@ void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
 	int len = bin->Length();
 	//'pque', len, version
 	bin->WriteInt3(0x65757170, 0, 1);
-	bin->WriteString(mapName->c_str());
+	bin->WriteString(mapName);
 	bin->WriteInt(map->size());
 	//写入fullid
 	for (auto iter = map->begin(); iter != map->end(); iter++) bin->WriteInt(iter->first);

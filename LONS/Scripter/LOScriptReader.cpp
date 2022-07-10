@@ -1595,9 +1595,7 @@ int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 
 
 void LOScriptReader::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//'scri',len, version
-	bin->WriteInt3(0x69726373, 0, 1);
+	int len = bin->WriteLpksEntity("scri", 0, 1);
 	//
 	bin->WriteInt(lastCmdCheckFlag);
 	bin->WriteInt((int)sctype);

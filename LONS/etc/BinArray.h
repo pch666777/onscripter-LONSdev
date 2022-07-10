@@ -8,10 +8,15 @@
 #include "LOString.h"
 #include "LOVariant.h"
 
-//默认是Little Endian模式的
+//本质上是一个连续的char数组
 class BinArray
 {
 public:
+	enum {
+		FLAGS_STREAM = 1,
+
+	};
+
 	//字节集的默认大小和是否为流模式
 	BinArray(int prepsize = 8 , bool isstream = false);
 
@@ -21,53 +26,64 @@ public:
 	~BinArray();
 
 	void Clear(bool resize);
-	uint32_t Length() { return realLen; }
-	void SetLength(uint32_t len) { realLen = len; }
+	uint32_t Length();
+	void SetLength(uint32_t len);
 
+	//设置字节集的order模式，字节顺序只对auto读取时有用，模式默认时小端的
+	void SetOrder(bool isBig);
+	//恢复默认的字节顺序
+	void SetCpuOrder();
+
+	//与order无关的获取
 	char GetChar(int *pos);
-	char GetChar(int pos) { return GetChar(&pos); }
-	short int GetShortInt(int *pos,bool isbig = false);
-	short int GetShortInt(int pos, bool isbig = false) { return GetShortInt(&pos, isbig); }
-	int  GetInt(int *pos, bool isbig = false);
-	int  GetInt(int pos, bool isbig = false) { return GetInt(&pos, isbig); }
-	int8_t GetInt8(int *pos);
-	int8_t GetInt8(int pos) { return GetInt8(&pos); }
-	int16_t GetInt16(int *pos, bool isbig = false);
-	int16_t GetInt16(int pos, bool isbig = false) { return GetInt16(&pos, isbig); }
-	int32_t GetInt32(int *pos, bool isbig = false);
-	int32_t GetInt32(int pos, bool isbig = false) { return GetInt32(&pos, isbig); }
-	int64_t GetInt64(int *pos, bool isbig = false);
-	int64_t GetInt64(int pos, bool isbig = false) { return GetInt64(&pos, isbig); }
-	void GetString(std::string &s, int *pos);
-	//std::string GetString(int pos) { return GetString(&pos); }
+	bool GetBool(int *pos);
+	std::string GetString(int *pos);
 	LOString GetLOString(int *pos);
 	LOString* GetLOStrPtr(int *pos);
-	bool GetBool(int *pos);
-	bool GetBool(int pos) { return GetBool(&pos); }
-	float GetFloat(int *pos, bool isbig = false);
-	float GetFloat(int pos, bool isbig = false) { return GetFloat(&pos, isbig); }
-	double GetDouble(int *pos, bool isbig = false);
-	double GetDouble(int pos, bool isbig = false) { return GetDouble(&pos, isbig); }
+	
+
+	//根据BinArray的order自动调整读取的内容到CPU order
+	int GetIntAuto(int *pos);
+	int GetIntAuto(int pos) { return GetIntAuto(&pos); }
+	int16_t GetInt16Auto(int *pos);
+	int16_t GetInt16Auto(int pos) { return GetInt16Auto(&pos); }
+	int32_t GetInt32Auto(int *pos);
+	int64_t GetInt64Auto(int *pos);
+	float   GetFloatAuto(int *pos);
+	double  GetDoubleAuto(int *pos);
+	bool GetArrayAuto(void *dst, int elmentCount, int elmentSize, int *pos);
 
 	void Append(const char *buf,int len);
 	void Append(BinArray *v);
 
+	//不调整order的write
 	int WriteChar(char v,int *pos = NULL);
-	int WriteInt(int v, int *pos = NULL, bool isbig = false);
-	int WriteInt3(int v1, int v2, int v3, int *pos = NULL, bool isbig = false);
-	int WriteInt16(int16_t v, int *pos = NULL, bool isbig = false);
-	int WriteInt32(int32_t v, int *pos = NULL, bool isbig = false);
-	int WriteInt64(int64_t v, int *pos = NULL, bool isbig = false);
-	int WriteFloat(float v, int *pos = NULL, bool isbig = false);
-	int WriteDouble(double v, int *pos = NULL, bool isbig = false);
-	int WriteBool(bool v, int *pos = NULL, bool isbig = false);
-	//int WriteString(std::string *v, int *pos = NULL, bool isbig = false);
-	int WriteString(const char *buf, int *pos = NULL, bool isbig = false);
-	int WriteLOString(LOString *v, int *pos = NULL);
+	int WriteBool(bool v, int *pos = NULL);
+	int WriteInt(int v, int *pos = NULL);
+	int WriteInt2(int v1, int v2, int *pos = NULL);
+	int WriteInt3(int v1, int v2, int v3, int *pos = NULL);
+	int WriteInt4(int v1, int v2, int v3, int v4, int *pos = NULL);
+	int WriteInt16(int16_t v, int *pos = NULL);
+	int WriteInt32(int32_t v, int *pos = NULL);
+	int WriteInt64(int64_t v, int *pos = NULL);
+	int WriteFloat(float v, int *pos = NULL);
+	int WriteDouble(double v, int *pos = NULL);
+	//C风格的字符串 结尾的0一起写入
+	int WriteCString(const char *buf, int *pos = NULL);
+	int WriteString(std::string *s, int *pos = NULL);
+	int WriteLOString(LOString *s, int *pos = NULL);
 	int WriteLOVariant(LOVariant *v, int *pos = NULL);
+	//LPKS格式的操作,mark只写入4字节，返回的是len被写入的位置
+	int WriteLpksEntity(const char *mark, int len, int version);
+	void InitLpksHeader();
+	//检查LPKS的文件头，检查通过的话会设置字节集的字节顺序
+	bool CheckLpksHeader(int *pos);
+	bool CheckEntity(const char *mark,int *next, int *version, int *pos);
+	int GetNextEntity(int *pos);
+	//调整order的write
 
 
-	int WriteFillEmpty(int len, int *pos = NULL);
+	//其他
 	bool WriteToFile(const char *name);
 
 	//static BinArray* ReadFromFile(const char* name);
@@ -76,21 +92,37 @@ public:
 	char *bin;
 private:
 	enum {
-		BIN_PREPLEN = 20
+		BIN_DEFAULT_LEN = 20,
+		//数据起始的位置
+		BIN_DATA = 12,
+		//当前设置的内存序列（大端，还是小端）
+		//BIN_ORDER = 0,
+		//标记位，总长2字节
+		//BIN_FLAGS = 2,
+		//BIN_REALLEN = 4,
+		//BIN_PRELEN = 8,
 	};
-	//检测是大端还是小端的标记
-	static char litte[2];
+	//检测是当前CPU是大端还是小端的标记
+	static int16_t cpuOrder;
 
-	uint32_t realLen;  //实际使用的长度，指读写到的位置
-	uint32_t prepLen;  //准备使用的长度
-	bool isStream;     //流模式每次准备长度翻倍，非流模式每次准备长度+20
+	//实际数据的存放地址
+	char *dataPtr;
+	////实际使用的长度，指读写到的位置
+	//uint32_t *realLenPtr;
+	////已经准备的长度
+	//uint32_t *preLenPtr;
 	const char *errerinfo;   //上一次错误信息
 
 	void NewSelf(int prepsize, bool isstream);
-	void ReverseBytes(char *buf,int len);
-	void GetCharIntArray(char *buf, int len, int *pos, bool isbig);
+	//void ReverseBytes(char *buf,int len);
+	//void GetCharIntArray(char *buf, int len, int *pos, bool isbig);
+
+
 	void WriteCharIntArray(char *buf, int len, int *pos, bool isbig);
 	void AddMemory(int len);
+	bool CheckPosition(int pos);
+	void XChangeN(char *buf, int n);
+	int WriteUnOrder(void *src_t, int *pos, int len);
 };
 
 

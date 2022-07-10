@@ -442,14 +442,16 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 
 
-void LOLayer::Serialize(BinArray *sbin) {
+void LOLayer::Serialize(BinArray *bin) {
 	//'lyr ',version, fullid
-	sbin->WriteInt3(0x2072796C, 1, data->fullid);
+	int len = bin->WriteLpksEntity("lyr ", 0, 1);
+	bin->WriteInt(data->fullid);
 	//是否link
-	if (parent) sbin->WriteInt(1);
-	else sbin->WriteInt(0);
+	if (parent) bin->WriteInt(1);
+	else bin->WriteInt(0);
 	//data
-	data->Serialize(sbin);
+	data->Serialize(bin);
+	bin->WriteInt(bin->Length() - len, &len);
 }
 
 
@@ -837,11 +839,10 @@ void LonsSaveLayer(BinArray *bin) {
 
 //存储所有layerCenter中的文件
 void LOLayer::SaveLayer(BinArray *bin) {
-	int len = bin->Length() + 4;
 	//LYRS,len, version
-	bin->WriteInt3(0x5352594C, 0, 1);
+	int len = bin->WriteLpksEntity("LYRS", 0, 1);
+	
 	bin->WriteInt(layerCenter.size());
-
 	//从图层中心获取图层
 	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
 		auto childs = iter->second->childs;

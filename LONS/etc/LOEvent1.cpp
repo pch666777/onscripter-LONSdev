@@ -121,15 +121,11 @@ void LOEventHook::ClearParam() {
 
 
 void LOEventHook::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//even,len, version
-	bin->WriteInt3(0x6E657665, 0, 1);
+	int len = bin->WriteLpksEntity("even", 0, 1);
 	//自身的指针作为识别ID，在反序列化时有用
 	bin->WriteInt64((int64_t)this);
-	bin->WriteInt32(catchFlag);
-	bin->WriteInt32(evType);
 	//时间记录的是时间戳跟当前的差值
-	bin->WriteInt32((int32_t)(SDL_GetTicks() - timeStamp));
+	bin->WriteInt3(catchFlag, evType, (int)(SDL_GetTicks() - timeStamp));
 	bin->WriteInt16(param1);
 	bin->WriteInt16(param2);
 	bin->WriteInt(state.load());
@@ -406,8 +402,7 @@ void LOEventQue::clear() {
 void LOEventQue::SaveHooks(BinArray *bin) {
 	_mutex.lock();
 	//'hque',len, version
-	int len = bin->Length() + 4;
-	bin->WriteInt3(0x65757168, 0, 1);
+	int len = bin->WriteLpksEntity("hque", 0, 1);
 
 	bin->WriteInt(highList.size());
 	for (int ii = 0; ii < highList.size(); ii++) highList.at(ii)->Serialize(bin);

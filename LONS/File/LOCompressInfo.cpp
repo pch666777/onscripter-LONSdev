@@ -152,7 +152,7 @@ std::string LOCompressInfo::GetCdata(BinArray *bin) {
 	int pos = 0;
 	int count = 0;
 	while (pos >= 0) {
-		int val = bin->GetInt32(&pos);
+		int val = bin->GetIntAuto(&pos);
 		memset(buf, 0, 32);
 		sprintf(buf, "0x%x,", val);
 		s.append(buf);

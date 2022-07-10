@@ -1,12 +1,18 @@
 #include "BinArray.h"
 
-char BinArray::litte[2] = { 1,2 };
+int16_t BinArray::cpuOrder = 0x1122;
 
 //大端顺位，小端逆位
-#define ISBIG *(int16_t*)litte==0x0102
+#define IsBigOrder *(char*)(&cpuOrder)==0x11
+#define IsCpuOrder *(int16_t*)dataPtr==cpuOrder
+//使用0x1122作为字节顺序判断，大端为11 22   小端为 22 11
+#define notCpuOrder *(int16_t*)dataPtr!=cpuOrder
+#define RealLen *(uint32_t*)(dataPtr + 4)
+#define PreLen *(uint32_t*)(dataPtr + 8)
+#define Flags *(int16_t*)(dataPtr + 2)
 
 //快速交换
-//#define XCHANGE2 val=((val&0xff)<<8)|((val&0xff00)>>8)
+#define XCHANGE2(X) ((X&0xff)<<8)|((X&0xff00)>>8)
 //#define XCHANGE3 val=((val&0xff)<<16)|((val&0xff0000)>>16)|(val&0xff00)
 #define XCHANGE4(X) ((X&0xff)<<24)|((X&0xff00)<<8)|(X>>24)|((X&0x00ff0000)>>8)
 
@@ -21,9 +27,8 @@ BinArray::BinArray(const char *buf, int length) {
 	}
 	if (length == 0)NewSelf(8,false);
 	else if(length > 0) {
-		NewSelf(length + BIN_PREPLEN, false);
-		realLen = length;
-		memcpy(bin, buf, realLen);
+		NewSelf(length + BIN_DEFAULT_LEN, false);
+		memcpy(bin, buf, RealLen);
 	}
 	else {
 		errerinfo = "BinArray(const char *buf, int length) length less than zero!";
@@ -31,210 +36,222 @@ BinArray::BinArray(const char *buf, int length) {
 }
 
 void BinArray::NewSelf(int prepsize, bool isstream) {
-	prepLen = prepsize;
-	realLen = 0;
-	bin = (char*)calloc(1, prepLen);
-	isStream = isstream;
+	dataPtr = (char*)calloc(1, prepsize + BIN_DATA);
+
+	bin = dataPtr + BIN_DATA;
+	RealLen = 0;
+	PreLen = prepsize;
+	if (isstream) Flags |= FLAGS_STREAM;
+
+	//CPU是小端模式的话，内存为 22 11，大端模式为 11 22
+	//这里采用的CPU的默认order
+	*(int16_t*)dataPtr = 0x1122;
 	errerinfo = nullptr;
 }
 
 void BinArray::Clear(bool resize) {
 	if (resize) {
-		if (bin) free(bin);
-		NewSelf(8,false);
+		if (dataPtr) free(dataPtr);
+		NewSelf(8, false);
 	}
-	else memset(bin, 0, prepLen);
-	realLen = 0;
+	else memset(bin, 0, PreLen);
+	RealLen = 0;
 	errerinfo = nullptr;
 }
 
 
 BinArray::~BinArray()
 {
-	if (bin) free(bin);
+	if (dataPtr) free(dataPtr);
 }
 
-void BinArray::GetCharIntArray(char *buf, int len, int *pos, bool isbig) {
-	if (*pos > realLen - 1) {
-		errerinfo = "out of range!";
-		*pos = -2;
+uint32_t BinArray::Length() {
+	if (dataPtr) return RealLen;
+	return 0;
+}
+
+void BinArray::SetLength(uint32_t len) {
+	if (dataPtr) RealLen = len;
+}
+
+//颠倒字节
+void BinArray::XChangeN(char *buf, int n) {
+	for (int ii = 0; ii <= n / 2; ii++) {
+		char c = buf[ii];
+		buf[ii] = buf[n - 1 - ii];
+		buf[n - 1 - ii] = c;
 	}
-	else if (*pos < 0) {
-		errerinfo = "position less than zero!";
-		*pos = -2;
+}
+
+bool BinArray::CheckPosition(int pos) {
+	if (pos > RealLen) {
+		errerinfo = "out of range!";
+		return false;
+	}
+	return true;
+}
+
+void BinArray::SetOrder(bool isBig) {
+	if (isBig) {
+		dataPtr[0] = 0x11;
+		dataPtr[1] = 0x22;
 	}
 	else {
-		int olen = len;
-		memset(buf, 0, len);
-		if (len + (*pos) > realLen - 1) len = realLen - (*pos);
-		memcpy(buf, bin + (*pos), len);
-		(*pos) += len;
-		if (*pos >= realLen) *pos = -1;
-		//确定是否需要反转字节数组
-		if (olen > 1) {
-			bool machineBigen = false;
-			char test[] = { 11,22 };
-			if (*(uint16_t*)(test) == 0x1122) machineBigen = true;
-			if (!isbig && machineBigen) ReverseBytes(buf, olen);  //机器是大端要求读小端
-			if (isbig && !machineBigen) ReverseBytes(buf, olen);  //机器是小端要求读大端
-		}
-		//if (isbig && !isBig && olen > 1) ReverseBytes(buf, olen);
-		//if(!isbig && isBig && olen > 1) ReverseBytes(buf, olen);
+		dataPtr[0] = 0x22;
+		dataPtr[1] = 0x11;
 	}
 }
 
-//将数据写入字节集
-void BinArray::WriteCharIntArray(char *buf, int len, int *pos, bool isbig) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
+void BinArray::SetCpuOrder() {
+	*(int16_t*)dataPtr = cpuOrder;
+}
 
-	//检查长度，增加长度
-	if ((*pos) + len > prepLen) AddMemory(len);
+int BinArray::GetIntAuto(int *pos) {
+	int val = 0;
+	if (!CheckPosition(pos[0] + 4)) return val;
+	val = *(int*)(bin + pos[0]);
+	if (notCpuOrder) val = XCHANGE4(val);
+	pos[0] += 4;
+	return val;
+}
 
-	//检查是否需要交换值，大小端设置不匹配均需要交换值
-	if (len > 1 && isbig != (ISBIG)) {
-		//最多支持4个4字节
-		char nbuf[16];
-		//反正字节
-		for (int ii = 0; ii < len; ii++) nbuf[ii] = buf[(len - 1) - ii];
-		memcpy(bin + (*pos), nbuf, len);
+int32_t BinArray::GetInt32Auto(int *pos) {
+	return GetIntAuto(pos);
+}
+
+int16_t BinArray::GetInt16Auto(int *pos) {
+	int16_t val = 0;
+	if (!CheckPosition(pos[0] + 2)) return val;
+	val = *(int16_t*)(bin + pos[0]);
+	if (notCpuOrder) val = XCHANGE2(val);
+	pos[0] += 2;
+	return val;
+}
+
+int64_t BinArray::GetInt64Auto(int *pos) {
+	int64_t val = 0;
+	if (!CheckPosition(pos[0] + 8)) return val;
+	val = *(int64_t*)(bin + pos[0]);
+	if (notCpuOrder) XChangeN((char*)(&val), 8);
+	pos[0] += 8;
+	return val;
+}
+
+float BinArray::GetFloatAuto(int *pos) {
+	float val = 0.0f;
+	if (!CheckPosition(pos[0] + 4)) return val;
+	val = *(float*)(bin + pos[0]);
+	if (notCpuOrder) XChangeN((char*)(&val), 4);
+	pos[0] += 4;
+	return val;
+}
+
+double  BinArray::GetDoubleAuto(int *pos) {
+	double val = 0.0;
+	if (!CheckPosition(pos[0] + 8)) return val;
+	val = *(double*)(bin + pos[0]);
+	if (notCpuOrder) XChangeN((char*)(&val), 8);
+	pos[0] += 8;
+	return val;
+}
+
+bool BinArray::GetArrayAuto(void *dst, int elmentCount, int elmentSize, int *pos) {
+	int len = elmentCount * elmentSize;
+	if (!CheckPosition(pos[0] + len)) return false;
+	memcpy(dst, bin + pos[0], len);
+	//交换每一个元素的字节顺序
+	if (notCpuOrder) {
+		char *dst_t = (char*)dst;
+		for (int ii = 0; ii < elmentCount; ii++) {
+			//2交换1次，3交换1次，4交换2次
+			for (int kk = 0; kk <= elmentSize /2 ; kk++) {
+				char c = dst_t[kk];
+				dst_t[kk] = dst_t[elmentSize - 1 - kk];
+				dst_t[elmentSize - 1 - kk] = c;
+			}
+			dst_t += elmentSize;
+		}
 	}
-	else memcpy(bin + (*pos), buf, len);
 
-
-	(*pos) += len;
-	if ( *pos > realLen) realLen = *pos;
+	pos[0] += len;
+	return true;
 }
 
 
 char BinArray::GetChar(int *pos) {
-	char tmp = 0;
-	GetCharIntArray(&tmp, 1, pos,false);
-	return tmp;
+	char val = 0;
+	if (!CheckPosition(pos[0] + 1)) return val;
+	val = bin[pos[0]];
+	pos[0] += 1;
+	return val;
 }
 
 bool BinArray::GetBool(int *pos) {
-	return (bool)GetChar(pos);
+	bool val = false;
+	if (!CheckPosition(pos[0] + 1)) return val;
+	val = bin[pos[0]];
+	pos[0] += 1;
+	return val;
 }
 
-float BinArray::GetFloat(int *pos, bool isbig) {
-	float tmp = 0.0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos, isbig);
-	return tmp;
+std::string BinArray::GetString(int *pos) {
+	std::string val;
+	if (!CheckPosition(pos[0] + 1)) return val;
+	//要对字节集的边界做一个检查
+	int len = strlen(bin + pos[0]);
+	if (pos[0] + len >= RealLen) val.assign(bin + pos[0], RealLen - pos[0]);
+	else val.assign(bin + pos[0]);
+	pos[0] += val.length() + 1;
+	return val;
 }
-
-double BinArray::GetDouble(int *pos, bool isbig) {
-	double tmp = 0.0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos, isbig);
-	return tmp;
-}
-
-short int BinArray::GetShortInt(int *pos, bool isbig) {
-	short int tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,isbig);
-	return tmp;
-}
-
-
-int  BinArray::GetInt(int *pos, bool isbig) {
-	int tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,isbig);
-	return tmp;
-}
-
-
-
-int8_t BinArray::GetInt8(int *pos) {
-	int8_t tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,false);
-	return tmp;
-}
-
-int16_t BinArray::GetInt16(int *pos, bool isbig) {
-	int16_t tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,isbig);
-	return tmp;
-}
-
-
-int32_t BinArray::GetInt32(int *pos, bool isbig) {
-	int32_t tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,isbig);
-	return tmp;
-}
-
-int64_t BinArray::GetInt64(int *pos, bool isbig) {
-	int64_t tmp = 0;
-	GetCharIntArray((char*)(&tmp), sizeof(tmp), pos,isbig);
-	return tmp;
-}
-
-
-//反转字节数组
-void BinArray::ReverseBytes(char *buf, int len) {
-	char *tmp = new char[len];
-	memcpy(tmp, buf, len);
-	for (int ii = 0; ii < len; ii++) buf[ii] = tmp[(len-1) - ii];
-	delete []tmp;
-}
-
-//包含\0，pos指向\0的后一个字节
-void BinArray::GetString(std::string &s, int *pos){
-	if (*pos > realLen - 1) {
-		errerinfo = "out of range!";
-		*pos = -2;
-	}
-	else if (*pos < 0) {
-		errerinfo = "position less than zero!";
-		*pos = -2;
-	}
-	int len = 0;
-	while (bin[(*pos) + len] != 0 && (*pos) + len < realLen) len++;
-	s.assign(bin + (*pos), len);
-	(*pos) += (len+1); //包含\0
-	if ( *pos >= realLen) *pos = -1;
-}
-
-
-LOString BinArray::GetLOString(int *pos) {
-	LOString s;
-	GetString(s, pos);
-	s.SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
-	return s;
-}
-
 
 LOString* BinArray::GetLOStrPtr(int *pos) {
-	LOString *s = nullptr;
-	if (GetChar(*pos) == 0) {
-		*pos += 2;
+	if (!CheckPosition(pos[0] + 2)) return nullptr;
+	if (bin[pos[0]] == 0) {
+		pos[0] += 2;
+		return nullptr;
 	}
 	else {
-		s = new LOString();
-		GetString(*s, pos);
-		s->SetEncoder(LOCodePage::GetEncoder(GetChar(pos)));
+		LOString *s = new LOString(bin + pos[0]);
+		pos[0] += s->length() + 1;
+		s->SetEncoder(LOCodePage::GetEncoder(bin[pos[0]]));
+		pos[0]++;
+		return s;
 	}
-	return s;
 }
 
 
 void BinArray::AddMemory(int len) {
-	int destlen;
-	if (!isStream) destlen = realLen + len + BIN_PREPLEN;
-	else {
-		destlen = realLen + len;
-		if (destlen < 10000000) destlen *= 2;  //10MB以下直接翻倍
-		else destlen = destlen + 10000000;    //10MB以上最多只加10MB
+	//浪费一点点空间，避免频繁重新分配内存
+	len += BIN_DEFAULT_LEN;
+	//增加的大小
+	int addLen;
+	//对字节流有一个优化
+	if ((Flags)& FLAGS_STREAM) {
+		//10MB以下直接翻倍,10MB以上最多只加10MB
+		addLen = PreLen;
+		if (addLen > 10000000) addLen = 10000000;
+		while (addLen < len) {
+			if (addLen < 10000000) addLen *= 2;
+			else addLen += 10000000;
+		}
 	}
-	bin = (char*)realloc(bin, destlen);
-	memset(bin + realLen, 0, destlen - realLen);  //多出来的内存置0
-	prepLen = destlen;
+	else addLen = len;
+
+	//BIN_DATA + preLen才是上次分配的大小
+	//printf("BinArray resize:%d ++-> %d\n", PreLen + BIN_DATA, addLen);
+	dataPtr = (char*)realloc(dataPtr, PreLen + BIN_DATA + addLen);
+	//多出来的内存置0
+	memset(dataPtr + BIN_DATA + PreLen, 0, addLen); 
+
+	bin = dataPtr + BIN_DATA;
+	PreLen = PreLen + addLen;
 }
 
 void BinArray::Append(const char *buf, int len) {
-	if (realLen + len > prepLen) AddMemory(len);
-	memcpy(bin + realLen, buf, len);
-	realLen += len;
+	if (RealLen + len > PreLen) AddMemory(len);
+	memcpy(bin + RealLen, buf, len);
+	RealLen += len;
 }
 
 void BinArray::Append(BinArray *v) {
@@ -242,113 +259,121 @@ void BinArray::Append(BinArray *v) {
 }
 
 
-int BinArray::WriteChar(char v, int *pos) {
-	WriteCharIntArray(&v, 1, pos, false);
-	return 1;
-}
-
-int BinArray::WriteInt(int v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
-}
 
 
-int BinArray::WriteInt3(int v1, int v2, int v3, int *pos, bool isbig) {
-	//预先交换值
-	if (isbig != (ISBIG)) {
-		v1 = XCHANGE4(v1);
-		v2 = XCHANGE4(v2);
-		v3 = XCHANGE4(v3);
-	}
-	int val[] = { v1,v2,v3 };
-	WriteCharIntArray((char*)(val), sizeof(int) * 3, pos, ISBIG);
-	return sizeof(int) * 3;
-}
-
-int BinArray::WriteInt16(int16_t v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), 2, pos, isbig);
-	return 2;
-}
-
-int BinArray::WriteInt32(int32_t v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), 4, pos, isbig);
-	return 4;
-}
-
-int BinArray::WriteInt64(int64_t v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), 8, pos, isbig);
-	return 8;
-}
-
-int BinArray::WriteFloat(float v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
-}
-
-int BinArray::WriteDouble(double v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), sizeof(v), pos, isbig);
-	return sizeof(v);
-}
-
-int BinArray::WriteBool(bool v, int *pos, bool isbig) {
-	WriteCharIntArray((char*)(&v), 1, pos, isbig);
-	return 1;
-}
-
-
-int BinArray::WriteString(const char *buf, int *pos, bool isbig) {
-	int tpos = realLen;
+//==============================================
+int BinArray::WriteUnOrder(void *src_t, int *pos, int len) {
+	//int testP = RealLen;
+	//if (testP == 8227) {
+	//	int breakii = 0;
+	//}
+	int tpos = RealLen;
 	if (!pos) pos = &tpos;
-	int len = strlen(buf) + 1;
-	if (*pos + len > prepLen) AddMemory(len);
-	memcpy(bin + (*pos), buf, len);
-	*pos += len;
-	if (*pos > realLen) realLen = *pos;
+
+	if (pos[0] + len > PreLen) AddMemory(len);
+	memcpy(bin + pos[0], src_t, len);
+
+	pos[0] += len;
+	if (pos[0] > RealLen) RealLen = pos[0];
+
+	//if (RealLen - testP > 5000) {
+	//	int breaki = 0;
+	//}
 	return len;
 }
 
-int BinArray::WriteLOString(LOString *v, int *pos) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
+int BinArray::WriteBool(bool v, int *pos) {
+	char c = (char)v;
+	return WriteUnOrder(&c, pos, 1);
+}
 
-	int len;
-	if (!v || v->length() == 0) { //空字符串或者长度为0
-		//字符串
-		WriteChar(0, pos);
-		//编码
-		WriteChar(0, pos);
-		len = 2; 
+int BinArray::WriteChar(char v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(char));
+}
+
+int BinArray::WriteInt(int v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(int));
+}
+
+int BinArray::WriteInt2(int v1, int v2, int *pos) {
+	int list[] = { v1,v2 };
+	return WriteUnOrder(list, pos, sizeof(int) * 2);
+}
+
+int BinArray::WriteInt3(int v1, int v2, int v3, int *pos) {
+	int list[] = { v1,v2,v3 };
+	return WriteUnOrder(list, pos, sizeof(int) * 3);
+}
+
+int BinArray::WriteInt4(int v1, int v2, int v3, int v4, int *pos) {
+	int list[] = { v1,v2,v3,v4 };
+	return WriteUnOrder(list, pos, sizeof(int) * 4);
+}
+
+int BinArray::WriteInt16(int16_t v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(int16_t));
+}
+
+int BinArray::WriteInt32(int32_t v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(int32_t));
+}
+
+int BinArray::WriteInt64(int64_t v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(int64_t));
+}
+
+int BinArray::WriteFloat(float v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(float));
+}
+
+int BinArray::WriteDouble(double v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(double));
+}
+
+int BinArray::WriteCString(const char *buf, int *pos) {
+	if (!buf) {
+		char c = 0;
+		return WriteUnOrder(&c, pos, 1);
+	}
+	return WriteUnOrder((void*)buf, pos, strlen(buf) + 1);
+}
+
+
+int BinArray::WriteString(std::string *s, int *pos) {
+	if (!s) {
+		char c = 0;
+		return WriteUnOrder(&c, pos, 1);
+	}
+	else WriteUnOrder( (void*)s->c_str(), pos, s->length() + 1);
+}
+
+
+int BinArray::WriteLOString(LOString *s, int *pos) {
+	if (!s || s->length() == 0) {
+		int16_t v = 0;
+		return WriteUnOrder(&v, pos, 2);
 	}
 	else {
-		//字符串，包括了 \0
-		WriteString(v->c_str(), pos);
-		//编码ID
-		WriteChar(v->GetEncoder()->codeID & 0xff, pos);
-		len = v->length() + 2;
+		int len = WriteUnOrder((void*)s->c_str(), pos, s->length() + 1);
+		char code = s->GetEncoder()->codeID;
+		if(pos) (*pos) += len;
+		WriteUnOrder(&code, pos, 1);
+		return len + 1;
 	}
-	return len;
 }
 
 
 int BinArray::WriteLOVariant(LOVariant *v, int *pos) {
-	int tpos = realLen;
-	if (!pos) pos = &tpos;
-
-	int len = 0;
-	if (v) len = v->GetDataLen();
-	//空
-	if (len == 0) {
-		WriteChar(0, pos);
-		return 1;
+	if (!v || v->GetDataPtr()) {
+		int v = 0;
+		return WriteUnOrder(&v, pos, 4);
 	}
-	else {
-		if (*pos + len > prepLen) AddMemory(len);
-		memcpy(bin + (*pos), v->GetDataPtr(), len);
-		*pos += len;
-		if (*pos > realLen) realLen = *pos;
-	}
-	return len;
+	else return WriteUnOrder((void*)v->GetDataPtr(), pos, v->GetDataLen());
 }
+
+
+
+
 
 
 BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
@@ -356,7 +381,7 @@ BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
 	fseek(f, 0, SEEK_END);
 	if (len > ftell(f)) len = ftell(f);
 
-	BinArray *sbin = new BinArray(len + BIN_PREPLEN, false);
+	BinArray *sbin = new BinArray(len, false);
 	//文件位置
 	fseek(f, pos, SEEK_SET);
 	int sumlen = 0;
@@ -365,7 +390,7 @@ BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
 		if (rlen <= 0) break;  //可能读到文件尾了
 		sumlen += rlen;
 	}
-	sbin->realLen = sumlen;
+	sbin->SetLength(len);
 	return sbin;
 }
 
@@ -379,15 +404,51 @@ bool BinArray::WriteToFile(const char *name) {
 	return true;
 }
 
-//如果字节集没有达到指定长度则用0填充
-int BinArray::WriteFillEmpty(int len, int *pos) {
-	int npos = 0;
-	if (!pos) pos = &npos;
-	if (*pos + len > prepLen) AddMemory(len);
-	if (realLen < (*pos + len)) {  //说明填充了内容
-		memset(bin + realLen, 0, (*pos + len) - realLen);  //超出部分置0
-		realLen = (*pos + len);
-		(*pos) += len;
-	}
-	return len;
+
+//mark只写入4字节，返回的是len被写入的位置
+int BinArray::WriteLpksEntity(const char *mark, int len, int version) {
+	int markv = *(int*)mark;
+	//if (!(ISBIG)) markv = XCHANGE4(markv);
+	int outlen = Length() + 4;
+	WriteInt3(markv, len, version);
+	return outlen;
+}
+
+void BinArray::InitLpksHeader() {
+	Clear(false);
+	SetCpuOrder();
+	//LPKS，字节顺序和标记，版本
+	WriteLpksEntity("LPKS", *(int*)dataPtr, 1);
+	//预留
+	WriteInt(0);
+}
+
+bool BinArray::CheckLpksHeader(int *pos) {
+	if (!CheckPosition(4) || !CheckEntity("LPKS", nullptr, nullptr, pos)) return false;
+	dataPtr[0] = bin[4];
+	dataPtr[1] = bin[5];
+	pos[0] += 4;
+	return true;
+}
+
+
+bool BinArray::CheckEntity(const char *mark, int *next, int *version, int *pos) {
+	if (!CheckPosition(pos[0] + 12)) return false;
+	int markv = *(int*)mark;
+	//if (!(ISBIG)) markv = XCHANGE4(markv);
+	if (markv != *(int*)(bin + pos[0])) return false;
+	pos[0] += 4;
+	if (next) *next = pos[0] + *(int*)(bin + pos[0]);
+	pos[0] += 4;
+	if (version) *version = *(int*)(bin + pos[0]);
+	pos[0] += 4;
+	return true;
+}
+
+
+int BinArray::GetNextEntity(int *pos) {
+	if (!CheckPosition(pos[0] + 4)) return -1;
+	int next = pos[0] + *(int*)(bin + pos[0]);
+	pos[0] += 4;
+	return next;
 }

@@ -273,10 +273,8 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 }
 
 void LOLayerDataBase::Serialize(BinArray *bin) {
-	//长度记录在标记之后
-	int len = bin->Length() + 4;
-	//base,len,version
-	bin->WriteInt3(0x65736162, 0, 1);
+	//长度记录在标记之后 base,len,version
+	int len = bin->WriteLpksEntity("base", 0, 1);
 
 	bin->WriteInt3(flags, upflags, upaction);
 	bin->WriteInt(btnval);
@@ -490,9 +488,8 @@ void LOLayerData::UpdataToForce() {
 
 
 void LOLayerData::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
 	//data, len, version
-	bin->WriteInt3(0x61746164, 0, 1);
+	int len = bin->WriteLpksEntity("data", 0, 1);
 	//fullid
 	bin->WriteInt(fullid);
 	cur.Serialize(bin);

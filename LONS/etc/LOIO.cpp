@@ -93,26 +93,12 @@ void LOIO::ReadBytes(BinArray *&bin, FILE *f, int position, int length) {
 }
 
 
-void LOIO::InitLPKStream(BinArray *bin) {
-	bin->Clear(false);
-	//LPKS,version,预留
-	bin->WriteInt3(0x534B504C, 1, 0);
-	bin->WriteInt(0);   //预留
-}
-
-bool LOIO::CheckLPKHeader(BinArray *bin, int *pos) {
-	*pos = 0;
-	//LPKS
-	if (bin->GetInt(*pos) != 0x534B504C) return false;
-	*pos = 16;
-	return true;
-}
 
 //LONS的envdata跟ONS是完全不同的
 void LonsSaveEnvData() {
 	std::unique_ptr<BinArray> unibin(new BinArray(1024, true));
 	BinArray *bin = unibin.get();
-	LOIO::InitLPKStream(bin);
+	bin->InitLpksHeader();
 	//envdata的版本
 	bin->WriteInt(1);
 	//savedir，这个必须先写出，因为一些存储的文件会放在这个文件夹里
@@ -139,6 +125,7 @@ void LonsSaveEnvData() {
 
 
 void LonsReadEnvData() {
+	/*
 	LOString s("envdataL");
 	FILE *f = LOIO::GetWriteHandle(s, "rb");
 	if (f) {
@@ -151,4 +138,5 @@ void LonsReadEnvData() {
 		bin->GetInt(&pos);
 		LOIO::ioSaveDir = bin->GetLOString(&pos);
 	}
+	*/
 }

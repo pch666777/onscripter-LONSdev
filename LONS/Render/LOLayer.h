@@ -123,7 +123,7 @@ public:
 	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
-	void Serialize(BinArray *sbin);
+	void Serialize(BinArray *bin);
 
 	//将图层挂载到图层结构上
 	//void upDataNewFile();

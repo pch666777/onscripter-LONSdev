@@ -834,7 +834,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	scriptModule->ChangeRunState(MODULE_STATE_SAVING);
 
 	//做一些初始化工作
-	LOIO::InitLPKStream(GloSaveFS);
+	GloSaveFS->InitLpksHeader();
 
 	//等待img进入saving
 	while (!imgeModule->isStateSaving()) {
@@ -863,7 +863,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 //将全局变量写入到全局变量流中
 void LOScriptReader::UpdataGlobleVariable() {
 	//初始化格式
-	LOIO::InitLPKStream(GloVariableFS);
+	GloVariableFS->InitLpksHeader();
 	ONSVariableBase::SaveOnsVar(GloVariableFS, 0, gloableMax);
 }
 
@@ -879,28 +879,29 @@ void LOScriptReader::ReadGlobleVarFile() {
 	fclose(f);
 	if (bin) {
 		int pos = 0;
+		if (!bin->CheckLpksHeader(&pos)) {
+			LOLog_i("[gloval.savl] not 'LPKS' flag!");
+			return;
+		}
 		ReadGlobleVariable(bin.get(), &pos);
 	}
 }
 
 void LOScriptReader::ReadGlobleVariable(BinArray *bin, int *pos) {
-	if (!LOIO::CheckLPKHeader(bin, pos)) {
-		LOLog_i("[gloval.savl] not 'LPKS' flag!");
+	int next = 0;
+	if (!bin->CheckEntity("GVAR", &next, nullptr, pos) ){
+		LOLog_i("Deserialization not 'GVAR' flag!");
 		return;
 	}
-	if (bin->GetInt(pos) != 0x52415647) {
-		LOLog_i("[gloval.savl] not 'GVAR' flag!");
-		return;
-	}
-	bin->GetInt(pos); //version
-	int from = bin->GetInt(pos);
-	int count = bin->GetInt(pos);
+	int from = bin->GetIntAuto(pos);
+	int count = bin->GetIntAuto(pos);
 	for (int ii = from; ii < count; ii++) {
 		if (!GNSvariable[ii].Deserialization(bin, pos)) {
 			LOLog_i("GNSvariable[ii].Deserialization() faild!");
 			break;
 		}
 	}
+	pos[0] = next;
 }
 
 void LOScriptReader::SaveGlobleVariable() {
@@ -977,7 +978,12 @@ int LOScriptReader::testcmdsCommand(FunctionInterface *reader) {
 	else if (cmd == "globalon_load") {
 		ONSVariableBase::ResetAll();
 		int pos = 0;
-		ReadGlobleVariable(GloVariableFS, &pos);
+		if (GloVariableFS->CheckLpksHeader(&pos)) ReadGlobleVariable(GloVariableFS, &pos);
+		else LOLog_i("[gloval.savl] not 'LPKS' flag!");
+		
+	}
+	else if (cmd == "savepoint") {
+		savepointCommand(reader);
 	}
 	return RET_CONTINUE;
 }

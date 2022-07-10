@@ -174,8 +174,7 @@ int LOFileModule::readfileCommand(FunctionInterface *reader) {
 		//utf8 bom
 		if (bin->Length() > 3 && bin->bin[0] == (char)0xef 
 			&& bin->bin[1] == (char)0xbb && bin->bin[2] == (char)0xbf) pos = 3;
-		LOString s;
-		bin->GetString(s, &pos);
+		LOString s = bin->GetString(&pos);
 		s.SetEncoder(fn.GetEncoder());
 		ONSVariableRef *v = reader->GetParamRef(0);
 		v->SetValue(&s);
