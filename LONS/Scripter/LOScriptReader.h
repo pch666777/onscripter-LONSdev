@@ -98,6 +98,7 @@ public:
 	void NextAdress() { currentLable->c_buf++; }
 	void NextLineStart();
 	void BackLineStart();
+	void GotoLine(int lineID);
 
 	//1为else，2为endif -1表示出现错误
 	int LogicJump(bool iselse); 

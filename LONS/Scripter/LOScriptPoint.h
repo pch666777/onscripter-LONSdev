@@ -78,6 +78,10 @@ public:
 	bool isRetTrue() { return flags & TYPE_RESULT_TRUE; }
 	void reset();
 	void SetRet(bool it);
+	////设置记录点
+	//void SetPoint(LOScriptPointCall *p);
+	////返回记录点
+	//void BackToPoint(LOScriptPointCall *p);
 	void Serialize(BinArray *bin);
 
 	//循环的起点，存档的时候转换为行位置
@@ -101,6 +105,10 @@ class LOScripFile {
 public:
 	//行跟buf的关系
 	struct LineData{
+		LineData(int id, const char* bin) {
+			lineID = id;
+			buf = bin;
+		}
 		int lineID = -1;
 		const char* buf = nullptr;
 	};
@@ -116,6 +124,9 @@ public:
 	void InitLables(bool lableRe = false);
 	//int GetPointLineAndPosition(LOScriptPoint *p, int *position);
 	void GetBufLine(const char *buf, int *lineID, const char* &lineStart);
+
+	//获取某一行的开始位置
+	void GetLineStart(int lineID);
 private:
 	LOString scriptbuf;
 	//每100行打一个记录点
@@ -124,6 +135,9 @@ private:
 
 	void ClearLables();
 	void CreateRootLabel();
+
+	//二分法查找到指定行的基行位置，会修改lintID为基行，失败返回null
+	const char* MidFindLinePoint(int &lineID);
 };
 
 

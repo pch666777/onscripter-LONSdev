@@ -316,10 +316,6 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
-	//if (currentLable->c_line == 184968) {
-	//	int debugbreak = 0;
-	//}
-
 	bool hasnormal, haslabel, hasvariable;
 	int allow_type, paramcount = 0;
 	const char *fromparam = param;
@@ -700,9 +696,6 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isalia
 
 
 ONSVariableRef *LOScriptReader::ParseVariableBase(ONSVariableRef *ref, bool str_alias) {
-	//if (currentLable->c_line == 310401) {
-	//	int debugbreak = 111;
-	//}
 
 	const char *buf, *obuf;
 	buf = obuf = scriptbuf->SkipSpace(currentLable->c_buf);
@@ -1143,6 +1136,12 @@ void LOScriptReader::BackLineStart() {
 	while (buf[0] != '\n') buf -= scriptbuf->GetEncoder()->GetLastCharLen(buf);
 	buf++;
 	currentLable->c_buf = buf;
+}
+
+void LOScriptReader::GotoLine(int lineID) {
+	int lineID_t;
+	const char *lineStart = nullptr;
+	currentLable->file->GetBufLine()
 }
 
 int LOScriptReader::LogicJump(bool iselse) {
@@ -1622,7 +1621,9 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	//逻辑堆栈
 	bin->WriteInt(loopStack.size());
 	for (int ii = 0; ii < loopStack.size(); ii++)loopStack.at(ii)->Serialize(bin);
-	normalLogic.Serialize(bin);
+	//普通的normalLogic只需要存储结果
+	bin->WriteChar(normalLogic.isRetTrue());
+	//normalLogic.Serialize(bin);
 	//预留
 	bin->WriteInt3(0, 0, 0);
 	bin->WriteInt3(0, 0, 0);

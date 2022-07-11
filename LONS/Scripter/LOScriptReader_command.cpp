@@ -220,9 +220,6 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
-	//if (currentLable->c_line == 352) {
-	//	int debugbreak = 1;
-	//}
 
 	bool ret = ParseLogicExp();
 	if (isName("notif")) ret = !ret;
@@ -354,6 +351,9 @@ int LOScriptReader::tablegotoCommand(FunctionInterface *reader) {
 int LOScriptReader::skipCommand(FunctionInterface *reader) {
 	int count = reader->GetParamInt(0);
 	if (count == 0) count = 1;
+	//直接查找并跳转到某行
+	
+
 	while (count > 0) {
 		NextLineStart();
 		count--;
@@ -407,9 +407,6 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::gotoCommand(FunctionInterface *reader) {
-	//if (currentLable->c_line == 63) {
-	//	int debuglog = 0;
-	//}
 
 	LOScriptPoint *p = reader->GetParamLable(0);
 	if (p) {

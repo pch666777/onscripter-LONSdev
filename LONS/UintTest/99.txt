@@ -960,7 +960,7 @@ bg "bg308_e_no.jpg"
 lsp 20,"6.jpg",10,10
 lsp 10,":c;>200,100,#08EFA3",800,40
 print 1
-lsp 10,":c;>200,100,#ff00ff",800,300
+lsp 11,":c;>200,100,#ff00ff",800,300
 ;btnwait %0
 
 ;Ä£Äâsavepoint

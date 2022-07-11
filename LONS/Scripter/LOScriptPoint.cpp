@@ -92,6 +92,16 @@ void LogicPointer::SetRet(bool it) {
 	else flags &= (~TYPE_RESULT_TRUE);
 }
 
+//void LogicPointer::SetPoint(LOScriptPointCall *p) {
+//	point = p->c_buf;
+//	pointLine = p->c_line;
+//	label = p;
+//}
+//
+//void LogicPointer::BackToPoint(LOScriptPointCall *p) {
+//	p->p
+//}
+
 void LogicPointer::Serialize(BinArray *bin) {
 	int len = bin->Length() + 4;
 	//'lpos', len, version
@@ -171,12 +181,7 @@ void LOScripFile::InitLables(bool lableRe) {
 	while (buf < ebuf - 1) {
 		buf = scriptbuf.SkipSpace(buf);
 		//记录点
-		if (linecount % LINEINTERVAL == 0) {
-			LineData it;
-			it.buf = buf;
-			it.lineID = linecount;
-			lineInfo.push_back(it);
-		}
+		if ((linecount - 1) % LINEINTERVAL == 0) lineInfo.emplace_back(linecount, buf);
 
 		if (buf[0] == '*') {
 			while (buf[0] == '*') buf++;
@@ -205,10 +210,7 @@ void LOScripFile::InitLables(bool lableRe) {
 	}
 
 	//增加最后一行，方便搜索
-	LineData it;
-	it.buf = buf + 1;
-	it.lineID = linecount + 1;
-	lineInfo.push_back(it);
+	lineInfo.emplace_back(linecount + 1, buf + 1);
 }
 
 LOScriptPoint *LOScripFile::FindLable(std::string &lname) {
@@ -261,13 +263,49 @@ void LOScripFile::GetBufLine(const char *buf, int *lineID, const char* &lineStar
 	while (buf < endbuf) {
 		if (buf >= startbuf && buf < nextbuf) {
 			if (lineID) *lineID = startLine;
-			if (lineStart) lineStart = startbuf;
+			if (&lineStart) lineStart = startbuf;
 			return;
 		}
 		else {
 			startbuf = nextbuf;
+			startLine++;
 			nextbuf = scriptbuf.NextLine(startbuf);
-			lineStart++;
 		}
 	}
+}
+
+const char* LOScripFile::MidFindLinePoint(int &lineID) {
+	if (lineID < 0 || lineID > lineInfo.back().lineID) return nullptr;
+
+	if (lineInfo.size() > 1) {
+		int left = 0;
+		int right = lineInfo.size() - 1;
+		int mid = right / 2;
+		while (true) {
+			//落在右边
+			if (lineID >= lineInfo.at(mid).lineID) {
+				if (right - mid <= 1) {
+					lineID = lineInfo.at(mid).lineID;
+					return lineInfo.at(mid).buf;
+				}
+				left = mid;
+			}
+			else {
+				//落在左边
+				right = mid;
+			}
+
+			mid = (left + right) / 2;
+		}
+	}
+	else {
+		lineID = 0;
+		return scriptbuf.c_str();
+	}
+}
+
+void LOScripFile::GetLineStart(int lineID) {
+	//二分法查找
+	int startLine = 0;
+
 }
