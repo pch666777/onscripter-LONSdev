@@ -21,16 +21,14 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 	bin->WriteLOString(&file->Name);
 	bin->WriteLOString(&name);
 	//重新获取行信息，因为运行的时候 c_line可能是错误的
-	int lineID = 0;
-	const char *lineStart = nullptr;
-	file->GetBufLine(c_buf, &lineID, lineStart);
-	if (!lineStart) {
+	auto line = file->GetLineInfo(c_buf, 0, false);
+	if (!line.buf) {
 		LOLog_e("Get running point info error! file[%s],lable[%s],at buf[%d]", file->Name.c_str(), name.c_str(), c_buf - s_buf);
 	}
 	//相对行
-	bin->WriteInt(lineID - s_line);
+	bin->WriteInt(line.lineID - s_line);
 	//相对于行首有多少长度
-	bin->WriteInt(c_buf - lineStart);
+	bin->WriteInt(c_buf - line.buf);
 	//call类型
 	bin->WriteInt(callType);
 
@@ -106,15 +104,14 @@ void LogicPointer::Serialize(BinArray *bin) {
 	int len = bin->Length() + 4;
 	//'lpos', len, version
 	bin->WriteInt3(0x736F706C, 0 , 1);
-	int lineID = 0;
-	const char *lineStart = nullptr;
-	label->file->GetBufLine(point, &lineID, lineStart);
+	auto line = label->file->GetLineInfo(point, 0, false);
+
 	//属于哪个label的
 	bin->WriteLOString(&label->name);
 	//相对于label的位置
-	bin->WriteInt(lineID - label->s_line);
+	bin->WriteInt(line.lineID - label->s_line);
 	//相对于行首的位置
-	bin->WriteInt(point - lineStart);
+	bin->WriteInt(point - line.buf);
 
 	bin->WriteInt(step);
 	if (forVar) bin->WriteInt(forVar->GetTypeRefid());
@@ -224,88 +221,49 @@ LOScriptPoint *LOScripFile::FindLable(const char *lname) {
 	return FindLable(tmp);
 }
 
-//获取指定地址对应的行
-//指定的buf，存储行ID的变量，存储行首buf的变量
-void LOScripFile::GetBufLine(const char *buf, int *lineID, const char* &lineStart) {
-	if(lineID) *lineID = -1;
-	if (lineStart) lineStart = nullptr;
-	const char *startbuf = scriptbuf.c_str();
-	const char *endbuf = startbuf + scriptbuf.length();
-	if (buf < startbuf || buf >= endbuf) return;
+LOScripFile::LineData* LOScripFile::MidFindBaseIndex(const char *buf, int dstLine, bool isLine) {
+	//检查有效性
+	if (isLine && (dstLine < 1 || dstLine > lineInfo.back().lineID)) return nullptr;
+	if (!isLine && (buf < lineInfo.front().buf || buf > lineInfo.back().buf)) return nullptr;
+	if (lineInfo.size() == 1) return &lineInfo.front();
 
-	//二分法定位搜索起始行
-	int startLine = 0;
-	if (lineInfo.size() > 1) {
-		int left = 0;
-		int right = lineInfo.size() - 1;
-		int mid = right / 2;
-		while (true) {
-			auto *line = &lineInfo.at(mid);
-			startLine = line->lineID;
-			startbuf = line->buf;
-			//落在右边
-			if (buf >= startbuf) {
-				if (right - mid <= 1) break;
-				left = mid;
-			}
-			else {
-				//落在左边
-				right = mid;
-			}
-
-			mid = (left + right) / 2;
-		}
-	}
-
-
-	//定位到具体的某一行
-	const char *nextbuf = scriptbuf.NextLine(startbuf);
-	while (buf < endbuf) {
-		if (buf >= startbuf && buf < nextbuf) {
-			if (lineID) *lineID = startLine;
-			if (&lineStart) lineStart = startbuf;
-			return;
+	int left = 0;
+	int right = lineInfo.size() - 1;
+	int mid = right / 2;
+	while (true) {
+		//落在右边
+		if ((isLine && dstLine <= lineInfo.at(mid).lineID) ||
+			(!isLine && buf <= lineInfo.at(mid).buf)) {
+			// (mid + mid + 1 ) / 2 还是等于mid，所以已经搜索到尾部了
+			if (right - mid <= 1) return &lineInfo.at(mid);
+			left = mid;
 		}
 		else {
-			startbuf = nextbuf;
-			startLine++;
-			nextbuf = scriptbuf.NextLine(startbuf);
+			//落在左边
+			right = mid;
 		}
+
+		mid = (left + right) / 2;
+	}
+	return nullptr;
+}
+
+
+void LOScripFile::NextFindDest(const char *dst, int dstLine, const char *&startBuf, int &startLine, bool isLine) {
+	const char *endbuf = scriptbuf.c_str() + scriptbuf.length();
+	while (startBuf < endbuf) {
+		const char *nextbuf = scriptbuf.NextLine(startBuf);
+		if((isLine && dstLine == startLine) || (!isLine && dst >= startBuf && dst < nextbuf )) return ;
+		startBuf = nextbuf;
+		startLine++;
 	}
 }
 
-const char* LOScripFile::MidFindLinePoint(int &lineID) {
-	if (lineID < 0 || lineID > lineInfo.back().lineID) return nullptr;
-
-	if (lineInfo.size() > 1) {
-		int left = 0;
-		int right = lineInfo.size() - 1;
-		int mid = right / 2;
-		while (true) {
-			//落在右边
-			if (lineID >= lineInfo.at(mid).lineID) {
-				if (right - mid <= 1) {
-					lineID = lineInfo.at(mid).lineID;
-					return lineInfo.at(mid).buf;
-				}
-				left = mid;
-			}
-			else {
-				//落在左边
-				right = mid;
-			}
-
-			mid = (left + right) / 2;
-		}
-	}
-	else {
-		lineID = 0;
-		return scriptbuf.c_str();
-	}
-}
-
-void LOScripFile::GetLineStart(int lineID) {
-	//二分法查找
-	int startLine = 0;
-
+LOScripFile::LineData LOScripFile::GetLineInfo(const char *buf, int lineID, bool isLine) {
+	LineData *index = MidFindBaseIndex(buf, lineID, isLine);
+	LineData data(-1, nullptr);
+	if (!index) return data;
+	data = *index;
+	NextFindDest(buf, lineID, data.buf, data.lineID, isLine);
+	return data;
 }

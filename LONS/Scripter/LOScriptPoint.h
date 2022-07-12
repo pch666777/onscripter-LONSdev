@@ -122,11 +122,9 @@ public:
 	LOScriptPoint *FindLable(const char *lname);
 	LOString *GetBuf() { return &scriptbuf; }
 	void InitLables(bool lableRe = false);
-	//int GetPointLineAndPosition(LOScriptPoint *p, int *position);
-	void GetBufLine(const char *buf, int *lineID, const char* &lineStart);
-
-	//获取某一行的开始位置
-	void GetLineStart(int lineID);
+	//获取指定行的信息，需要提供行号或者buf
+	//AMD zen1 1400  100次查找release耗时0.5ms -->行记录设定为80行
+	LineData GetLineInfo(const char *buf, int lineID, bool isLine);
 private:
 	LOString scriptbuf;
 	//每100行打一个记录点
@@ -136,8 +134,10 @@ private:
 	void ClearLables();
 	void CreateRootLabel();
 
-	//二分法查找到指定行的基行位置，会修改lintID为基行，失败返回null
-	const char* MidFindLinePoint(int &lineID);
+	//二分法定位基行，返回的是lineInfo的索引
+	LineData* MidFindBaseIndex(const char *buf, int dstLine, bool isLine);
+	//从指定的起始位置查找到目标，startBuf和startLine会被修改为找到的目标，应该在MidFindBaseIndex做了有效性检查
+	void NextFindDest(const char *dst, int dstLine, const char *&startBuf, int &startLine, bool isLine);
 };
 
 
