@@ -75,14 +75,14 @@ LogicPointer::~LogicPointer() {
 
 void LogicPointer::reset() {
 	flags = 0;
-	pointLine = 0;
 	step = 1;
+	relativeLine = relativeByte = 0;
 	if (forVar) delete forVar;
 	if (dstVar) delete dstVar;
 	forVar = nullptr;
 	dstVar = nullptr;
-	point = nullptr;
-	label = nullptr;
+	lineStart = nullptr;
+	//label = nullptr;
 }
 
 void LogicPointer::SetRet(bool it) {
@@ -90,28 +90,34 @@ void LogicPointer::SetRet(bool it) {
 	else flags &= (~TYPE_RESULT_TRUE);
 }
 
-//void LogicPointer::SetPoint(LOScriptPointCall *p) {
-//	point = p->c_buf;
-//	pointLine = p->c_line;
-//	label = p;
-//}
-//
-//void LogicPointer::BackToPoint(LOScriptPointCall *p) {
-//	p->p
-//}
+
+void LogicPointer::SetPoint(LOScriptPointCall *p) {
+	LOScripFile::LineData data = p->file->GetLineInfo(p->c_buf, 0, false);
+	if (data.buf && data.lineID == p->c_line) {
+		relativeLine = data.lineID - p->s_line;
+		lineStart = data.buf;
+		relativeByte = p->c_buf - lineStart;
+		label = p;
+	}
+	else LOLog_e("LogicPointer::SetPoint() check lineID error,system is %d,actually is %d.", p->c_line, data.lineID);
+}
+
+void LogicPointer::BackToPoint(LOScriptPointCall *p) {
+	p->c_line = p->s_line + relativeLine;
+	p->c_buf = lineStart + relativeByte;
+}
 
 void LogicPointer::Serialize(BinArray *bin) {
 	int len = bin->Length() + 4;
 	//'lpos', len, version
 	bin->WriteInt3(0x736F706C, 0 , 1);
-	auto line = label->file->GetLineInfo(point, 0, false);
 
 	//属于哪个label的
 	bin->WriteLOString(&label->name);
 	//相对于label的位置
-	bin->WriteInt(line.lineID - label->s_line);
+	bin->WriteInt(relativeLine);
 	//相对于行首的位置
-	bin->WriteInt(point - line.buf);
+	bin->WriteInt(relativeByte);
 
 	bin->WriteInt(step);
 	if (forVar) bin->WriteInt(forVar->GetTypeRefid());

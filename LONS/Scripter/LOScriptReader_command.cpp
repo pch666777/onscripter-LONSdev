@@ -271,8 +271,7 @@ int LOScriptReader::nextCommand(FunctionInterface *reader) {
 	if (p->step < 0) comparetype = ONSVariableRef::LOGIC_BIGANDEQUAL;
 
 	if (p->forVar->Compare(p->dstVar, comparetype,false)) {
-		currentLable->c_buf = p->point;
-		currentLable->c_line = p->pointLine;
+		p->BackToPoint(currentLable);
 	}
 	else {
 		loopStack.pop(true);
@@ -307,9 +306,7 @@ int LOScriptReader::forCommand(FunctionInterface *reader) {
 	int comparetype = ONSVariableRef::LOGIC_LESSANDEQUAL;
 	if (p->step < 0) comparetype = ONSVariableRef::LOGIC_BIGANDEQUAL;
 	if (p->forVar->Compare(p->dstVar, comparetype,false)) {
-		p->point = currentLable->c_buf;
-		p->pointLine = currentLable->c_line;
-		p->label = currentLable;
+		p->SetPoint(currentLable);
 	}
 	else { //跳过不执行的部分
 		loopStack.pop(true);

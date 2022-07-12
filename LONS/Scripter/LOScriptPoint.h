@@ -78,25 +78,28 @@ public:
 	bool isRetTrue() { return flags & TYPE_RESULT_TRUE; }
 	void reset();
 	void SetRet(bool it);
-	////设置记录点
-	//void SetPoint(LOScriptPointCall *p);
+	////设置记录点，会对行数据做一个校验
+	void SetPoint(LOScriptPointCall *p);
 	////返回记录点
-	//void BackToPoint(LOScriptPointCall *p);
+	void BackToPoint(LOScriptPointCall *p);
 	void Serialize(BinArray *bin);
 
-	//循环的起点，存档的时候转换为行位置
-	const char *point;
-	int pointLine;
 	//for循环step递增的数量
 	int step;
 	//for %1 = 1 to %2 step n中的%1
 	ONSVariableRef *forVar;
 	//for 中的 %2，可以被动态改变
 	ONSVariableRef *dstVar;
-	//循环在哪个标签中
-	LOScriptPoint *label;
 private:
 	int flags;
+	//相对于标签s_line的行数
+	int relativeLine;
+	//相对于行首的前进量
+	int relativeByte;
+	//行首buf
+	const char *lineStart;
+	//循环在哪个标签中
+	LOScriptPoint *label;
 };
 
 
