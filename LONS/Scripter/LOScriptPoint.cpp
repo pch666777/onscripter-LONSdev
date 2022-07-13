@@ -13,22 +13,23 @@ LOScriptPoint::LOScriptPoint() {
 LOScriptPoint::~LOScriptPoint() {
 }
 
-void LOScriptPointCall::Serialize(BinArray *bin) {
+void LOScriptPointCall::CheckCurrentLine() {
+	LOScripFile::LineData data = file->GetLineInfo(c_buf, 0, false);
+	if (data.lineID != c_line)
+		printf("LOScriptPointCall::CheckCurrentLine() get lineID error:%d-->%d\n", c_line, data.lineID);
+	c_line = data.lineID;
+	c_buf_start = data.buf;
+}
 
-	int len = bin->Length() + 4;
+void LOScriptPointCall::Serialize(BinArray *bin) {
 	//'poin', len, version
-	bin->WriteInt3(0x6E696F70, 0, 1);
+	int len = bin->WriteLpksEntity("poin", 0, 1);
 	bin->WriteLOString(&file->Name);
 	bin->WriteLOString(&name);
-	//重新获取行信息，因为运行的时候 c_line可能是错误的
-	auto line = file->GetLineInfo(c_buf, 0, false);
-	if (!line.buf) {
-		LOLog_e("Get running point info error! file[%s],lable[%s],at buf[%d]", file->Name.c_str(), name.c_str(), c_buf - s_buf);
-	}
 	//相对行
-	bin->WriteInt(line.lineID - s_line);
+	bin->WriteInt(c_line - s_line);
 	//相对于行首有多少长度
-	bin->WriteInt(c_buf - line.buf);
+	bin->WriteInt(c_buf - c_buf_start);
 	//call类型
 	bin->WriteInt(callType);
 
@@ -45,6 +46,7 @@ LOScriptPointCall::LOScriptPointCall() {
 	c_line = 0;
 	//当前执行到的位置
 	c_buf = nullptr;
+	c_buf_start = nullptr;
 }
 
 LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {
@@ -54,6 +56,7 @@ LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {
 	file = p->file;
 	c_line = s_line;
 	c_buf = s_buf;
+	c_buf_start = s_buf;
 }
 
 LOScriptPointCall::~LOScriptPointCall() {
@@ -238,8 +241,8 @@ LOScripFile::LineData* LOScripFile::MidFindBaseIndex(const char *buf, int dstLin
 	int mid = right / 2;
 	while (true) {
 		//落在右边
-		if ((isLine && dstLine <= lineInfo.at(mid).lineID) ||
-			(!isLine && buf <= lineInfo.at(mid).buf)) {
+		if ((isLine && dstLine >= lineInfo.at(mid).lineID) ||
+			(!isLine && buf >= lineInfo.at(mid).buf)) {
 			// (mid + mid + 1 ) / 2 还是等于mid，所以已经搜索到尾部了
 			if (right - mid <= 1) return &lineInfo.at(mid);
 			left = mid;

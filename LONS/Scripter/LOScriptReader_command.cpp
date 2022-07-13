@@ -418,7 +418,11 @@ int LOScriptReader::gotoCommand(FunctionInterface *reader) {
 
 int LOScriptReader::gosubCore(LOScriptPoint *p, bool isgoto) {
 	if (isgoto) ChangePointer(p);
-	else ReadyToRun(p);
+	else {
+		//gosub均矫正行信息
+		if (currentLable) currentLable->CheckCurrentLine();
+		ReadyToRun(p);
+	}
 	return RET_CONTINUE;
 }
 

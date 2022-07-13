@@ -42,6 +42,8 @@ public:
 	LOScriptPointCall(LOScriptPoint *p);
 	~LOScriptPointCall();
 
+	//检查行是否正确
+	void CheckCurrentLine();
 	void Serialize(BinArray *bin);
 
 	int callType;
@@ -49,6 +51,8 @@ public:
 	int c_line;
 	//当前执行到的位置
 	const char* c_buf;
+	//行开始的位置
+	const char* c_buf_start;
 };
 
 

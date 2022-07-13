@@ -12,9 +12,8 @@ int16_t BinArray::cpuOrder = 0x1122;
 #define Flags *(int16_t*)(dataPtr + 2)
 
 //¿ìËÙ½»»»
-#define XCHANGE2(X) ((X&0xff)<<8)|((X&0xff00)>>8)
-//#define XCHANGE3 val=((val&0xff)<<16)|((val&0xff0000)>>16)|(val&0xff00)
-#define XCHANGE4(X) ((X&0xff)<<24)|((X&0xff00)<<8)|(X>>24)|((X&0x00ff0000)>>8)
+#define XCHANGE2(X) ((X<<8)&0xff00)|((X>>8)&0xff)
+#define XCHANGE4(X) ((X<<24)&0xff000000)|((X<<8)&0xff0000)|((X>>8)&0xff00)|((X>>24)&0xff)
 
 BinArray::BinArray(int prepsize, bool isstream){
 	NewSelf(prepsize, isstream);

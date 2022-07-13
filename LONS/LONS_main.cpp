@@ -139,12 +139,16 @@ int main(int argc, char **argv) {
 
 	GlobalInit();
 
+	int x = 0x8EB90100;
+	int a = (x & 0xff) << 24;
+	int b = (x & 0xff00) << 8;
+	int c = (x & 0x00ff0000) >> 8;
 
-	BinArray bin(2, true);
-	bin.WriteInt(1);
-	bin.WriteInt4(2, 3, 4, 5);
-	bin.WriteInt4(6, 7, 8, 9);
-	bin.WriteInt4(10, 11, 12, 13);
+	//BinArray bin(2, true);
+	//bin.WriteInt(1);
+	//bin.WriteInt4(2, 3, 4, 5);
+	//bin.WriteInt4(6, 7, 8, 9);
+	//bin.WriteInt4(10, 11, 12, 13);
 
 	//初始化IO，必须优先进行IO，因为后面要读文件
 	filemodule = new LOFileModule;

@@ -152,14 +152,14 @@ int LOScriptReader::MainTreadRunning() {
 		LOString lable(lables[sectionState]);
 		if (!ReadyToRun(&lable, LOScriptPoint::CALL_BY_NORMAL))return -1;
 
-		//测试100次搜索时间
-		Uint64 perHtickTime = SDL_GetPerformanceFrequency() / 1000;
-		Uint64 t1 = SDL_GetPerformanceCounter();
-		for (int ii = 0; ii < 100; ii++) {
-			currentLable->file->GetLineInfo(nullptr, rand() % 200000 + 1, true);
-		}
-		double postime = 1.0 * (SDL_GetPerformanceCounter() - t1) / perHtickTime;
-		printf("%lf", postime);
+		////测试100次搜索时间
+		//Uint64 perHtickTime = SDL_GetPerformanceFrequency() / 1000;
+		//Uint64 t1 = SDL_GetPerformanceCounter();
+		//for (int ii = 0; ii < 100; ii++) {
+		//	currentLable->file->GetLineInfo(nullptr, rand() % 200000 + 1, true);
+		//}
+		//double postime = 1.0 * (SDL_GetPerformanceCounter() - t1) / perHtickTime;
+		//printf("%lf", postime);
 
 		//============轮询循环===========================
 		while (!isModuleExit() && !isModuleReset()) {

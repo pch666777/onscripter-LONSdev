@@ -962,9 +962,26 @@ lsp 10,":c;>200,100,#08EFA3",800,40
 print 1
 lsp 11,":c;>200,100,#ff00ff",800,300
 ;btnwait %0
+;设置变量
+;赋值数字变量和文字变量
+for %600 = 500 to 999
+	mov %%600,%600
+	itoa $%600,%600
+next
 
 ;模拟savepoint
 _testcmd_s "savepoint"
+
+;重置变量和画面，看看load是否正常
+for %600 = 500 to 999
+	mov %%600,0
+	mov $%600,""
+next
+csp -1
+print 1
+
+_testcmd_s "loadpoint"
+
 
 btnwait %0
 return
