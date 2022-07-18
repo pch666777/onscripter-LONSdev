@@ -959,27 +959,32 @@ ns2
 bg "bg308_e_no.jpg"
 lsp 20,"6.jpg",10,10
 lsp 10,":c;>200,100,#08EFA3",800,40
+lsp 12,":c;>512,576,#ff00ff",512,0
+lsp 9,":a/4,0,3;data\four.png",400,200
+cell 9,3
+
 print 1
-lsp 11,":c;>200,100,#ff00ff",800,300
+lsp 11,":c;>200,100,#ffffff",800,300
 ;btnwait %0
 ;设置变量
 ;赋值数字变量和文字变量
-for %600 = 500 to 999
-	mov %%600,%600
-	itoa $%600,%600
+for %1 = 500 to 999
+	mov %%1,%1
+	itoa $%1,%1
 next
 
-;模拟savepoint
-_testcmd_s "savepoint"
+savepoint
+savegame 1024
 
 ;重置变量和画面，看看load是否正常
-for %600 = 500 to 999
-	mov %%600,0
-	mov $%600,""
+for %1 = 500 to 999
+	mov %%1,0
+	mov $%1,""
 next
 csp -1
 print 1
 
+btnwait %0
 _testcmd_s "loadpoint"
 
 

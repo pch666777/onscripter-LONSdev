@@ -359,7 +359,7 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 		resetTexture();
 
 		//超大纹理是非ref的，其他的都是ref的
-		isRef = baseTexture->isBig();
+		isRef = !baseTexture->isBig();
 		if (isRef) {
 			texturePtr = baseTexture->GetFullTexture();
 			return texturePtr != nullptr;

@@ -851,6 +851,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	LonsSaveLayer(GloSaveFS);
 	//存储渲染模块
 	LonsSaveImageModule(GloSaveFS);
+
 	//存储脚本模块
 	((LOScriptReader*)scriptModule)->Serialize(GloSaveFS);
 	//存储音频模块
@@ -920,15 +921,19 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 
 	//存储全局变量
 	SaveGlobleVariable();
-	//LOString fn;
-	//if (saveDir.length() > 0) fn = saveDir + "/" + StringFormat(64, "save%d.datl", no);
-	//else fn = StringFormat(64, "save%d.datl", no);
-
-	//FILE *f = OpenFileForWrite(fn.c_str(), "rb");
-	//if (f) {
-	//	
-	//}
-	//else LOLog_e("open file to write faild:%s \n", fn.c_str());
+	LOString fn = "save" + std::to_string(no) + ".datl";
+	FILE *f = LOIO::GetSaveHandle(fn, "wb");
+	if (f) {
+		//要先写入tag和存档时间
+		BinArray bin(512,true);
+		bin.InitLpksHeader();
+		bin.WriteLOString(&tag);
+		fwrite(bin.bin, 1, bin.Length(), f);
+		fwrite(GloSaveFS->bin, 1, GloSaveFS->Length(), f);
+		fflush(f);
+		fclose(f);
+	}
+	else LOLog_e("can't write save data [save%d.datl]!", no);
 	return RET_CONTINUE;
 }
 
