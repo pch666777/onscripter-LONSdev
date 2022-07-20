@@ -176,46 +176,44 @@ void ONSVariableBase::SaveOnsVar(BinArray *bin, int from, int count) {
 
 //序列化
 void ONSVariableBase::Serialization(BinArray *bin, int vid) {
-	int len = bin->WriteLpksEntity("onsv", 0, 1);
-	//vid
-	//bin->WriteInt(vid);
-	//value
-	bin->WriteDouble(value);
-	//string
-	bin->WriteLOString(strValue);  
-	//数组
+	//需要优化存储的大小，毕竟有好几千个变量需要存储
+	bin->WriteInt16(0x6176); //'va'
+	//使用1个字节来标识是否有 value、string和array
+	char f = 0;
 	int count = ArrayCount();
-	bin->WriteInt(count);  //array count
-	if (count > 0) {       //array data
+	if (*(int64_t*)(&value) != 0) f |= SAVE_HAS_VALUE;
+	if (strValue && strValue->length() > 0) f |= SAVE_HAS_STRING;
+	if (count > 0) f |= SAVE_HAS_ARRAY;
+
+	bin->WriteChar(f);
+	if(f & SAVE_HAS_VALUE) bin->WriteDouble(value);
+	if(f & SAVE_HAS_STRING) bin->WriteLOString(strValue);
+	if(f & SAVE_HAS_ARRAY) {
+		bin->WriteInt(count);
 		count += MAXVARIABLE_ARRAY;
 		bin->Append((char*)arrayData, count * 4);
 	}
-
-	//收尾长度，这样及时之后有改也能顺利到底下一个位置
-	bin->WriteInt(bin->Length() - len, &len);
 }
 
 //反序列化
 bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
-	int next = 0;
-	if (!bin->CheckEntity("onsv", &next, nullptr, pos)) return false;
-	//value
-	value = bin->GetDoubleAuto(pos);
-	//string
+	if (bin->GetInt16Auto(pos) != 0x6176) return false;
+
 	if (strValue) delete strValue;
-	strValue = bin->GetLOStrPtr(pos);
-	//数组
 	if (arrayData) delete[] arrayData;
-	int count = bin->GetIntAuto(pos);
-	if (count > 0) {
-		//虽然看起来 MAXVARIABLE_ARRAY 是可调的，其实是已经限制住了最大4维
+	value = 0.0;
+	strValue = nullptr;
+	arrayData = nullptr;
+
+	char f = bin->GetChar(pos);
+	if (f & SAVE_HAS_VALUE) value = bin->GetDoubleAuto(pos);
+	if (f & SAVE_HAS_STRING) strValue = bin->GetLOStrPtr(pos);
+	if (f & SAVE_HAS_ARRAY) {
+		int count = bin->GetIntAuto(pos);
 		count += MAXVARIABLE_ARRAY;
 		arrayData = new int[count];
 		bin->GetArrayAuto(arrayData, count, 4, pos);
 	}
-	else arrayData = nullptr;
-	//指向下一段
-	*pos = next;
 	return true;
 }
 

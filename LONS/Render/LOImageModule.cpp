@@ -1330,11 +1330,11 @@ LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printNam
 	return backDataMaps[backDataMaps.size() - 1].get();
 }
 
-void LonsSaveImageModule(BinArray *bin) {
-	LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
-	img->SerializePrintQue(bin);
-	img->SerializeState(bin);
-}
+//void LonsSaveImageModule(BinArray *bin) {
+//	LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
+//	img->SerializePrintQue(bin);
+//	img->SerializeState(bin);
+//}
 
 
 void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
@@ -1346,6 +1346,15 @@ void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
 	//写入fullid
 	for (auto iter = map->begin(); iter != map->end(); iter++) bin->WriteInt(iter->first);
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+void LOImageModule::Serialize(BinArray *bin) {
+	//存储图层
+	LOLayer::SaveLayer(bin);
+	//存储队列
+	SerializePrintQue(bin);
+	//存储状态
+	SerializeState(bin);
 }
 
 void LOImageModule::SerializePrintQue(BinArray *bin) {

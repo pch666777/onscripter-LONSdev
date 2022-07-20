@@ -16,6 +16,13 @@ extern void LOLog_e(const char *fmt, ...);
 class ONSVariableBase
 {
 public:
+	enum {
+		SAVE_HAS_VALUE = 1,
+		SAVE_HAS_STRING = 2,
+		SAVE_HAS_ARRAY = 4,
+	};
+
+
 	ONSVariableBase();
 	~ONSVariableBase();
 	void SetValue(double v);

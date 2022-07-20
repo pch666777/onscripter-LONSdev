@@ -11,9 +11,6 @@
 #define M_PI 3.14159265358979323846264338327950288   /**< pi */
 #endif // !M_PI
 
-extern void LonsSaveLayer(BinArray *bin);
-extern void LonsSaveImageModule(BinArray *bin);
-
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	struct tm *ptm = localtime(&tt);
@@ -811,16 +808,16 @@ int LOScriptReader::delaygosubCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
-	/*
+	
 	ONSVariableRef *v = reader->GetParamRef(0);
 	LOString fn = StringFormat(64, "save%d.datl",reader->GetParamInt(1));
-	FILE *f = OpenFileForRead(fn.c_str(), "rb");
+	FILE *f = LOIO::GetSaveHandle(fn, "rb");
 	if (f) {
 		fclose(f);
 		v->SetValue(1.0);
 	}
 	else v->SetValue(0.0);
-	*/
+	
 	return RET_CONTINUE;
 }
 
@@ -840,22 +837,20 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 		G_PrecisionDelay(1);
 	}
 
-	//更新全局变量
-	if (st_globalon) UpdataGlobleVariable();
-	//存储变量
-	if(st_globalon) ONSVariableBase::SaveOnsVar(GloSaveFS, gloableMax, MAXVARIABLE_COUNT - gloableMax);
+	//更新变量
+	if (st_globalon) {
+		UpdataGlobleVariable();
+		ONSVariableBase::SaveOnsVar(GloSaveFS, gloableMax, MAXVARIABLE_COUNT - gloableMax);
+	}
 	else ONSVariableBase::SaveOnsVar(GloSaveFS, 0, MAXVARIABLE_COUNT);
 	//存储hook钩子列表
 	G_hookQue.SaveHooks(GloSaveFS);
-	//存储图层
-	LonsSaveLayer(GloSaveFS);
-	//存储渲染模块
-	LonsSaveImageModule(GloSaveFS);
-
-	//存储脚本模块
-	((LOScriptReader*)scriptModule)->Serialize(GloSaveFS);
-	//存储音频模块
-
+	//渲染模块
+	imgeModule->Serialize(GloSaveFS);
+	//脚本模块
+	scriptModule->Serialize(GloSaveFS);
+	//音频模块
+	audioModule->Serialize(GloSaveFS);
 	return RET_CONTINUE;
 }
 
@@ -928,6 +923,10 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		BinArray bin(512,true);
 		bin.InitLpksHeader();
 		bin.WriteLOString(&tag);
+		//写入存档时间，4位整数
+		uint32_t t1 = (uint32_t)(time(nullptr) & 0xffffffff) - 0x50000000;
+		bin.WriteInt(t1);
+
 		fwrite(bin.bin, 1, bin.Length(), f);
 		fwrite(GloSaveFS->bin, 1, GloSaveFS->Length(), f);
 		fflush(f);

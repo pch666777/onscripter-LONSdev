@@ -205,6 +205,8 @@ public:
 	intptr_t GetSDLRender() { return (intptr_t)render; }
 	void PrintError(LOString *err);
 	void ResetMe();
+
+	void Serialize(BinArray *bin);
 	//序列化print执行队列
 	void SerializePrintQue(BinArray *bin);
 	//序列化渲染模块的状态

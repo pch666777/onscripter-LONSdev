@@ -221,6 +221,7 @@ public:
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
 	void WriteLog(int logt);
+	virtual void Serialize(BinArray *bin) { return; };
 	
 
 	//===== scripter virtual  ========

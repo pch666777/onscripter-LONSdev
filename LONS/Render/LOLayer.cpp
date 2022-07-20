@@ -832,10 +832,6 @@ int LOLayer::GetSelfChildID() {
 //
 //}
 
-//操作接口
-void LonsSaveLayer(BinArray *bin) {
-	LOLayer::SaveLayer(bin);
-}
 
 //存储所有layerCenter中的文件
 void LOLayer::SaveLayer(BinArray *bin) {
