@@ -459,3 +459,8 @@ void LOImageModule::ResetMe() {
 	*/
 }
 
+
+void LOImageModule::LoadReset() {
+	LOLayer::ResetLayer();
+
+}

@@ -50,19 +50,20 @@ public:
 	void Serialize(BinArray *bin);
 
 	//属性设置的目标应该是明确的
-	inline bool isShowScale() { return showType & SHOW_SCALE; }
-	inline bool isShowRotate() { return showType & SHOW_ROTATE; }
-	inline bool isShowRect() { return showType & SHOW_RECT; }
-	inline bool isVisiable() { return flags & FLAGS_VISIABLE; }
-	inline bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
-	inline bool isCache() { return flags & FLAGS_USECACHE; }
-	inline bool isDelete() { return flags & FLAGS_DELETE; }
-	inline bool isNewFile() { return flags & FLAGS_NEWFILE; }
-	inline bool isUpData() { return flags & FLAGS_UPDATA; }
-	inline bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
-	inline bool isBtndef() { return flags & FLAGS_BTNDEF; }
-	inline bool isActive() { return flags & FLAGS_ACTIVE; }
-	inline bool isForce() { return flags & FLAGS_ISFORCE; }
+	bool isShowScale() { return showType & SHOW_SCALE; }
+	bool isShowRotate() { return showType & SHOW_ROTATE; }
+	bool isShowRect() { return showType & SHOW_RECT; }
+	bool isVisiable() { return flags & FLAGS_VISIABLE; }
+	bool isChildVisiable() { return flags & FLAGS_CHILDVISIABLE; }
+	bool isCache() { return flags & FLAGS_USECACHE; }
+	bool isDelete() { return flags & FLAGS_DELETE; }
+	bool isNewFile() { return flags & FLAGS_NEWFILE; }
+	bool isUpData() { return flags & FLAGS_UPDATA; }
+	bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
+	bool isBtndef() { return flags & FLAGS_BTNDEF; }
+	bool isActive() { return flags & FLAGS_ACTIVE; }
+	bool isForce() { return flags & FLAGS_ISFORCE; }
+	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
 
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
@@ -138,6 +139,8 @@ public:
 		//释放时，只有前台和后台同时处于不适用状态才会删除
 		//是否处于前台
 		FLAGS_ISFORCE = 0x2000,
+		//是否处于浮点模式
+		FLAGS_FLOATMODE = 0x4000,
 	};
 
 	//显示模式
@@ -152,16 +155,16 @@ public:
 	int upflags;    //更新了那些值
 	int upaction;
 	int btnval;    //btn的值
-	int16_t offsetX;    //显示目标左上角位置
-	int16_t offsetY;    //显示目标左上角位置
+	float offsetX;    //显示目标左上角位置
+	float offsetY;    //显示目标左上角位置
 	int16_t alpha;      //透明度
 	int16_t centerX;    //锚点，缩放旋转时有用
 	int16_t centerY;
 
 	int16_t showSrcX;      //显示区域的X偏移
 	int16_t showSrcY;     //显示区域的Y偏移
-	uint16_t showWidth;   //显示区域的宽度
-	uint16_t showHeight;  //显示区域的高度
+	float showWidth;   //显示区域的宽度
+	float showHeight;  //显示区域的高度
 
 	uint8_t cellNum;      //第几格动画
 	uint8_t alphaMode;

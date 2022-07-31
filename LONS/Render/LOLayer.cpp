@@ -851,3 +851,19 @@ void LOLayer::SaveLayer(BinArray *bin) {
 
 	bin->WriteInt(bin->Length() - len, &len);
 }
+
+//重置图层文件
+void LOLayer::ResetLayer() {
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		//删除直接在图层中心删除即可，这里只需要处理连接关系
+		if (G_baseLayer[ii]->childs) G_baseLayer[ii]->childs->clear();
+	}
+
+	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
+		//删除之前先断开图层关系，防止重复删除
+		if (iter->second->childs) iter->second->childs->clear();
+		delete iter->second;
+	}
+
+	layerCenter.clear();
+}

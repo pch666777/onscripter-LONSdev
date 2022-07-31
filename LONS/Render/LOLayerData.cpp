@@ -279,8 +279,10 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	bin->WriteInt3(flags, upflags, upaction);
 	bin->WriteInt(btnval);
 
-	int16_t vals[] = {offsetX ,offsetY ,alpha ,centerX ,centerY ,showSrcX ,showSrcY,(int16_t)showWidth ,(int16_t)showHeight };
-	bin->Append((char*)vals, 9 * 2);
+	float fvals[] = { offsetX, offsetY, showWidth , showHeight };
+	bin->Append((char*)fvals, 4 * 4);
+	int16_t vals[] = {alpha ,centerX ,centerY ,showSrcX ,showSrcY};
+	bin->Append((char*)vals, 5 * 2);
 	uint8_t bytes[] = { cellNum ,alphaMode ,texType ,showType };
 	bin->Append((char*)bytes, 4);
 

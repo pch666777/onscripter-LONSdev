@@ -98,7 +98,9 @@ public:
 		//退出标记
 		MODULE_FLAGE_EXIT = 0x4000,
 		//错误标记
-		MODULE_FLAGE_ERROR = 0x8000
+		MODULE_FLAGE_ERROR = 0x8000,
+		//move_to标记
+		//MODULE_FLAGE_MOVETO = 0x10000,
 	};
 
 	////本质上就是一个大型状态机，将需要设置的状态集中起来，便于管理
@@ -222,7 +224,6 @@ public:
 	void ReadLog(int logt);
 	void WriteLog(int logt);
 	virtual void Serialize(BinArray *bin) { return; };
-	
 
 	//===== scripter virtual  ========
 	virtual void GetGameInit(int &w, int &h) { return; };
@@ -294,6 +295,8 @@ public:
 	virtual int labellogCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int globalonCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int testcmdsCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	//virtual int _movto_Command(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int loadgameCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int lspCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int printCommand(FunctionInterface *reader) { return RET_VIRTUAL; };

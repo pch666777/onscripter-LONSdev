@@ -17,6 +17,7 @@ bool LOScriptReader::st_globalon; //是否使用全局变量
 bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 int LOScriptReader::gloableMax = 200;
+int LOScriptReader::loadID = 0;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
@@ -162,7 +163,7 @@ int LOScriptReader::MainTreadRunning() {
 		//printf("%lf", postime);
 
 		//============轮询循环===========================
-		while (!isModuleExit() && !isModuleReset()) {
+		while (!isModuleExit() && !isStateChange()) {
 
 			ret = activeReader->ContinueRun();
 			if (ret == RET_RETURN && activeReader->isEndSub()) {  //某个脚本返回
@@ -179,22 +180,15 @@ int LOScriptReader::MainTreadRunning() {
 		}
 		//============轮询循环==结束=======================
 
-		//决定下一步的操作模式，是下一个section，还是重置，还是退出
-		if (isModuleReset()) { //重置，到这一步说明其他模块已经重置完成了
-			//ResetMe();
-			////清理所有的事件队列
-			////G_ClearAllEventSlots();
-			////清理所有的变量
-			//ONSVariableBase::ResetAll();
-			//moduleState = MODULE_STATE_NOUSE;
-			////等待渲染模块重置
-			//while (imgeModule->moduleState != MODULE_STATE_RUNNING) {
-			//	SDL_Delay(1);
-			//}
-			////完成重置，恢复其他模块的可操作性
-			//audioModule->ResetMeFinish();
-			//moduleState = MODULE_STATE_RUNNING;
-			sectionState = SECTION_DEFINE;
+		//检查循环退出是否由某些事件引起的
+		if (isStateChange()) {
+			if (isModuleLoading()) {
+				LoadReset();
+				LoadCore(loadID);
+			}
+			else if (isModuleReset()) {
+				ResetMe();
+			}
 		}
 		else {
 			sectionState++;
@@ -1490,6 +1484,28 @@ void LOScriptReader::ResetMe() {
 	ResetBaseConfig();
 }
 
+
+//这个函数只能从主脚本调用
+void LOScriptReader::LoadReset() {
+	if (this != scriptModule) {
+		LOLog_e("LOScriptReader::LoadReset() must call by main script reader!");
+		return;
+	}
+
+	//移除其他所有脚本解析
+	while (nextReader) {
+		LeaveScriptReader(nextReader);
+	}
+	//清空call堆栈
+	while (!isEndSub()) ReadyToBack();
+	//清除运行状态
+	subStack.clear();
+	normalLogic.reset();
+	loopStack.clear();
+	nextReader = nullptr;
+	//不清除各种 define设置
+}
+
 //获取自身报告
 LOString LOScriptReader::GetReport() {
 	LOString report = "scripter thread: " + Name + "\n";
@@ -1588,18 +1604,6 @@ int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 	hook->InvalidMe();
 	return 0;
 }
-
-
-
-//按钮事件
-//int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
-//	LOUniqVariableRef ref(new ONSVariableRef((ONSVariableRef::ONSVAR_TYPE)hook->paramList[0]->GetInt(), hook->paramList[1]->GetInt()));
-//	if (e->paramList[1]->IsType(LOVariant::TYPE_INT)) {
-//		ref->SetValue((double)e->paramList[1]->GetInt());
-//	}
-//	hook->InvalidMe();
-//	return LOEventHook::RUNFUNC_FINISH;
-//}
 
 
 void LOScriptReader::Serialize(BinArray *bin) {

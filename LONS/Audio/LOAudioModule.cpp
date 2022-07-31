@@ -40,7 +40,8 @@ void LOAudioModule::ResetMe() {
 	Mix_ChannelFinished(NULL);
 	Mix_HookMusicFinished(NULL);
 
-	//blocksEvent.InvalidAll();
+	//不再需要等待播放队列
+	waitEventQue.clear();
 
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
 		if (audioPtr[ii]) {

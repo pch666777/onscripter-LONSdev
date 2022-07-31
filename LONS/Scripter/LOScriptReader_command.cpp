@@ -989,3 +989,29 @@ int LOScriptReader::testcmdsCommand(FunctionInterface *reader) {
 	}
 	return RET_CONTINUE;
 }
+
+
+int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
+	//停止所有播放，重置音频模块状态
+	audioModule->ResetMe();
+	//给图像模块发送 load 信号
+	imgeModule->ChangeFlagState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
+	scriptModule->ChangeRunState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
+	loadID = reader->GetParamInt(0);
+	return RET_CONTINUE;
+}
+
+
+void LOScriptReader::LoadCore(int id) {
+	LOString fn = StringFormat(64, "save%d.datl", id);
+	FILE *f = LOIO::GetSaveHandle(fn, "rb");
+	if (!f) {
+		LOLog_e("can't read save file:%s", fn.c_str());
+		return;
+	}
+
+	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, -1));
+	int pos = 0;
+	if (!bin || bin->CheckLpksHeader(&pos)) return;
+
+}

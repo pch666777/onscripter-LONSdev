@@ -182,6 +182,7 @@ public:
 	intptr_t GetEncoder();
 	int GetCurrentLine() { return currentLable->c_line; }
 	void ResetMe();
+	void LoadReset();
 	void ResetBaseConfig();
 	LOString GetReport();
 	void PrintError(const char *fmt, ...);
@@ -266,6 +267,9 @@ public:
 	int labellogCommand(FunctionInterface *reader);
 	int globalonCommand(FunctionInterface *reader);
 	int testcmdsCommand(FunctionInterface *reader);
+	//转移脚本，等同于reset，然后从指定脚本开始执行
+	//int _movto_Command(FunctionInterface *reader);
+	int loadgameCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
@@ -280,6 +284,7 @@ private:
 	static bool st_labellog; //是否使用标签变量
 	static bool st_errorsave; //是否使用错误自动保存
 	static int gloableMax;
+	static int loadID;   //loadgame时加载的序号
 
 	//bool isAddLine;
 	int  parseDeep;    //startparse进入多少个嵌套了
@@ -302,6 +307,7 @@ private:
 	void ClearParams(bool isall);
 	int TextPushParams(const char *&buf);   //将文本的参数推入paramStack中
 	void JumpNext();    //跳过next执行
+	void LoadCore(int id);
 
 	virtual int   FileRemove(const char *name);
 	

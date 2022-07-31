@@ -109,7 +109,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"labellog",   "\0",      "\0",        &FunctionInterface::labellogCommand},
 	{"globalon",   "\0",      "\0",        &FunctionInterface::globalonCommand},
 	{"_testcmd_s", "s",       "Y",         &FunctionInterface::testcmdsCommand},
-
+	//{"_moveto_",   "s",       "Y",         &FunctionInterface::_movto_Command},
+	{"loadgame",   "i",       "Y",         &FunctionInterface::loadgameCommand},
 
 	{"pretextgosub", "L",     "Y",         &FunctionInterface::usergosubCommand},
 	{"textgosub",    "L",     "Y",         &FunctionInterface::usergosubCommand},
