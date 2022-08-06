@@ -975,6 +975,8 @@ next
 
 savepoint
 savegame 1024
+;;如果是load的，则跳转，跳转之后ifload就不再有效，除非下一次load
+_ifload_ "loadCheck1"
 
 ;重置变量和画面，看看load是否正常
 for %1 = 500 to 999
@@ -984,8 +986,11 @@ next
 csp -1
 print 1
 
-btnwait %0
-_testcmd_s "loadpoint"
+loadgame 1024
+debuglog "[loadgame]测试不通过！"
+end
+
+*loadCheck1
 
 
 btnwait %0

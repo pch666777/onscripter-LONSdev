@@ -399,6 +399,16 @@ void LOEventQue::clear() {
 }
 
 
+void LOEventQue::invalidClear() {
+	_mutex.lock();
+	for (int ii = 0; ii < normalList.size(); ii++) normalList.at(ii)->InvalidMe();
+	for (int ii = 0; ii < highList.size(); ii++) highList.at(ii)->InvalidMe();
+	normalList.clear();
+	highList.clear();
+	_mutex.unlock();
+}
+
+
 void LOEventQue::SaveHooks(BinArray *bin) {
 	_mutex.lock();
 	//'hque',len, version

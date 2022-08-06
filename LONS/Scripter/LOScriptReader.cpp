@@ -1503,7 +1503,11 @@ void LOScriptReader::LoadReset() {
 	normalLogic.reset();
 	loopStack.clear();
 	nextReader = nullptr;
+	//清除所有事件
+	waitEventQue.invalidClear();
 	//不清除各种 define设置
+
+	ChangeFlagState(0);
 }
 
 //获取自身报告

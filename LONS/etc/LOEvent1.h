@@ -188,6 +188,7 @@ public:
 	//整理队列，注意调用的时机
 	void arrangeList();
 	void clear();
+	void invalidClear();
 	void SaveHooks(BinArray *bin);
 
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件

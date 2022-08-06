@@ -195,27 +195,53 @@ void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 	}
 }
 
-//反序列化
-bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
-	if (bin->GetInt16Auto(pos) != 0x6176) return false;
 
+//load的反序列化是选择性的
+bool ONSVariableBase::LoadDeserialize(BinArray *bin, int *pos) {
+	if (bin->GetInt16Auto(pos) != 0x6176) return false;
+	//首先重置变量，limit特性并不会随着load而改变
 	if (strValue) delete strValue;
-	if (arrayData) delete[] arrayData;
-	value = 0.0;
 	strValue = nullptr;
-	arrayData = nullptr;
+	value = 0.0;
+	//可能有define的数组大小跟存档不一致的情况
+	if (ArrayCount() > 0) memset(arrayData + MAXVARIABLE_ARRAY, 0, ArrayCount() * 4);
 
 	char f = bin->GetChar(pos);
 	if (f & SAVE_HAS_VALUE) value = bin->GetDoubleAuto(pos);
 	if (f & SAVE_HAS_STRING) strValue = bin->GetLOStrPtr(pos);
 	if (f & SAVE_HAS_ARRAY) {
 		int count = bin->GetIntAuto(pos);
-		count += MAXVARIABLE_ARRAY;
-		arrayData = new int[count];
-		bin->GetArrayAuto(arrayData, count, 4, pos);
+		//现状数组大小不足的情况
+		if (ArrayCount() < count) {
+			delete[] arrayData;
+			arrayData = new int[count + MAXVARIABLE_ARRAY];
+		}
+		bin->GetArrayAuto(arrayData, count + MAXVARIABLE_ARRAY, 4, pos);
 	}
 	return true;
 }
+
+//反序列化
+//bool ONSVariableBase::Deserialization(BinArray *bin, int *pos) {
+//	if (bin->GetInt16Auto(pos) != 0x6176) return false;
+//
+//	if (strValue) delete strValue;
+//	if (arrayData) delete[] arrayData;
+//	value = 0.0;
+//	strValue = nullptr;
+//	arrayData = nullptr;
+//
+//	char f = bin->GetChar(pos);
+//	if (f & SAVE_HAS_VALUE) value = bin->GetDoubleAuto(pos);
+//	if (f & SAVE_HAS_STRING) strValue = bin->GetLOStrPtr(pos);
+//	if (f & SAVE_HAS_ARRAY) {
+//		int count = bin->GetIntAuto(pos);
+//		count += MAXVARIABLE_ARRAY;
+//		arrayData = new int[count];
+//		bin->GetArrayAuto(arrayData, count, 4, pos);
+//	}
+//	return true;
+//}
 
 
 //====================== Ref =============

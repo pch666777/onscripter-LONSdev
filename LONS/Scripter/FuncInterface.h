@@ -198,6 +198,7 @@ public:
 	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
 	bool isModuleNoUse() { return moduleState & MODULE_STATE_NOUSE; }
 	bool isModuleError() { return moduleState & MODULE_FLAGE_ERROR; }
+	bool isModuleFlagSNone() { return (moduleState >> 4) == 0; }
 
 	static LOString StringFormat(int max, const char *format, ...);
 

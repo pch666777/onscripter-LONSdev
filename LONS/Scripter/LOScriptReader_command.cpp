@@ -890,7 +890,7 @@ void LOScriptReader::ReadGlobleVariable(BinArray *bin, int *pos) {
 	int from = bin->GetIntAuto(pos);
 	int count = bin->GetIntAuto(pos);
 	for (int ii = from; ii < count; ii++) {
-		if (!GNSvariable[ii].Deserialization(bin, pos)) {
+		if (!GNSvariable[ii].LoadDeserialize(bin, pos)) {
 			LOLog_i("GNSvariable[ii].Deserialization() faild!");
 			break;
 		}
@@ -998,6 +998,8 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 	imgeModule->ChangeFlagState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
 	scriptModule->ChangeRunState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
 	loadID = reader->GetParamInt(0);
+
+	//读档前必须先进行loadReset()
 	return RET_CONTINUE;
 }
 
@@ -1012,6 +1014,30 @@ void LOScriptReader::LoadCore(int id) {
 
 	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, -1));
 	int pos = 0;
-	if (!bin || bin->CheckLpksHeader(&pos)) return;
+	if (!bin || !bin->CheckLpksHeader(&pos)) {
+		LOLog_e("save file error:%s", fn.c_str());
+		return;
+	}
+	LOString *tmp = bin->GetLOStrPtr(&pos);
+	if (tmp) delete tmp;
+	bin->GetInt32Auto(&pos);
+	//实际内容
+	if (!bin->CheckLpksHeader(&pos)) {
+		LOLog_e("save file error:%s", fn.c_str());
+		return;
+	}
+
+	//正式开始前，等待渲染线程准备完成
+	while (imgeModule->isModuleLoading()) G_PrecisionDelay(0.2);
+	//读取变量
+
+	//读取hook钩子
+
+	//渲染模块
+
+	//脚本模块
+
+	//音频模块
+
 
 }

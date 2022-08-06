@@ -36,7 +36,8 @@ public:
 	const char *CheckAarryIndex(int *index);
 	void DimArray(int *index);
 	void Serialization(BinArray *bin, int vid);
-	bool Deserialization(BinArray *bin, int *pos);
+	bool LoadDeserialize(BinArray *bin, int *pos);
+	//bool Deserialization(BinArray *bin, int *pos);
 	static void SetStrCore(LOString *&dst, LOString *s);
 	static ONSVariableBase *GetVariable(int id);
 	static int StrToIntSafe(LOString *s); //这个函数有重复的

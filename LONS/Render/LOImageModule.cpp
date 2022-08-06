@@ -289,7 +289,7 @@ int LOImageModule::MainLoop() {
 				//进入存档函数
 			}
 			else if (isModuleLoading()) {
-
+				LoadReset();
 			}
 			else if (isModuleReset()) {
 				ResetMe();

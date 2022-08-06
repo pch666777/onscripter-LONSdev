@@ -378,7 +378,7 @@ int BinArray::WriteLOVariant(LOVariant *v, int *pos) {
 BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
 	//长度不因大于文件的长度
 	fseek(f, 0, SEEK_END);
-	if (len > ftell(f)) len = ftell(f);
+	if (len > ftell(f) || len < 0) len = ftell(f);
 
 	BinArray *sbin = new BinArray(len, false);
 	//文件位置

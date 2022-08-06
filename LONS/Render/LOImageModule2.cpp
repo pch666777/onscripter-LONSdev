@@ -462,5 +462,12 @@ void LOImageModule::ResetMe() {
 
 void LOImageModule::LoadReset() {
 	LOLayer::ResetLayer();
+	//清空等待队列
+	for (int ii = 0; ii < backDataMaps.size(); ii++) backDataMaps[ii]->map->clear();
+	//清除所有的事件，一些常驻事件要重新注册
+	G_hookQue.invalidClear();
+	ChangeFlagState(0);
 
+	SDL_RenderClear(render);
+	SDL_RenderPresent(render);
 }
