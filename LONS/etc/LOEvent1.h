@@ -7,6 +7,7 @@
 #include <mutex>
 #include <SDL.h>
 #include <vector>
+#include <map>
 #include "../Scripter/ONSvariable.h"
 #include "LOVariant.h"
 
@@ -190,7 +191,7 @@ public:
 	void clear();
 	void invalidClear();
 	void SaveHooks(BinArray *bin);
-
+	bool LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap);
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
 	//LOEventHook* GetNextEvent(int *listindex, int *index);
 	

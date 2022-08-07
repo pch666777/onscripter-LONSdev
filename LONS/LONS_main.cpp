@@ -72,10 +72,7 @@ void ReadConfig() {
 //必要的变量初始化
 void GlobalInit() {
 	//初始化根图层
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		int fullid = GetFullID(LOLayer::LAYER_CC_USE, ii, 255, 255);
-		G_baseLayer[ii] = LOLayer::CreateLayer(fullid);
-	}
+	LOLayer::InitBaseLayer();
 	//读取基本环境
 	LonsReadEnvData();
 }

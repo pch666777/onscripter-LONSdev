@@ -44,6 +44,7 @@ public:
 	static void AppendStrCore(LOString *&dst,LOString *s);
 	static void ResetAll();
 	static void SaveOnsVar(BinArray *bin, int from, int count);
+	static bool LoadOnsVar(BinArray *bin, int *pos);
 private:
 	double value;
 	LOString *strValue;

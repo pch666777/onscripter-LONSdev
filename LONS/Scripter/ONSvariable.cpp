@@ -174,6 +174,19 @@ void ONSVariableBase::SaveOnsVar(BinArray *bin, int from, int count) {
 }
 
 
+bool ONSVariableBase::LoadOnsVar(BinArray *bin, int *pos) {
+	int next = -1;
+	if(!bin->CheckEntity("GVAR", &next, nullptr, pos)) return false;
+	int from = bin->GetIntAuto(pos);
+	int count = bin->GetIntAuto(pos);
+	for (int ii = from; ii < count; ii++) {
+		if(!GNSvariable[ii].LoadDeserialize(bin, pos)) return false;
+	}
+
+	*pos = next;
+}
+
+
 //序列化
 void ONSVariableBase::Serialization(BinArray *bin, int vid) {
 	//需要优化存储的大小，毕竟有好几千个变量需要存储

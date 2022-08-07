@@ -143,6 +143,7 @@ int LOScriptReader::MainTreadRunning() {
 	//开始之前先读取全局变量
 	ReadGlobleVarFile();
 
+	bool isLableStart = true;
 	const char* lables[] = { "define" , "start" };
 	int ret = RET_CONTINUE;
 	sectionState = SECTION_DEFINE;
@@ -150,17 +151,12 @@ int LOScriptReader::MainTreadRunning() {
 
 	//section循环
 	while (!isModuleExit()) {
-		LOString lable(lables[sectionState]);
-		if (!ReadyToRun(&lable, LOScriptPoint::CALL_BY_NORMAL))return -1;
 
-		////测试100次搜索时间
-		//Uint64 perHtickTime = SDL_GetPerformanceFrequency() / 1000;
-		//Uint64 t1 = SDL_GetPerformanceCounter();
-		//for (int ii = 0; ii < 100; ii++) {
-		//	currentLable->file->GetLineInfo(nullptr, rand() % 200000 + 1, true);
-		//}
-		//double postime = 1.0 * (SDL_GetPerformanceCounter() - t1) / perHtickTime;
-		//printf("%lf", postime);
+		//是否从指定标签开始
+		if (isLableStart) {
+			LOString lable(lables[sectionState]);
+			if (!ReadyToRun(&lable, LOScriptPoint::CALL_BY_NORMAL))return -1;
+		}
 
 		//============轮询循环===========================
 		while (!isModuleExit() && !isStateChange()) {
@@ -185,12 +181,16 @@ int LOScriptReader::MainTreadRunning() {
 			if (isModuleLoading()) {
 				LoadReset();
 				LoadCore(loadID);
+				isLableStart = false;
 			}
 			else if (isModuleReset()) {
 				ResetMe();
+				sectionState = SECTION_DEFINE;
+				isLableStart = true;
 			}
 		}
 		else {
+			isLableStart = true;
 			sectionState++;
 			if (sectionState > SECTION_NORMAL) break;
 		}

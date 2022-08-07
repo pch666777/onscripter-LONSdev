@@ -307,7 +307,7 @@ private:
 	void ClearParams(bool isall);
 	int TextPushParams(const char *&buf);   //将文本的参数推入paramStack中
 	void JumpNext();    //跳过next执行
-	void LoadCore(int id);
+	bool LoadCore(int id);
 
 	virtual int   FileRemove(const char *name);
 	

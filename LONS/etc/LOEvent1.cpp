@@ -422,3 +422,11 @@ void LOEventQue::SaveHooks(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 	_mutex.unlock();
 }
+
+
+bool LOEventQue::LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap) {
+	int next = -1;
+	if (!bin->CheckEntity("hque", &next, nullptr, pos)) return false;
+	int count = bin->GetIntAuto(pos);
+
+}

@@ -1004,33 +1004,36 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 }
 
 
-void LOScriptReader::LoadCore(int id) {
+bool LOScriptReader::LoadCore(int id) {
 	LOString fn = StringFormat(64, "save%d.datl", id);
 	FILE *f = LOIO::GetSaveHandle(fn, "rb");
 	if (!f) {
-		LOLog_e("can't read save file:%s", fn.c_str());
-		return;
+		LOLog_e("can't read save file [%s]", fn.c_str());
+		return false;
 	}
 
 	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, -1));
 	int pos = 0;
 	if (!bin || !bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file error:%s", fn.c_str());
-		return;
+		LOLog_e("save file [%s] error!", fn.c_str());
+		return false;
 	}
 	LOString *tmp = bin->GetLOStrPtr(&pos);
 	if (tmp) delete tmp;
 	bin->GetInt32Auto(&pos);
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file error:%s", fn.c_str());
-		return;
+		LOLog_e("save file [%s] error!", fn.c_str());
+		return false;
 	}
 
 	//正式开始前，等待渲染线程准备完成
 	while (imgeModule->isModuleLoading()) G_PrecisionDelay(0.2);
 	//读取变量
-
+	if (!ONSVariableBase::LoadOnsVar(bin.get(), &pos)) {
+		LOLog_e("save file [%s] ONSVariable read faild!", fn.c_str());
+		return false;
+	}
 	//读取hook钩子
 
 	//渲染模块
@@ -1039,5 +1042,5 @@ void LOScriptReader::LoadCore(int id) {
 
 	//音频模块
 
-
+	return true;
 }

@@ -4,6 +4,9 @@
 
 extern void AddPreEvent(LOShareEventHook &e);
 
+//确定删除图层时是否调用layercenter移除
+bool LOLayer::useLayerCenter = true;
+
 LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
 
@@ -52,7 +55,7 @@ LOLayer::~LOLayer() {
 			LOLayer *layer = iter->second;
 			layer->parent = nullptr;
 			//如果子图层不是新的对象，那么直接移除
-			if (!layer->data->bak.isNewFile()) NoUseLayer(layer);
+			if (!layer->data->bak.isNewFile() && useLayerCenter) NoUseLayer(layer);
 		}
 		childs->clear();
 	}
@@ -852,18 +855,25 @@ void LOLayer::SaveLayer(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 }
 
+
+void LOLayer::InitBaseLayer() {
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		int fullid = GetFullID(LOLayer::LAYER_CC_USE, ii, 255, 255);
+		G_baseLayer[ii] = LOLayer::CreateLayer(fullid);
+	}
+}
+
 //重置图层文件
 void LOLayer::ResetLayer() {
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		//删除直接在图层中心删除即可，这里只需要处理连接关系
-		if (G_baseLayer[ii]->childs) G_baseLayer[ii]->childs->clear();
-	}
-
+	//根图层也已经被删除了
+	useLayerCenter = false;
 	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
 		//删除之前先断开图层关系，防止重复删除
 		if (iter->second->childs) iter->second->childs->clear();
 		delete iter->second;
 	}
-
 	layerCenter.clear();
+	useLayerCenter = true;
+	//重新创建根图层
+	InitBaseLayer();
 }
