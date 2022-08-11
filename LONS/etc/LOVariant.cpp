@@ -169,6 +169,14 @@ void LOVariant::SetPtr(void *ptr) {
 }
 
 
+void LOVariant::SetMemData(void *mem, int len) {
+	FreeMem();
+	//提供的len是总长度
+	NewMem(len - CFG_RECORED);
+	memcpy(bytes + CFG_RECORED, mem, len - CFG_RECORED);
+}
+
+
 void* LOVariant::GetPtr() {
 	int64_t val = *(int64_t*)(bytes + CFG_DATAS);
 	if (sizeof(intptr_t) == 4) return (void*)(val & 0xffffffff);

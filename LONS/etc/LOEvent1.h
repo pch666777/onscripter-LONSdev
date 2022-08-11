@@ -129,6 +129,7 @@ public:
 	int GetState() { return state; }
 
 	void Serialize(BinArray *bin);
+	bool Deserialize(BinArray *bin, int *pos);
 	//创建一个等待事件
 	static LOEventHook* CreateTimerWaitHook(LOString *scripter, bool isclickNext);
 	//创建一个print准备
@@ -157,6 +158,9 @@ public:
 	static LOEventHook* CreateSePalyFinishEvent(int channel);
 	//创建一个没有参数的信号
 	static LOEventHook* CreateSignal(int param1, int param2);
+
+	//读取存档的时候需要一个时间搓作为参考
+	static Uint32 loadTimeTick;
 private:
 	bool upState(int sa);
 	//参数表
@@ -192,6 +196,7 @@ public:
 	void invalidClear();
 	void SaveHooks(BinArray *bin);
 	bool LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap);
+	bool LoadHooksList(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap, std::vector<LOShareEventHook> *list);
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
 	//LOEventHook* GetNextEvent(int *listindex, int *index);
 	

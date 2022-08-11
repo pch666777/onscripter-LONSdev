@@ -220,6 +220,17 @@ LOString* BinArray::GetLOStrPtr(int *pos) {
 }
 
 
+LOVariant* BinArray::GetLOVariant(int *pos) {
+	int len = GetIntAuto(pos);
+	if (len <= 0) return nullptr;
+	if (!CheckPosition(pos[0] + len)) return nullptr;
+	LOVariant *v = new LOVariant();
+	v->SetMemData(bin + pos[0], len);
+	*pos += len;
+	return v;
+}
+
+
 void BinArray::AddMemory(int len) {
 	//浪费一点点空间，避免频繁重新分配内存
 	len += BIN_DEFAULT_LEN;

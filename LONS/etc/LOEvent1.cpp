@@ -9,6 +9,7 @@ LOEventQue G_hookQue;
 
 //==================== LOEvent1 ===================
 std::atomic_int LOEventHook::exitFlag{};
+Uint32 LOEventHook::loadTimeTick = 0;
 
 
 LOEventHook::LOEventHook() {
@@ -121,9 +122,10 @@ void LOEventHook::ClearParam() {
 
 
 void LOEventHook::Serialize(BinArray *bin) {
-	int len = bin->WriteLpksEntity("even", 0, 1);
 	//自身的指针作为识别ID，在反序列化时有用
 	bin->WriteInt64((int64_t)this);
+
+	int len = bin->WriteLpksEntity("even", 0, 1);
 	//时间记录的是时间戳跟当前的差值
 	bin->WriteInt3(catchFlag, evType, (int)(SDL_GetTicks() - timeStamp));
 	bin->WriteInt16(param1);
@@ -134,6 +136,29 @@ void LOEventHook::Serialize(BinArray *bin) {
 	for (int ii = 0; ii < paramList.size(); ii++) bin->WriteLOVariant(paramList.at(ii));
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOEventHook::Deserialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("even", &next, nullptr, pos)) return false;
+
+	catchFlag = bin->GetIntAuto(pos);
+	evType = bin->GetIntAuto(pos);
+	timeStamp = loadTimeTick + bin->GetIntAuto(pos);
+	param1 = bin->GetInt16Auto(pos);
+	param2 = bin->GetInt16Auto(pos);
+	state.store(bin->GetIntAuto(pos));
+
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		LOVariant *v = bin->GetLOVariant(pos);
+		if (!v) return false;
+		paramList.push_back(v);
+	}
+
+	*pos = next;
+	return true;
 }
 
 
@@ -427,6 +452,30 @@ void LOEventQue::SaveHooks(BinArray *bin) {
 bool LOEventQue::LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap) {
 	int next = -1;
 	if (!bin->CheckEntity("hque", &next, nullptr, pos)) return false;
-	int count = bin->GetIntAuto(pos);
+	//highList
+	if (!LoadHooksList(bin, pos, evmap, &highList)) return false;
+	//normalList
+	if (!LoadHooksList(bin, pos, evmap, &normalList)) return false;
+}
 
+
+bool LOEventQue::LoadHooksList(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap, std::vector<LOShareEventHook> *list) {
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		int64_t PID = bin->GetInt64Auto(pos);
+		auto iter = evmap->find(PID);
+		//已经序列化了eventhook
+		if (iter != evmap->end()) {
+			list->push_back(iter->second);
+			int next = -1;
+			if (!bin->CheckEntity("even", &next, nullptr, pos)) return false;
+			*pos = next;
+		}
+		else {
+			LOEventHook *e = new LOEventHook();
+			if (!e->Deserialize(bin, pos)) return false;
+			LOShareEventHook ev(e);
+			list->push_back(ev);
+		}
+	}
 }

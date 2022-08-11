@@ -58,6 +58,9 @@ public:
 	void SetLOString(LOString *str);
 	void SetPtr(void *ptr);
 
+	//覆盖现有的内存
+	void SetMemData(void *mem, int len);
+
 	//所有的get类都不做有效性检查
 	char GetChar();
 	const char* GetChars(int *len);
