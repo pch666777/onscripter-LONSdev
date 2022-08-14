@@ -146,6 +146,7 @@ public:
 	static LOLayer* GetLayer(int fullid);
 	static LOLayer* LinkLayerLeve(LOLayer *lyr);
 	static void SaveLayer(BinArray *bin);
+	static bool LoadLayer(BinArray *bin, int *pos, LOEvPtrMap *evmap);
 	static void ResetLayer();
 	static bool useLayerCenter;
 	static void InitBaseLayer();

@@ -64,6 +64,7 @@ public:
 	bool isActive() { return flags & FLAGS_ACTIVE; }
 	bool isForce() { return flags & FLAGS_ISFORCE; }
 	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
+	bool isNothing() { return flags == 0 && upflags == 0; }
 
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
@@ -85,6 +86,7 @@ public:
 	void FirstSNC();
 	void GetSimpleSrc(SDL_Rect *src);
 	void GetSimpleDst(SDL_Rect *dst);
+	LOLayerDataBase* RegisterMe();
 
 	enum {
 		UP_BTNVAL = 1,
@@ -108,6 +110,7 @@ public:
 		//UP_ACTIONS = 0x20000,
 		UP_SHOWTYPE = 0x40000,
 		UP_VISIABLE = 0x80000,
+
 		UP_NEWFILE = -1,
 
 		//更新了哪一个action，使用LOAction的类型标识
@@ -141,6 +144,9 @@ public:
 		FLAGS_ISFORCE = 0x2000,
 		//是否处于浮点模式
 		FLAGS_FLOATMODE = 0x4000,
+
+		//该layerData已经被使用
+		FLAGS_HASUSED = 0x40000000,
 	};
 
 	//显示模式
@@ -191,12 +197,15 @@ public:
 };
 
 
+
+
+
+
 //数据由前台数据和后台数据组成，set时总是设置后台数据, get时则根据upflags确定返回前台还是后台数据
 class LOLayerData{
 public:
 	LOLayerData();
 	~LOLayerData();
-
 	//禁用赋值
 	const LOLayerData& operator=(const LOLayerData &obj) = delete;
 
@@ -221,8 +230,8 @@ public:
 	};
 
 	int fullid;
-	LOLayerDataBase cur;
-	LOLayerDataBase bak;
+	LOLayerDataBase *cur;
+	LOLayerDataBase *bak;
 
 	//get类函数都会检查后台，如果后台有更新则返回后台数据
 	//void GetSimpleDst(SDL_Rect *dst);
@@ -246,10 +255,38 @@ public:
 
 	//将动画的初始信息同步到layerinfo上
 	void UpdataToForce();
+	void ReleaseForce();
+	void ReleaseBak();
+	//总是新建
+	void NewBak();
+	//空的才新建
+	void EmptyNewBak();
 
 	void Serialize(BinArray *bin);
 private:
 	bool isinit;
 };
+
+
+//环形缓存结构
+class LOLayerDataManager {
+public:
+	LOLayerDataManager();
+	~LOLayerDataManager();
+
+	//空白的，DataBase无效后均指向它
+	LOLayerDataBase *emptyData;
+
+	void GetDataBase(LOLayerDataBase *&base);
+	void GetEmpty(LOLayerDataBase *&base);
+private:
+	void AddDataList(int size);
+	//当前循环的位置
+	int current;
+	//指针
+	std::vector<LOLayerDataBase*> DataList;
+};
+
+extern LOLayerDataManager LOLayerDataCenter;
 
 #endif // !__H_LOLAYERDATA_

@@ -90,7 +90,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 			////////
 			if (isnow) {
-				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);
+				if(lyr->data->bak->isDelete()) LOLayer::NoUseLayer(lyr);
 				else lyr->UpDataToForce();
 				//指向下一个
 				iter = map->erase(iter);
@@ -249,7 +249,7 @@ void LOImageModule::ClearDialogText(char flag) {
 	if (flag == '\\') {
 		int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		info->bak.SetDelete();
+		info->bak->SetDelete();
 		sayState.say.clear();
 	}
 }
@@ -259,8 +259,8 @@ void LOImageModule::ClearDialogText(char flag) {
 void LOImageModule::CutDialogueAction() {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (lyr && lyr->data->cur.isForce()) {
-		LOActionText *ac = (LOActionText*)lyr->data->cur.GetAction(LOAction::ANIM_TEXT);
+	if (lyr && lyr->data->cur->isForce()) {
+		LOActionText *ac = (LOActionText*)lyr->data->cur->GetAction(LOAction::ANIM_TEXT);
 		if (ac) {
 			lyr->DoTextAction(lyr->data.get(), ac, 0x7ffffff);
 		}

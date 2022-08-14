@@ -212,6 +212,7 @@ public:
 	void SerializePrintQue(BinArray *bin);
 	//序列化渲染模块的状态
 	void SerializeState(BinArray *bin);
+	void DeSerialize(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap);
 
 	int lspCommand(FunctionInterface *reader);
 	int printCommand(FunctionInterface *reader);

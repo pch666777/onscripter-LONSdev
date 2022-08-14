@@ -20,6 +20,8 @@ int G_destHeight = -1;  //目标窗口高度
 int G_fpsnum = 60;      //默认的fps速度
 int G_textspeed = 20;   //默认的文字速度
 
+LOLayerDataManager LOLayerDataCenter;
+
 //============ static and globle ================
 
 //游戏画面是否被缩放
@@ -272,6 +274,11 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 	dst->w = texture->baseW(); dst->h = texture->baseH();
 }
 
+LOLayerDataBase* LOLayerDataBase::RegisterMe() {
+	flags |= FLAGS_HASUSED;
+	return this;
+}
+
 void LOLayerDataBase::Serialize(BinArray *bin) {
 	//长度记录在标记之后 base,len,version
 	int len = bin->WriteLpksEntity("base", 0, 1);
@@ -309,95 +316,99 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 }
 
 
-//=================================
+//=================================LOLayerData======================
 
 LOLayerData::LOLayerData() {
 	isinit = false;
+	cur = bak = nullptr;
+	LOLayerDataCenter.GetEmpty(cur);
+	LOLayerDataCenter.GetEmpty(bak);
 }
 
 LOLayerData::~LOLayerData() {
-	//if (actions) for (int ii = 0; ii < actions->size(); ii++) delete actions->at(ii);
-	//if (eventHooks) for (int ii = 0; ii < eventHooks->size(); ii++) delete eventHooks->at(ii);
+	//纹理资源应该已经释放，如果没有会输出一个错误
+	cur->resetBase();
+	bak->resetBase();
 }
 
 
 
 bool LOLayerData::GetVisiable() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return false;
-	else if (bak.upflags & LOLayerDataBase::UP_VISIABLE) return bak.isVisiable();
-	return cur.isVisiable();
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return false;
+	else if (bak->upflags & LOLayerDataBase::UP_VISIABLE) return bak->isVisiable();
+	return cur->isVisiable();
 }
 
 int LOLayerData::GetOffsetX() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_OFFX) return bak.offsetX;
-	return cur.offsetX;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_OFFX) return bak->offsetX;
+	return cur->offsetX;
 }
 
 int LOLayerData::GetOffsetY() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_OFFY) return bak.offsetY;
-	return cur.offsetY;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_OFFY) return bak->offsetY;
+	return cur->offsetY;
 }
 
 int LOLayerData::GetCenterX() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_CENX) return bak.centerX;
-	return cur.centerX;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_CENX) return bak->centerX;
+	return cur->centerX;
 }
 
 int LOLayerData::GetCenterY() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_CENY) return bak.centerY;
-	return cur.centerY;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_CENY) return bak->centerY;
+	return cur->centerY;
 }
 
 int LOLayerData::GetAlpha() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 255;
-	if (bak.upflags & LOLayerDataBase::UP_ALPHA) return bak.alpha;
-	return cur.alpha;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 255;
+	if (bak->upflags & LOLayerDataBase::UP_ALPHA) return bak->alpha;
+	return cur->alpha;
 }
 
 int LOLayerData::GetShowWidth() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_SHOWW) return bak.showWidth;
-	return cur.showWidth;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_SHOWW) return bak->showWidth;
+	return cur->showWidth;
 }
 
 int LOLayerData::GetShowHeight() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_SHOWH) return bak.showHeight;
-	return cur.showHeight;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_SHOWH) return bak->showHeight;
+	return cur->showHeight;
 }
 
 int LOLayerData::GetCellCount() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0;
-	if (bak.upflags & LOLayerDataBase::UP_NEWFILE) return bak.GetCellCount();
-	return cur.GetCellCount();
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0;
+	if (bak->upflags & LOLayerDataBase::UP_NEWFILE) return bak->GetCellCount();
+	return cur->GetCellCount();
 }
 
 double LOLayerData::GetScaleX() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
-	if (bak.upflags & LOLayerDataBase::UP_SCALEX) return bak.scaleX;
-	return cur.scaleX;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
+	if (bak->upflags & LOLayerDataBase::UP_SCALEX) return bak->scaleX;
+	return cur->scaleX;
 }
 
 double LOLayerData::GetScaleY() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
-	if (bak.upflags & LOLayerDataBase::UP_SCALEY) return bak.scaleY;
-	return cur.scaleY;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
+	if (bak->upflags & LOLayerDataBase::UP_SCALEY) return bak->scaleY;
+	return cur->scaleY;
 }
 
 
 double LOLayerData::GetRotate() {
-	if (bak.flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
-	if (bak.upflags & LOLayerDataBase::UP_ROTATE) return bak.rotate;
-	return cur.rotate;
+	if (bak->flags & LOLayerDataBase::FLAGS_DELETE) return 0.0;
+	if (bak->upflags & LOLayerDataBase::UP_ROTATE) return bak->rotate;
+	return cur->rotate;
 }
 
 LOLayerDataBase *LOLayerData::GetBase(bool isforce) {
-	if (isforce)return &cur;
-	return &bak;
+	if (isforce)return cur;
+	return bak;
 }
 
 //设置默认的显示范围，通常在loadsp后调用
@@ -448,54 +459,111 @@ void LOLayerData::cpuDelay() {
 
 void LOLayerData::UpdataToForce() {
 	//首先更新action，后面有用
-	if (bak.upaction == LOLayerDataBase::UP_ACTION_ALL) cur.actions = std::move(bak.actions);
-	else if (bak.upaction != 0) {
+	if (bak->upaction == LOLayerDataBase::UP_ACTION_ALL) cur->actions = std::move(bak->actions);
+	else if (bak->upaction != 0) {
 		//更新单个状态
 	}
 	
-	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) cur.btnval = bak.btnval;
-	if (bak.upflags & LOLayerDataBase::UP_OFFX) cur.offsetX = bak.offsetX;
-	if (bak.upflags & LOLayerDataBase::UP_OFFY) cur.offsetY = bak.offsetY;
-	if (bak.upflags & LOLayerDataBase::UP_ALPHA) cur.alpha = bak.alpha;
-	if (bak.upflags & LOLayerDataBase::UP_CENX) cur.centerX = bak.centerX;
-	if (bak.upflags & LOLayerDataBase::UP_CENY) cur.centerY = bak.centerY;
-	if (bak.upflags & LOLayerDataBase::UP_SRCX) cur.showSrcX = bak.showSrcX;
-	if (bak.upflags & LOLayerDataBase::UP_SRCY) cur.showSrcY = bak.showSrcY;
-	if (bak.upflags & LOLayerDataBase::UP_SHOWW) cur.showWidth = bak.showWidth;
-	if (bak.upflags & LOLayerDataBase::UP_SHOWH) cur.showHeight = bak.showHeight;
-	if (bak.upflags & LOLayerDataBase::UP_ALPHAMODE) cur.alphaMode = bak.alphaMode;
-	if (bak.upflags & LOLayerDataBase::UP_SCALEX) cur.scaleX = bak.scaleX;
-	if (bak.upflags & LOLayerDataBase::UP_SCALEY) cur.scaleY = bak.scaleY;
-	if (bak.upflags & LOLayerDataBase::UP_ROTATE) cur.rotate = bak.rotate;
-	if (bak.upflags & LOLayerDataBase::UP_BTNSTR) cur.btnStr = std::move(bak.btnStr);
-	if (bak.upflags & LOLayerDataBase::UP_SHOWTYPE) cur.showType = bak.showType;
-	if (bak.upflags == LOLayerDataBase::UP_NEWFILE) {
-		cur.keyStr = std::move(bak.keyStr);
-		cur.buildStr = std::move(bak.buildStr);
-		cur.texture = bak.texture;
-		cur.texType = bak.texType;
-		cur.flags = bak.flags;
+	if (bak->upflags & LOLayerDataBase::UP_BTNVAL) cur->btnval = bak->btnval;
+	if (bak->upflags & LOLayerDataBase::UP_OFFX) cur->offsetX = bak->offsetX;
+	if (bak->upflags & LOLayerDataBase::UP_OFFY) cur->offsetY = bak->offsetY;
+	if (bak->upflags & LOLayerDataBase::UP_ALPHA) cur->alpha = bak->alpha;
+	if (bak->upflags & LOLayerDataBase::UP_CENX) cur->centerX = bak->centerX;
+	if (bak->upflags & LOLayerDataBase::UP_CENY) cur->centerY = bak->centerY;
+	if (bak->upflags & LOLayerDataBase::UP_SRCX) cur->showSrcX = bak->showSrcX;
+	if (bak->upflags & LOLayerDataBase::UP_SRCY) cur->showSrcY = bak->showSrcY;
+	if (bak->upflags & LOLayerDataBase::UP_SHOWW) cur->showWidth = bak->showWidth;
+	if (bak->upflags & LOLayerDataBase::UP_SHOWH) cur->showHeight = bak->showHeight;
+	if (bak->upflags & LOLayerDataBase::UP_ALPHAMODE) cur->alphaMode = bak->alphaMode;
+	if (bak->upflags & LOLayerDataBase::UP_SCALEX) cur->scaleX = bak->scaleX;
+	if (bak->upflags & LOLayerDataBase::UP_SCALEY) cur->scaleY = bak->scaleY;
+	if (bak->upflags & LOLayerDataBase::UP_ROTATE) cur->rotate = bak->rotate;
+	if (bak->upflags & LOLayerDataBase::UP_BTNSTR) cur->btnStr = std::move(bak->btnStr);
+	if (bak->upflags & LOLayerDataBase::UP_SHOWTYPE) cur->showType = bak->showType;
+	if (bak->upflags == LOLayerDataBase::UP_NEWFILE) {
+		cur->keyStr = std::move(bak->keyStr);
+		cur->buildStr = std::move(bak->buildStr);
+		cur->texture = bak->texture;
+		cur->texType = bak->texType;
+		cur->flags = bak->flags;
 	}
 
 	//最后更新动画格数，因为涉及一些操作
-	if (bak.upflags & LOLayerDataBase::UP_CELLNUM) {
-		cur.cellNum = bak.cellNum;
-		cur.SetCell(nullptr, cur.cellNum);
+	if (bak->upflags & LOLayerDataBase::UP_CELLNUM) {
+		cur->cellNum = bak->cellNum;
+		cur->SetCell(nullptr, cur->cellNum);
 	}
 
-	if (bak.upflags & LOLayerDataBase::UP_VISIABLE) cur.SetVisable(bak.isVisiable());
-	cur.flags |= LOLayerDataBase::FLAGS_ISFORCE;
-	bak.resetBase();
+	if (bak->upflags & LOLayerDataBase::UP_VISIABLE) cur->SetVisable(bak->isVisiable());
+	cur->flags |= LOLayerDataBase::FLAGS_ISFORCE;
 }
 
+void LOLayerData::ReleaseForce() {
+	LOLayerDataCenter.GetEmpty(cur);
+}
+void LOLayerData::ReleaseBak() {
+	LOLayerDataCenter.GetEmpty(bak);
+}
+
+
+void LOLayerData::NewBak() {
+	if (bak != LOLayerDataCenter.emptyData) bak->resetBase();
+	LOLayerDataCenter.GetDataBase(bak);
+}
+
+void LOLayerData::EmptyNewBak() {
+	if (bak == LOLayerDataCenter.emptyData) LOLayerDataCenter.GetDataBase(bak);
+}
 
 void LOLayerData::Serialize(BinArray *bin) {
 	//data, len, version
 	int len = bin->WriteLpksEntity("data", 0, 1);
 	//fullid
 	bin->WriteInt(fullid);
-	cur.Serialize(bin);
-	bak.Serialize(bin);
+	cur->Serialize(bin);
+	bak->Serialize(bin);
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+//===============================================
+LOLayerDataManager::LOLayerDataManager() {
+	current = 0;
+	emptyData = new LOLayerDataBase();
+	AddDataList(50);
+}
+
+
+LOLayerDataManager::~LOLayerDataManager() {
+	delete emptyData;
+	for (int ii = 0; ii < DataList.size(); ii++) delete DataList.at(ii);
+	DataList.clear();
+}
+
+void LOLayerDataManager::AddDataList(int size) {
+	for (int ii = 0; ii < size; ii++) DataList.push_back(new LOLayerDataBase());
+}
+
+void LOLayerDataManager::GetDataBase(LOLayerDataBase *&base) {
+	int max = DataList.size();
+	for (int ii = 0; ii < max; ii++) {
+		if (current >= max) current = 0;
+		if (DataList.at(current)->isNothing()) {
+			if (base && base != emptyData) base->resetBase();
+			base = DataList.at(current);
+			base->RegisterMe();
+		}
+		current++;
+	}
+	//没有找到符合要求的
+	printf("LOLayerDataManager size add to:%d\n", max + 50);
+	AddDataList(50);
+	GetDataBase(base);
+}
+
+
+void LOLayerDataManager::GetEmpty(LOLayerDataBase *&base) {
+	if (base && base != emptyData) base->resetBase();
+	base = emptyData;
 }
