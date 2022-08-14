@@ -79,24 +79,28 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//LOLog_i("uppos1:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 
 	//历遍图层，注意需要先处理父对象
+	int nowkey = 0xFFFF;
 	for (int level = 1; level <= 3; level++) {
 		for (auto iter = map->begin(); iter != map->end();) {
 			LOLayer *lyr = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
-			if (level < 3 && lyr->id[level] >= G_maxLayerCount[level]) isnow = true;
+			if (level < 3 && (lyr->fullID & nowkey) == nowkey) isnow = true;
 			else if (level >= 3) isnow = true;
 			else isnow = false;
 
 			////////
 			if (isnow) {
-				if(lyr->data->bak->isDelete()) LOLayer::NoUseLayer(lyr);
+				if (lyr->data->isDelete()) {
+					lyr->data->reset();
+					
+				}
 				else lyr->UpDataToForce();
 				//指向下一个
 				iter = map->erase(iter);
 			}
 			else iter++;
-
+			nowkey >> 8;
 		}
 	}
 

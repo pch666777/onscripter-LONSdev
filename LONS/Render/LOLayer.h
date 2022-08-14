@@ -15,6 +15,29 @@
 #include <unordered_map>
 #include <memory>
 
+
+
+//printName结构
+class PrintNameMap {
+public:
+	std::string *mapName = nullptr;
+	std::map<int, LOLayerData*> *map = nullptr;
+	PrintNameMap(const char *fn) {
+		mapName = new std::string(fn);
+		map = new std::map<int, LOLayerData*>;
+	}
+	~PrintNameMap() {
+		delete mapName;
+		delete map;
+	}
+
+	void Serialize(BinArray *bin);
+	static PrintNameMap* GetPrintNameMap(const char *printName);
+private:
+	static std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
+};
+
+
 	////////////////////LOLayer/////////////////////////
 	/*
 	//新版的图层采用了前台和后台双份操作，action引起的参数变化不会同步到后台，除非显示调用同步命令。
@@ -59,37 +82,29 @@ public:
 	};
 
 	//成员///////////
-	int id[3];
-	SysLayerType layerType;     //图层所在的组，在new图层时已经把LAYER_SPRINT转换
+	int fullID;
 	//前台数据
-	std::unique_ptr<LOLayerData> data;
+	LOLayerData *data;
 	//父对象
 	LOLayer *parent;
-	//根图层的，根图层总是有效的
-	LOLayer *rootLyr;
 
 	//变换矩阵
 	LOMatrix2d matrix;
 
 	//是否已经初始化
 	bool isinit;
-	//是否已经激活悬停
-
 
 	std::map<int, LOLayer*> *childs;
 
 	//顶级图层不需要后台数据
 	LOLayer();
-	LOLayer(SysLayerType lyrType);
-	LOLayer(int fullid);
-
 	~LOLayer();
+	void reset();
+	bool LinkToTree();
 
 	//插入一个子对象，如果子对象已经存在则失败
-	//bool InserChild(LOLayer *layer);
-	bool InserChild(int cid, LOLayer *layer);
-	//void releaseForce();
-	//void releaseBack();
+	LOLayer* InserChild(int cid, LOLayer *layer);
+	LOLayer* RemoveChild(int cid);
 
 	//坐标是否包含在图层内
 	bool isPositionInsideMe(int x, int y);
@@ -102,9 +117,6 @@ public:
 	void setBtnShow(bool isshow);
 	//设置对象显示在某一格NS动画，并且active纹理
 	bool setActiveCell(int cell);
-
-	LOLayer *FindChild(int cid);
-	LOLayer* RemodeChild(int cid);
 
 	void GetShowSrc(SDL_Rect *srcR);
 
@@ -136,28 +148,31 @@ public:
 	bool SendEvent(LOEventHook *e, LOEventQue *aswerQue);
 	int checkEvent(LOEventHook *e, LOEventQue *aswerQue);
 
-	//获得预期的父对象，注意并不是真的已经挂载到父对象上
-	//只是根据ids预期父对象，识别返回null
-	//static LOLayer* GetExpectFather(int lyrType, int *ids);
-	static LOLayer* FindViewLayer(int fullid, bool isRemove);
-	static void NoUseLayer(LOLayer *lyr);
-	static LOLayer* CreateLayer(int fullid);
-	static LOLayer* FindLayerInCenter(int fullid);
-	static LOLayer* GetLayer(int fullid);
-	static LOLayer* LinkLayerLeve(LOLayer *lyr);
+	static LOLayer* FindLayerIC(int fullid);
+	static LOLayer* FindFaterLayerIC(int fullid);
 	static void SaveLayer(BinArray *bin);
 	static bool LoadLayer(BinArray *bin, int *pos, LOEvPtrMap *evmap);
 	static void ResetLayer();
-	static bool useLayerCenter;
-	static void InitBaseLayer();
+	static LOLayerData* NewLayerData(int fullid);
+	static LOLayer* NewLayer(int fullid);
+	static LOLayerData* CreateNewLayerData(int fid, const char *printName);
+	static LOLayerData* CreateLayerData(int fid, const char *printName);
+	//static bool useLayerCenter;
+	//static void InitBaseLayer();
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 
 	void GetInheritScale(double *sx, double *sy);
 	void GetInheritOffset(float *ox, float *oy);
 	bool isFaterCopyEx();
-	static LOLayer* DescentFather(LOLayer *father, int *index,const int *ids);
-	void BaseNew(SysLayerType lyrType);
+	//图层中心相关的
+	static int layerCurrent;
+	static std::vector<LOLayer*> layerList;
+	static int AddLayer(int size);
+
+	static int dataCurrent;
+	static std::vector<LOLayerData*> dataList;
+	static int AddLayerData(int size);
 };
 
 //根层直接定义

@@ -12,6 +12,7 @@
 #include "../etc/LOString.h"
 #include "LOTexture.h"
 #include "LOAction.h"
+#include "LOMatrix2d.h"
 
 extern char G_Bit[4];             //默认材质所只用的RGBA模式位置 0-A 1-R 2-G 3-B
 extern Uint32 G_Texture_format;   //默认编辑使用的材质格式
@@ -39,15 +40,52 @@ extern int GetFullID(int t, int father, int child, int grandson);
 extern int GetIDs(int fullid, int pos);
 extern void GetTypeAndIds(int *type, int *ids, int fullid);
 
-//基本类型都放在一起，拷贝方便
-class LOLayerDataBase {
+class LOLayerData;
+class LOLayerRef;
+
+//==============================图层的基本属性====================
+//只有具体显示时我们才需要图层关系，因此需要独立出来
+class LOLayerRef{
 public:
-	LOLayerDataBase();
-	~LOLayerDataBase();
-	void resetBase();
+	LOLayerRef();
+	~LOLayerRef();
+	enum {
+		FLAGS_MUST_INIT = 1,
+		FLAGS_MUST_SORT = 2,
+	};
+
+	void RemoveChild(int fid);
+	void reset();
+	void LinkToRoot();
+
+	int fullID;
+	//父对象
+	LOLayerRef *parent;
+	//绑定的数据
+	LOLayerData *data;
+	//子对象，单项链表，从大到小排列
+	std::map<int, LOLayerRef*> *childs;
+
+	//变换矩阵
+	LOMatrix2d matrix;
+private:
+	int flags;
+};
+
+
+
+//===============================================================
+//基本类型都放在一起，拷贝方便
+class LOLayerData {
+public:
+	LOLayerData();
+	~LOLayerData();
+	void reset();
+	LOLayerData* reset(int fid);
 	LOAction* GetAction(int t);
 	int GetCellCount();
 	void Serialize(BinArray *bin);
+	LOLayerData* RegisterMe(int fid);
 
 	//属性设置的目标应该是明确的
 	bool isShowScale() { return showType & SHOW_SCALE; }
@@ -86,7 +124,6 @@ public:
 	void FirstSNC();
 	void GetSimpleSrc(SDL_Rect *src);
 	void GetSimpleDst(SDL_Rect *dst);
-	LOLayerDataBase* RegisterMe();
 
 	enum {
 		UP_BTNVAL = 1,
@@ -161,6 +198,7 @@ public:
 	int upflags;    //更新了那些值
 	int upaction;
 	int btnval;    //btn的值
+	int fullID;
 	float offsetX;    //显示目标左上角位置
 	float offsetY;    //显示目标左上角位置
 	int16_t alpha;      //透明度
@@ -194,13 +232,16 @@ public:
 	std::unique_ptr<std::vector<LOShareAction>> actions;
 
 	uint8_t showType;
+
+	void *layerRef;
+	LOLayerData *bakData;
 };
 
 
 
 
 
-
+/*
 //数据由前台数据和后台数据组成，set时总是设置后台数据, get时则根据upflags确定返回前台还是后台数据
 class LOLayerData{
 public:
@@ -266,7 +307,7 @@ public:
 private:
 	bool isinit;
 };
-
+*/
 
 //环形缓存结构
 class LOLayerDataManager {

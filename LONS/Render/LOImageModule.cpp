@@ -1296,14 +1296,16 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 //创建新图层，会释放原来的老的数据，lsp使用
 LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
-	LOLayer *lyr = LOLayer::CreateLayer(fullid);
-	lyr->data->bak->SetDelete();
-	//去除setdelete的标记，不去除的话某些情况下会导致图层被删除
-	//lyr->data->bak.flags = 0;
 	auto *map = GetPrintNameMap(printName)->map;
-	(*map)[fullid] = lyr;
-	lyr->data->NewBak();
-	return lyr->data.get();
+	auto iter = map->find(fullid);
+	if (iter != map->end()) iter->second->SetDelete();
+	else {
+		LOLayerData *data = LOLayer::NewLayerData(fullid);
+		data->layerRef = LOLayer::NewLayer(fullid);
+
+		(*map)[fullid] = data;
+	}
+	return iter->second;
 }
 
 //获取信息或者操作原来的对象

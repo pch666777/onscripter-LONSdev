@@ -59,13 +59,51 @@ void GetTypeAndIds(int *type, int *ids, int fullid) {
 	}
 }
 
-
-//=================================
-LOLayerDataBase::LOLayerDataBase() {
-	resetBase();
+//=============== LOLayerRef ==================
+LOLayerRef::LOLayerRef() {
+	parent = nullptr;
+	childs = nullptr;
+	data = nullptr;
+	fullID = 0;
 }
 
-void LOLayerDataBase::resetBase() {
+
+
+LOLayerRef::~LOLayerRef() {
+	if (childs) delete childs;
+}
+
+
+//注意使用管理中心来管理layerRef，只需要reset即可复用
+void LOLayerRef::reset() {
+	//解除跟data的连接
+	if (data) data->layerRef = nullptr;
+	if (childs) {
+		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->reset();
+		delete childs;
+	}
+	parent = nullptr;
+	data = nullptr;
+	childs = nullptr;
+	fullID = 0;
+	matrix.Clear();
+}
+
+
+//移除子对象
+void LOLayerRef::RemoveChild(int fid) {
+	LOLayerRef *root = this;
+	while (root->parent) root = root->parent;
+
+}
+
+
+//=================================
+LOLayerData::LOLayerData() {
+	reset();
+}
+
+void LOLayerData::reset() {
 	flags = upflags = upaction = 0;
 	offsetX = offsetY = centerX = centerY = 0;
 	alpha = -1;
@@ -74,6 +112,9 @@ void LOLayerDataBase::resetBase() {
 	scaleX = scaleY = 1.0;
 	rotate = 0.0;
 	showType = texType = 0;
+	fullID = 0;
+	layerRef = nullptr;
+	bakData = nullptr;
 	keyStr.reset();
 	btnStr.reset();
 	buildStr.reset();
@@ -81,12 +122,17 @@ void LOLayerDataBase::resetBase() {
 	actions.reset();
 }
 
-LOLayerDataBase::~LOLayerDataBase() {
+LOLayerData::~LOLayerData() {
 
 }
 
+LOLayerData* LOLayerData::reset(int fid) {
+	reset();
+	return RegisterMe(fid);
+}
 
-LOAction* LOLayerDataBase::GetAction(int t) {
+
+LOAction* LOLayerData::GetAction(int t) {
 	if (actions) {
 		for (int ii = 0; ii < actions->size(); ii++) {
 			if (actions->at(ii)->acType == t) return actions->at(ii).get();
@@ -95,13 +141,13 @@ LOAction* LOLayerDataBase::GetAction(int t) {
 	return nullptr;
 }
 
-void LOLayerDataBase::SetAction(LOAction *ac) {
+void LOLayerData::SetAction(LOAction *ac) {
 	LOShareAction sac(ac);
 	SetAction(sac);
 }
 
 //同类型的动画只存在一个
-void LOLayerDataBase::SetAction(LOShareAction &ac) {
+void LOLayerData::SetAction(LOShareAction &ac) {
 	if (!actions) actions.reset(new std::vector<LOShareAction>());
 	auto iter = actions->begin();
 	while (iter != actions->end()) {
@@ -112,7 +158,7 @@ void LOLayerDataBase::SetAction(LOShareAction &ac) {
 	upaction |= ac->acType;
 }
 
-int LOLayerDataBase::GetCellCount() {
+int LOLayerData::GetCellCount() {
 	LOAction *ac = GetAction(LOAction::ANIM_NSANIM);
 	if (ac) {
 		LOActionNS *nac = (LOActionNS*)ac;
@@ -121,13 +167,13 @@ int LOLayerDataBase::GetCellCount() {
 	return 1;
 }
 
-void LOLayerDataBase::SetVisable(int v) {
+void LOLayerData::SetVisable(int v) {
 	if (v) flags |= FLAGS_VISIABLE;
 	else flags &= (~FLAGS_VISIABLE);
 	upflags |= UP_VISIABLE;
 }
 
-void LOLayerDataBase::SetShowRect(int x, int y, int w, int h) {
+void LOLayerData::SetShowRect(int x, int y, int w, int h) {
 	showWidth = w;
 	showHeight = h;
 	showSrcX = x;
@@ -136,26 +182,26 @@ void LOLayerDataBase::SetShowRect(int x, int y, int w, int h) {
 	upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
 }
 
-void LOLayerDataBase::SetShowType(int show) {
+void LOLayerData::SetShowType(int show) {
 	showType |= show;
 	upflags |= UP_SHOWTYPE;
 }
 
-void LOLayerDataBase::SetPosition(int ofx, int ofy) {
+void LOLayerData::SetPosition(int ofx, int ofy) {
 	offsetX = ofx;
 	offsetY = ofy;
 	upflags |= UP_OFFX;
 	upflags |= UP_OFFY;
 }
 
-void LOLayerDataBase::SetPosition2(int cx, int cy, double sx, double sy) {
+void LOLayerData::SetPosition2(int cx, int cy, double sx, double sy) {
 	centerX = cx; centerY = cy;
 	scaleX = sx; scaleY = sy;
 	showType |= SHOW_SCALE;
 	upflags |= (UP_CENX | UP_CENY | UP_SCALEX | UP_SCALEY | UP_SHOWTYPE);
 }
 
-void LOLayerDataBase::SetRotate(double ro) {
+void LOLayerData::SetRotate(double ro) {
 	rotate = ro;
 	//位置为正方向
 	//if (abs(rotate) < 0.0001) showType &= (~SHOW_ROTATE);
@@ -164,17 +210,17 @@ void LOLayerDataBase::SetRotate(double ro) {
 	upflags |= UP_ROTATE;
 }
 
-void LOLayerDataBase::SetAlpha(int alp) {
+void LOLayerData::SetAlpha(int alp) {
 	alpha = alp & 0xff;
 	upflags |= UP_ALPHA;
 }
 
-void LOLayerDataBase::SetAlphaMode(int mode) {
+void LOLayerData::SetAlphaMode(int mode) {
 	alphaMode = mode & 0xff;
 	upflags |= UP_ALPHAMODE;
 }
 
-bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
+bool LOLayerData::SetCell(LOActionNS *ac, int ce) {
 	upflags |= UP_CELLNUM;
 	//如果有active，那么应该设置action的值
 	if (!ac) ac = (LOActionNS*)GetAction(LOAction::ANIM_NSANIM);
@@ -196,13 +242,13 @@ bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
 }
 
 //只设置数，不检查有效性
-void LOLayerDataBase::SetCellNum(int ce) {
+void LOLayerData::SetCellNum(int ce) {
 	cellNum = ce;
 	upflags |= UP_CELLNUM;
 }
 
 
-void LOLayerDataBase::SetTextureType(int dt) {
+void LOLayerData::SetTextureType(int dt) {
 	texType = dt & 0xff;
 	switch (texType) {
 		//使用缓存
@@ -218,7 +264,7 @@ void LOLayerDataBase::SetTextureType(int dt) {
 	}
 }
 
-void LOLayerDataBase::SetNewFile(LOShareTexture &tex) {
+void LOLayerData::SetNewFile(LOShareTexture &tex) {
 	texture = tex;
 	flags |= FLAGS_NEWFILE;
 	upflags |= UP_NEWFILE;
@@ -227,12 +273,12 @@ void LOLayerDataBase::SetNewFile(LOShareTexture &tex) {
 	flags &= (~FLAGS_DELETE);
 }
 
-void LOLayerDataBase::SetDelete() {
-	resetBase();
+void LOLayerData::SetDelete() {
+	reset();
 	flags |= FLAGS_DELETE;
 }
 
-void LOLayerDataBase::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
+void LOLayerData::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
 	if (s) btnStr.reset(new LOString(*s));
 	btnval = val;
 	flags |= FLAGS_BTNDEF;
@@ -243,11 +289,11 @@ void LOLayerDataBase::SetBtndef(LOString *s, int val, bool isleft, bool isright)
 	upflags |= UP_BTNVAL;
 }
 
-void LOLayerDataBase::unSetBtndef() {
+void LOLayerData::unSetBtndef() {
 	flags &= (~(FLAGS_BTNDEF | FLAGS_LEFTCLICK | FLAGS_RIGHTCLICK | FLAGS_MOUSEMOVE));
 }
 
-void LOLayerDataBase::FirstSNC() {
+void LOLayerData::FirstSNC() {
 	if (!actions) return;
 	for (int ii = 0; ii < actions->size(); ii++) {
 		LOShareAction ac = actions->at(ii);
@@ -264,22 +310,18 @@ void LOLayerDataBase::FirstSNC() {
 	}
 }
 
-void LOLayerDataBase::GetSimpleSrc(SDL_Rect *src) {
+void LOLayerData::GetSimpleSrc(SDL_Rect *src) {
 	src->x = showSrcX; src->y = showSrcY;
 	src->w = showWidth; src->h = showHeight;
 }
 
-void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
+void LOLayerData::GetSimpleDst(SDL_Rect *dst) {
 	dst->x = offsetX; dst->y = offsetY;
 	dst->w = texture->baseW(); dst->h = texture->baseH();
 }
 
-LOLayerDataBase* LOLayerDataBase::RegisterMe() {
-	flags |= FLAGS_HASUSED;
-	return this;
-}
 
-void LOLayerDataBase::Serialize(BinArray *bin) {
+void LOLayerData::Serialize(BinArray *bin) {
 	//长度记录在标记之后 base,len,version
 	int len = bin->WriteLpksEntity("base", 0, 1);
 
@@ -316,8 +358,15 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 }
 
 
-//=================================LOLayerData======================
+LOLayerData* LOLayerData::RegisterMe(int fid) {
+	fullID = fid;
+	flags |= FLAGS_HASUSED;
+	return this;
+}
 
+
+//=================================LOLayerData======================
+/*
 LOLayerData::LOLayerData() {
 	isinit = false;
 	cur = bak = nullptr;
@@ -427,36 +476,6 @@ void LOLayerData::SetDefaultShowSize(bool isforce) {
 
 
 
-/*
-void LOLayerData::lockMe() {
-	int ta = 0;
-	int tb = 1;
-	//锁住
-	while (!threadLock.compare_exchange_strong(ta, tb)) {
-		cpuDelay();
-	}
-}
-
-
-void LOLayerData::unLockMe() {
-	int ta = 1;
-	int tb = 0;
-	//锁住
-	while (!threadLock.compare_exchange_strong(ta, tb)) {
-		cpuDelay();
-	}
-}
-
-
-void LOLayerData::cpuDelay() {
-	int sum = 0;
-	for (int ii = 0; ii < 200; ii++) {
-		sum += rand() % 3;
-	}
-}
-*/
-
-
 void LOLayerData::UpdataToForce() {
 	//首先更新action，后面有用
 	if (bak->upaction == LOLayerDataBase::UP_ACTION_ALL) cur->actions = std::move(bak->actions);
@@ -525,7 +544,7 @@ void LOLayerData::Serialize(BinArray *bin) {
 
 	bin->WriteInt(bin->Length() - len, &len);
 }
-
+*/
 
 //===============================================
 LOLayerDataManager::LOLayerDataManager() {

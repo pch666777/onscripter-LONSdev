@@ -4,62 +4,58 @@
 
 extern void AddPreEvent(LOShareEventHook &e);
 
-//确定删除图层时是否调用layercenter移除
-bool LOLayer::useLayerCenter = true;
-
 LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
 
 //所有的图层都存储在这
-std::map<int, LOLayer*> layerCenter;
+std::map<int, LOLayerData*> layerCenter;
+//图层中心相关的
+int LOLayer::layerCurrent = 0;
+std::vector<LOLayer*> LOLayer::layerList;
+int LOLayer::dataCurrent = 0 ;
+std::vector<LOLayerData*> LOLayer::dataList;
 
-void LOLayer::BaseNew(SysLayerType lyrType) {
-	id[0] = -1;
-	id[1] = -1;
-	id[2] = -1;
-	parent = nullptr;   //父对象
-	childs = nullptr;
-	layerType = lyrType;
-	isinit = false;
-	rootLyr = G_baseLayer[layerType];
+//================== printMap ================
+std::vector<std::unique_ptr<PrintNameMap>> PrintNameMap::backDataMaps;
+PrintNameMap* PrintNameMap::GetPrintNameMap(const char *printName) {
+	for (int ii = 0; ii < backDataMaps.size(); ii++) {
+		if (backDataMaps[ii]->mapName->compare(printName) == 0) return backDataMaps[ii].get();
+	}
+	backDataMaps.push_back(std::make_unique<PrintNameMap>(printName));
+	return backDataMaps[backDataMaps.size() - 1].get();
 }
+
+
+
+//==================================
 
 LOLayer::LOLayer() {
-	BaseNew(LAYER_CC_USE);
-	data.reset(new LOLayerData());
-}
-
-LOLayer::LOLayer(SysLayerType lyrType) {
-	BaseNew(lyrType);
-	data.reset(new LOLayerData());
-}
-
-LOLayer::LOLayer(int fullid) {
-	int lyrType;
-	int ids[3];
-	GetTypeAndIds(&lyrType, ids, fullid);
-	BaseNew((SysLayerType)lyrType);
-	memcpy(id, ids, 3 * 4);
-	data.reset(new LOLayerData());
-	data->fullid = fullid;
+	fullID = 0;
+	parent = nullptr;   //父对象
+	childs = nullptr;
+	isinit = false;
 }
 
 
+//具体的资源是由图层中心管理的
 LOLayer::~LOLayer() {
-	//与parent解除关系
-	if (parent && parent->childs) parent->RemodeChild(GetSelfChildID());
+	if (childs) delete childs;
+}
+
+
+void LOLayer::reset() {
 	//与子对象解除关系
 	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
-			LOLayer *layer = iter->second;
-			layer->parent = nullptr;
-			//如果子图层不是新的对象，那么直接移除
-			if (!layer->data->bak->isNewFile() && useLayerCenter) NoUseLayer(layer);
-		}
-		childs->clear();
+		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->reset();
+		delete childs;
 	}
+	//与绑定的数据解除关系
+	if (data && data->layerRef) data->layerRef = nullptr;
+	fullID = 0;
+	parent = nullptr;   //父对象
+	childs = nullptr;
+	isinit = false;
 }
-
 
 
 
@@ -67,61 +63,30 @@ bool LOLayer::isMaxBorder(int index, int val) {
 	return val >= G_maxLayerCount[index];
 }
 
-//注意这个函数只应该 layer->Root->InserChild()这样调用
-//bool LOLayer::InserChild(LOLayer *layer) {
-//	int ids[3];
-//	int index;
-//
-//	GetTypeAndIds(nullptr, ids, layer->curInfo->fullid);
-//	LOLayer *father = DescentFather(this, &index, ids);
-//	if (!father) return false;
-//	return father->InserChild(ids[index], layer);
-//}
 
-//插入子对象，注意，直接根据id插入
-bool LOLayer::InserChild(int cid, LOLayer *layer) {
+//插入子对象，注意，直接根据fullid插入
+LOLayer* LOLayer::InserChild(int cid, LOLayer *layer) {
 	if(!childs) childs = new std::map<int, LOLayer*>();
 	auto iter = childs->find(cid);
 	if (iter != childs->end()) {
 		//不是同一个对象
-		if (layer != iter->second) return false;
+		if (layer != iter->second) return nullptr;
 		layer->parent = this;
 	}
 	(*childs)[cid] = layer;
 	layer->parent = this;
-	return true;
+	return layer;
 }
 
-//递归下降父对象
-LOLayer* LOLayer::DescentFather(LOLayer *father, int *index, const int *ids) {
-	*index = 0;
-	//有子参数，下降一层
-	if (!isMaxBorder(1, ids[1])) {
-		*index = 1;
-		father = father->FindChild(ids[0]);
-		//有孙子参数，下降一层
-		if (father && !isMaxBorder(2, ids[2])) {
-			*index = 2;
-			father = father->FindChild(ids[1]);
-		}
-	}
-	return father;
-}
 
-//删除不在这里，这个方法只应该从 layer->Root调用
-//LOLayer* LOLayer::RemodeChild(int *cids) {
-//	int index;
-//	LOLayer *father = DescentFather(this, &index, cids);
-//	if (father && father->childs) return RemodeChild(cids[index]);
-//	return nullptr;
-//}
-
-LOLayer* LOLayer::RemodeChild(int cid) {
+//注意提供的是fullid
+LOLayer* LOLayer::RemoveChild(int cid) {
 	if (childs) {
 		auto iter = childs->find(cid);
 		if (iter != childs->end()) {
 			LOLayer *lyr = iter->second;
 			childs->erase(iter);
+			lyr->parent = nullptr;
 			return lyr;
 		}
 	}
@@ -129,27 +94,17 @@ LOLayer* LOLayer::RemodeChild(int cid) {
 }
 
 
-//这个方法只应该从根对象调用
-//LOLayer *LOLayer::FindChild(const int *cids) {
-//	int index;
-//	LOLayer *father = DescentFather(this, &index, cids);
-//	if (!father) return nullptr;
-//	return father->FindChild(cids[index]);
-//}
-
-
-
-LOLayer *LOLayer::FindChild(int cid) {
-	if (!childs) return nullptr;
-	auto iter = childs->find(cid);
-	if (iter != childs->end()) return iter->second;
-	return nullptr;
+bool LOLayer::LinkToTree() {
+	LOLayer *lyr = FindFaterLayerIC(fullID);
+	if (!lyr) return false;
+	return lyr->InserChild(fullID, lyr);
 }
+
 
 
 bool LOLayer::isPositionInsideMe(int x, int y) {
 	//隐藏的按钮会激活为显示
-	LOLayerDataBase *curInfo = data->cur;
+	LOLayerData *curInfo = data;
 	int left = curInfo->offsetX;
 	int top = curInfo->offsetY;
 	int right = left + curInfo->showWidth;
@@ -187,7 +142,7 @@ LOAnimation *LOLayer::GetAnimation(LOAnimation::AnimaType type) {
 
 LOMatrix2d LOLayer::GetTranzMatrix() {
 	LOMatrix2d mat,tmp;
-	LOLayerDataBase *curInfo = data->cur;
+	LOLayerData *curInfo = data;
 
 	int cx = curInfo->centerX;
 	int cy = curInfo->centerY;
@@ -237,18 +192,18 @@ LOMatrix2d LOLayer::GetTranzMatrix() {
 }
 
 void LOLayer::GetInheritScale(double *sx, double *sy) {
-	*sx = data->cur->scaleX;
-	*sy = data->cur->scaleY;
+	*sx = data->scaleX;
+	*sy = data->scaleY;
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		*sx *= lyr->data->cur->scaleX;
-		*sy *= lyr->data->cur->scaleY;
+		*sx *= lyr->data->scaleX;
+		*sy *= lyr->data->scaleY;
 		lyr = lyr->parent;
 	}
 }
 
 void LOLayer::GetInheritOffset(float *ox, float *oy) {
-	LOLayerDataBase *curInfo = data->cur;
+	LOLayerData *curInfo = data;
 	*ox = curInfo->offsetX;
 	*oy = curInfo->offsetY;
 	if (curInfo->texture) {
@@ -257,11 +212,11 @@ void LOLayer::GetInheritOffset(float *ox, float *oy) {
 	}
 	LOLayer *lyr = this->parent;
 	while (lyr) {
-		*ox += lyr->data->cur->offsetX ;
-		*oy += lyr->data->cur->offsetY;
-		if (lyr->data->cur->texture) {
-			*ox += lyr->data->cur->texture->Xfix;
-			*oy += lyr->data->cur->texture->Yfix;
+		*ox += lyr->data->offsetX ;
+		*oy += lyr->data->offsetY;
+		if (lyr->data->texture) {
+			*ox += lyr->data-texture->Xfix;
+			*oy += lyr->data->texture->Yfix;
 		}
 		lyr = lyr->parent;
 	}
@@ -626,24 +581,6 @@ void LOLayer::GetLayerUsedState(char *bin, int *ids) {
 	}
 }
 
-//根据提供的id，在前台图层组中搜索图层
-LOLayer* LOLayer::FindViewLayer(int fullid, bool isRemove) {
-	int lyrType;
-	int ids[3];
-	GetTypeAndIds(&lyrType, ids, fullid);
-
-	int index = 0;
-	LOLayer *father = DescentFather(G_baseLayer[lyrType], &index, ids);
-	if (father && father->childs) {
-		auto iter = father->childs->find(ids[index]);
-		if (iter == father->childs->end()) return nullptr;
-		LOLayer *lyr = iter->second;
-		if (isRemove) father->childs->erase(iter);
-		return lyr;
-	}
-	return nullptr;
-}
-
 
 //外部要相应的主要是鼠标进入图层和离开图层
 bool LOLayer::SendEvent(LOEventHook *e, LOEventQue *aswerQue) {
@@ -755,48 +692,30 @@ void LOLayer::unSetBtndefAll() {
 }
 
 
-//删除图层，这里留了一个接口
-void LOLayer::NoUseLayer(LOLayer *lyr) {
-	int fullid = GetFullID(lyr->layerType, lyr->id);
-	layerCenter.erase(fullid);
-	delete lyr;
-}
 
-LOLayer* LOLayer::CreateLayer(int fullid) {
-	LOLayer *lyr = FindLayerInCenter(fullid);
-	if (lyr) return lyr;
-	lyr = new LOLayer(fullid);
-	layerCenter[fullid] = lyr;
-	return lyr;
-}
-
-LOLayer* LOLayer::FindLayerInCenter(int fullid) {
+LOLayer* LOLayer::FindLayerIC(int fullid) {
 	auto iter = layerCenter.find(fullid);
-	if (iter != layerCenter.end()) return iter->second;
+	if (iter != layerCenter.end()) {
+		//图层中心记录的可能是过期的
+		if (iter->second->fullID == fullid) return (LOLayer*)iter->second->layerRef;
+		else layerCenter.erase(iter);
+	}
 	return nullptr;
 }
 
-LOLayer* LOLayer::GetLayer(int fullid) {
-	auto iter = layerCenter.find(fullid);
-	if (iter != layerCenter.end()) return iter->second;
-	return nullptr;
+
+LOLayer* LOLayer::FindFaterLayerIC(int fullid) {
+	int ids[3], lt;
+	GetTypeAndIds(&lt, ids, fullid);
+	//普通层 100,255,255  ->父对象是根图层
+	if (ids[1] >= G_maxLayerCount[1]) return G_baseLayer[lt];
+	//有一个子层 100,100,255 ->父对象是 100,255,255
+	if (ids[2] >= G_maxLayerCount[2]) ids[1] = G_maxLayerCount[1];
+	else ids[2] = G_maxLayerCount[2]; //100,100,100  ->父对象是 100,100,255
+
+	return FindLayerIC(GetFullID(lt, ids));
 }
 
-//将图层挂载到图层组上
-LOLayer* LOLayer::LinkLayerLeve(LOLayer *lyr) {
-	int fullid = GetFullID(lyr->layerType, lyr->id);
-	int index = 0;
-	LOLayer *father = DescentFather(lyr->rootLyr, &index, lyr->id);
-	if (!father) {
-		LOLog_e("LOLayer::LinkLayerLeve() faild! no father!");
-		return nullptr;
-	}
-	if (!father->InserChild(lyr->id[index], lyr)) {
-		LOLog_e("LOLayer::InserChild() faild! There is already another object:%d", lyr->id[index]);
-		return nullptr;
-	}
-	return father;
-}
 
 
 //获取自身相对于parent的ID值
@@ -861,4 +780,85 @@ void LOLayer::ResetLayer() {
 	useLayerCenter = true;
 	//重新创建根图层
 	InitBaseLayer();
+}
+
+
+int LOLayer::AddLayer(int size) {
+	int ret = layerList.size();
+	for (int ii = 0; ii < size; ii++) layerList.push_back(new LOLayer());
+	return ret;
+}
+
+
+LOLayer* LOLayer::NewLayer(int fullid) {
+	int max = layerList.size();
+	for (int ii = 0; ii < max; ii++) {
+		if (layerCurrent >= max) layerCurrent = 0;
+		LOLayer *lyr = layerList.at(layerCurrent);
+		if (lyr->fullID == 0 || lyr->fullID == fullid) {
+			lyr->fullID = fullid;
+			return lyr;
+		}
+	}
+
+	printf("layer add size to:%d\n", max + 50);
+	layerCurrent = AddLayer(50);
+	return NewLayer(fullid);
+}
+
+
+int LOLayer::AddLayerData(int size) {
+	int ret = dataList.size();
+	for (int ii = 0; ii < size; ii++) dataList.push_back(new LOLayerData());
+	return ret;
+}
+
+
+LOLayerData* LOLayer::NewLayerData(int fullid) {
+	int max = dataList.size();
+	for (int ii = 0; ii < max; ii++) {
+		if (layerCurrent >= max) layerCurrent = 0;
+		LOLayerData *data = dataList.at(layerCurrent);
+		if (data->isNothing()) return data->RegisterMe(fullid);
+	}
+
+	printf("LayerData add size to:%d\n", max + 50);
+	dataCurrent = AddLayerData(50);
+	return NewLayerData(fullid);
+}
+
+
+//会释放当前已载入的数据，lsp时候使用，返回的肯定是bak
+LOLayerData* LOLayer::CreateNewLayerData(int fid, const char *printName) {
+	auto iter = layerCenter.find(fid);
+	if (iter == layerCenter.end() || iter->second->fullID != fid) {
+		LOLayerData *data = NewLayerData(fid);
+		layerCenter[fid] = data;
+		return data;
+	}
+	else {
+		LOLayerData *data = iter->second;
+		//没有layer说明肯定是后台，释放现有数据，直接返回
+		if (!data->layerRef) return data->reset(fid);
+		//有layer我们需要返回后台
+		if (!data->bakData) data->bakData = NewLayerData(fid);
+		else data->bakData->reset(fid);  //有数据的要情理
+		return data->bakData;
+	}
+}
+
+
+//创建一个后台操作数据，不会释放已有数据，用于移动图层等操作
+LOLayerData* LOLayer::CreateLayerData(int fid, const char *printName) {
+	auto iter = layerCenter.find(fid);
+	//后台操作必须基于已有对象
+	if (iter == layerCenter.end() || iter->second->fullID != fid) {
+		return nullptr;
+	}
+	else {
+		LOLayerData *data = iter->second;
+		//没有layer说明肯定是后台，释放现有数据，直接返回
+		if (!data->layerRef) return data->reset(fid);
+		else if()
+	}
 }
