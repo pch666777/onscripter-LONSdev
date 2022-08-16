@@ -101,6 +101,10 @@ public:
 	~LOLayer();
 	void reset();
 	bool LinkToTree();
+	int id_type() { return (fullID >> 26) & 0x3F; }
+	int id_0() { return (fullID >> 16) & 0x3ff; }
+	int id_1() { return (fullID >> 8) & 0xff; }
+	int id_2() { return fullID & 0xff; }
 
 	//插入一个子对象，如果子对象已经存在则失败
 	LOLayer* InserChild(int cid, LOLayer *layer);
@@ -156,7 +160,8 @@ public:
 	static LOLayerData* NewLayerData(int fullid);
 	static LOLayer* NewLayer(int fullid);
 	static LOLayerData* CreateNewLayerData(int fid, const char *printName);
-	static LOLayerData* CreateLayerData(int fid, const char *printName);
+	static LOLayerData* CreateLayerBakData(int fid, const char *printName);
+	static LOLayerData* GetInfoData(int fid);
 	//static bool useLayerCenter;
 	//static void InitBaseLayer();
 private:

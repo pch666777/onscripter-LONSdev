@@ -465,10 +465,10 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 	//}
 	//注意是从后往前刷新
 	auto iter = layer->childs->rbegin();
-	while (iter != layer->childs->rend() && iter->second->id[0] > from) iter++;
+	while (iter != layer->childs->rend() && iter->second->id_0() > from) iter++;
 	while (iter != layer->childs->rend()) {
 		LOLayer *lyr = iter->second;
-		if (lyr->id[0] < dest) break;
+		if (lyr->id_0() < dest) break;
 
 		//debug
 		//if (lyr->id[0] == 9) {
@@ -1296,69 +1296,20 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 //创建新图层，会释放原来的老的数据，lsp使用
 LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
-	auto *map = GetPrintNameMap(printName)->map;
-	auto iter = map->find(fullid);
-	if (iter != map->end()) iter->second->SetDelete();
-	else {
-		LOLayerData *data = LOLayer::NewLayerData(fullid);
-		data->layerRef = LOLayer::NewLayer(fullid);
-
-		(*map)[fullid] = data;
-	}
-	return iter->second;
+	return LOLayer::CreateNewLayerData(fullid, printName);
 }
 
 //获取信息或者操作原来的对象
 LOLayerData* LOImageModule::CreateLayerBakData(int fullid, const char *printName) {
-	//首先搜索是否已经在队列中
-	auto *map = GetPrintNameMap(printName)->map;
-	auto iter = map->find(fullid);
-	if (iter != map->end()) return iter->second->data.get();
-	//不在的检查是否有图层
-	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (!lyr) return nullptr;
-	//有图层的添加进队列
-	(*map)[fullid] = lyr;
-	//
-	lyr->data->EmptyNewBak();
-	return lyr->data.get();
+	return LOLayer::CreateLayerBakData(fullid, printName);
 }
 
 
 LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
-	//优先搜索已存在的图层
-	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (lyr) return lyr->data.get();
-	//不存在的图层是无法操作也无法获取信息的
-	return nullptr;
+	return LOLayer::GetInfoData(fullid);
 }
 
 
-LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printName) {
-	for (int ii = 0; ii < backDataMaps.size(); ii++) {
-		if (backDataMaps[ii]->mapName->compare(printName) == 0) return backDataMaps[ii].get();
-	}
-	backDataMaps.push_back(std::make_unique<PrintNameMap>(printName));
-	return backDataMaps[backDataMaps.size() - 1].get();
-}
-
-//void LonsSaveImageModule(BinArray *bin) {
-//	LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
-//	img->SerializePrintQue(bin);
-//	img->SerializeState(bin);
-//}
-
-
-void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
-	int len = bin->Length();
-	//'pque', len, version
-	bin->WriteInt3(0x65757170, 0, 1);
-	bin->WriteString(mapName);
-	bin->WriteInt(map->size());
-	//写入fullid
-	for (auto iter = map->begin(); iter != map->end(); iter++) bin->WriteInt(iter->first);
-	bin->WriteInt(bin->Length() - len, &len);
-}
 
 void LOImageModule::Serialize(BinArray *bin) {
 	//存储图层

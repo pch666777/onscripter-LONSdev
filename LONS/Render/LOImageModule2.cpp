@@ -53,7 +53,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	iswait = true;
 
 	//检查是不是有需要刷新的
-	auto *map = GetPrintNameMap(print_name)->map;
+	auto *map = PrintNameMap::GetPrintNameMap(print_name)->map;
 	if (map->size() == 0) return 0;
 
 	//Uint64 t1 = SDL_GetPerformanceCounter();
@@ -79,28 +79,54 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//LOLog_i("uppos1:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 
 	//历遍图层，注意需要先处理父对象
-	int nowkey = 0xFFFF;
 	for (int level = 1; level <= 3; level++) {
 		for (auto iter = map->begin(); iter != map->end();) {
-			LOLayer *lyr = iter->second;
+			//首先需要处理最根部的图层
+			LOLayerData *data = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
-			if (level < 3 && (lyr->fullID & nowkey) == nowkey) isnow = true;
-			else if (level >= 3) isnow = true;
-			else isnow = false;
+			if (level == 1) isnow = (data->id_1() == G_maxLayerCount[1]);
+			else if (level == 2) isnow = (data->id_2() == G_maxLayerCount[2]);
+			else isnow = true;
 
 			////////
 			if (isnow) {
-				if (lyr->data->isDelete()) {
-					lyr->data->reset();
-					
+				//确定操作对象
+				LOLayerData *cur = nullptr;
+				LOLayerData *bak = nullptr;
+				if (data->bakData) {
+					bak = data->bakData;
+					cur = data;
+					data->bakData = nullptr;
 				}
-				else lyr->UpDataToForce();
+				else bak = data;
+
+				//检查操作对象是否还有效，多线程脚本带来的问题，在另一个线程中print后
+				//cur可能没有了，bak也可能没有了
+				if (bak && bak->fullID == iter->first) {
+					//删除的
+					if (bak->isDelete()) {
+						bak->reset();
+						if (cur) cur->reset();
+					}
+					else {
+					//更新的
+						if (cur) cur->upaction;
+						bak->reset();
+					}
+				}
+
+				//if (lyr->data->isDelete()) {
+				//	lyr->data->reset();
+				//	
+				//}
+				//else lyr->UpDataToForce();
+
+
 				//指向下一个
 				iter = map->erase(iter);
 			}
 			else iter++;
-			nowkey >> 8;
 		}
 	}
 

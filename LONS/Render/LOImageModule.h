@@ -49,23 +49,6 @@ public:
 		SHADER_INVERT, //反色
 	};
 
-	//printName结构
-	class PrintNameMap{
-	public:
-		std::string *mapName = nullptr;
-		std::map<int, LOLayerData*> *map = nullptr;
-		PrintNameMap(const char *fn) {
-			mapName = new std::string(fn);
-			map = new std::map<int, LOLayerData*>;
-		}
-		~PrintNameMap() {
-			delete mapName;
-			delete map;
-		}
-
-		void Serialize(BinArray *bin);
-	};
-
 	//对话框描述
 	struct LOSayWindow {
 		int x;
@@ -160,9 +143,6 @@ public:
 	LOLayerData* CreateNewLayerData(int fullid, const char *printName);
 	LOLayerData* CreateLayerBakData(int fullid, const char *printName);
 	LOLayerData* GetLayerData(int fullid, const char *printName);
-
-	//获取printName对应的map
-	PrintNameMap* GetPrintNameMap(const char *printName);
 
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
 	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);

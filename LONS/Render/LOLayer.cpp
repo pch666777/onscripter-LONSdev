@@ -16,15 +16,6 @@ int LOLayer::dataCurrent = 0 ;
 std::vector<LOLayerData*> LOLayer::dataList;
 
 //================== printMap ================
-std::vector<std::unique_ptr<PrintNameMap>> PrintNameMap::backDataMaps;
-PrintNameMap* PrintNameMap::GetPrintNameMap(const char *printName) {
-	for (int ii = 0; ii < backDataMaps.size(); ii++) {
-		if (backDataMaps[ii]->mapName->compare(printName) == 0) return backDataMaps[ii].get();
-	}
-	backDataMaps.push_back(std::make_unique<PrintNameMap>(printName));
-	return backDataMaps[backDataMaps.size() - 1].get();
-}
-
 
 
 //==================================
@@ -100,6 +91,12 @@ bool LOLayer::LinkToTree() {
 	return lyr->InserChild(fullID, lyr);
 }
 
+
+//0 - id[0] 1-id[1] 2-id[2] other->type
+int LOLayer::GetID(int pos) {
+	if (pos < 0 || pos > 2) return (fullID >> 26) & 0x3F;
+
+}
 
 
 bool LOLayer::isPositionInsideMe(int x, int y) {
@@ -830,35 +827,59 @@ LOLayerData* LOLayer::NewLayerData(int fullid) {
 
 //会释放当前已载入的数据，lsp时候使用，返回的肯定是bak
 LOLayerData* LOLayer::CreateNewLayerData(int fid, const char *printName) {
+	auto *map = PrintNameMap::GetPrintNameMap(printName)->map;
+	LOLayerData *data = nullptr;
+
 	auto iter = layerCenter.find(fid);
 	if (iter == layerCenter.end() || iter->second->fullID != fid) {
-		LOLayerData *data = NewLayerData(fid);
+		data = NewLayerData(fid);
 		layerCenter[fid] = data;
-		return data;
 	}
 	else {
-		LOLayerData *data = iter->second;
+		data = iter->second;
 		//没有layer说明肯定是后台，释放现有数据，直接返回
-		if (!data->layerRef) return data->reset(fid);
-		//有layer我们需要返回后台
-		if (!data->bakData) data->bakData = NewLayerData(fid);
-		else data->bakData->reset(fid);  //有数据的要情理
-		return data->bakData;
+		if (!data->layerRef) data->reset(fid);
+		else {
+			//有layer我们需要返回后台
+			if (!data->bakData) data->bakData = NewLayerData(fid);
+			else data->bakData->reset(fid);  //有数据的要情理
+			data = data->bakData;
+		}
 	}
+
+	if(data) (*map)[fid] = data;
+	return data;
 }
 
 
 //创建一个后台操作数据，不会释放已有数据，用于移动图层等操作
-LOLayerData* LOLayer::CreateLayerData(int fid, const char *printName) {
+LOLayerData* LOLayer::CreateLayerBakData(int fid, const char *printName) {
+	auto *map = PrintNameMap::GetPrintNameMap(printName)->map;
+	LOLayerData *data = nullptr;
+
 	auto iter = layerCenter.find(fid);
-	//后台操作必须基于已有对象
-	if (iter == layerCenter.end() || iter->second->fullID != fid) {
-		return nullptr;
+	if (iter != layerCenter.end() && iter->second->fullID == fid) {
+		data = iter->second;
+		//没有layer说明肯定是后台，有说明是前台
+		if (data->layerRef) {
+			//检查是否有后台，没就新建一个
+			if (!data->bakData) data->bakData = NewLayerData(fid);
+			data = data->bakData;
+		}
 	}
-	else {
+
+	if (data) (*map)[fid] = data;
+	return data;
+}
+
+
+//专门获取信息用，有前台返回前台，没有前台，后台是newfile则返回后台，不然返回空
+LOLayerData* LOLayer::GetInfoData(int fid) {
+	auto iter = layerCenter.find(fid);
+	if (iter != layerCenter.end() && iter->second->fullID == fid) {
 		LOLayerData *data = iter->second;
-		//没有layer说明肯定是后台，释放现有数据，直接返回
-		if (!data->layerRef) return data->reset(fid);
-		else if()
+		if (data->layerRef) return data;
+		if (data->bakData && data->bakData->isNewFile()) return data->bakData;
 	}
+	return nullptr;
 }

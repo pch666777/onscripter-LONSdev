@@ -104,6 +104,11 @@ public:
 	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
 	bool isNothing() { return flags == 0 && upflags == 0; }
 
+	int id_type() { return (fullID >> 26) & 0x3F; }
+	int id_0() { return (fullID >> 16) & 0x3ff; }
+	int id_1() { return (fullID >> 8) & 0xff; }
+	int id_2() { return fullID & 0xff; }
+
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
 	void SetVisable(int v);
@@ -192,6 +197,18 @@ public:
 		SHOW_RECT = 2,
 		SHOW_SCALE = 4,
 		SHOW_ROTATE = 8
+	};
+
+	//透明模式
+	enum {
+		TRANS_ALPHA = 'a',
+		TRANS_TOPLEFT = 'l',
+		TRANS_COPY = 'c',
+		TRANS_STRING = 's',
+		TRANS_DIRECT = '#',
+		TRANS_PALLETTE = '!',
+		TRANS_TOPRIGHT = 'r',
+		TRANS_MASK = 'm'
 	};
 
 	int flags;
