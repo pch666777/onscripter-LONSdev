@@ -12,7 +12,6 @@
 #include "../etc/LOString.h"
 #include "LOTexture.h"
 #include "LOAction.h"
-#include "LOMatrix2d.h"
 
 extern char G_Bit[4];             //默认材质所只用的RGBA模式位置 0-A 1-R 2-G 3-B
 extern Uint32 G_Texture_format;   //默认编辑使用的材质格式
@@ -40,52 +39,15 @@ extern int GetFullID(int t, int father, int child, int grandson);
 extern int GetIDs(int fullid, int pos);
 extern void GetTypeAndIds(int *type, int *ids, int fullid);
 
-class LOLayerData;
-class LOLayerRef;
-
-//==============================图层的基本属性====================
-//只有具体显示时我们才需要图层关系，因此需要独立出来
-class LOLayerRef{
-public:
-	LOLayerRef();
-	~LOLayerRef();
-	enum {
-		FLAGS_MUST_INIT = 1,
-		FLAGS_MUST_SORT = 2,
-	};
-
-	void RemoveChild(int fid);
-	void reset();
-	void LinkToRoot();
-
-	int fullID;
-	//父对象
-	LOLayerRef *parent;
-	//绑定的数据
-	LOLayerData *data;
-	//子对象，单项链表，从大到小排列
-	std::map<int, LOLayerRef*> *childs;
-
-	//变换矩阵
-	LOMatrix2d matrix;
-private:
-	int flags;
-};
-
-
-
-//===============================================================
 //基本类型都放在一起，拷贝方便
-class LOLayerData {
+class LOLayerDataBase {
 public:
-	LOLayerData();
-	~LOLayerData();
-	void reset();
-	LOLayerData* reset(int fid);
+	LOLayerDataBase();
+	~LOLayerDataBase();
+	void resetBase();
 	LOAction* GetAction(int t);
 	int GetCellCount();
 	void Serialize(BinArray *bin);
-	LOLayerData* RegisterMe(int fid);
 
 	//属性设置的目标应该是明确的
 	bool isShowScale() { return showType & SHOW_SCALE; }
@@ -102,12 +64,6 @@ public:
 	bool isActive() { return flags & FLAGS_ACTIVE; }
 	bool isForce() { return flags & FLAGS_ISFORCE; }
 	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
-	bool isNothing() { return flags == 0 && upflags == 0; }
-
-	int id_type() { return (fullID >> 26) & 0x3F; }
-	int id_0() { return (fullID >> 16) & 0x3ff; }
-	int id_1() { return (fullID >> 8) & 0xff; }
-	int id_2() { return fullID & 0xff; }
 
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
@@ -152,7 +108,6 @@ public:
 		//UP_ACTIONS = 0x20000,
 		UP_SHOWTYPE = 0x40000,
 		UP_VISIABLE = 0x80000,
-
 		UP_NEWFILE = -1,
 
 		//更新了哪一个action，使用LOAction的类型标识
@@ -186,9 +141,6 @@ public:
 		FLAGS_ISFORCE = 0x2000,
 		//是否处于浮点模式
 		FLAGS_FLOATMODE = 0x4000,
-
-		//该layerData已经被使用
-		FLAGS_HASUSED = 0x40000000,
 	};
 
 	//显示模式
@@ -199,23 +151,10 @@ public:
 		SHOW_ROTATE = 8
 	};
 
-	//透明模式
-	enum {
-		TRANS_ALPHA = 'a',
-		TRANS_TOPLEFT = 'l',
-		TRANS_COPY = 'c',
-		TRANS_STRING = 's',
-		TRANS_DIRECT = '#',
-		TRANS_PALLETTE = '!',
-		TRANS_TOPRIGHT = 'r',
-		TRANS_MASK = 'm'
-	};
-
 	int flags;
 	int upflags;    //更新了那些值
 	int upaction;
 	int btnval;    //btn的值
-	int fullID;
 	float offsetX;    //显示目标左上角位置
 	float offsetY;    //显示目标左上角位置
 	int16_t alpha;      //透明度
@@ -249,21 +188,15 @@ public:
 	std::unique_ptr<std::vector<LOShareAction>> actions;
 
 	uint8_t showType;
-
-	void *layerRef;
-	LOLayerData *bakData;
 };
 
 
-
-
-
-/*
 //数据由前台数据和后台数据组成，set时总是设置后台数据, get时则根据upflags确定返回前台还是后台数据
 class LOLayerData{
 public:
 	LOLayerData();
 	~LOLayerData();
+
 	//禁用赋值
 	const LOLayerData& operator=(const LOLayerData &obj) = delete;
 
@@ -288,8 +221,8 @@ public:
 	};
 
 	int fullid;
-	LOLayerDataBase *cur;
-	LOLayerDataBase *bak;
+	LOLayerDataBase cur;
+	LOLayerDataBase bak;
 
 	//get类函数都会检查后台，如果后台有更新则返回后台数据
 	//void GetSimpleDst(SDL_Rect *dst);
@@ -313,38 +246,10 @@ public:
 
 	//将动画的初始信息同步到layerinfo上
 	void UpdataToForce();
-	void ReleaseForce();
-	void ReleaseBak();
-	//总是新建
-	void NewBak();
-	//空的才新建
-	void EmptyNewBak();
 
 	void Serialize(BinArray *bin);
 private:
 	bool isinit;
 };
-*/
-
-//环形缓存结构
-class LOLayerDataManager {
-public:
-	LOLayerDataManager();
-	~LOLayerDataManager();
-
-	//空白的，DataBase无效后均指向它
-	LOLayerDataBase *emptyData;
-
-	void GetDataBase(LOLayerDataBase *&base);
-	void GetEmpty(LOLayerDataBase *&base);
-private:
-	void AddDataList(int size);
-	//当前循环的位置
-	int current;
-	//指针
-	std::vector<LOLayerDataBase*> DataList;
-};
-
-extern LOLayerDataManager LOLayerDataCenter;
 
 #endif // !__H_LOLAYERDATA_

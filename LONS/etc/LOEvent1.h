@@ -173,7 +173,6 @@ private:
 
 typedef std::shared_ptr<LOEventHook> LOShareEventHook;
 typedef std::unique_ptr<LOEventHook> LOUniqEventHook;
-typedef std::map<int64_t, LOShareEventHook> LOEvPtrMap;
 
 //=============================
 

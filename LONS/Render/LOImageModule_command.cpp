@@ -48,27 +48,26 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 	LeveTextDisplayMode();
 
 	LOLayerData *info = CreateNewLayerData(fullid, reader->GetPrintName());
-	LOLayerDataBase *dbase = info->bak;
 	loadSpCore(info, tag, reader->GetParamInt(2), reader->GetParamInt(3), alpha, true);
-	if (!dbase->texture) return RET_CONTINUE;
+	if (!info->bak.texture) return RET_CONTINUE;
 
-	int cx = dbase->texture->baseW() / 2;
-	int cy = dbase->texture->baseH() / 2;
-	dbase->SetPosition2(cx, cy, reader->GetParamDoublePer(4), reader->GetParamDoublePer(5));
+	int cx = info->bak.texture->baseW() / 2;
+	int cy = info->bak.texture->baseH() / 2;
+	info->bak.SetPosition2(cx, cy, reader->GetParamDoublePer(4), reader->GetParamDoublePer(5));
 	double rotate = (double)reader->GetParamInt(6);
 	if (fabs(rotate - 0.0) > 0.001) {
-		dbase->SetRotate(rotate);
+		info->bak.SetRotate(rotate);
 	}
 
 	// lsp2 lsph2  lsp2add lsph2add
 	const char *buf = reader->GetCmdChar() + 3;
 	if (buf[0] == 'h') {
-		dbase->SetVisable(false);
+		info->bak.SetVisable(false);
 		buf++;
 	}
 
 	if (buf[0] == 'a') {//lsp2add or  lsph2add
-		dbase->texture->setBlendModel(SDL_BLENDMODE_ADD);
+		info->bak.texture->setBlendModel(SDL_BLENDMODE_ADD);
 	}
 	else if (buf[0] == 's') {
 		//info->texture->setBlendModel(SDL_BLENDMODE_INVALID);
@@ -165,7 +164,7 @@ void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *pr
 	for (int ii = fromid; ii <= endid; ii++) {
 		int fullid = GetFullID(layerType, ii, 255, 255);
 		LOLayerData *data = CreateLayerBakData(fullid, print_name);
-		if (data) data->bak->SetDelete();
+		if (data) data->bak.SetDelete();
 	}
 }
 
@@ -182,7 +181,6 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 	LeveTextDisplayMode();
 
 	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
-	LOLayerDataBase *dbase = info->bak;
 	if (!info) return RET_CONTINUE;
 
 	if (sptype == LOLayer::LAYER_SPRINT) {
@@ -197,8 +195,8 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 			ba += info->GetAlpha();
 		}
 
-		info->bak->SetPosition(bx, by);
-		if (reader->GetParamCount() > 3) info->bak->SetAlpha(ba);
+		info->bak.SetPosition(bx, by);
+		if (reader->GetParamCount() > 3) info->bak.SetAlpha(ba);
 	}
 	else {
 		int ox, oy, ra, ba = 0;
@@ -220,10 +218,10 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 			ba += info->GetAlpha();
 		}
 
-		dbase->SetPosition2(info->GetCenterX(), info->GetCenterY(), sx, sy);
-		dbase->SetPosition(ox, oy);
-		dbase->SetRotate(ra);
-		if (reader->GetParamCount() > 6) dbase->SetAlpha(ba);
+		info->bak.SetPosition2(info->GetCenterX(), info->GetCenterY(), sx, sy);
+		info->bak.SetPosition(ox, oy);
+		info->bak.SetRotate(ra);
+		if (reader->GetParamCount() > 6) info->bak.SetAlpha(ba);
 	}
 	return RET_CONTINUE;
 }
@@ -233,7 +231,7 @@ int LOImageModule::cellCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *info = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (info) {
-		info->bak->SetCellNum(reader->GetParamInt(1));
+		info->bak.SetCellNum(reader->GetParamInt(1));
 	}
 	return RET_CONTINUE;
 }
@@ -464,7 +462,7 @@ int LOImageModule::vspCommand(FunctionInterface *reader) {
 
 void LOImageModule::VspCore(int fullid, const char *print_name, int vals) {
 	LOLayerData *data = CreateLayerBakData(fullid, print_name);
-	if (data) data->bak->SetVisable(vals);
+	if (data) data->bak.SetVisable(vals);
 }
 
 
@@ -597,7 +595,7 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
-	data->bak->SetBtndef(nullptr, 0, true, true);
+	data->bak.SetBtndef(nullptr, 0, true, true);
 	ExportQuequ(reader->GetPrintName(), nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
@@ -624,8 +622,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (data) {
-		if(reader->GetParamCount() > 2) data->bak->SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
-		else data->bak->SetBtndef(nullptr, reader->GetParamInt(1), true, false);
+		if(reader->GetParamCount() > 2) data->bak.SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
+		else data->bak.SetBtndef(nullptr, reader->GetParamInt(1), true, false);
 	}
 	return RET_CONTINUE;
 }
@@ -634,7 +632,7 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
-	data->bak->SetBtndef(&reader->GetParamStr(0), 0, true, true);
+	data->bak.SetBtndef(&reader->GetParamStr(0), 0, true, true);
 	return RET_CONTINUE;
 }
 

@@ -1035,11 +1035,7 @@ bool LOScriptReader::LoadCore(int id) {
 		return false;
 	}
 	//读取hook钩子
-	std::map<int64_t, LOShareEventHook> evmap;
-	if (!G_hookQue.LoadHooks(bin.get(), &pos, &evmap)) {
-		LOLog_e("save file [%s] EventHook read faild!", fn.c_str());
-		return false;
-	}
+
 	//渲染模块
 
 	//脚本模块

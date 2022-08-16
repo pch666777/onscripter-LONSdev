@@ -53,7 +53,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	iswait = true;
 
 	//检查是不是有需要刷新的
-	auto *map = PrintNameMap::GetPrintNameMap(print_name)->map;
+	auto *map = GetPrintNameMap(print_name)->map;
 	if (map->size() == 0) return 0;
 
 	//Uint64 t1 = SDL_GetPerformanceCounter();
@@ -81,52 +81,22 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
 		for (auto iter = map->begin(); iter != map->end();) {
-			//首先需要处理最根部的图层
-			LOLayerData *data = iter->second;
+			LOLayer *lyr = iter->second;
 			//检查是不是现在要处理的
 			bool isnow = false;
-			if (level == 1) isnow = (data->id_1() == G_maxLayerCount[1]);
-			else if (level == 2) isnow = (data->id_2() == G_maxLayerCount[2]);
-			else isnow = true;
+			if (level < 3 && lyr->id[level] >= G_maxLayerCount[level]) isnow = true;
+			else if (level >= 3) isnow = true;
+			else isnow = false;
 
 			////////
 			if (isnow) {
-				//确定操作对象
-				LOLayerData *cur = nullptr;
-				LOLayerData *bak = nullptr;
-				if (data->bakData) {
-					bak = data->bakData;
-					cur = data;
-					data->bakData = nullptr;
-				}
-				else bak = data;
-
-				//检查操作对象是否还有效，多线程脚本带来的问题，在另一个线程中print后
-				//cur可能没有了，bak也可能没有了
-				if (bak && bak->fullID == iter->first) {
-					//删除的
-					if (bak->isDelete()) {
-						bak->reset();
-						if (cur) cur->reset();
-					}
-					else {
-					//更新的
-						if (cur) cur->upaction;
-						bak->reset();
-					}
-				}
-
-				//if (lyr->data->isDelete()) {
-				//	lyr->data->reset();
-				//	
-				//}
-				//else lyr->UpDataToForce();
-
-
+				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);
+				else lyr->UpDataToForce();
 				//指向下一个
 				iter = map->erase(iter);
 			}
 			else iter++;
+
 		}
 	}
 
@@ -279,7 +249,7 @@ void LOImageModule::ClearDialogText(char flag) {
 	if (flag == '\\') {
 		int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		info->bak->SetDelete();
+		info->bak.SetDelete();
 		sayState.say.clear();
 	}
 }
@@ -289,8 +259,8 @@ void LOImageModule::ClearDialogText(char flag) {
 void LOImageModule::CutDialogueAction() {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
 	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
-	if (lyr && lyr->data->cur->isForce()) {
-		LOActionText *ac = (LOActionText*)lyr->data->cur->GetAction(LOAction::ANIM_TEXT);
+	if (lyr && lyr->data->cur.isForce()) {
+		LOActionText *ac = (LOActionText*)lyr->data->cur.GetAction(LOAction::ANIM_TEXT);
 		if (ac) {
 			lyr->DoTextAction(lyr->data.get(), ac, 0x7ffffff);
 		}
