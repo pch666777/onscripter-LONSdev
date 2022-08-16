@@ -1357,6 +1357,11 @@ void LOImageModule::Serialize(BinArray *bin) {
 	SerializeState(bin);
 }
 
+
+void LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+
+}
+
 void LOImageModule::SerializePrintQue(BinArray *bin) {
 	for (int ii = 0; ii < backDataMaps.size(); ii++) {
 		PrintNameMap *map = backDataMaps[ii].get();

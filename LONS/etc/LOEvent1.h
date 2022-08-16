@@ -173,7 +173,7 @@ private:
 
 typedef std::shared_ptr<LOEventHook> LOShareEventHook;
 typedef std::unique_ptr<LOEventHook> LOUniqEventHook;
-
+typedef std::map<int64_t, LOShareEventHook> LOEventMap;
 //=============================
 
 class LOEventQue {
@@ -195,8 +195,8 @@ public:
 	void clear();
 	void invalidClear();
 	void SaveHooks(BinArray *bin);
-	bool LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap);
-	bool LoadHooksList(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap, std::vector<LOShareEventHook> *list);
+	bool LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap);
+	bool LoadHooksList(BinArray *bin, int *pos, LOEventMap *evmap, std::vector<LOShareEventHook> *list);
 	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
 	//LOEventHook* GetNextEvent(int *listindex, int *index);
 	

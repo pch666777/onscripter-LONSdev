@@ -449,7 +449,7 @@ void LOEventQue::SaveHooks(BinArray *bin) {
 }
 
 
-bool LOEventQue::LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap) {
+bool LOEventQue::LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap) {
 	int next = -1;
 	if (!bin->CheckEntity("hque", &next, nullptr, pos)) return false;
 	//highList
@@ -459,7 +459,7 @@ bool LOEventQue::LoadHooks(BinArray *bin, int *pos, std::map<int64_t, LOShareEve
 }
 
 
-bool LOEventQue::LoadHooksList(BinArray *bin, int *pos, std::map<int64_t, LOShareEventHook> *evmap, std::vector<LOShareEventHook> *list) {
+bool LOEventQue::LoadHooksList(BinArray *bin, int *pos, LOEventMap *evmap, std::vector<LOShareEventHook> *list) {
 	int count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {
 		int64_t PID = bin->GetInt64Auto(pos);

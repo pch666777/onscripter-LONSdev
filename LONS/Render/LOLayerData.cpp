@@ -275,6 +275,8 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 void LOLayerDataBase::Serialize(BinArray *bin) {
 	//长度记录在标记之后 base,len,version
 	int len = bin->WriteLpksEntity("base", 0, 1);
+	//优先存储重生成字符串
+	bin->WriteLOString(buildStr.get());
 
 	bin->WriteInt3(flags, upflags, upaction);
 	bin->WriteInt(btnval);
@@ -289,9 +291,8 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	bin->WriteDouble(scaleX);
 	bin->WriteDouble(scaleY);
 	bin->WriteDouble(rotate);
-
 	bin->WriteLOString(btnStr.get());
-	bin->WriteLOString(buildStr.get());
+	
 	//文字纹理需要存储样式
 	if (texture && texture->isTextTexture()) {
 		texture->textData->style.Serialize(bin);
@@ -494,8 +495,15 @@ void LOLayerData::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("data", 0, 1);
 	//fullid
 	bin->WriteInt(fullid);
-	cur.Serialize(bin);
-	bak.Serialize(bin);
-
+	if (cur.isNothing()) bin->WriteChar(0);
+	else {
+		bin->WriteChar(1);
+		cur.Serialize(bin);
+	}
+	if (bak.isNothing()) bin->WriteChar(0);
+	else {
+		bin->WriteChar(1);
+		bak.Serialize(bin);
+	}
 	bin->WriteInt(bin->Length() - len, &len);
 }

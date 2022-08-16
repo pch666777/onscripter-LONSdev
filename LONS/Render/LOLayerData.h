@@ -64,6 +64,7 @@ public:
 	bool isActive() { return flags & FLAGS_ACTIVE; }
 	bool isForce() { return flags & FLAGS_ISFORCE; }
 	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
+	bool isNothing() { return flags == 0 && upflags == 0; }
 
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
