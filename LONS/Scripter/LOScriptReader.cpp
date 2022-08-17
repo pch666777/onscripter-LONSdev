@@ -319,6 +319,10 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
+	if (GetCurrentLine() == 281) {
+		int debugint = 0;
+	}
+
 	bool hasnormal, haslabel, hasvariable;
 	int allow_type, paramcount = 0;
 	const char *fromparam = param;

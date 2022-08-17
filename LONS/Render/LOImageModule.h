@@ -153,7 +153,7 @@ public:
 		//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
 	std::vector<LOShareEventHook> preEventList;
 
-	void GetUseTextrue(LOLayerData *info, void *data, bool addcount = true);
+	void GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcount = true);
 
 	void ClearBtndef(const char *printName);
 
@@ -165,16 +165,16 @@ public:
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
-	bool loadSpCoreWith(LOLayerData *nfo, LOString &tag, int x, int y, int alpha,int eff);
+	bool loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, int y, int alpha,int eff);
 
 	LOtexture* ScreenShot(int x, int y, int w, int h, int dw, int dh);
 	void ScreenShotCountinue(LOEventHook *e);
 	LOtextureBase* SurfaceFromFile(LOString *filename);
 	int RefreshFrame(double postime);        //刷新帧显示
 
-	bool ParseTag(LOLayerData *info ,LOString *tag);
+	bool ParseTag(LOLayerDataBase *bak, LOString *tag);
 
-	bool ParseImgSP(LOLayerData *info, LOString *tag, const char *buf);
+	bool ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *buf);
 
 	//LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
 	//LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
@@ -325,13 +325,13 @@ private:
 	bool InitFps();
 	void ResetConfig();
 	void FreeFps();
-	void TextureFromFile(LOLayerData *info);
-	void TextureFromCache(LOLayerData *info);
+	void TextureFromFile(LOLayerDataBase *bak);
+	void TextureFromCache(LOLayerDataBase *bak);
 	//void TextureFromEmpty(LOLayerData *info);
-	void TextureFromControl(LOLayerData *info, LOString *s);
-	void TextureFromColor(LOLayerData *info, LOString *s);
-	void TextureFromSimpleStr(LOLayerData*info, LOString *s);
-	void TextureFromActionStr(LOLayerData*info, LOString *s);
+	void TextureFromControl(LOLayerDataBase *bak, LOString *s);
+	void TextureFromColor(LOLayerDataBase *bak, LOString *s);
+	void TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s);
+	void TextureFromActionStr(LOLayerDataBase *bak, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);
