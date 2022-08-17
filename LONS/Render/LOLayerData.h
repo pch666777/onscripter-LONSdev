@@ -48,6 +48,7 @@ public:
 	LOAction* GetAction(int t);
 	int GetCellCount();
 	void Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos);
 
 	//属性设置的目标应该是明确的
 	bool isShowScale() { return showType & SHOW_SCALE; }
@@ -84,6 +85,7 @@ public:
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
 	void FirstSNC();
+	void SetDefaultShowSize();
 	void GetSimpleSrc(SDL_Rect *src);
 	void GetSimpleDst(SDL_Rect *dst);
 
@@ -240,15 +242,11 @@ public:
 	double GetScaleX();
 	double GetScaleY();
 	double GetRotate();
-
-	void SetDefaultShowSize(bool isforce);
 	
 	inline LOLayerDataBase *GetBase(bool isforce);
 
 	//将动画的初始信息同步到layerinfo上
 	void UpdataToForce();
-
-	void Serialize(BinArray *bin);
 private:
 	bool isinit;
 };

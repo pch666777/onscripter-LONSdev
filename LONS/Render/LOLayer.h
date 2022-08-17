@@ -123,7 +123,10 @@ public:
 	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
-	void Serialize(BinArray *bin);
+	//void Serialize(BinArray *bin);
+	void SerializeForce(BinArray *bin);
+	bool DeSerializeForce(BinArray *bin, int *pos);
+	void SerializeBak(BinArray *bin);
 
 	//将图层挂载到图层结构上
 	//void upDataNewFile();
@@ -145,10 +148,10 @@ public:
 	static LOLayer* FindLayerInCenter(int fullid);
 	static LOLayer* GetLayer(int fullid);
 	static LOLayer* LinkLayerLeve(LOLayer *lyr);
-	static void SaveLayer(BinArray *bin);
 	static void ResetLayer();
 	static bool useLayerCenter;
 	static void InitBaseLayer();
+	static std::map<int, LOLayer*> layerCenter;
 private:
 	LOMatrix2d GetTranzMatrix() ; //获取图层当前对应的变换矩阵
 

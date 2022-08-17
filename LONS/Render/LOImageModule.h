@@ -213,6 +213,8 @@ public:
 	//序列化渲染模块的状态
 	void SerializeState(BinArray *bin);
 	void DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
+	void SaveLayers(BinArray *bin);
+	bool LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap);
 
 	int lspCommand(FunctionInterface *reader);
 	int printCommand(FunctionInterface *reader);

@@ -262,6 +262,19 @@ void LOLayerDataBase::FirstSNC() {
 	}
 }
 
+
+void LOLayerDataBase::SetDefaultShowSize() {
+	if (actions) {
+		FirstSNC();
+	}
+	else {
+		showWidth = texture->baseW();
+		showHeight = texture->baseH();
+		upflags |= LOLayerDataBase::UP_SHOWW;
+		upflags |= LOLayerDataBase::UP_SHOWH;
+	}
+}
+
 void LOLayerDataBase::GetSimpleSrc(SDL_Rect *src) {
 	src->x = showSrcX; src->y = showSrcY;
 	src->w = showWidth; src->h = showHeight;
@@ -307,6 +320,17 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	else bin->WriteInt(0);
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("base", &next, nullptr, pos)) return false;
+	std::unique_ptr<LOString> tmp(bin->GetLOStrPtr(pos));
+	if (!tmp) return false;
+
+	//要先加载
+
 }
 
 
@@ -401,19 +425,6 @@ LOLayerDataBase *LOLayerData::GetBase(bool isforce) {
 	return &bak;
 }
 
-//设置默认的显示范围，通常在loadsp后调用
-void LOLayerData::SetDefaultShowSize(bool isforce) {
-	LOLayerDataBase *data = GetBase(isforce);
-	if (data->actions) {
-		data->FirstSNC();
-	}
-	else {
-		data->showWidth = data->texture->baseW();
-		data->showHeight = data->texture->baseH();
-		data->upflags |= LOLayerDataBase::UP_SHOWW;
-		data->upflags |= LOLayerDataBase::UP_SHOWH;
-	}
-}
 
 
 
@@ -489,21 +500,3 @@ void LOLayerData::UpdataToForce() {
 	bak.resetBase();
 }
 
-
-void LOLayerData::Serialize(BinArray *bin) {
-	//data, len, version
-	int len = bin->WriteLpksEntity("data", 0, 1);
-	//fullid
-	bin->WriteInt(fullid);
-	if (cur.isNothing()) bin->WriteChar(0);
-	else {
-		bin->WriteChar(1);
-		cur.Serialize(bin);
-	}
-	if (bak.isNothing()) bin->WriteChar(0);
-	else {
-		bin->WriteChar(1);
-		bak.Serialize(bin);
-	}
-	bin->WriteInt(bin->Length() - len, &len);
-}

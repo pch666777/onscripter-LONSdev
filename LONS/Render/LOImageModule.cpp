@@ -849,7 +849,7 @@ bool LOImageModule::loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, i
 	if (!bak->texture) return false;
 
 	bak->SetPosition(x, y);
-	info->SetDefaultShowSize(false);
+	bak->SetDefaultShowSize();
 	bak->SetAlpha(alpha);
 
 	//记录
@@ -1335,12 +1335,17 @@ LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printNam
 //	img->SerializePrintQue(bin);
 //	img->SerializeState(bin);
 //}
-
+void LOImageModule::Serialize(BinArray *bin) {
+	//存储图层
+	SaveLayers(bin);
+	//存储队列
+	SerializePrintQue(bin);
+	//存储状态
+	SerializeState(bin);
+}
 
 void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
-	int len = bin->Length();
-	//'pque', len, version
-	bin->WriteInt3(0x65757170, 0, 1);
+	int len = bin->WriteLpksEntity("pque", 0, 1);
 	bin->WriteString(mapName);
 	bin->WriteInt(map->size());
 	//写入fullid
@@ -1348,32 +1353,52 @@ void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 }
 
-void LOImageModule::Serialize(BinArray *bin) {
-	//存储图层
-	LOLayer::SaveLayer(bin);
-	//存储队列
-	SerializePrintQue(bin);
-	//存储状态
-	SerializeState(bin);
+
+//加载图层也要在图像模块
+void LOImageModule::SaveLayers(BinArray *bin) {
+	//LYRS,len, version
+	int len = bin->WriteLpksEntity("FORC", 0, 1);
+	//首先存储前台
+	bin->WriteInt(LOLayer::LAYER_BASE_COUNT);
+	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
+		G_baseLayer[ii]->SerializeForce(bin);
+	}
+	bin->WriteInt(bin->Length() - len, &len);
+
+	//存储后台
+	len = bin->WriteLpksEntity("BAKE", 0, 1);
+	bin->WriteInt(LOLayer::layerCenter.size());
+	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end(); iter++) {
+		iter->second->SerializeBak(bin);
+	}
+	bin->WriteInt(bin->Length() - len, &len);
 }
 
 
-void LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+bool LOImageModule::LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap) {
+	int next = -1;
+	if (!bin->CheckEntity("FORC", &next, nullptr, pos)) return false;
+	//高版本的可能无法在低版本上读取
+	int count = bin->GetIntAuto(pos);
+	if (count > LOLayer::LAYER_BASE_COUNT) return false;
+	for (int ii = 0; ii < count; ii++) {
+		G_baseLayer[ii]->SerializeForce(bin);
+	}
+	//读取后台
 
 }
+
 
 void LOImageModule::SerializePrintQue(BinArray *bin) {
+	bin->WriteInt(backDataMaps.size());
 	for (int ii = 0; ii < backDataMaps.size(); ii++) {
-		PrintNameMap *map = backDataMaps[ii].get();
-		if (map->map->size() > 0) map->Serialize(bin);
+		backDataMaps.at(ii)->Serialize(bin);
 	}
 }
 
 
 void LOImageModule::SerializeState(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//imgo, len, version
-	bin->WriteInt3(0x6F676D69, 0, 1);
+	int len = bin->WriteLpksEntity("imgo", 0, 1);
 
 	spStyle.Serialize(bin);
 	bin->WriteLOString(&spFontName);
@@ -1402,9 +1427,8 @@ void LOImageModule::SerializeState(BinArray *bin) {
 }
 
 void LOImageModule::LOSayWindow::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//winn, len, version
-	bin->WriteInt3(0x6E6E6977, 0, 1);
+	int len = bin->WriteLpksEntity("winn", 0, 1);
+
 	bin->WriteInt3(x, y, w);
 	bin->WriteInt3(h, textX, textY);
 	bin->WriteLOString(&winstr);
@@ -1413,13 +1437,17 @@ void LOImageModule::LOSayWindow::Serialize(BinArray *bin) {
 }
 
 void LOImageModule::LOSayState::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//wins, len, version
-	bin->WriteInt3(0x736E6977, 0, 1);
+	int len = bin->WriteLpksEntity("wins", 0, 1);
 	bin->WriteLOString(&say);
 	bin->WriteInt(flags);
 	bin->WriteInt(pageEnd);
 	//z_order和winEffect不会记录，这两个应该要跟随define的时候设置
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+
+void LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+
 }

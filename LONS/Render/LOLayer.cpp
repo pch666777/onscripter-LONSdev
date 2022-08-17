@@ -11,7 +11,7 @@ LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
 
 //所有的图层都存储在这
-std::map<int, LOLayer*> layerCenter;
+std::map<int, LOLayer*> LOLayer::layerCenter;
 
 void LOLayer::BaseNew(SysLayerType lyrType) {
 	id[0] = -1;
@@ -444,17 +444,53 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 }
 
 
-
-void LOLayer::Serialize(BinArray *bin) {
-	//'lyr ',version, fullid
-	int len = bin->WriteLpksEntity("lyr ", 0, 1);
+void LOLayer::SerializeForce(BinArray *bin) {
+	bin->WriteInt16(0x4244);
+	//fid很重要
 	bin->WriteInt(data->fullid);
-	//是否link
-	if (parent) bin->WriteInt(1);
+
+	if (data->cur.isNothing()) bin->WriteChar(0);
+	else {
+		bin->WriteChar(1);
+		data->cur.Serialize(bin);
+	}
+	//子对象的关系
+	if (childs) {
+		bin->WriteInt(childs->size());
+		for (int ii = 0; ii < childs->size(); ii++) {
+			childs->at(ii)->SerializeForce(bin);
+		}
+	}
 	else bin->WriteInt(0);
-	//data
-	data->Serialize(bin);
-	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOLayer::DeSerializeForce(BinArray *bin, int *pos) {
+	if (bin->GetInt16Auto(pos) != 0x4244) return false;
+
+	int fid = bin->GetIntAuto(pos);
+	int ttt = 0;
+	GetTypeAndIds(&ttt, id, fid);
+	layerType = (SysLayerType)ttt;
+
+	//空的对象
+	if (bin->GetChar(pos) == 0) return true;
+	else {
+
+	}
+}
+
+
+void LOLayer::SerializeBak(BinArray *bin) {
+	bin->WriteInt16(0x4144);
+	//fid很重要
+	bin->WriteInt(data->fullid);
+	if (data->bak.isNothing()) bin->WriteChar(0);
+	else {
+		bin->WriteChar(1);
+		data->bak.Serialize(bin);
+	}
+	//后台数据不关注子对象
 }
 
 
@@ -836,24 +872,25 @@ int LOLayer::GetSelfChildID() {
 //}
 
 
-//存储所有layerCenter中的文件
-void LOLayer::SaveLayer(BinArray *bin) {
-	//LYRS,len, version
-	int len = bin->WriteLpksEntity("LYRS", 0, 1);
-	
-	bin->WriteInt(layerCenter.size());
-	//从图层中心获取图层
-	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
-		auto childs = iter->second->childs;
-		if (childs) {
-			for (auto iter = childs->begin(); iter != childs->end(); iter++) {
-				iter->second->Serialize(bin);
-			}
-		}
-	}
+////存储所有layerCenter中的文件
+//void LOLayer::SaveLayer(BinArray *bin) {
+//	//LYRS,len, version
+//	int len = bin->WriteLpksEntity("LYRS", 0, 1);
+//	
+//	bin->WriteInt(layerCenter.size());
+//	//从图层中心获取图层
+//	for (auto iter = layerCenter.begin(); iter != layerCenter.end(); iter++) {
+//		auto childs = iter->second->childs;
+//		if (childs) {
+//			for (auto iter = childs->begin(); iter != childs->end(); iter++) {
+//				iter->second->Serialize(bin);
+//			}
+//		}
+//	}
+//
+//	bin->WriteInt(bin->Length() - len, &len);
+//}
 
-	bin->WriteInt(bin->Length() - len, &len);
-}
 
 
 void LOLayer::InitBaseLayer() {
