@@ -838,6 +838,12 @@ bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, i
 	return ret;
 }
 
+//给图层在读取存档的时候调用
+bool ImgLoadSpForce(LOLayerDataBase *cur, LOString *tag) {
+	LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
+	return img->loadSpCoreWith(cur, *tag, 0, 0, -1, 0);
+}
+
 bool LOImageModule::loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, int y, int alpha, int eff) {
 	bak->buildStr.reset(new LOString(tag));
 

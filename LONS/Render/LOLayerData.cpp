@@ -20,6 +20,9 @@ int G_destHeight = -1;  //目标窗口高度
 int G_fpsnum = 60;      //默认的fps速度
 int G_textspeed = 20;   //默认的文字速度
 
+//定义在LOImageModule
+extern bool ImgLoadSpForce(LOLayerDataBase *cur, LOString *tag);
+
 //============ static and globle ================
 
 //游戏画面是否被缩放
@@ -330,7 +333,42 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	if (!tmp) return false;
 
 	//要先加载
+	if (!ImgLoadSpForce(this, tmp.get())) {
+		*pos = next;
+		//加载失败不影响程序继续执行，只是图像无法显示
+		return true;
+	}
 
+	//参数覆盖回来
+	flags = bin->GetIntAuto(pos);
+	upflags = bin->GetIntAuto(pos);
+	upaction = bin->GetIntAuto(pos);
+	offsetX = bin->GetFloatAuto(pos);
+	offsetY = bin->GetFloatAuto(pos);
+	showWidth = bin->GetFloatAuto(pos);
+	showHeight = bin->GetFloatAuto(pos);
+	alpha = bin->GetInt16Auto(pos);
+	centerX = bin->GetInt16Auto(pos);
+	centerY = bin->GetInt16Auto(pos);
+	showSrcX = bin->GetInt16Auto(pos);
+	showSrcY = bin->GetInt16Auto(pos);
+	cellNum = bin->GetChar(pos);
+	//alphaMode = bin->GetChar(pos);
+	//不应该覆盖纹理透明模式
+	bin->GetChar(pos);
+	//texType = bin->GetChar(pos);
+	//不应该覆盖纹理类型
+	bin->GetChar(pos);
+	showType = bin->GetChar(pos);
+	scaleX = bin->GetDoubleAuto(pos);
+	scaleY = bin->GetDoubleAuto(pos);
+	rotate = bin->GetDoubleAuto(pos);
+	btnStr.reset(bin->GetLOStrPtr(pos));
+	//文字样式不需要处理
+
+
+	*pos = next;
+	return true;
 }
 
 
