@@ -79,6 +79,7 @@ public:
 	//检查LPKS的文件头，检查通过的话会设置字节集的字节顺序
 	bool CheckLpksHeader(int *pos);
 	bool CheckEntity(const char *mark,int *next, int *version, int *pos);
+	bool JumpEntity(const char *mark, int *pos);
 	int GetNextEntity(int *pos);
 	//调整order的write
 

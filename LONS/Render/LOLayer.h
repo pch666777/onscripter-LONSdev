@@ -127,6 +127,7 @@ public:
 	void SerializeForce(BinArray *bin);
 	bool DeSerializeForce(BinArray *bin, int *pos);
 	void SerializeBak(BinArray *bin);
+	bool DeSerializeBak(BinArray *bin, int *pos);
 
 	//将图层挂载到图层结构上
 	//void upDataNewFile();

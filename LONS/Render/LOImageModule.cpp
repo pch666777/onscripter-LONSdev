@@ -1386,12 +1386,25 @@ bool LOImageModule::LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap) {
 	if (!bin->CheckEntity("FORC", &next, nullptr, pos)) return false;
 	//高版本的可能无法在低版本上读取
 	int count = bin->GetIntAuto(pos);
-	if (count > LOLayer::LAYER_BASE_COUNT) return false;
 	for (int ii = 0; ii < count; ii++) {
-		G_baseLayer[ii]->SerializeForce(bin);
+		bin->GetIntAuto(pos);  //fid
+		if (ii < LOLayer::LAYER_BASE_COUNT) {
+			if(!G_baseLayer[ii]->DeSerializeForce(bin, pos)) return false ;
+		}
+		else {
+			LOLog_i("save dat layer count is %d, but this app max is %d", count, LOLayer::LAYER_BASE_COUNT);
+			bin->JumpEntity("fdat", pos);
+		}
 	}
-	//读取后台
+	*pos = next;
 
+	//读取后台
+	if (!bin->CheckEntity("BAKE", &next, nullptr, pos)) return false;
+	count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+
+	}
+	*pos = next;
 }
 
 

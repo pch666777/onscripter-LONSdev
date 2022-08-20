@@ -310,10 +310,12 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	bin->WriteLOString(btnStr.get());
 	
 	//文字纹理需要存储样式
-	if (texture && texture->isTextTexture()) {
-		texture->textData->style.Serialize(bin);
-	}
-	bin->WriteInt(0);
+	//当前无需存储文字样式
+	bin->WriteChar(0);
+	//if (texture && texture->isTextTexture()) {
+	//	texture->textData->style.Serialize(bin);
+	//}
+	//bin->WriteInt(0);
 
 	//action
 	if (actions) {
@@ -365,7 +367,12 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	rotate = bin->GetDoubleAuto(pos);
 	btnStr.reset(bin->GetLOStrPtr(pos));
 	//文字样式不需要处理
-
+	bin->GetChar(pos);
+	//action
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count++; ii++) {
+		//do it
+	}
 
 	*pos = next;
 	return true;

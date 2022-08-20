@@ -445,10 +445,10 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 
 void LOLayer::SerializeForce(BinArray *bin) {
-	bin->WriteInt16(0x4244);
-	//fid很重要
+	//fid很重要，最先读取，以便产生新建对象
 	bin->WriteInt(data->fullid);
 
+	int len = bin->WriteLpksEntity("fdat", 0, 1);
 	if (data->cur.isNothing()) bin->WriteChar(0);
 	else {
 		bin->WriteChar(1);
@@ -462,35 +462,56 @@ void LOLayer::SerializeForce(BinArray *bin) {
 		}
 	}
 	else bin->WriteInt(0);
+
+	bin->WriteInt(bin->Length() - len, &len);
 }
 
 
 bool LOLayer::DeSerializeForce(BinArray *bin, int *pos) {
-	if (bin->GetInt16Auto(pos) != 0x4244) return false;
+	int next = -1;
+	if (!bin->CheckEntity("fdat", &next, nullptr, pos)) return false;
 
-	int fid = bin->GetIntAuto(pos);
-	int ttt = 0;
-	GetTypeAndIds(&ttt, id, fid);
-	layerType = (SysLayerType)ttt;
-
-	//空的对象
-	if (bin->GetChar(pos) == 0) return true;
-	else {
-
+	if (bin->GetChar(pos) != 0) {
+		if (!data->cur.DeSerialize(bin, pos)) return false;
 	}
+
+	//子对象，应该保证layer是刚生成的
+	int count = bin->GetIntAuto(pos);
+	if(count > 0 && !childs) childs = new std::map<int, LOLayer*>();
+	for (int ii = 0; ii < count; ii++) {
+		int fid = bin->GetIntAuto(pos);
+		LOLayer *lyr = CreateLayer(fid);
+		if (!lyr->DeSerializeForce(bin, pos)) return false;
+		(*childs)[fid] = lyr;
+	}
+
+	*pos = next;
+	return true;
 }
 
 
 void LOLayer::SerializeBak(BinArray *bin) {
-	bin->WriteInt16(0x4144);
 	//fid很重要
 	bin->WriteInt(data->fullid);
+	int len = bin->WriteLpksEntity("bdat", 0, 1);
 	if (data->bak.isNothing()) bin->WriteChar(0);
 	else {
 		bin->WriteChar(1);
 		data->bak.Serialize(bin);
 	}
 	//后台数据不关注子对象
+	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOLayer::DeSerializeBak(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("bdat", &next, nullptr, pos)) return false;
+	if (bin->GetChar(pos) != 0) {
+		if(!data->bak.DeSerialize(bin, pos)) return false;
+	}
+	*pos = next;
+	return true;
 }
 
 

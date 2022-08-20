@@ -456,6 +456,15 @@ bool BinArray::CheckEntity(const char *mark, int *next, int *version, int *pos) 
 }
 
 
+//Ìø¹ýÊµÌå
+bool BinArray::JumpEntity(const char *mark, int *pos) {
+	int next = -1;
+	if (!CheckEntity(mark, &next, nullptr, pos)) return false;
+	*pos = next;
+	return true;
+}
+
+
 int BinArray::GetNextEntity(int *pos) {
 	if (!CheckPosition(pos[0] + 4)) return -1;
 	int next = pos[0] + *(int*)(bin + pos[0]);
