@@ -38,7 +38,7 @@ public:
 	char GetChar(int *pos);
 	bool GetBool(int *pos);
 	std::string GetString(int *pos);
-	//LOString GetLOString(int *pos);
+	LOString GetLOString(int *pos);
 	LOString* GetLOStrPtr(int *pos);
 	LOVariant* GetLOVariant(int *pos);
 

@@ -219,6 +219,22 @@ LOString* BinArray::GetLOStrPtr(int *pos) {
 	}
 }
 
+LOString BinArray::GetLOString(int *pos) {
+	LOString tmp;
+	if (!CheckPosition(pos[0] + 2)) return tmp;
+	if (bin[pos[0]] == 0) {
+		pos[0] += 2;
+		return tmp;
+	}
+	else {
+		tmp.assign(bin + pos[0]);
+		pos[0] += tmp.length() + 1;
+		tmp.SetEncoder(LOCodePage::GetEncoder(bin[pos[0]]));
+		pos[0]++;
+		return tmp;
+	}
+}
+
 
 LOVariant* BinArray::GetLOVariant(int *pos) {
 	int len = GetIntAuto(pos);

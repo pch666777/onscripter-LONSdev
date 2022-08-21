@@ -1466,12 +1466,15 @@ bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("imgo", &next, nullptr, pos)) return false;
 	if (!bin->JumpEntity("styl", pos)) return false;
-	std::unique_ptr<LOString> tmp(bin->GetLOStrPtr(pos));
+	bin->GetLOString(pos);
 	if (!bin->JumpEntity("styl", pos)) return false;
-	tmp.reset(bin->GetLOStrPtr(pos));
+	bin->GetLOString(pos);
 
 	//对话框
 	if (!bin->JumpEntity("winn", pos)) return false;
+	if (!sayState.DeSerialize(bin, pos)) return false;
+	//载入对话
+	LoadDialogText(&sayState.say, sayState.pageEnd, false);
 
 }
 
@@ -1500,7 +1503,10 @@ void LOImageModule::LOSayState::Serialize(BinArray *bin) {
 bool LOImageModule::LOSayState::DeSerialize(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("wins", &next, nullptr, pos)) return false;
-	
+	say = bin->GetLOString(pos);
+	flags = bin->GetIntAuto(pos);
+	pageEnd = bin->GetIntAuto(pos);
+	return true;
 }
 
 
@@ -1522,8 +1528,9 @@ bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	}
 
 	//一些模块状态，大部分都不需要覆盖
-
-
-
+	if (!DeSerializeState(bin, pos)) {
+		LOLog_e("Image module state DeSerialize faild!");
+		return false;
+	}
 	return true;
 }
