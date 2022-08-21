@@ -64,6 +64,7 @@ public:
 		}
 
 		void Serialize(BinArray *bin);
+		bool DeSerialize(BinArray *bin, int *pos);
 	};
 
 	//对话框描述
@@ -130,6 +131,7 @@ public:
 		void setFlags(int f) { flags |= f; }
 		void unSetFlags(int f) { flags &= (~f); }
 		void Serialize(BinArray *bin);
+		bool DeSerialize(BinArray *bin, int *pos);
 	};
 
 
@@ -212,7 +214,8 @@ public:
 	void SerializePrintQue(BinArray *bin);
 	//序列化渲染模块的状态
 	void SerializeState(BinArray *bin);
-	void DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
+	bool DeSerializeState(BinArray *bin, int *pos);
+	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
 	void SaveLayers(BinArray *bin);
 	bool LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap);
 

@@ -1351,12 +1351,27 @@ void LOImageModule::Serialize(BinArray *bin) {
 }
 
 void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
-	int len = bin->WriteLpksEntity("pque", 0, 1);
+	//名称优先
 	bin->WriteString(mapName);
+	int len = bin->WriteLpksEntity("pque", 0, 1);
 	bin->WriteInt(map->size());
 	//写入fullid
 	for (auto iter = map->begin(); iter != map->end(); iter++) bin->WriteInt(iter->first);
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOImageModule::PrintNameMap::DeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("pque", &next, nullptr, pos)) return false;
+	map->clear();
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		int fid = bin->GetIntAuto(pos);
+		LOLayer *lyr = LOLayer::GetLayer(fid);
+		if (lyr) (*map)[fid] = lyr;
+	}
+	*pos = next;
 }
 
 
@@ -1402,7 +1417,9 @@ bool LOImageModule::LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap) {
 	if (!bin->CheckEntity("BAKE", &next, nullptr, pos)) return false;
 	count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {
-
+		int fid = bin->GetIntAuto(pos);
+		LOLayer *lyr = LOLayer::CreateLayer(fid);
+		if (!lyr->DeSerializeBak(bin, pos)) return false;
 	}
 	*pos = next;
 }
@@ -1445,6 +1462,20 @@ void LOImageModule::SerializeState(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 }
 
+bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("imgo", &next, nullptr, pos)) return false;
+	if (!bin->JumpEntity("styl", pos)) return false;
+	std::unique_ptr<LOString> tmp(bin->GetLOStrPtr(pos));
+	if (!bin->JumpEntity("styl", pos)) return false;
+	tmp.reset(bin->GetLOStrPtr(pos));
+
+	//对话框
+	if (!bin->JumpEntity("winn", pos)) return false;
+
+}
+
+
 void LOImageModule::LOSayWindow::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("winn", 0, 1);
 
@@ -1466,7 +1497,33 @@ void LOImageModule::LOSayState::Serialize(BinArray *bin) {
 }
 
 
+bool LOImageModule::LOSayState::DeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("wins", &next, nullptr, pos)) return false;
+	
+}
 
-void LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 
+
+bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+	if (!LoadLayers(bin, pos, evmap)) {
+		LOLog_e("LoadLayers faild!");
+		return false;
+	}
+	//读取printQue
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		std::string s = bin->GetString(pos);
+		PrintNameMap *pmap = GetPrintNameMap(s.c_str());
+		if (!pmap || !pmap->DeSerialize(bin, pos)) {
+			LOLog_e("PrintMap DeSerialize faild!");
+			return false;
+		}
+	}
+
+	//一些模块状态，大部分都不需要覆盖
+
+
+
+	return true;
 }
