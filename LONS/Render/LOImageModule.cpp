@@ -1293,6 +1293,8 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 }
 
 
+
+
 //创建新图层，会释放原来的老的数据，lsp使用
 LOLayerData* LOImageModule::CreateNewLayerData(int fullid, const char *printName) {
 	LOLayer *lyr = LOLayer::CreateLayer(fullid);
@@ -1473,9 +1475,19 @@ bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
 	//对话框
 	if (!bin->JumpEntity("winn", pos)) return false;
 	if (!sayState.DeSerialize(bin, pos)) return false;
-	//载入对话
-	LoadDialogText(&sayState.say, sayState.pageEnd, false);
-
+	//其他
+	btndefStr = bin->GetLOString(pos);
+	btnOverTime = bin->GetIntAuto(pos);
+	btnUseSeOver = bin->GetIntAuto(pos);
+	//
+	int count = bin->GetIntAuto(pos);
+	allSpList->clear();
+	for (int ii = 0; ii < count; ii++) allSpList->push_back(bin->GetIntAuto(pos));
+	count = bin->GetIntAuto(pos);
+	allSpList2->clear();
+	for (int ii = 0; ii < count; ii++) allSpList2->push_back(bin->GetIntAuto(pos));
+	*pos = next;
+	return true;
 }
 
 

@@ -225,6 +225,7 @@ public:
 	void ReadLog(int logt);
 	void WriteLog(int logt);
 	virtual void Serialize(BinArray *bin) { return; };
+	virtual bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) { return false; };
 
 	//===== scripter virtual  ========
 	virtual void GetGameInit(int &w, int &h) { return; };

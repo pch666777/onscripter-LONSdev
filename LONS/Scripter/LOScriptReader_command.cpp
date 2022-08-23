@@ -833,8 +833,8 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 
 	//等待img进入saving
 	while (!imgeModule->isStateSaving()) {
-		//延迟1ms
-		G_PrecisionDelay(1);
+		//延迟0.5ms
+		G_PrecisionDelay(0.5);
 	}
 
 	//更新变量
@@ -1042,10 +1042,10 @@ bool LOScriptReader::LoadCore(int id) {
 		return false;
 	}
 	//渲染模块
-
+	if(!imgeModule->DeSerialize(bin.get(), &pos, &evmap) )return false;
 	//脚本模块
-
+	if (!scriptModule->DeSerialize(bin.get(), &pos, &evmap))return false;
 	//音频模块
-
+	if (!audioModule->DeSerialize(bin.get(), &pos, &evmap))return false;
 	return true;
 }

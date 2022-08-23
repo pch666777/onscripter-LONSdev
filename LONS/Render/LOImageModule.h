@@ -182,6 +182,7 @@ public:
 	//LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
 
 	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
+	void SaveLoadDialogText();
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
 	//int ShowLayer(int fullid, const char *printName);
