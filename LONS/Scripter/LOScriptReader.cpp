@@ -1655,3 +1655,107 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	//如果链表继续延长
 	if(nextReader) nextReader->Serialize(bin);
 }
+
+
+bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+	int next = -1;
+	if (!bin->CheckEntity("scri", &next, nullptr, pos)) {
+		LOLog_e("LOScriptReader::DeSerialize() faild! it's not scripter stream!");
+		return false;
+	}
+	lastCmdCheckFlag = bin->GetIntAuto(pos);
+	sctype = (SCRIPT_TYPE)bin->GetIntAuto(pos);
+
+	Name = bin->GetLOString(pos);
+	printName = bin->GetLOString(pos);
+	TagString = bin->GetLOString(pos);
+	curCmd = bin->GetLOString(pos);
+	lastCmd = bin->GetLOString(pos);
+	parseDeep = bin->GetIntAuto(pos);
+	//这里有跨平台的问题
+	ttimer = bin->GetInt64Auto(pos) + (int64_t)SDL_GetPerformanceCounter();
+	//运行点堆栈
+	int index = bin->GetIntAuto(pos);
+	int count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		if (!ScCallDeSerialize(bin, pos)) {
+			LOLog_e("LOScriptPointCall DeSerialize faild!");
+			return false;
+		}
+	}
+	currentLable = &subStack.at(index);
+	//逻辑堆栈
+	count = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < count; ii++) {
+		if (!LogicCallDeSerialize(bin, pos)) {
+			LOLog_e("LogicPointCall DeSerialize faild!");
+			return false;
+		}
+	}
+
+	//普通的normalLogic，只需要设置值
+	normalLogic.SetRet(bin->GetChar(pos));
+	//预留
+
+
+	return true;
+}
+
+
+
+bool LOScriptReader::ScCallDeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("poin", &next, nullptr, pos)) return false;
+	//ons对在哪个脚本不敏感
+	bin->GetLOString(pos);
+	//
+	LOString labelName = bin->GetLOString(pos);
+	LOScriptPoint *p = GetScriptPoint(labelName);
+	if (!p) return false;
+
+	subStack.emplace_back(p);
+	LOScriptPointCall *point = &subStack.at(subStack.size() - 1);
+
+	point->c_line = point->s_line + bin->GetIntAuto(pos);
+	auto data = p->file->GetLineInfo(nullptr, point->c_line, true);
+	if (!data.buf) {
+		LOLog_e("can't find scripter point line:%d", point->c_line);
+		return false;
+	}
+	point->c_buf = data.buf + bin->GetIntAuto(pos);
+	point->callType = bin->GetIntAuto(pos);
+	//校验一下
+	int ihash = bin->GetIntAuto(pos);
+	if (ihash != *(int*)point->c_buf) LOLog_i("scripter point [%s] mamy be error!", labelName.c_str());
+
+	*pos = next;
+	return true;
+}
+
+
+bool LOScriptReader::LogicCallDeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("lpos", &next, nullptr, pos)) return false;
+
+	int flags = bin->GetIntAuto(pos);
+	LogicPointer *logic = new LogicPointer(flags);
+	loopStack.push(logic);
+
+	LOString labelName = bin->GetLOString(pos);
+	LOScriptPoint *p = GetScriptPoint(labelName);
+	if (!p) return false;
+
+	if (!logic->LoadSetPoint(p, bin->GetIntAuto(pos), bin->GetIntAuto(pos))) {
+		LOLog_e("logic scripter point error");
+		return false;
+	}
+
+	logic->step = bin->GetIntAuto(pos);
+	int refID = bin->GetIntAuto(pos);
+	if (refID) logic->forVar = ONSVariableRef::GetRefFromTypeRefid(refID);
+	refID = bin->GetIntAuto(pos);
+	if(refID) logic->dstVar = ONSVariableRef::GetRefFromTypeRefid(refID);
+
+	*pos = next;
+	return true;
+}

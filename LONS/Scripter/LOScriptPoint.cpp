@@ -40,6 +40,8 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 
 }
 
+
+
 LOScriptPointCall::LOScriptPointCall() {
 	callType = CALL_BY_NORMAL;
 	//当前执行到的行
@@ -111,9 +113,9 @@ void LogicPointer::BackToPoint(LOScriptPointCall *p) {
 }
 
 void LogicPointer::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//'lpos', len, version
-	bin->WriteInt3(0x736F706C, 0 , 1);
+	int len = bin->WriteLpksEntity("lpos", 0, 1);
+	//flag优先
+	bin->WriteInt(flags);
 
 	//属于哪个label的
 	bin->WriteLOString(&label->name);
@@ -129,6 +131,16 @@ void LogicPointer::Serialize(BinArray *bin) {
 	else bin->WriteInt(0);
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LogicPointer::LoadSetPoint(LOScriptPoint *p, int r_line, int r_buf) {
+	relativeLine = r_line;
+	relativeByte = r_buf;
+	label = p;
+	auto data = label->file->GetLineInfo(nullptr, label->s_line + relativeLine, true);
+	if (!data.buf) return false;
+	lineStart = data.buf;
 }
 
 

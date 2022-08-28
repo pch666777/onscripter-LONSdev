@@ -191,6 +191,11 @@ public:
 	void ReadGlobleVariable(BinArray *bin, int *pos);
 	void SaveGlobleVariable();
 	void Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
+
+	//需要用到脚本的函数，因此运行点的反序列化放在这里，point为null
+	bool ScCallDeSerialize(BinArray *bin, int *pos);
+	bool LogicCallDeSerialize(BinArray *bin, int *pos);
 
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);

@@ -45,6 +45,7 @@ public:
 	//检查行是否正确
 	void CheckCurrentLine();
 	void Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos);
 
 	int callType;
 	//当前执行到的行
@@ -87,6 +88,7 @@ public:
 	////返回记录点
 	void BackToPoint(LOScriptPointCall *p);
 	void Serialize(BinArray *bin);
+	bool LoadSetPoint(LOScriptPoint *p, int r_line, int r_buf);
 
 	//for循环step递增的数量
 	int step;
