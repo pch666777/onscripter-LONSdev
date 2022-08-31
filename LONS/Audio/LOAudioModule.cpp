@@ -396,13 +396,11 @@ void LOAudioModule::PlayAfter() {
 
 
 void LOAudioModule::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//'audo', len, version
-	bin->WriteInt3(0x6F647561, 0, 1);
+	int len = bin->WriteLpksEntity("audo", 0, 1);
 	bin->WriteInt(currentChannel);
 	bin->WriteInt(flags);
 	//音量
-	bin->Append((char*)audioVol, sizeof(int) * (INDEX_MUSIC + 1));
+	//bin->Append((char*)audioVol, sizeof(int) * (INDEX_MUSIC + 1));
 	//循环的音乐才存储
 	for (int ii = 0; ii < INDEX_MUSIC; ii++) {
 		if (audioPtr[ii] && audioPtr[ii]->isLoop()) audioPtr[ii]->Serialize(bin);
@@ -410,9 +408,4 @@ void LOAudioModule::Serialize(BinArray *bin) {
 	bin->WriteLOString(&afterBgmName);
 	
 	bin->WriteInt(bin->Length() - len, &len);
-}
-
-
-void LonsSaveAudio(BinArray *bin) {
-
 }

@@ -1644,7 +1644,9 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	for (int ii = 0; ii < loopStack.size(); ii++)loopStack.at(ii)->Serialize(bin);
 	//普通的normalLogic只需要存储结果
 	bin->WriteChar(normalLogic.isRetTrue());
-	//normalLogic.Serialize(bin);
+	//是否有下一个脚本
+	if (nextReader) bin->WriteChar(1);
+	else bin->WriteChar(0);
 	//预留
 	bin->WriteInt3(0, 0, 0);
 	bin->WriteInt3(0, 0, 0);
@@ -1695,9 +1697,14 @@ bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 
 	//普通的normalLogic，只需要设置值
 	normalLogic.SetRet(bin->GetChar(pos));
+	char hasnext = bin->GetChar(pos);
 	//预留
-
-
+	*pos = next;
+	//继续反序列化下一个脚本
+	if (hasnext) {
+		nextReader = new LOScriptReader();
+		return nextReader->DeSerialize(bin, pos, evmap);
+	}
 	return true;
 }
 

@@ -1018,8 +1018,7 @@ bool LOScriptReader::LoadCore(int id) {
 		LOLog_e("save file [%s] error!", fn.c_str());
 		return false;
 	}
-	LOString *tmp = bin->GetLOStrPtr(&pos);
-	if (tmp) delete tmp;
+	bin->GetLOString(&pos);
 	bin->GetInt32Auto(&pos);
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
@@ -1035,7 +1034,6 @@ bool LOScriptReader::LoadCore(int id) {
 		return false;
 	}
 	//读取hook钩子
-		//读取hook钩子
 	LOEventMap evmap;
 	if (!G_hookQue.LoadHooks(bin.get(), &pos, &evmap)) {
 		LOLog_e("save file [%s] EventHook read faild!", fn.c_str());
