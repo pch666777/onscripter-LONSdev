@@ -5,6 +5,9 @@
 #include "LOAudioModule.h"
 #include <mutex>
 
+extern void musicFinished();
+extern void channelFinish(int channel);
+
 LOAudioModule::LOAudioModule() {
 	audioModule = this;
 	memset(audioPtr, NULL, sizeof(LOAudioElement*) * (INDEX_MUSIC + 1));
@@ -51,9 +54,18 @@ void LOAudioModule::ResetMe() {
 			audioVol[ii] = 100;
 		}
 	}
-	moduleState = MODULE_STATE_NOUSE;
-	//LOAudioElement::silenceFlag = true;    //注意之后将状态重新设为false
+	ChangeModuleState(MODULE_STATE_NOUSE);
 	unlock();
+}
+
+
+void LOAudioModule::LoadFinish() {
+	ChangeModuleState(MODULE_STATE_RUNNING);
+	Mix_HookMusicFinished(musicFinished);
+	Mix_ChannelFinished(channelFinish);
+	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
+		if (audioPtr[ii]) audioPtr[ii]->Play(0);
+	}
 }
 
 
@@ -171,6 +183,7 @@ void musicFinished() {
 	LOAudioModule *au = (LOAudioModule*)(FunctionInterface::audioModule);
 	//loopbgm播放第二段
 	if (au->afterBgmName.length() > 0) {
+		//模块处于挂起状态时，播放完成事件被存储在待处理区
 		LOShareEventHook ev(LOEventHook::CreateSignal(LOEventHook::MOD_SCRIPTER, LOEventHook::FUN_BGM_AFTER));
 		FunctionInterface::scriptModule->waitEventQue.push_header(ev, LOEventQue::LEVEL_NORMAL);
 	}
@@ -190,9 +203,13 @@ void LOAudioModule::channelFinish_t(int channel) {
 
 	//0频道绑定了按钮超时事件，频道播放完成事件
 	if ((isChannelZeroEv() && channel == 0) || isChannelALLEv()) {
+		//模块处于挂起状态时，播放完成事件被存储在待处理区
 		LOShareEventHook ev(LOEventHook::CreateSePalyFinishEvent(channel));
-		if (moduleState == MODULE_STATE_SUSPEND) {
-
+		if (isModuleSuspend()) {
+			//进入等待区
+		}
+		else {
+			//发到到事件处理
 		}
 	}
 }
@@ -201,7 +218,7 @@ void LOAudioModule::channelFinish_t(int channel) {
 int LOAudioModule::InitAudioModule() {
 	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF) < 0) return false;
 	Mix_AllocateChannels(INDEX_MUSIC);
-	ResetMeFinish();
+	//ResetMeFinish();
 	return true;
 }
 
@@ -401,11 +418,39 @@ void LOAudioModule::Serialize(BinArray *bin) {
 	bin->WriteInt(flags);
 	//音量
 	//bin->Append((char*)audioVol, sizeof(int) * (INDEX_MUSIC + 1));
-	//循环的音乐才存储
+	//循环的音乐才存储，先写入一个循环的音乐数量
+	int loopCountPos = bin->Length();
+	int loopCount = 0;
+	bin->WriteInt(loopCount);
 	for (int ii = 0; ii < INDEX_MUSIC; ii++) {
-		if (audioPtr[ii] && audioPtr[ii]->isLoop()) audioPtr[ii]->Serialize(bin);
+		if (audioPtr[ii] && audioPtr[ii]->isLoop()) {
+			audioPtr[ii]->Serialize(bin);
+			loopCount++;
+		}
 	}
+	//回写数量
+	bin->WriteInt(loopCount, &loopCountPos);
+
 	bin->WriteLOString(&afterBgmName);
-	
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+bool LOAudioModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+	int next = -1;
+	if (!bin->CheckEntity("audo", &next, nullptr, pos)) return false;
+	currentChannel = bin->GetIntAuto(pos);
+	flags = bin->GetIntAuto(pos);
+	int loopCount = bin->GetIntAuto(pos);
+	for (int ii = 0; ii < loopCount; ii++) {
+		LOAudioElement *aue = LOAudioElement::DeSerialize(bin, pos);
+		if (!aue) {
+			LOLog_e("LOAudioElement::DeSerialize() faild!");
+			return false;
+		}
+		audioPtr[aue->GetChannel()] = aue;
+	}
+	afterBgmName = bin->GetLOString(pos);
+	*pos = next;
+	return true;
 }

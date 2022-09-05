@@ -257,7 +257,7 @@ int LOImageModule::MainLoop() {
 	Uint64 lastTime = 0;
 	bool minisize = false;
 	
-	ChangeRunState(MODULE_STATE_RUNNING);
+	ChangeModuleState(MODULE_STATE_RUNNING);
 
 	//第一帧要锁住print信号
 	printHook->FinishMe();
@@ -283,17 +283,7 @@ int LOImageModule::MainLoop() {
 
 		//检查模块状态变化
 		if (isStateChange()) {
-			if (isModuleExit()) break;
-			else if (isModuleSaving()) {
-				ChangeRunState(MODULE_STATE_SAVING);
-				//进入存档函数
-			}
-			else if (isModuleLoading()) {
-				LoadReset();
-			}
-			else if (isModuleReset()) {
-				ResetMe();
-			}
+			if (!WaitStateEvent()) break;
 		}
 		
 		//处理事件
@@ -302,7 +292,7 @@ int LOImageModule::MainLoop() {
 			case SDL_QUIT:
 				loopflag = false;
 				//这个函数要改写
-				SetExitFlag(MODULE_FLAGE_EXIT);
+				SetExitFlag(MODULE_FLAGE_EXIT | MODULE_FLAGE_CHANNGE);
 				break;
 			case SDL_WINDOWEVENT:
 				if (ev.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
@@ -345,14 +335,13 @@ int LOImageModule::MainLoop() {
 	//退出前终止效果
 	CutPrintEffect(nullptr, nullptr);
 
-	ChangeRunState(MODULE_STATE_NOUSE);
+	ChangeModuleState(MODULE_STATE_NOUSE);
 
 	//等待其他模块退出
 	lastTime = SDL_GetPerformanceCounter();
 	posTime = 0.0;
 	//LOLog_i("img start wait:%d\n", SDL_GetTicks());
-	while (posTime < 2000 && (scriptModule->moduleState != MODULE_STATE_NOUSE
-		|| audioModule->moduleState != MODULE_STATE_NOUSE)) {
+	while (posTime < 2000 && (scriptModule->isModuleNoUse() || audioModule->isModuleNoUse())) {
 		SDL_Delay(1);
 		hightTimeNow = SDL_GetPerformanceCounter();
 		posTime = ((double)(hightTimeNow - lastTime)) / perHtickTime;
@@ -577,7 +566,7 @@ void LOImageModule::ShowFPS(double postime) {
 
 		rect.w = (int)((double)fpstex[ii].baseW() / G_gameScaleX);
 		rect.h = (int)((double)fpstex[ii].baseH() / G_gameScaleX);
-		//auto ittt = fpstex[ii].GetTexture(NULL);
+		auto ittt = fpstex[ii].GetTexture();
 
 		////LOLog_i("%d fps number!", ii) ;
 

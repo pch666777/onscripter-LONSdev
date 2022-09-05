@@ -76,15 +76,14 @@ public:
 
 	//用比特位表示各个模块的状态
 	enum MODULE_STATE {
-		//低4表示运行状态，0为没有在使用，1正在运行，2正在saving，4已经挂起
+		//低4表示运行状态，0为没有在使用，1正在运行，4已经挂起
 		MODULE_STATE_NOUSE = 0,
 		MODULE_STATE_RUNNING = 1,
-		MODULE_STATE_SAVING = 2,
 		//模块已经挂起，对于不同的模块有不同的意义
 		//对于脚本模块，表示正在轮询其他脚本线程
-		//对于渲染模块，表示已经暂停染指，正在处理save事件
+		//对于渲染模块，表示已经暂停渲染
 		//对于音频模块，将不在发生任何播放完成事件，
-		MODULE_STATE_SUSPEND = 4,
+		MODULE_STATE_SUSPEND = 2,
 
 		//其他为功能性标记位
 		//状态切换标记，模块检查到此标记将会转到状态切换函数
@@ -188,17 +187,18 @@ public:
 	int GetParamCount();
 	bool CheckTimer(LOEventHook *e, int waittmer);
 
-	void ChangeRunState(int s);
-	void ChangeFlagState(int f);
+	void ChangeModuleState(int s);
+	void ChangeModuleFlags(int f);
 	bool isStateChange() { return moduleState & MODULE_FLAGE_CHANNGE; }
 	bool isModuleExit() { return moduleState & MODULE_FLAGE_EXIT; }
 	bool isModuleReset() { return moduleState & MODULE_FLAGE_RESET; }
 	bool isModuleSaving() { return moduleState & MODULE_FLAGE_SAVE; }
-	bool isStateSaving() { return moduleState & MODULE_STATE_SAVING; }
 	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
 	bool isModuleNoUse() { return moduleState & MODULE_STATE_NOUSE; }
 	bool isModuleError() { return moduleState & MODULE_FLAGE_ERROR; }
 	bool isModuleFlagSNone() { return (moduleState >> 4) == 0; }
+	bool isModuleSuspend() { return moduleState & MODULE_STATE_SUSPEND; }
+	bool isModuleRunning() { return moduleState & MODULE_STATE_RUNNING; }
 
 	static LOString StringFormat(int max, const char *format, ...);
 
@@ -215,7 +215,7 @@ public:
 	virtual int  AddBtn(int fullid, intptr_t ptr) { return 0; };
 	virtual intptr_t GetSDLRender() { return 0; }
 	virtual void ResetMe() { return; };
-	virtual void ResetMeFinish() { return; };
+	virtual void LoadFinish() { return; };
 	virtual void PrintError(LOString *err) { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);

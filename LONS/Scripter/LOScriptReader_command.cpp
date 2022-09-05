@@ -824,15 +824,14 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	//音频、渲染模块进入save模式，不要调整这几个的顺序
-	audioModule->ChangeFlagState(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
-	imgeModule->ChangeFlagState(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
-	scriptModule->ChangeRunState(MODULE_STATE_SAVING);
+	audioModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+	imgeModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+	scriptModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
 
 	//做一些初始化工作
 	GloSaveFS->InitLpksHeader();
-
-	//等待img进入saving
-	while (!imgeModule->isStateSaving()) {
+	//等待img进入挂起状态
+	while (!imgeModule->isModuleSuspend()) {
 		//延迟0.5ms
 		G_PrecisionDelay(0.5);
 	}
@@ -851,6 +850,10 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	scriptModule->Serialize(GloSaveFS);
 	//音频模块
 	audioModule->Serialize(GloSaveFS);
+
+	//恢复脚本状态
+	scriptModule->ChangeModuleState(MODULE_STATE_RUNNING);
+	scriptModule->ChangeModuleFlags(0);
 	return RET_CONTINUE;
 }
 
@@ -995,8 +998,8 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 	//停止所有播放，重置音频模块状态
 	audioModule->ResetMe();
 	//给图像模块发送 load 信号
-	imgeModule->ChangeFlagState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
-	scriptModule->ChangeRunState(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
+	imgeModule->ChangeModuleFlags(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
+	scriptModule->ChangeModuleFlags(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
 	loadID = reader->GetParamInt(0);
 
 	//读档前必须先进行loadReset()
@@ -1027,7 +1030,7 @@ bool LOScriptReader::LoadCore(int id) {
 	}
 
 	//正式开始前，等待渲染线程准备完成
-	while (imgeModule->isModuleLoading()) G_PrecisionDelay(0.2);
+	while (imgeModule->isModuleRunning()) G_PrecisionDelay(0.2);
 	//读取变量
 	if (!ONSVariableBase::LoadOnsVar(bin.get(), &pos)) {
 		LOLog_e("save file [%s] ONSVariable read faild!", fn.c_str());
@@ -1045,5 +1048,10 @@ bool LOScriptReader::LoadCore(int id) {
 	if (!scriptModule->DeSerialize(bin.get(), &pos, &evmap))return false;
 	//音频模块
 	if (!audioModule->DeSerialize(bin.get(), &pos, &evmap))return false;
+	//马上让渲染模块继续运行
+	ChangeModuleState(MODULE_STATE_RUNNING);
+	ChangeModuleFlags(0);
+	//让音频模块恢复运行
+	audioModule->LoadFinish();
 	return true;
 }

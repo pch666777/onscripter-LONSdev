@@ -22,6 +22,7 @@ public:
 	LOAudioElement();
 	~LOAudioElement();
 	void Serialize(BinArray *bin);
+	static LOAudioElement* DeSerialize(BinArray *bin, int *pos);
 
 	LOString buildStr;
 	
@@ -33,6 +34,7 @@ public:
 	void SetLoop(int l) { loopCount = l; }
 	bool Play(int fade);
 	void Stop(int fade);
+	int GetChannel() { return channel; }
 private:
 	void SetNull();
 	BinArray *rwbin;

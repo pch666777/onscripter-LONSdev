@@ -51,7 +51,9 @@ public:
 	bool isBgmCallback() { return flags & flags & FLAGS_BGM_CALLBACK; }
 
 	void ResetMe();
+	void LoadFinish();
 	void Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
 
 	void PlayAfter();
 	void channelFinish_t(int channel);

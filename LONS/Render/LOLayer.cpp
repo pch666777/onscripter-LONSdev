@@ -457,8 +457,8 @@ void LOLayer::SerializeForce(BinArray *bin) {
 	//子对象的关系
 	if (childs) {
 		bin->WriteInt(childs->size());
-		for (int ii = 0; ii < childs->size(); ii++) {
-			childs->at(ii)->SerializeForce(bin);
+		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
+			iter->second->SerializeForce(bin);
 		}
 	}
 	else bin->WriteInt(0);

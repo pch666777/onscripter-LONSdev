@@ -139,7 +139,7 @@ int LOScriptReader::MainTreadRunning() {
 		return -1;
 	}
 
-	ChangeRunState(MODULE_STATE_RUNNING);
+	ChangeModuleState(MODULE_STATE_RUNNING);
 	//开始之前先读取全局变量
 	ReadGlobleVarFile();
 
@@ -180,13 +180,18 @@ int LOScriptReader::MainTreadRunning() {
 		if (isStateChange()) {
 			if (isModuleLoading()) {
 				LoadReset();
-				LoadCore(loadID);
+				if(!LoadCore(loadID)) ChangeModuleState(MODULE_FLAGE_ERROR);
 				isLableStart = false;
 			}
 			else if (isModuleReset()) {
 				ResetMe();
 				sectionState = SECTION_DEFINE;
 				isLableStart = true;
+			}
+			//重置状态
+			if (!isModuleError() && !isModuleExit()) {
+				ChangeModuleState(MODULE_STATE_RUNNING);
+				ChangeModuleFlags(0);
 			}
 		}
 		else {
@@ -1510,8 +1515,6 @@ void LOScriptReader::LoadReset() {
 	//清除所有事件
 	waitEventQue.invalidClear();
 	//不清除各种 define设置
-
-	ChangeFlagState(0);
 }
 
 //获取自身报告

@@ -355,4 +355,5 @@ private:
 	bool TranzMousePos(int xx, int yy);
 	void CutDialogueAction();
 	int CutPrintEffect(LOEventHook *hook, LOEventHook *e);
+	bool WaitStateEvent();
 };

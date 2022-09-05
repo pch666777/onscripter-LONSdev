@@ -27,6 +27,7 @@ BinArray::BinArray(const char *buf, int length) {
 	if (length == 0)NewSelf(8,false);
 	else if(length > 0) {
 		NewSelf(length + BIN_DEFAULT_LEN, false);
+		RealLen = length;
 		memcpy(bin, buf, RealLen);
 	}
 	else {

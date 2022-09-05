@@ -466,8 +466,30 @@ void LOImageModule::LoadReset() {
 	for (int ii = 0; ii < backDataMaps.size(); ii++) backDataMaps[ii]->map->clear();
 	//清除所有的事件，一些常驻事件要重新注册
 	G_hookQue.invalidClear();
-	ChangeFlagState(0);
-
 	SDL_RenderClear(render);
 	SDL_RenderPresent(render);
+}
+
+
+//等待事件完成，继续执行返回真，要退出返回假
+bool LOImageModule::WaitStateEvent() {
+	if (isModuleExit()) return false;
+
+	ChangeModuleState(MODULE_STATE_SUSPEND);
+
+	if (isModuleSaving() || isModuleLoading()) {
+		//等待脚本完成事件操作
+		while (scriptModule->isModuleSaving() || scriptModule->isModuleLoading()) {
+			//G_PrecisionDelay(0.4);
+			//休眠降低CPU使用率
+			SDL_Delay(1);
+		}
+	}
+	else if (isModuleReset()) {
+		ResetMe();
+	}
+	//恢复模块状态
+	ChangeModuleState(MODULE_STATE_RUNNING);
+	ChangeModuleFlags(0);
+	return true;
 }

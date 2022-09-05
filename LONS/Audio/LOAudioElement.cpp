@@ -86,11 +86,22 @@ bool LOAudioElement::isAvailable() {
 
 
 void LOAudioElement::Serialize(BinArray *bin) {
-	int len = bin->Length() + 4;
-	//'aude', len, version
-	bin->WriteInt3(0x65647561, 0, 1);
+	int len = bin->WriteLpksEntity("aude", 0, 1);
 	bin->WriteInt3(channel, flags, loopCount);
 	bin->WriteLOString(&buildStr);
 
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+LOAudioElement* LOAudioElement::DeSerialize(BinArray *bin, int *pos) {
+	int next = -1;
+	if (!bin->CheckEntity("aude", &next, nullptr, pos)) return nullptr;
+	LOAudioElement *aue = new LOAudioElement();
+	aue->channel = bin->GetIntAuto(pos);
+	aue->flags = bin->GetIntAuto(pos);
+	aue->loopCount = bin->GetIntAuto(pos);
+	aue->buildStr = bin->GetLOString(pos);
+	*pos = next;
+	return aue;
 }

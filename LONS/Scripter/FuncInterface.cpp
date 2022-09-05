@@ -394,9 +394,11 @@ void FunctionInterface::PrintErrorStatic(LOString *err) {
 
 void FunctionInterface::SetExitFlag(int flag) {
 	//中断所有模块运行
-	if (audioModule) audioModule->ResetMe();
-	if (scriptModule) scriptModule->moduleState = flag;
-	if (imgeModule) imgeModule->moduleState = flag;
+	if (audioModule) {
+		audioModule->ResetMe();
+	}
+	if (scriptModule) scriptModule->ChangeModuleFlags(flag);
+	if (imgeModule) imgeModule->ChangeModuleFlags(flag);
 	//LOEvent1::SetExitFlag(1);
 }
 
@@ -521,14 +523,15 @@ int FunctionInterface::RunFuncBase(LOEventHook *hook, LOEventHook *e) {
 }
 
 
-void FunctionInterface::ChangeRunState(int s) {
-	//低4位置0
+void FunctionInterface::ChangeModuleState(int s) {
+	//低4位置0，保持高位不动
 	int high = moduleState & 0xFFFFFFF0;
 	moduleState = high | s;
 }
 
 
-void FunctionInterface::ChangeFlagState(int f) {
+void FunctionInterface::ChangeModuleFlags(int f) {
+	//保持低位不动
 	int low = moduleState & 0xf;
 	moduleState = low | f;
 }
