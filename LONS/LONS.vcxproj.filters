@@ -123,5 +123,8 @@
     <ClCompile Include="etc\LOIO.cpp">
       <Filter>源文件\etc</Filter>
     </ClCompile>
+    <ClCompile Include="etc\LOTimer.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

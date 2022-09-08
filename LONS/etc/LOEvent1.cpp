@@ -318,25 +318,6 @@ LOEventHook* LOEventHook::CreateSignal(int param1, int param2) {
 }
 
 
-//高精度延迟，阻塞线程，CPU维持在高使用率
-void G_PrecisionDelay(double t) {
-	Uint64 hightTimeNow, perHtickTime = SDL_GetPerformanceFrequency() / 1000;
-	hightTimeNow = SDL_GetPerformanceCounter();
-	double postime = 0.0;
-	while (postime < t && t > 0) {
-		Uint64 pos = SDL_GetPerformanceCounter() - hightTimeNow;
-		postime = (double)pos / perHtickTime;
-
-		//cpu delay litle
-		int sum = rand();
-		for (int ii = 0; ii < 200; ii++) {
-			sum ^= ii;
-			if (ii % 2) sum++;
-			else sum += 2;
-		}
-	}
-}
-
 
 //===========================================//
 

@@ -3,6 +3,7 @@
 */
 #include "LOScriptReader.h"
 #include "../etc/LOIO.h"
+#include "../etc/LOTimer.h"
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -833,7 +834,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	//等待img进入挂起状态
 	while (!imgeModule->isModuleSuspend()) {
 		//延迟0.5ms
-		G_PrecisionDelay(0.5);
+		LOTimer::CpuDelay(0.5);
 	}
 
 	//更新变量
@@ -1030,7 +1031,7 @@ bool LOScriptReader::LoadCore(int id) {
 	}
 
 	//正式开始前，等待渲染线程准备完成
-	while (imgeModule->isModuleRunning()) G_PrecisionDelay(0.2);
+	while (imgeModule->isModuleRunning()) LOTimer::CpuDelay(0.2);
 	//读取变量
 	if (!ONSVariableBase::LoadOnsVar(bin.get(), &pos)) {
 		LOLog_e("save file [%s] ONSVariable read faild!", fn.c_str());

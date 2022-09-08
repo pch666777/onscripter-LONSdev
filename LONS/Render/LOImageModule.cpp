@@ -4,6 +4,7 @@
 
 #include "../etc/LOEvent1.h"
 #include "../etc/LOString.h"
+#include "../etc/LOTimer.h"
 #include "LOImageModule.h"
 #include <SDL_image.h>
 
@@ -74,6 +75,8 @@ int LOImageModule::InitImageModule() {
 		SDL_LogError(0, "Couldn't initialize SDL: %s\n", SDL_GetError());
 		return 0;
 	}
+	//初始化时钟
+	LOTimer::Init();
 
 	//======初始化窗口==========//
 	//获取显示器的分辨率
@@ -246,7 +249,7 @@ void LOImageModule::CaleWindowSize(int scX, int scY, int srcW, int srcH, int dst
 
 //渲染主循环在这里实现
 int LOImageModule::MainLoop() {
-	Uint64 hightTimeNow, perHtickTime = SDL_GetPerformanceFrequency() / 1000;
+	Uint64 hightTimeNow;
 	bool loopflag = true;
 
 	if (G_fpsnum < 2) G_fpsnum = 2;
@@ -265,7 +268,7 @@ int LOImageModule::MainLoop() {
 
 	while (loopflag) {
 		hightTimeNow = SDL_GetPerformanceCounter();
-		posTime = ((double)(hightTimeNow - lastTime)) / perHtickTime;
+		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
 		if (!minisize && posTime + 0.1 > fpstime) {
 			if (RefreshFrame(posTime) == 0) {
@@ -338,16 +341,15 @@ int LOImageModule::MainLoop() {
 	ChangeModuleState(MODULE_STATE_NOUSE);
 
 	//等待其他模块退出
-	lastTime = SDL_GetPerformanceCounter();
-	posTime = 0.0;
-	//LOLog_i("img start wait:%d\n", SDL_GetTicks());
-	while (posTime < 2000 && (scriptModule->isModuleNoUse() || audioModule->isModuleNoUse())) {
+	hightTimeNow = SDL_GetPerformanceCounter();
+	posTime = 0;
+	while (posTime < 2000 && (!scriptModule->isModuleNoUse() || !audioModule->isModuleNoUse())) {
 		SDL_Delay(1);
-		hightTimeNow = SDL_GetPerformanceCounter();
-		posTime = ((double)(hightTimeNow - lastTime)) / perHtickTime;
+		posTime = LOTimer::GetHighTimeDiff(hightTimeNow);
 	}
 	//
-	//WriteLog(LOGSET_FILELOG);
+	if (scriptModule->isModuleNoUse()) printf("no use script");
+	if (audioModule->isModuleNoUse()) printf("not use audio");
 
 	LOLog_i("LONS::MainLoop exit.\n");
 	//LOLog_i("exit ok: %d", SDL_GetTicks());

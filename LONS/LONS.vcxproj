@@ -162,6 +162,7 @@
     <ClCompile Include="etc\LOIO.cpp" />
     <ClCompile Include="etc\LOLog.cpp" />
     <ClCompile Include="etc\LOString.cpp" />
+    <ClCompile Include="etc\LOTimer.cpp" />
     <ClCompile Include="etc\LOVariant.cpp" />
     <ClCompile Include="etc\SDL_mem.cpp" />
     <ClCompile Include="File\LOCompressInfo.cpp" />

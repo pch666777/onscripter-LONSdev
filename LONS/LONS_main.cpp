@@ -103,9 +103,7 @@ int ScripterThreadEntry(void *ptr) {
 	LOScriptReader::InitScriptLabels();
 	LOScriptReader *reader = (LOScriptReader*)ptr;
 	reader->MainTreadRunning();
-	reader->moduleState = FunctionInterface::MODULE_STATE_NOUSE;
-	LOLog_i("main scripter thread has exit.");
-	//LOLog_i("%d\n", SDL_GetTicks());
+	LOLog_i("main scripter thread will exit.");
  	return 0;
 }
 

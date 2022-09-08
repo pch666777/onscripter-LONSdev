@@ -217,6 +217,4 @@ private:
 
 extern LOEventQue G_hookQue;
 
-
-extern void G_PrecisionDelay(double t);
 #endif // !__LOEVENT1_H__
