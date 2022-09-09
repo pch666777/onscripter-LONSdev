@@ -56,9 +56,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	auto *map = GetPrintNameMap(print_name)->map;
 	if (map->size() == 0) return 0;
 
-	//Uint64 t1 = SDL_GetPerformanceCounter();
-	//Uint64 perHtickTime = SDL_GetPerformanceFrequency() / 1000;
-
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
 	//非print1则要求抓取当前显示的图像，下一帧在继续执行
@@ -71,12 +68,9 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		//遇到程序退出
 		if (isModuleExit()) return 0;
 	}
-	//LOLog_i("uppos0:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
 	//layerTestMute.lock();
-
-	//LOLog_i("uppos1:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -100,7 +94,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		}
 	}
 
-	//LOLog_i("uppos2:%f", ((double)(SDL_GetPerformanceCounter() - t1)) / perHtickTime);
 	//======图层已经更新完成=======
 
 	//等待print完成才继续

@@ -169,17 +169,14 @@ int LOScriptReader::gettimerCommand(FunctionInterface *reader) {
 	//STEADY_CLOCK::time_point t1 = STEADY_CLOCK::now();
 	//auto it = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - ttimer);
 	//int val = it.count() & 0xfffffff;
-	Uint64 pos = SDL_GetPerformanceCounter() - ttimer;
-	Uint64 perHtickTime = SDL_GetPerformanceFrequency() / 1000;
-	double val = (double)pos / perHtickTime;
 	ONSVariableRef *v = GetParamRef(0);
-	v->SetValue((double)val);
+	v->SetValue(LOTimer::GetHighTimeDiff(ttimer));
 	return RET_CONTINUE;
 }
 
 int LOScriptReader::resettimerCommand(FunctionInterface *reader) {
 	//ttimer = STEADY_CLOCK::now();
-	ttimer = SDL_GetPerformanceCounter();
+	ttimer = LOTimer::GetHighTimer();
 	return RET_CONTINUE;
 }
 

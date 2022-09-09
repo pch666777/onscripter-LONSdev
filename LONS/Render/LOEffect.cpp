@@ -1,5 +1,6 @@
 #include "LOEffect.h"
 #include "LOTexture.h"
+#include "../etc/LOTimer.h"
 
 LOEffect::LOEffect(){
 	masksu = nullptr;
@@ -376,15 +377,13 @@ void LOEffect::CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 		SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_NONE);
 		SDL_RenderCopy(ren, effectTex, NULL, &dst);
 		//SDL_Delay(1);
-		Uint64 t1 = SDL_GetPerformanceCounter();
+		Uint64 t1 = LOTimer::GetHighTimer();
 
 		SDL_LockSurface(tsu);
 		SDL_RenderReadPixels(ren, &dst, 0, tsu->pixels, tsu->pitch);
 		SDL_UnlockSurface(tsu);
 
-		Uint64 t2 = SDL_GetPerformanceCounter();
-		Uint64 tper = SDL_GetPerformanceFrequency() / 1000;
-		SDL_Log("SDL_RenderReadPixels() use %d ms\n", (int)((t2 - t1) / tper));
+		SDL_Log("SDL_RenderReadPixels() use %d ms\n", (int)(LOTimer::GetHighTimeDiff(t1)));
 		//SDL_SaveBMP(masksu, "test.bmp");
 	}
 }

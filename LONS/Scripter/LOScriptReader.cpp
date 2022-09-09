@@ -1,5 +1,6 @@
 #include "LOScriptReader.h"
 #include "../etc/LOIO.h"
+#include "../etc/LOTimer.h"
 #include "Buil_in_script.h"
 #include <stdarg.h>
 //#include <SDL.h>
@@ -1634,8 +1635,10 @@ void LOScriptReader::Serialize(BinArray *bin) {
 	bin->WriteLOString(&lastCmd);
 	//parse嵌套
 	bin->WriteInt(parseDeep);
-	//高精度计时器，差值
-	bin->WriteInt64((int64_t)(SDL_GetPerformanceCounter() - ttimer));
+	//高精度计时器，存储的时候不需要那个高的精度，只保留整数即可
+	//存储的是经过的毫秒数
+	int timeDiff = (int)LOTimer::GetHighTimeDiff(ttimer);
+	bin->WriteInt(timeDiff);
 	//nextReader不需要
 	//当前的运行点在堆栈中的序号
 	bin->WriteInt(GetCurrentLableIndex());
@@ -1677,8 +1680,11 @@ bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	curCmd = bin->GetLOString(pos);
 	lastCmd = bin->GetLOString(pos);
 	parseDeep = bin->GetIntAuto(pos);
-	//这里有跨平台的问题
-	ttimer = bin->GetInt64Auto(pos) + (int64_t)SDL_GetPerformanceCounter();
+	//从时间差回推
+	int timeDiff = bin->GetIntAuto(pos);
+	ttimer = LOTimer::GetHighTimer();
+	ttimer -= LOTimer::perTik64 * 1000 * timeDiff;
+
 	//运行点堆栈
 	int index = bin->GetIntAuto(pos);
 	int count = bin->GetIntAuto(pos);

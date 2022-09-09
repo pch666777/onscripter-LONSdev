@@ -194,7 +194,7 @@ public:
 	bool isModuleReset() { return moduleState & MODULE_FLAGE_RESET; }
 	bool isModuleSaving() { return moduleState & MODULE_FLAGE_SAVE; }
 	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
-	bool isModuleNoUse() { return moduleState & MODULE_STATE_NOUSE; }
+	bool isModuleNoUse() { return (moduleState&0xf) == MODULE_STATE_NOUSE; }
 	bool isModuleError() { return moduleState & MODULE_FLAGE_ERROR; }
 	bool isModuleFlagSNone() { return (moduleState >> 4) == 0; }
 	bool isModuleSuspend() { return moduleState & MODULE_STATE_SUSPEND; }

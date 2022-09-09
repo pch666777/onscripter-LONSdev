@@ -437,6 +437,8 @@ bool LOEventQue::LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap) {
 	if (!LoadHooksList(bin, pos, evmap, &highList)) return false;
 	//normalList
 	if (!LoadHooksList(bin, pos, evmap, &normalList)) return false;
+
+	*pos = next;
 }
 
 
@@ -459,4 +461,6 @@ bool LOEventQue::LoadHooksList(BinArray *bin, int *pos, LOEventMap *evmap, std::
 			list->push_back(ev);
 		}
 	}
+
+	return true;
 }

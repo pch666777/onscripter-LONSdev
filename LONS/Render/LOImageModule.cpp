@@ -267,12 +267,11 @@ int LOImageModule::MainLoop() {
 	printPreHook->FinishMe();
 
 	while (loopflag) {
-		hightTimeNow = SDL_GetPerformanceCounter();
+		hightTimeNow = LOTimer::GetHighTimer();
 		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
 		if (!minisize && posTime + 0.1 > fpstime) {
 			if (RefreshFrame(posTime) == 0) {
-				//LOLog_i("frame time:%f", ((double)(SDL_GetPerformanceCounter() - hightTimeNow)) / perHtickTime) ;
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
 				//在进入事件处理之前，先整理一下钩子队列
@@ -341,18 +340,17 @@ int LOImageModule::MainLoop() {
 	ChangeModuleState(MODULE_STATE_NOUSE);
 
 	//等待其他模块退出
-	hightTimeNow = SDL_GetPerformanceCounter();
+	hightTimeNow = LOTimer::GetHighTimer();
 	posTime = 0;
 	while (posTime < 2000 && (!scriptModule->isModuleNoUse() || !audioModule->isModuleNoUse())) {
 		SDL_Delay(1);
 		posTime = LOTimer::GetHighTimeDiff(hightTimeNow);
 	}
 	//
-	if (scriptModule->isModuleNoUse()) printf("no use script");
-	if (audioModule->isModuleNoUse()) printf("not use audio");
+	//if (scriptModule->isModuleNoUse()) LOLog_i("no use script");
+	//if (audioModule->isModuleNoUse()) LOLog_i("not use audio");
 
-	LOLog_i("LONS::MainLoop exit.\n");
-	//LOLog_i("exit ok: %d", SDL_GetTicks());
+	LOLog_i("LONS::MainLoop exit.");
 	return -1;
 }
 
@@ -1472,11 +1470,18 @@ bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
 	btnUseSeOver = bin->GetIntAuto(pos);
 	//
 	int count = bin->GetIntAuto(pos);
-	allSpList->clear();
-	for (int ii = 0; ii < count; ii++) allSpList->push_back(bin->GetIntAuto(pos));
+	if (count > 0) {
+		if (!allSpList) allSpList = new std::vector<int>();
+		allSpList->clear();
+		for (int ii = 0; ii < count; ii++) allSpList->push_back(bin->GetIntAuto(pos));
+	}
+
 	count = bin->GetIntAuto(pos);
-	allSpList2->clear();
-	for (int ii = 0; ii < count; ii++) allSpList2->push_back(bin->GetIntAuto(pos));
+	if (count > 0) {
+		if (!allSpList2) allSpList2 = new std::vector<int>();
+		allSpList2->clear();
+		for (int ii = 0; ii < count; ii++) allSpList2->push_back(bin->GetIntAuto(pos));
+	}
 	*pos = next;
 	return true;
 }
