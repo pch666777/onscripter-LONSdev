@@ -168,7 +168,8 @@ std::vector<unsigned short>* LOCodePage::GetUtf16Array(std::string *s) {
 
 //从最长字节往回逆推，刚好等于指定长度，则为上一个字节的长度
 int LOCodePage::GetLastCharLen(const char* ch) {
-	for (int ii = MaxCharLen(); ii > 1; ii--) {
+	int max = MaxCharLen();
+	for (int ii = max; ii > 1; ii--) {
 		if (GetCharLen(ch - ii) == ii) return ii;
 	}
 	return 1;

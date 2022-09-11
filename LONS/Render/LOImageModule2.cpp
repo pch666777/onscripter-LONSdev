@@ -467,9 +467,14 @@ void LOImageModule::LoadReset() {
 //等待事件完成，继续执行返回真，要退出返回假
 bool LOImageModule::WaitStateEvent() {
 	if (isModuleExit()) return false;
+	//根据对应的事件做重置
+	if (isModuleLoading()) LoadReset();
+	else if(isModuleReset()) ResetMe();
 
+	//发送完成信号
 	ChangeModuleState(MODULE_STATE_SUSPEND);
 
+	//完成后有些操作需要等待其他线程完成
 	if (isModuleSaving() || isModuleLoading()) {
 		//等待脚本完成事件操作
 		while (scriptModule->isModuleSaving() || scriptModule->isModuleLoading()) {
@@ -478,9 +483,7 @@ bool LOImageModule::WaitStateEvent() {
 			SDL_Delay(1);
 		}
 	}
-	else if (isModuleReset()) {
-		ResetMe();
-	}
+
 	//恢复模块状态
 	ChangeModuleState(MODULE_STATE_RUNNING);
 	ChangeModuleFlags(0);

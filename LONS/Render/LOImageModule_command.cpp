@@ -20,8 +20,8 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	}
 
 	LOString tag = reader->GetParamStr(1 + fixpos);
-	int xx = reader->GetParamInt(2);
-	int yy = reader->GetParamInt(3);
+	int xx = reader->GetParamInt(2 + fixpos);
+	int yy = reader->GetParamInt(3 + fixpos);
 	int alpha = -1;
 	if (reader->GetParamCount() > 4 + fixpos) alpha = reader->GetParamInt(4 + fixpos);
 	
@@ -580,8 +580,13 @@ int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
 //btntime btntime2小心的用在多线程
 int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	Uint32 pos, timesnap = SDL_GetTicks();
+	const char *prin_name = "_lons";
+	//btnwait和btnwait2会触发print 1，textbtnwait则不会
+	if (reader->isName("btnwait") || reader->isName("btnwait2")) {
+		LeveTextDisplayMode();
+		prin_name = reader->GetPrintName();
+	}
 
-	if (reader->isName("btnwait") || reader->isName("btnwait2")) LeveTextDisplayMode();
 	if (textbtnFlag && reader->isName("textbtnwait")) { //注册文字按钮
 		//int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
 		//LOLayerInfo *info = GetInfoLayerAvailable(LOLayer::LAYER_DIALOG, ids, reader->GetPrintName());
@@ -592,11 +597,12 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	//btnwait对右键和没有点击任何按钮均有反应，因此准备一个空白图层位于底部，以便进行反应
 	//exbtn_d实际上就设置这空白层的btnstr
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
-	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
+
+	LOLayerData *data = CreateNewLayerData(fullid, prin_name);
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
 	data->bak.SetBtndef(nullptr, 0, true, true);
-	ExportQuequ(reader->GetPrintName(), nullptr, true);
+	ExportQuequ(prin_name, nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
 	pos = SDL_GetTicks() - timesnap;

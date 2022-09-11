@@ -15,10 +15,8 @@ LOScriptPoint::~LOScriptPoint() {
 
 void LOScriptPointCall::CheckCurrentLine() {
 	LOScripFile::LineData data = file->GetLineInfo(c_buf, 0, false);
-	if (data.lineID != c_line)
-		printf("LOScriptPointCall::CheckCurrentLine() get lineID error:%d-->%d\n", c_line, data.lineID);
-	c_line = data.lineID;
-	c_buf_start = data.buf;
+	if (data.lineID >= 0) c_line = data.lineID;
+	else LOLog_e("LOScriptPointCall::CheckCurrentLine() can't find right line ID!");
 }
 
 void LOScriptPointCall::Serialize(BinArray *bin) {
@@ -26,10 +24,16 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("poin", 0, 1);
 	bin->WriteLOString(&file->Name);
 	bin->WriteLOString(&name);
+	//获取相对行和行首
+	auto data = file->GetLineInfo(c_buf, 0, false);
+	if (data.lineID < 0) {
+		LOLog_e("LOScriptPointCall::Serialize() get line info error!");
+		return;
+	}
 	//相对行
-	bin->WriteInt(c_line - s_line);
+	bin->WriteInt(data.lineID - s_line);
 	//相对于行首有多少长度
-	bin->WriteInt(c_buf - c_buf_start);
+	bin->WriteInt(c_buf - data.buf);
 	//call类型
 	bin->WriteInt(callType);
 
@@ -48,7 +52,6 @@ LOScriptPointCall::LOScriptPointCall() {
 	c_line = 0;
 	//当前执行到的位置
 	c_buf = nullptr;
-	c_buf_start = nullptr;
 }
 
 LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {
@@ -58,7 +61,6 @@ LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {
 	file = p->file;
 	c_line = s_line;
 	c_buf = s_buf;
-	c_buf_start = s_buf;
 }
 
 LOScriptPointCall::~LOScriptPointCall() {

@@ -557,6 +557,9 @@ int LOString::HashStr(const char* buf) {
 	return hash;
 }
 
+int LOString::HashStr() {
+	return HashStr(c_str());
+}
 
 //转换路径分隔符风格
 LOString LOString::PathTypeTo(PATH_TYPE ptype) {

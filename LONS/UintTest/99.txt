@@ -1,6 +1,7 @@
 ;$V1000G500S1024,576
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
+setintvar "linelog",1
 globalon
 filelog
 labellog
@@ -913,6 +914,7 @@ return
 ;首先检查全局变量
 dim ?2[10][10]
 ;赋值数字变量和文字变量
+setintvar "linelog",0
 for %600 = 0 to 499
 	mov %%600,%600
 	itoa $%600,%600
@@ -925,6 +927,7 @@ for %600 = 0 to 10
 	 inc %602
 	next
 next
+setintvar "linelog",1
 
 ;存储进入全局存储区
 _testcmd_s "globalon_save"
@@ -933,6 +936,7 @@ _testcmd_s "globalon_save"
 _testcmd_s "globalon_load"
 
 ;比较变量
+setintvar "linelog",0
 for %600 = 0 to 499
 	if %%600 != %600 debuglog "全局变量存储测试未通过！",%%600 :break
 	itoa $600,%600
@@ -946,6 +950,7 @@ for %600 = 0 to 10
 		inc %602
 	next
 next
+setintvar "linelog",1
 
 ;
 csp -1
@@ -968,21 +973,32 @@ lsp 11,":c;>200,100,#ffffff",800,300
 ;btnwait %0
 ;设置变量
 ;赋值数字变量和文字变量
+setintvar "linelog",0
 for %1 = 500 to 999
 	mov %%1,%1
 	itoa $%1,%1
 next
+setintvar "linelog",1
 
+;标记
+loadgosub *loadgosub1
+mov %4999,4999
+
+*savepoint1
 savepoint
+;读取后从这里开始
+;如果已经完成额外的存储要求，转到读取测试
+if %4999 > 5000 goto *loadCheck1
 savegame 1024
 ;;如果是load的，则跳转，跳转之后ifload就不再有效，除非下一次load
-_ifload_ "loadCheck1"
 
 ;重置变量和画面，看看load是否正常
+setintvar "linelog",0
 for %1 = 500 to 999
 	mov %%1,0
 	mov $%1,""
 next
+setintvar "linelog",1
 csp -1
 print 1
 
@@ -990,10 +1006,25 @@ loadgame 1024
 debuglog "[loadgame]测试不通过！"
 end
 
+
+*loadgosub1
+;马上再save并且读取一次
+inc %4999
+if %4999 == 5000 return *savepoint1
+;第二次load之后再判断读取的情况
+return
+
 *loadCheck1
-
-
+setintvar "linelog",0
+for %1 = 500 to 999
+	if %%1 != %1 debuglog "[savepoint][savegame][loadgame]组合测试不通过" :break
+	itoa $1,%%1
+	if $1 != $%1 debuglog "[savepoint][savegame][loadgame]组合测试不通过" :break
+next
+setintvar "linelog",1
+;~
 btnwait %0
+;jumpb
 return
 
 

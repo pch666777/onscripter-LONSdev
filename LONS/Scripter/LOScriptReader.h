@@ -275,6 +275,7 @@ public:
 	//转移脚本，等同于reset，然后从指定脚本开始执行
 	//int _movto_Command(FunctionInterface *reader);
 	int loadgameCommand(FunctionInterface *reader);
+	int setintvarCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
@@ -294,7 +295,7 @@ private:
 	//bool isAddLine;
 	int  parseDeep;    //startparse进入多少个嵌套了
 	//LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
-	//运行点堆栈，gosub sub用
+	//运行点堆栈，gosub sub用，每次增长时都会重新取currentlabel的指针，因此用vector时安全的
 	std::vector<LOScriptPointCall> subStack;
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本

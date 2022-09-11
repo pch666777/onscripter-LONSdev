@@ -88,6 +88,7 @@ public:
 	LOString substrWord(int start, int len);
 	LOString Itoa2(int number);
 	LOString PathTypeTo(PATH_TYPE ptype);
+	int HashStr();
 
 	const char* e_buf() { return c_str() + length(); }
 

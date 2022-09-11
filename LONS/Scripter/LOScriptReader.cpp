@@ -19,6 +19,7 @@ bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 int LOScriptReader::gloableMax = 200;
 int LOScriptReader::loadID = 0;
+int G_lineLog = 0;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
@@ -619,7 +620,7 @@ int LOScriptReader::RunCommand(const char *&buf) {
 			curCmd = tmpcmd;
 			curCmdbuf = curCmd.c_str();
 			buf = scriptbuf->SkipSpace(buf);
-			LOLog_i("[%d]:[%s]\n", currentLable->c_line, tmpcmd.c_str());
+			if(G_lineLog) LOLog_i("[%d]:[%s]\n", currentLable->c_line, tmpcmd.c_str());
 			//if (currentLable->current_line == 54) {
 			//	int debugbreak = 1;
 			//}

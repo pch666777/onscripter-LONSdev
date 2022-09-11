@@ -508,6 +508,9 @@ bool LOLayer::DeSerializeBak(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("bdat", &next, nullptr, pos)) return false;
 	if (bin->GetChar(pos) != 0) {
+		//if (id[0] == 11) {
+		//	int bbk = 0;
+		//}
 		if(!data->bak.DeSerialize(bin, pos)) return false;
 	}
 	*pos = next;

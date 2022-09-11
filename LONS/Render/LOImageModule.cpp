@@ -460,9 +460,9 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 		if (lyr->id[0] < dest) break;
 
 		//debug
-		//if (lyr->id[0] == 9) {
-		//	int bbk = 1;
-		//}
+		if (lyr->layerType == LOLayer::LAYER_BG) {
+			int bbk = 1;
+		}
 
 		//在下方的对象先渲染，渲染父对象
 		if (lyr->data->cur.texture) {

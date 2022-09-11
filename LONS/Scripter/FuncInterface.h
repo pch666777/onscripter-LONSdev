@@ -299,6 +299,7 @@ public:
 	virtual int testcmdsCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	//virtual int _movto_Command(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int loadgameCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int setintvarCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int lspCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int printCommand(FunctionInterface *reader) { return RET_VIRTUAL; };

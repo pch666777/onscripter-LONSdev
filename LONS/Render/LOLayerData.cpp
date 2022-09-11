@@ -291,18 +291,19 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 void LOLayerDataBase::Serialize(BinArray *bin) {
 	//长度记录在标记之后 base,len,version
 	int len = bin->WriteLpksEntity("base", 0, 1);
+
 	//优先存储重生成字符串
 	bin->WriteLOString(buildStr.get());
 
 	bin->WriteInt3(flags, upflags, upaction);
 	bin->WriteInt(btnval);
-
 	float fvals[] = { offsetX, offsetY, showWidth , showHeight };
 	bin->Append((char*)fvals, 4 * 4);
 	int16_t vals[] = {alpha ,centerX ,centerY ,showSrcX ,showSrcY};
 	bin->Append((char*)vals, 5 * 2);
 	uint8_t bytes[] = { cellNum ,alphaMode ,texType ,showType };
 	bin->Append((char*)bytes, 4);
+
 
 	bin->WriteDouble(scaleX);
 	bin->WriteDouble(scaleY);
@@ -331,11 +332,12 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("base", &next, nullptr, pos)) return false;
-	std::unique_ptr<LOString> tmp(bin->GetLOStrPtr(pos));
-	if (!tmp) return false;
+
+	LOString tmp = bin->GetLOString(pos);
+	if (tmp.length() == 0) return false;
 
 	//要先加载
-	if (!ImgLoadSpForce(this, tmp.get())) {
+	if (!ImgLoadSpForce(this, &tmp)) {
 		*pos = next;
 		//加载失败不影响程序继续执行，只是图像无法显示
 		return true;
@@ -345,10 +347,12 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	flags = bin->GetIntAuto(pos);
 	upflags = bin->GetIntAuto(pos);
 	upaction = bin->GetIntAuto(pos);
+	btnval = bin->GetIntAuto(pos);
 	offsetX = bin->GetFloatAuto(pos);
 	offsetY = bin->GetFloatAuto(pos);
 	showWidth = bin->GetFloatAuto(pos);
 	showHeight = bin->GetFloatAuto(pos);
+
 	alpha = bin->GetInt16Auto(pos);
 	centerX = bin->GetInt16Auto(pos);
 	centerY = bin->GetInt16Auto(pos);
@@ -370,7 +374,7 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	bin->GetChar(pos);
 	//action
 	int count = bin->GetIntAuto(pos);
-	for (int ii = 0; ii < count++; ii++) {
+	for (int ii = 0; ii < count; ii++) {
 		//do it
 	}
 

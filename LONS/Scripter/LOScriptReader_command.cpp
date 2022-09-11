@@ -12,6 +12,8 @@
 #define M_PI 3.14159265358979323846264338327950288   /**< pi */
 #endif // !M_PI
 
+extern int G_lineLog;
+
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	struct tm *ptm = localtime(&tt);
@@ -377,22 +379,17 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 	const char *buf = currentLable->c_buf;
 	const char *sbuf = scriptbuf->c_str();
 	const char *ebuf = scriptbuf->e_buf();
-	int cline = currentLable->c_line;
 	bool isnext = isName("jumpf");
 
 	while (buf > sbuf && buf < ebuf) {
+		if (isnext) buf += scriptbuf->ThisCharLen(buf);
+		else buf -= scriptbuf->GetEncoder()->GetLastCharLen(buf);
+
 		if (buf[0] == '~') {
 			currentLable->c_buf = buf;
-			currentLable->c_line = cline;
+			currentLable->CheckCurrentLine();
 			return RET_CONTINUE;
 		}
-		else if (buf[0] == '\n') {
-			if (isnext) cline++;
-			else cline--;
-		}
-
-		if (isnext) buf += scriptbuf->ThisCharLen(buf);
-		else buf -= scriptbuf->ThisCharLen(buf);
 	}
 	SimpleError("jumpb faild! not find '~' Symbol!\n");
 	return RET_ERROR;
@@ -414,8 +411,6 @@ int LOScriptReader::gotoCommand(FunctionInterface *reader) {
 int LOScriptReader::gosubCore(LOScriptPoint *p, bool isgoto) {
 	if (isgoto) ChangePointer(p);
 	else {
-		//gosub均矫正行信息
-		if (currentLable) currentLable->CheckCurrentLine();
 		ReadyToRun(p);
 	}
 	return RET_CONTINUE;
@@ -1051,5 +1046,28 @@ bool LOScriptReader::LoadCore(int id) {
 	ChangeModuleFlags(0);
 	//让音频模块恢复运行
 	audioModule->LoadFinish();
+
+	//执行loadgosub
+	if (userGoSubName[USERGOSUB_LOAD].length() > 0) {
+		LOScriptPoint *p = GetScriptPoint(userGoSubName[USERGOSUB_LOAD]);
+		if (p) {
+			gosubCore(p, false);
+		}
+		else LOLog_e("[loadgosub] error! no label name:%s", userGoSubName[USERGOSUB_LOAD].c_str());
+	}
 	return true;
+}
+
+
+int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
+	int hash = reader->GetParamStr(0).HashStr();
+	int val = reader->GetParamInt(1);
+	switch (hash){
+	case 0x4db490bb:  //linelog
+		G_lineLog = val;
+		break;
+	default:
+		break;
+	}
+	return RET_CONTINUE;
 }
