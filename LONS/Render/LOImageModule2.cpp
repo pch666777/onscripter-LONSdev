@@ -48,7 +48,7 @@ void LOImageModule::DoPreEvent(double postime) {
 
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
-int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait) {
+int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM) {
 	//考虑到需要存档
 	iswait = true;
 
@@ -70,7 +70,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	}
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
-	//layerTestMute.lock();
+	//是否要求帧立即响应
+	reflashNow = isIM;
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -108,6 +109,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		ep->ResetMe();
 		//printf("script thread:%d\n", SDL_GetTicks());
 	}
+	reflashNow = false;
+
 	SDL_UnlockMutex(layerQueMutex);
 	if (ep) {
 		//print2-18会响应点击事件
@@ -119,6 +122,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	SDL_UnlockMutex(doQueMutex);
 	return 0;
 }
+
+
 
 
 int LOImageModule::SendEventToLayer(LOEventHook *e) {

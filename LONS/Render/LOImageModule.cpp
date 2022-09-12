@@ -251,6 +251,7 @@ void LOImageModule::CaleWindowSize(int scX, int scY, int srcW, int srcH, int dst
 int LOImageModule::MainLoop() {
 	Uint64 hightTimeNow;
 	bool loopflag = true;
+	reflashNow = false;
 
 	if (G_fpsnum < 2) G_fpsnum = 2;
 	if (G_fpsnum > 120) G_fpsnum = 120;
@@ -270,7 +271,8 @@ int LOImageModule::MainLoop() {
 		hightTimeNow = LOTimer::GetHighTimer();
 		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
-		if (!minisize && posTime + 0.1 > fpstime) {
+		//部分操作要求立即刷新帧
+		if (!minisize && (posTime + 0.1 > fpstime || reflashNow)) {
 			if (RefreshFrame(posTime) == 0) {
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
@@ -759,24 +761,15 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 
 
 void LOImageModule::ClearBtndef(const char *printName) {
-	//[btn]命令生成的按钮被直接删除
-	//这个过程要转到渲染线程执行
-	LOShareEventHook ev(LOEventHook::CreateBtnClearEvent(0));
-	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
-	//等待的过程中，可以先处理一些其他事
-	//等待[btn]的按钮被删除
-	while (!ev->isInvalid()) LOTimer::CpuDelay(0.5);
+	//删除当前的按钮
+	for (int ii = 0; ii < G_maxLayerCount[1]; ii++) {
+		int fid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 0, 0);
+		LOLayerData *data = CreateLayerBakData(fid, "_lons");
+		if (data) data->bak.SetDelete();
+	}
+	//立即刷新，不等待帧刷新时间满足要求
+	ExportQuequ("_lons", nullptr, true, true);
 
-	//后台只取消对应的print队列
-	auto *map = GetPrintNameMap(printName)->map;
-	for (auto iter = map->begin(); iter != map->end(); iter++) {
-		iter->second->data->bak.unSetBtndef();
-	}
-	//前台直接失去按钮效果
-	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end(); iter++) {
-		LOLayer *lyr = iter->second;
-		if (lyr->data->cur.isForce()) lyr->data->cur.unSetBtndef();
-	}
 
 	//重置变量
 	BtndefCount = 0;

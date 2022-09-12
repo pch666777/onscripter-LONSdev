@@ -286,6 +286,7 @@ private:
 	//int exbtn_count;
 	int btnOverTime;
 	bool btnUseSeOver;
+	bool reflashNow;
 	//bool exbtn_d_hasrun;
 
 	int dialogDisplayMode;
@@ -331,8 +332,7 @@ private:
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
 
-	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait);
-	//void DoDelayEvent(double postime);
+	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM = false);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	void HandlingEvents();
