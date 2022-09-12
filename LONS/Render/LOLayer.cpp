@@ -46,19 +46,9 @@ LOLayer::LOLayer(int fullid) {
 
 
 LOLayer::~LOLayer() {
-
-	//与parent解除关系
-	if (parent && parent->childs) parent->RemodeChild(GetSelfChildID());
-	//与子对象解除关系
-	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) {
-			LOLayer *layer = iter->second;
-			layer->parent = nullptr;
-			//如果子图层不是新的对象，那么直接移除
-			if (!layer->data->bak.isNewFile() && useLayerCenter) NoUseLayer(layer);
-		}
-		childs->clear();
-	}
+	//析构前应解除所有的连接关系了
+	if (parent) LOLog_e("LOLayer::~LOLayer() has parent now!");
+	if(childs && childs->size() > 0)  LOLog_e("LOLayer::~LOLayer() has childs now!");
 }
 
 
@@ -581,7 +571,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 		ai->lastTime = curTime;
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//初始化后才会相应左键跳过事件
-		ai->hook->catchFlag = { LOEventHook::ANSWER_LEFTCLICK ,LOEventHook::ANSWER_PRINGJMP };
+		ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
 		G_hookQue.push_back(ai->hook, LOEventQue::LEVEL_HIGH);
 	}
 	else {
@@ -751,9 +741,9 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	//已经在子层中完成了
 	if (ret == SENDRET_END) return ret;
 	//没有需要响应的事件
-	if (!(e->catchFlag.isFullFlag(data->cur.flags))) return ret;
+	if (!(e->catchFlag & data->cur.flags)) return ret;
 	//左键、右键、长按、悬停
-	if (e->catchFlag.isFullFlag(LOLayerDataBase::FLAGS_RIGHTCLICK)) {
+	if (e->catchFlag & LOLayerDataBase::FLAGS_RIGHTCLICK) {
 		//只有按钮才相应右键事件
 		LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), -1, 0));
 		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
@@ -784,7 +774,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 					e->param1 |= LOEventHook::BTN_STATE_ACTIVED;
 
 					//左键和长按会进一步产生按钮响应点击事件
-					if (e->catchFlag.isFullFlag(LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
+					if (e->catchFlag & (LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
 						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), data->cur.btnval, 0));
 						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 					}
@@ -833,10 +823,36 @@ bool LOLayer::setActiveCell(int cell) {
 
 
 //删除图层，这里留了一个接口
-void LOLayer::NoUseLayer(LOLayer *lyr) {
-	int fullid = GetFullID(lyr->layerType, lyr->id);
-	layerCenter.erase(fullid);
-	delete lyr;
+//void LOLayer::NoUseLayer(LOLayer *lyr) {
+//	int fullid = GetFullID(lyr->layerType, lyr->id);
+//	layerCenter.erase(fullid);
+//	delete lyr;
+//}
+
+//图层前台已经不需要了，如果后退不是新文件，则后退应该被删除
+//断开图层间的连接
+void LOLayer::NoUseLayerForce(LOLayer *lyr) {
+	lyr->data->cur.resetBase();
+	if (lyr->parent && lyr->parent->childs) lyr->parent->RemodeChild(lyr->GetSelfChildID());
+	lyr->parent = nullptr;
+	if (lyr->childs) {
+		for (auto iter = lyr->childs->begin(); iter != lyr->childs->end(); iter++) {
+			LOLayer *layer = iter->second;
+			layer->parent = nullptr;
+			NoUseLayerForce(layer);
+		}
+		lyr->childs->clear();
+	}
+	//如果后台不是新文件，则删除图层
+	if (!lyr->data->bak.isNewFile()) {
+		LOLayer::layerCenter.erase(lyr->data->fullid);
+		delete lyr;
+	}
+}
+
+void LOLayer::NoUseLayerForce(int fid) {
+	LOLayer *lyr = LOLayer::GetLayer(fid);
+	if (lyr) NoUseLayerForce(lyr);
 }
 
 LOLayer* LOLayer::CreateLayer(int fullid) {

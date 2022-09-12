@@ -160,8 +160,6 @@ public:
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
 
-	void ClearBtndef(const char *printName);
-
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
 	bool loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, int y, int alpha,int eff);
 
@@ -176,6 +174,7 @@ public:
 	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
+	void ClearBtndef(const char *printName);
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();
@@ -187,6 +186,8 @@ public:
 	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
 	int RunFuncText(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
+	int RunFuncScriptCall(LOEventHook *hook, LOEventHook *e);
+	int RunFuncBtnClear(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
 	void PrepareEffect(LOEffect *ef, const char *printName);

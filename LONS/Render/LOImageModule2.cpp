@@ -88,7 +88,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 			////////
 			if (isnow) {
-				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);
+				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayerForce(lyr);
 				else lyr->UpDataToForce();
 				//指向下一个
 				iter = map->erase(iter);
@@ -141,7 +141,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
-		ev->catchFlag.AddFullFlag(LOLayerDataBase::FLAGS_MOUSEMOVE);
+		ev->catchFlag = LOLayerDataBase::FLAGS_MOUSEMOVE;
 		ev->PushParam(new LOVariant(mouseXY[0]));
 		ev->PushParam(new LOVariant(mouseXY[1]));
 		SendEventToLayer(ev.get());
@@ -150,19 +150,19 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		//鼠标进行了点击
 		if (!TranzMousePos(event->button.x, event->button.y))break;
 		//这里需要将左、右键事件先发一次hook队列，因为有些hook需要优先处理，比如print wait等点击可跳过的事件
-		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag |= {LOEventHook::ANSWER_LEFTCLICK};
-		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag |= {LOEventHook::ANSWER_RIGHTCLICK};
-		if (ev->catchFlag.hasFlag()) {
+		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOEventHook::ANSWER_LEFTCLICK;
+		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOEventHook::ANSWER_RIGHTCLICK;
+		if (ev->catchFlag) {
 			ev->PushParam(new LOVariant(mouseXY[0]));
 			ev->PushParam(new LOVariant(mouseXY[1]));
 			//队列没有响应按键事件，那么就发送到图层响应
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
 			//这里要注意检查事件类型是否被改变
-			LongFlag old = ev->catchFlag;
+			int old = ev->catchFlag;
 			if (SendEventToHooks(ev.get(), LOEventQue::LEVEL_HIGH | LOEventQue::LEVEL_NORMAL) == LOEventHook::RUNFUNC_CONTINUE) {
 				if(ev->catchFlag == old) {
-					if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag.AddFullFlag(LOLayerDataBase::FLAGS_LEFTCLICK);
-					else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag.AddFullFlag(LOLayerDataBase::FLAGS_RIGHTCLICK);
+					if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
+					else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
 					SendEventToLayer(ev.get());
 				}
 			}
@@ -198,12 +198,27 @@ int LOImageModule::SendEventToHooks(LOEventHook *e, int flags) {
 			LOShareEventHook hook = G_hookQue.GetEventHook(index, listID[level], true);
 			if (!hook) break;
 			//printf("%x\n", hook.get());
-			if (hook->catchFlag.isOrFlag(e->catchFlag)) state = RunFuncBase(hook.get(), e);
+			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
 			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
 		}
 	}
 	return state;
 }
+
+//int LOImageModule::SendEventToHooks(LOEventHook *e) {
+//	int state = LOEventHook::RUNFUNC_CONTINUE;
+//	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
+//		int index = 0;
+//		while (state == LOEventHook::RUNFUNC_CONTINUE) {
+//			LOShareEventHook hook = G_hookQue.GetEventHook(index, level, true);
+//			if (!hook) break;
+//			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
+//
+//			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
+//		}
+//	}
+//	return state;
+//}
 
 
 //转换鼠标位置，超出视口位置等于事件没有发生
@@ -259,7 +274,7 @@ int LOImageModule::CutPrintEffect(LOEventHook *hook, LOEventHook *e) {
 		ContinueEffect(ef, printName, 0x7ffffff);
 		hook->FinishMe();
 		//转换事件类型
-		if (e && e->catchFlag.isOrFlag({ LOEventHook::ANSWER_LEFTCLICK })) e->catchFlag = { LOEventHook::ANSWER_PRINGJMP };
+		if (e && e->catchFlag == LOEventHook::ANSWER_LEFTCLICK) e->catchFlag = LOEventHook::ANSWER_PRINGJMP;
 		else return LOEventHook::RUNFUNC_FINISH;
 	}
 	return LOEventHook::RUNFUNC_CONTINUE;
@@ -268,8 +283,10 @@ int LOImageModule::CutPrintEffect(LOEventHook *hook, LOEventHook *e) {
 
 int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	switch (hook->param2){
-	case LOEventHook::FUN_SPSTR:
-		return RunFuncSpstr(hook, e);
+	//case LOEventHook::FUN_SPSTR:
+	//	return RunFuncSpstr(hook, e);
+	case LOEventHook::FUN_SCRIPT_CALL:
+		return RunFuncScriptCall(hook, e);
 	case LOEventHook::FUN_INVILIDE:
 		hook->InvalidMe();
 		return LOEventHook::RUNFUNC_FINISH;
@@ -286,6 +303,28 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 
 int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 	return LOEventHook::RUNFUNC_CONTINUE;
+}
+
+
+int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
+	int key = e->GetParam(0)->GetInt();
+	switch (key){
+	case LOEventHook::SCRIPT_CALL_BTNSTR:
+	case LOEventHook::SCRIPT_CALL_BTNCLEAR:
+		return RunFuncBtnClear(hook, e);
+	default:
+		break;
+	}
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+int LOImageModule::RunFuncBtnClear(LOEventHook *hook, LOEventHook *e) {
+	//能调用到这个函数说明肯定不在刷新图层，以及向图层传递事件，所以是线程安全的
+	//直接删除[btn]命令生成的图层
+	LOLayer::NoUseLayerForce(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255));
+	e->InvalidMe();
+	return LOEventHook::RUNFUNC_FINISH;
 }
 
 
@@ -342,8 +381,8 @@ int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
 
 
 int LOImageModule::RunFuncText(LOEventHook *hook, LOEventHook *e) {
-	if (e->catchFlag.isOrFlag({ LOEventHook::ANSWER_LEFTCLICK })) {
-		e->catchFlag = { LOEventHook::ANSWER_PRINGJMP };
+	if (e->catchFlag == LOEventHook::ANSWER_LEFTCLICK) {
+		e->catchFlag = LOEventHook::ANSWER_PRINGJMP;
 		CutDialogueAction();
 		return LOEventHook::RUNFUNC_CONTINUE;
 	}

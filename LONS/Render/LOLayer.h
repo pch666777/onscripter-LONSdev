@@ -141,7 +141,8 @@ public:
 	//只是根据ids预期父对象，识别返回null
 	//static LOLayer* GetExpectFather(int lyrType, int *ids);
 	static LOLayer* FindViewLayer(int fullid, bool isRemove);
-	static void NoUseLayer(LOLayer *lyr);
+	static void NoUseLayerForce(LOLayer *lyr);
+	static void NoUseLayerForce(int fid);
 	static LOLayer* CreateLayer(int fullid);
 	static LOLayer* FindLayerInCenter(int fullid);
 	static LOLayer* GetLayer(int fullid);

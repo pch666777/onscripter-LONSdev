@@ -12,71 +12,7 @@
 #include "LOVariant.h"
 
 //=====================================
-//超长符号
-struct LongFlag{
-public:
-	enum {
-		MAXCOUNT = 4,
-		MAXSIZE = 32,
-	};
 
-	LongFlag();
-	LongFlag(std::initializer_list<int> list);
-	//检测是否具有提供的list指定的符号位，采用 ||
-	bool isOrFlag(std::initializer_list<int> list);
-	bool isOrFlag(const LongFlag &f);
-	bool isFullFlag(int64_t f);
-	//检测是否具有提供的list指定的符号位，采用 &&
-	bool isAndFlag(std::initializer_list<int> list);
-	bool hasFlag();
-
-	//添加非位移符号
-	void AddFullFlag(int64_t flag);
-
-	int data[MAXCOUNT];
-	
-	//某位置1
-	void operator |=(std::initializer_list<int> list) {
-		for (auto iter = list.begin(); iter != list.end(); iter++) {
-			int vc = (*iter) / MAXSIZE;
-			int vd = (*iter) % MAXSIZE;
-			data[vc] |= (1 << vd);
-		}
-	}
-
-	void operator |=(const LongFlag &f) {
-		for (int ii = 0; ii < MAXCOUNT; ii++) data[ii] |= f.data[ii];
-	}
-
-	//某位置0
-	void operator &=(std::initializer_list<int> list) {
-		for (auto iter = list.begin(); iter != list.end(); iter++) {
-			int vc = (*iter) / MAXSIZE;
-			int vd = (*iter) % MAXSIZE;
-			data[vc] &= (~(1 << vd));
-		}
-	}
-
-	void operator &=(const LongFlag &f) {
-		for (int ii = 0; ii < MAXCOUNT; ii++) data[ii] &= f.data[ii];
-	}
-
-	bool operator ==(const LongFlag &f) {
-		for (int ii = 0; ii < MAXCOUNT; ii++) {
-			if (data[ii] != f.data[ii]) return false;
-		}
-		return true;
-	}
-
-	LongFlag& operator =(std::initializer_list<int> list) {
-		memset(data, 0, MAXCOUNT * 4);
-		(*this) |= list;
-		return (*this);
-	}
-
-};
-
-//=====================================
 class LOEventHook
 {
 public:
@@ -87,29 +23,20 @@ public:
 		STATE_INVALID
 	};
 
-	enum TYPE_EVENT{  //envents
-		//没有必要了解类型的
-		EVENT_NONE,
-		//定义的按钮
-		EVENT_BTNDEF,
-		EVENT_BTNWAIT,
-		EVENT_TEXTFINISH,
-	};
-
 	//要响应的事件
 	enum {
-		//ANSWER_NONE,
-		ANSWER_TIMER,
-		ANSWER_BTNSTR,
-		ANSWER_SEPLAYOVER,
-		ANSWER_BTNCLICK,
-		ANSWER_LEFTCLICK,
-		ANSWER_RIGHTCLICK,
+		ANSWER_NONE = 0,
+		ANSWER_TIMER = 1,
+		//ANSWER_BTNSTR = 2,
+		ANSWER_SEPLAYOVER = 8,
+		ANSWER_BTNCLICK = 16,
+		ANSWER_LEFTCLICK = 32,
+		ANSWER_RIGHTCLICK = 64,
 		//需要同时响应点击跳过print和文字，因此如果单击事件遇到这两个事件会
 		//转换成PRINGJMP事件
-		ANSWER_PRINGJMP,
-		//需要从脚本呼叫渲染线程的事件
-		ANSWER_SCRIPTCALL,
+		ANSWER_PRINGJMP = 128,
+		//某些操作需要从脚本模块调用渲染模块
+		ANSWER_SCRIPTCALL = 0x100,
 	};
 
 	//一些参数的位置
@@ -158,6 +85,11 @@ public:
 		FUN_INVILIDE,
 	};
 
+	enum {
+		SCRIPT_CALL_BTNSTR = 1,
+		SCRIPT_CALL_BTNCLEAR = 2,
+	};
+
 	LOEventHook();
 	~LOEventHook();
 
@@ -176,10 +108,9 @@ public:
 	void ResetMe();
 
 	//要求捕获的事件
-	//int32_t catchFlag;
+	int32_t catchFlag;
 	//事件的类型
 	//int32_t evType;
-	LongFlag catchFlag;
 
 	//时间戳
 	Uint32 timeStamp;
@@ -214,20 +145,21 @@ public:
 	static LOEventHook* CreateClickHook(bool isleft, bool isright);
 	//创建一个btnstr事件
 	static LOEventHook* CreateBtnStr(int fullid, LOString *btnstr);
-	//创建一个spstr运行
-	static LOEventHook* CreateSpstrHook();
+
 	//创建一个时间阻塞钩子，参数可设置是否响应左键
 	static LOEventHook* CreateTimerHook(int outtime, bool isleft);
 	//创建一个文字事件hook
 	static LOEventHook* CreateTextHook(int pageEnd, int hash);
 	//创建一个图层相应事件
-	static LOEventHook* CreateLayerAnswer(std::initializer_list<int> list,void *lyr);
+	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 	//创建一个se播放完成事件
 	static LOEventHook* CreateSePalyFinishEvent(int channel);
 	//创建一个没有参数的信号
 	static LOEventHook* CreateSignal(int param1, int param2);
-	//创建一个从脚本线程呼叫的事件
+	//创建一个脚本模块呼叫call
 	static LOEventHook* CreateScriptCallHook();
+	//创建一个按钮清除事件
+	static LOEventHook* CreateBtnClearEvent(int val);
 
 	//读取存档的时候需要一个时间搓作为参考
 	static Uint32 loadTimeTick;

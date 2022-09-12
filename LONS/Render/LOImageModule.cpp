@@ -760,21 +760,24 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 
 void LOImageModule::ClearBtndef(const char *printName) {
 	//[btn]命令生成的按钮被直接删除
-	SDL_LockMutex(layerQueMutex);
+	//这个过程要转到渲染线程执行
+	LOShareEventHook ev(LOEventHook::CreateBtnClearEvent(0));
+	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	//等待的过程中，可以先处理一些其他事
+	//等待[btn]的按钮被删除
+	while (!ev->isInvalid()) LOTimer::CpuDelay(0.5);
 
-
-	SDL_UnlockMutex(layerQueMutex);
-
-	//前台直接失去按钮效果
-	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end(); iter++) {
-		LOLayer *lyr = iter->second;
-		if (lyr->data->cur.isForce()) lyr->data->cur.unSetBtndef();
-	}
 	//后台只取消对应的print队列
 	auto *map = GetPrintNameMap(printName)->map;
 	for (auto iter = map->begin(); iter != map->end(); iter++) {
 		iter->second->data->bak.unSetBtndef();
 	}
+	//前台直接失去按钮效果
+	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end(); iter++) {
+		LOLayer *lyr = iter->second;
+		if (lyr->data->cur.isForce()) lyr->data->cur.unSetBtndef();
+	}
+
 	//重置变量
 	BtndefCount = 0;
 }
