@@ -20,7 +20,7 @@ bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
 int LOScriptReader::gloableMax = 200;
 int LOScriptReader::loadID = 0;
-int G_lineLog = 0;
+int G_lineLog = 1;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
@@ -514,10 +514,10 @@ int LOScriptReader::ContinueEvent() {
 		hasEvent = true;
 
 		//如果ev带有timer则验证是否超时
-		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
+		if (ev->catchFlag.isOrFlag({ LOEventHook::ANSWER_TIMER })) {
 			if (CheckTimer(ev.get(), 5)) RunFuncBase(ev.get(), nullptr);
 		}
-		else if (ev->catchFlag == LOEventHook::ANSWER_NONE) {
+		else if (!ev->catchFlag.hasFlag()) {
 			if (ev->param2 == LOEventHook::FUN_BGM_AFTER) {
 				audioModule->PlayAfter();
 				ev->InvalidMe();
@@ -527,8 +527,8 @@ int LOScriptReader::ContinueEvent() {
 		//这里有个小技巧，如果hook是 finish状态，表示需要由脚本线程处理余下的过程
 		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
 		if (ev->isFinish()) {
-			if (ev->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(ev.get());
-			else if (ev->catchFlag & LOEventHook::ANSWER_PRINGJMP) {
+			if (ev->catchFlag.isOrFlag({ LOEventHook::ANSWER_BTNCLICK })) RunFuncBtnSetVal(ev.get());
+			else if (ev->catchFlag.isOrFlag({ LOEventHook::ANSWER_PRINGJMP })) {
 				//响应此事件的有文字和print
 				if (ev->param2 == LOEventHook::FUN_TEXT_ACTION) {
 					//printf("***********text funish***********\n");
@@ -1574,10 +1574,11 @@ int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 		e->PushParam(new LOVariant(-2));
 	}
 
-	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
-		//没有满足要求
-		if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
-	}
+	//if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
+	//	//没有满足要求
+	//	if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
+	//}
+
 	//要确定是否清除btndef
 	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
 		if (e->GetParam(1)->GetInt() > 0)

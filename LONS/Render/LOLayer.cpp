@@ -581,7 +581,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 		ai->lastTime = curTime;
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//初始化后才会相应左键跳过事件
-		ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
+		ai->hook->catchFlag = { LOEventHook::ANSWER_LEFTCLICK ,LOEventHook::ANSWER_PRINGJMP };
 		G_hookQue.push_back(ai->hook, LOEventQue::LEVEL_HIGH);
 	}
 	else {
@@ -751,9 +751,9 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	//已经在子层中完成了
 	if (ret == SENDRET_END) return ret;
 	//没有需要响应的事件
-	if (!(e->catchFlag & data->cur.flags)) return ret;
+	if (!(e->catchFlag.isFullFlag(data->cur.flags))) return ret;
 	//左键、右键、长按、悬停
-	if (e->catchFlag & LOLayerDataBase::FLAGS_RIGHTCLICK) {
+	if (e->catchFlag.isFullFlag(LOLayerDataBase::FLAGS_RIGHTCLICK)) {
 		//只有按钮才相应右键事件
 		LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), -1, 0));
 		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
@@ -784,7 +784,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 					e->param1 |= LOEventHook::BTN_STATE_ACTIVED;
 
 					//左键和长按会进一步产生按钮响应点击事件
-					if (e->catchFlag & (LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
+					if (e->catchFlag.isFullFlag(LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
 						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), data->cur.btnval, 0));
 						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
 					}

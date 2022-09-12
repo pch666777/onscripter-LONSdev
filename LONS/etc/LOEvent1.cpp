@@ -11,9 +11,65 @@ LOEventQue G_hookQue;
 std::atomic_int LOEventHook::exitFlag{};
 Uint32 LOEventHook::loadTimeTick = 0;
 
+LongFlag::LongFlag() {
+	memset(data, 0, MAXCOUNT * 4);
+}
+
+
+LongFlag::LongFlag(std::initializer_list<int> list) {
+	memset(data, 0, MAXCOUNT * 4);
+	(*this) |= list;
+}
+
+bool LongFlag::isOrFlag(std::initializer_list<int> list) {
+	for (auto iter = list.begin(); iter != list.end(); iter++) {
+		int vc = (*iter) / MAXSIZE;
+		int vd = 1 << ((*iter) % MAXSIZE);
+		if (data[vc] & vd) return true;
+	}
+	return false;
+}
+
+
+bool LongFlag::isOrFlag(const LongFlag &f) {
+	for (int ii = 0; ii < MAXCOUNT; ii++) {
+		if (data[ii] & f.data[ii]) return true;
+	}
+	return false;
+}
+
+bool LongFlag::isFullFlag(int64_t f) {
+	if (data[0] & (f & 0xffffffff)) return true;
+	if (data[1] & (f >> 32) & 0xffffffff) return true;
+	return false;
+}
+
+bool LongFlag::isAndFlag(std::initializer_list<int> list) {
+	for (auto iter = list.begin(); iter != list.end(); iter++) {
+		int vc = (*iter) / MAXSIZE;
+		int vd = 1 << ((*iter) % MAXSIZE);
+		//要么为vd，要么为0
+		if ( (data[vc] & vd) == 0) return false;
+	}
+	return true;
+}
+
+bool LongFlag::hasFlag() {
+	for (int ii = 0; ii < MAXCOUNT; ii++) {
+		if (data[ii]) return true;
+	}
+	return false;
+}
+
+void LongFlag::AddFullFlag(int64_t flag) {
+	int va = flag & 0xffffffff;
+	data[0] |= va;
+	va = (flag >> 32) & 0xffffff;
+	data[1] |= va;
+}
+
 
 LOEventHook::LOEventHook() {
-	catchFlag = 0;
 	param1 = 0;
 	param2 = 0;
 }
@@ -126,8 +182,13 @@ void LOEventHook::Serialize(BinArray *bin) {
 	bin->WriteInt64((int64_t)this);
 
 	int len = bin->WriteLpksEntity("even", 0, 1);
+
+	//标记位
+	bin->WriteInt16(LongFlag::MAXCOUNT);
+	bin->Append((const char*)catchFlag.data, LongFlag::MAXCOUNT * 4);
+
 	//时间记录的是时间戳跟当前的差值
-	bin->WriteInt3(catchFlag, evType, (int)(SDL_GetTicks() - timeStamp));
+	bin->WriteInt((int)(SDL_GetTicks() - timeStamp));
 	bin->WriteInt16(param1);
 	bin->WriteInt16(param2);
 	bin->WriteInt(state.load());
@@ -143,14 +204,16 @@ bool LOEventHook::Deserialize(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("even", &next, nullptr, pos)) return false;
 
-	catchFlag = bin->GetIntAuto(pos);
-	evType = bin->GetIntAuto(pos);
+	//标记位
+	int count = bin->GetInt16Auto(pos);
+	bin->GetArrayAuto(catchFlag.data, count, 4, pos);
+	//
 	timeStamp = loadTimeTick + bin->GetIntAuto(pos);
 	param1 = bin->GetInt16Auto(pos);
 	param2 = bin->GetInt16Auto(pos);
 	state.store(bin->GetIntAuto(pos));
 
-	int count = bin->GetIntAuto(pos);
+	count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {
 		LOVariant *v = bin->GetLOVariant(pos);
 		if (!v) return false;
@@ -165,7 +228,6 @@ bool LOEventHook::Deserialize(BinArray *bin, int *pos) {
 LOEventHook* LOEventHook::CreateHookBase() {
 	auto *e = new LOEventHook();
 	e->timeStamp = SDL_GetTicks();
-	e->evType = EVENT_NONE;
 	return e;
 }
 
@@ -191,7 +253,8 @@ LOEventHook* LOEventHook::CreatePrintPreHook(LOEventHook *e, void *ef, const cha
 LOEventHook* LOEventHook::CreatePrintHook(LOEventHook *e, void *ef, const char *printName) {
 	e->ClearParam();
 	e->timeStamp = SDL_GetTicks();
-	e->catchFlag |= ANSWER_LEFTCLICK | ANSWER_PRINGJMP;
+	e->catchFlag |= {ANSWER_LEFTCLICK, ANSWER_PRINGJMP};
+	//e->catchFlag |= ANSWER_LEFTCLICK | ANSWER_PRINGJMP;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_CONTINUE_EFF;
 	e->paramList.push_back(new LOVariant(ef));
@@ -219,9 +282,9 @@ LOEventHook* LOEventHook::CreateScreenShot(LOEventHook *e, int x, int y, int w, 
 //channel < 0 表示不关联语音播放，>= 0表示关联哪一个通道，最后一个参数表示按钮调用的命令
 LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_BTNCLICK;
-	if (channel >= 0) e->catchFlag |= ANSWER_SEPLAYOVER;
-	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
+	e->catchFlag |= {ANSWER_BTNCLICK};
+	if (channel >= 0) e->catchFlag |= {ANSWER_SEPLAYOVER};
+	if (waittime > 0) e->catchFlag |= {ANSWER_TIMER};
 	e->param1 = MOD_SCRIPTER;
 	e->param2 = FUN_BTNFINISH;
 	//最大的等待时间
@@ -235,7 +298,7 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char 
 
 LOEventHook* LOEventHook::CreateBtnClickEvent(int fullid, int btnval, int islong) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_BTNCLICK;
+	e->catchFlag |= {ANSWER_BTNCLICK};
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnval));
 	e->paramList.push_back(new LOVariant(islong));
@@ -245,8 +308,8 @@ LOEventHook* LOEventHook::CreateBtnClickEvent(int fullid, int btnval, int islong
 
 LOEventHook* LOEventHook::CreateClickHook(bool isleft, bool isright) {
 	auto *e = CreateHookBase();
-	if (isleft) e->catchFlag |= ANSWER_LEFTCLICK;
-	if (isright) e->catchFlag |= ANSWER_RIGHTCLICK;
+	if (isleft) e->catchFlag |= {ANSWER_LEFTCLICK};
+	if (isright) e->catchFlag |= {ANSWER_RIGHTCLICK};
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_INVILIDE;
 	return e;
@@ -255,7 +318,7 @@ LOEventHook* LOEventHook::CreateClickHook(bool isleft, bool isright) {
 
 LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_BTNSTR;
+	e->catchFlag |= {ANSWER_BTNSTR};
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnstr));
 	return e;
@@ -264,7 +327,7 @@ LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
 
 LOEventHook* LOEventHook::CreateSpstrHook() {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_BTNSTR;
+	e->catchFlag |= {ANSWER_BTNSTR};
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_SPSTR;
 	return e;
@@ -273,8 +336,8 @@ LOEventHook* LOEventHook::CreateSpstrHook() {
 
 LOEventHook* LOEventHook::CreateTimerHook(int outtime, bool isleft) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_TIMER;
-	if (isleft) e->catchFlag |= ANSWER_LEFTCLICK;
+	e->catchFlag |= {ANSWER_TIMER};
+	if (isleft) e->catchFlag |= {ANSWER_LEFTCLICK};
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_INVILIDE;
 	e->paramList.push_back(new LOVariant(outtime));
@@ -283,7 +346,6 @@ LOEventHook* LOEventHook::CreateTimerHook(int outtime, bool isleft) {
 
 LOEventHook* LOEventHook::CreateTextHook(int pageEnd, int hash) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_NONE;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_TEXT_ACTION;
 	e->paramList.push_back(new LOVariant(pageEnd));
@@ -291,9 +353,9 @@ LOEventHook* LOEventHook::CreateTextHook(int pageEnd, int hash) {
 	return e;
 }
 
-LOEventHook* LOEventHook::CreateLayerAnswer(int answer, void *lyr) {
+LOEventHook* LOEventHook::CreateLayerAnswer(std::initializer_list<int> list, void *lyr) {
 	auto *e = CreateHookBase();
-	e->catchFlag = answer;
+	e->catchFlag |= list;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_LAYERANSWER;
 	e->paramList.push_back(new LOVariant(lyr));
@@ -311,12 +373,18 @@ LOEventHook* LOEventHook::CreateSePalyFinishEvent(int channel) {
 
 LOEventHook* LOEventHook::CreateSignal(int param1, int param2) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_NONE;
 	e->param1 = param1;
 	e->param2 = param2;
 	return e;
 }
 
+
+LOEventHook* LOEventHook::CreateScriptCallHook() {
+	auto *e = CreateHookBase();
+	e->catchFlag |= {ANSWER_SCRIPTCALL};
+	e->param1 = MOD_RENDER;
+	e->param2 = FUN_SCRIPT_CALL;
+}
 
 
 //===========================================//

@@ -162,7 +162,8 @@ int main(int argc, char **argv) {
 		//初始化渲染模块
 		if (imagemodule->InitImageModule()) {
 			LOLog_i("image module init ok.");
-			//注册spstr事件
+
+			//注册从脚本呼叫渲染线程的事件
 			LOShareEventHook ev(LOEventHook::CreateSpstrHook());
 			G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 
