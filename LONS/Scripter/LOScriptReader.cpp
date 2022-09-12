@@ -17,6 +17,7 @@ int LOScriptReader::sectionState ;
 bool LOScriptReader::st_globalon; //是否使用全局变量
 bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
+bool LOScriptReader::st_saveonflag = false;
 int LOScriptReader::gloableMax = 200;
 int LOScriptReader::loadID = 0;
 int G_lineLog = 0;
@@ -1599,7 +1600,7 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 	LOUniqVariableRef ref(ONSVariableRef::GetRefFromTypeRefid(refid));
 	LOVariant *var = hook->GetParam(LOEventHook::PINDS_BTNVAL + fix);
 	if (var->IsType(LOVariant::TYPE_INT)) {
-		LOLog_i("btnwait is:%d", var->GetInt());
+		//LOLog_i("btnwait is:%d", var->GetInt());
 		ref->SetValue((double)var->GetInt());
 	}
 	else {

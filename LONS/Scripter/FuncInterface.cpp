@@ -112,6 +112,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	//{"_moveto_",   "s",       "Y",         &FunctionInterface::_movto_Command},
 	{"loadgame",   "i",       "Y",         &FunctionInterface::loadgameCommand},
 	{"setintvar",  "s,i",     "Y,Y",       &FunctionInterface::setintvarCommand},
+	{"saveon",     "\0",      "\0",        &FunctionInterface::saveonCommand},
+	{"saveoff",    "\0",      "\0",        &FunctionInterface::saveonCommand},
 
 	{"pretextgosub", "L",     "Y",         &FunctionInterface::usergosubCommand},
 	{"textgosub",    "L",     "Y",         &FunctionInterface::usergosubCommand},

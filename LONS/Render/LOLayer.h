@@ -108,9 +108,6 @@ public:
 
 	void GetShowSrc(SDL_Rect *srcR);
 
-	//清理自身及子层的按钮定义
-	void unSetBtndefAll();
-
 	//获取自身相对于parent的ID值
 	int GetSelfChildID();
 

@@ -757,6 +757,28 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 	bak->keyStr.reset(new LOString(buf, tag->GetEncoder()));
 }
 
+
+void LOImageModule::ClearBtndef(const char *printName) {
+	//[btn]命令生成的按钮被直接删除
+	SDL_LockMutex(layerQueMutex);
+
+
+	SDL_UnlockMutex(layerQueMutex);
+
+	//前台直接失去按钮效果
+	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end(); iter++) {
+		LOLayer *lyr = iter->second;
+		if (lyr->data->cur.isForce()) lyr->data->cur.unSetBtndef();
+	}
+	//后台只取消对应的print队列
+	auto *map = GetPrintNameMap(printName)->map;
+	for (auto iter = map->begin(); iter != map->end(); iter++) {
+		iter->second->data->bak.unSetBtndef();
+	}
+	//重置变量
+	BtndefCount = 0;
+}
+
 ////随机字符串
 //void LOImageModule::RandomFileName(LOString *s, char alphamode) {
 //	s->clear();
@@ -781,35 +803,6 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 //	GetTypeAndIds( (int*)(&type), ids, fullid);
 //	return G_baseLayer[type].FindChild(ids);
 //}
-
-
-//移除按钮定义
-void LOImageModule::ClearBtndef(const char *printName) {
-	/*
-	//前台处理
-	//移去当前图层内的按钮定义
-	SDL_LockMutex(layerQueMutex);
-	//删除btn的按钮层
-	LOLayer *lyr = G_baseLayer[LOLayer::LAYER_NSSYS].RemodeChild(LOLayer::IDEX_NSSYS_BTN);
-	if (lyr) delete lyr;
-	//所有定义的按钮无效化
-	for (int ii = 0; ii < LOLayer::LAYER_BASE_COUNT; ii++) {
-		G_baseLayer[ii].unSetBtndefAll();
-	}
-	SDL_UnlockMutex(layerQueMutex);
-
-	//后台处理
-	auto *list = GetPrintNameMap(printName)->map;
-	SDL_LockMutex(layerDataMutex);
-	//删除btn的按钮层
-	CspCore(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, LOLayer::IDEX_NSSYS_BTN, printName);
-	for (auto iter = list->begin(); iter != list->end(); iter++) {
-		//去除按钮定义
-		//iter->second->unSetBtndef();
-	}
-	SDL_UnlockMutex(layerDataMutex);
-	*/
-}
 
 
 //tag定义：
@@ -1315,6 +1308,23 @@ LOLayerData* LOImageModule::GetLayerData(int fullid, const char *printName) {
 	LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
 	if (lyr) return lyr->data.get();
 	//不存在的图层是无法操作也无法获取信息的
+	return nullptr;
+}
+
+
+//专为[btn]命令设计的 
+LOLayerData* LOImageModule::CreateBtnData(const char *printName) {
+	auto *map = GetPrintNameMap(printName)->map;
+	//挑一个空白的
+	for (int ii = BtndefCount; ii < G_maxLayerCount[1]; ii++) {
+		int fid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, ii, 255);
+		LOLayer *lyr = LOLayer::CreateLayer(fid);
+		if (!lyr->data->bak.isNewFile()) {
+			(*map)[fid] = lyr;
+			return lyr->data.get();
+		}
+	}
+	LOLog_e("LOImageModule::CreateBtnData() no empty btn slot!");
 	return nullptr;
 }
 

@@ -82,6 +82,10 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			else if (level >= 3) isnow = true;
 			else isnow = false;
 
+			//if (lyr->layerType == LOLayer::LAYER_NSSYS && lyr->id[0] == LOLayer::IDEX_NSSYS_BTN) {
+			//	int bbk = 1;
+			//}
+
 			////////
 			if (isnow) {
 				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayer(lyr);

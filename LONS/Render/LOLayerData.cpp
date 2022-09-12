@@ -233,6 +233,7 @@ void LOLayerDataBase::SetDelete() {
 	flags |= FLAGS_DELETE;
 }
 
+
 void LOLayerDataBase::SetBtndef(LOString *s, int val, bool isleft, bool isright) {
 	if (s) btnStr.reset(new LOString(*s));
 	btnval = val;

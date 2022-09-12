@@ -482,7 +482,9 @@ bool LOLayer::DeSerializeForce(BinArray *bin, int *pos) {
 		int fid = bin->GetIntAuto(pos);
 		LOLayer *lyr = CreateLayer(fid);
 		if (!lyr->DeSerializeForce(bin, pos)) return false;
-		(*childs)[fid] = lyr;
+		//连接父对象
+		lyr->parent = this;
+		(*childs)[lyr->GetSelfChildID()] = lyr;
 	}
 
 	*pos = next;
@@ -830,14 +832,6 @@ bool LOLayer::setActiveCell(int cell) {
 }
 
 
-void LOLayer::unSetBtndefAll() {
-	data->cur.unSetBtndef();
-	if (childs) {
-		for (auto iter = childs->begin(); iter != childs->end(); iter++) iter->second->unSetBtndefAll();
-	}
-}
-
-
 //删除图层，这里留了一个接口
 void LOLayer::NoUseLayer(LOLayer *lyr) {
 	int fullid = GetFullID(lyr->layerType, lyr->id);
@@ -938,3 +932,4 @@ void LOLayer::ResetLayer() {
 	//重新创建根图层
 	InitBaseLayer();
 }
+

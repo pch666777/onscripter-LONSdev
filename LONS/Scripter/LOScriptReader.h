@@ -276,6 +276,7 @@ public:
 	//int _movto_Command(FunctionInterface *reader);
 	int loadgameCommand(FunctionInterface *reader);
 	int setintvarCommand(FunctionInterface *reader);
+	int saveonCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
@@ -289,6 +290,7 @@ private:
 	static bool st_globalon; //是否使用全局变量
 	static bool st_labellog; //是否使用标签变量
 	static bool st_errorsave; //是否使用错误自动保存
+	static bool st_saveonflag; //是否处于saveon模式
 	static int gloableMax;
 	static int loadID;   //loadgame时加载的序号
 

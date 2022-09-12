@@ -11,7 +11,7 @@
 #include "LOTexture.h"
 #include <SDL.h>
 
-#define ONS_VERSION "ver0.5-20220330"
+#define ONS_VERSION "ver0.5-20220910"
 
 
 class LOImageModule :public FunctionInterface{
@@ -142,29 +142,25 @@ public:
 	//std::mutex layerTestMute;
 	//需要对后台layerdata操作时，要先锁定
 	SDL_mutex* layerDataMutex;
-	//SDL_mutex* btnQueMutex;     //按钮队列操作锁
-	//SDL_mutex* presentMutex;    //SDL_RenderPresent时不能执行创建纹理，编辑纹理等操作
 	SDL_mutex* doQueMutex;      //添加、展开队列时必须保证没有其他线程进入
 
 	LOLayer *lastActiveLayer;  //上一次被激活的按钮图层，这个值每次进入btnwait时都会被重置
-	std::map<int, LOLayer*> btnMap;
 	std::vector<std::unique_ptr<PrintNameMap>> backDataMaps;
 
-	bool breakflag = false;
 	std::unordered_map<int, LOEffect*> effectMap; //特效缓存器
 		//前置事件组，用于帧刷新过程中产生的事件，帧刷新完成后在事件处理之前处理
 	std::vector<LOShareEventHook> preEventList;
-
 	void GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcount = true);
-
-	void ClearBtndef(const char *printName);
 
 	LOLayerData* CreateNewLayerData(int fullid, const char *printName);
 	LOLayerData* CreateLayerBakData(int fullid, const char *printName);
 	LOLayerData* GetLayerData(int fullid, const char *printName);
+	LOLayerData* CreateBtnData(const char *printName);
 
 	//获取printName对应的map
 	PrintNameMap* GetPrintNameMap(const char *printName);
+
+	void ClearBtndef(const char *printName);
 
 	bool loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable = false);
 	bool loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, int y, int alpha,int eff);
@@ -175,18 +171,11 @@ public:
 	int RefreshFrame(double postime);        //刷新帧显示
 
 	bool ParseTag(LOLayerDataBase *bak, LOString *tag);
-
 	bool ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *buf);
 
-	//LOtextureBase* RenderText(LOLayerData *info, LOFontWindow *fontwin, LOString *s, SDL_Color *color, int cellcount);
-	//LOtextureBase* RenderText2(LOLayerData *info, LOFontWindow *fontwin, LOString *s, int startx);
-
 	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
-	//void SaveLoadDialogText();
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
-	//int ShowLayer(int fullid, const char *printName);
-	//int HideLayer(int fullid, const char *printName);
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();
@@ -200,8 +189,6 @@ public:
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
-	void UpTest();
-	void WindowHasReset();
 	void PrepareEffect(LOEffect *ef, const char *printName);
 	bool ContinueEffect(LOEffect *ef, const char *printName, double postime);
 
@@ -277,7 +264,6 @@ public:
 private:
 	static bool isShowFps;
 	static bool st_filelog;  //是否使用文件记录
-	std::unordered_map<std::string, LOtexture*> texMap;        //材质缓存
 
 	//lsp时使用的样式
 	LOTextStyle spStyle;
@@ -295,7 +281,7 @@ private:
 
 	LOString btndefStr;     //btndef定义的按钮文件名
 	//LOString exbtn_dStr;
-	//int BtndefCount;
+	int BtndefCount;
 	//int exbtn_count;
 	int btnOverTime;
 	bool btnUseSeOver;

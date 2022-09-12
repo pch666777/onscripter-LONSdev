@@ -1071,3 +1071,18 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 	}
 	return RET_CONTINUE;
 }
+
+
+int LOScriptReader::saveonCommand(FunctionInterface *reader) {
+	int ret = RET_CONTINUE;
+	if (reader->isName("saveon")) {
+		//saveon
+		st_saveonflag = true;
+	}
+	else {
+		//saveoff 从on切换到off要记录一次
+		if (st_saveonflag) ret = savepointCommand(reader);
+		st_saveonflag = false;
+	}
+	return ret;
+}

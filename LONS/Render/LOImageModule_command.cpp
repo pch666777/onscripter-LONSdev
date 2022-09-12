@@ -143,7 +143,7 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::cspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 448) {
+	//if (reader->GetCurrentLine() == 419) {
 	//	int debugbreak = -1;
 	//}
 
@@ -164,7 +164,9 @@ void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *pr
 	for (int ii = fromid; ii <= endid; ii++) {
 		int fullid = GetFullID(layerType, ii, 255, 255);
 		LOLayerData *data = CreateLayerBakData(fullid, print_name);
-		if (data) data->bak.SetDelete();
+		if (data) {
+			data->bak.SetDelete();
+		}
 	}
 }
 
@@ -650,23 +652,6 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 //texec '\'作为结尾符时立即清除文字，"@"作为结尾符时不清除文字，不管哪个符号都保持文字显示状态
 //对话框受erasetextwindow影响，当erasetextwindow有效时，leveatextmode对话框消失
 
-	//texecFlag决定下一行文字是紧接着还是从下一行位置开始
-	//char lineEnd = pageEndFlag & 0xff;
-	//if (lineEnd == '\\') {  //换页清除
-	//	ClearDialogText(lineEnd);
-	//	DialogWindowSet(0, -1, -1);
-	//	texecFlag = false;
-	//	//dialogDisplayMode = DISPLAY_MODE_NORMAL;
-	//}
-	//else if (lineEnd == '@') {
-	//	if ((pageEndFlag & 0xff00) == 0x1000)texecFlag = true;
-	//	else texecFlag = false;
-	//}
-	//else texecFlag = false;
-	//if (reader->GetCurrentLine() == 680) {
-	//	int bbk = 1;
-	//}
-
 	char lineEnd = sayState.pageEnd & 0xff;
 	//换页清除
 	if (lineEnd == '\\') {
@@ -804,7 +789,6 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	//所有的按钮定义都会被清除
 	//无论如何btn的系统层都将被清除
 	imgeModule->ClearBtndef(reader->GetPrintName());
-	ExportQuequ("_lons", nullptr, true);
 	//All button related settings are cleared
 	btndefStr.clear();
 	btnOverTime = 0;
@@ -1040,39 +1024,27 @@ int LOImageModule::ispageCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::btnCommand(FunctionInterface *reader) {
-	/*
+	
 	if (btndefStr.length() == 0) return RET_CONTINUE;
-
-	int ids[] = { LOLayer::IDEX_NSSYS_BTN, 0, 255 };
-	int fullID = GetFullID(LOLayer::LAYER_NSSYS, ids);
-	//获取按钮在队列中的情况
-	BinArray *bin = GetQueLayerUsedState(fullID, NULL, IDS_LAYER_CHILD);
-
-	//获取按钮在图层中的情况
-	SDL_LockMutex(layerQueMutex);
-	lonsLayers[LOLayer::LAYER_SPRINT]->GetLayerUsedState(bin->bin, ids);
-	SDL_UnlockMutex(layerQueMutex);
-
-	//挑出一个空的编号进行使用
-	for (ids[1] = 0; ids[1] < 255 && bin->bin[ids[1]] != 0; ids[1]++);
-	if (ids[1] < 255) {
-		fullID = GetFullID(LOLayer::LAYER_NSSYS, ids);
-		LOLayerInfo *info = GetInfoNewAndFreeOld(fullID, reader->GetPrintName());
-		loadSpCore(info, btndefStr, reader->GetParamInt(1), reader->GetParamInt(2), 255);
-		info->SetShowRect(reader->GetParamInt(5), reader->GetParamInt(6), reader->GetParamInt(3), reader->GetParamInt(4));
-		info->SetBtn(nullptr, reader->GetParamInt(0));
-		//检查根对象是否已经载入
-		ids[1] = 255;
-		info = GetInfoUnLayerAvailable(LOLayer::LAYER_NSSYS, ids, reader->GetPrintName());
-		if (info) {
-			LOString tmp("**;_?_emptry_?_");
-			loadSpCore(info, tmp, 0, 0, 255);
-		}
+	
+	LOLayerData *info = CreateBtnData(reader->GetPrintName());
+	if(!info) return RET_CONTINUE;
+	BtndefCount++;
+	//首个按钮需要一个父对象
+	if (BtndefCount <= 1) {
+		LOLayerData *father = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255), reader->GetPrintName());
+		LOString tmp("**;_?_empty_?_");
+		loadSpCore(father, tmp, 0, 0, -1, true);
 	}
-	else LOLog_e("[btn] command more than 255 buttons have been defined!");
 
-	delete bin;
-	*/
+	int val = reader->GetParamInt(0);
+	int xx = reader->GetParamInt(1);
+	int yy = reader->GetParamInt(2);
+
+	//btn的按钮默认是不可见的
+	loadSpCore(info, btndefStr, xx, yy, -1, false);
+	info->bak.SetBtndef(nullptr, val, true, false);
+	info->bak.SetShowRect(reader->GetParamInt(5), reader->GetParamInt(6), reader->GetParamInt(3), reader->GetParamInt(4));
 	return RET_CONTINUE;
 }
 
