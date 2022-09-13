@@ -788,7 +788,7 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 
 	//所有的按钮定义都会被清除
 	//无论如何btn的系统层都将被清除
-	imgeModule->ClearBtndef(reader->GetPrintName());
+	ClearBtndef();
 	//All button related settings are cleared
 	btndefStr.clear();
 	btnOverTime = 0;

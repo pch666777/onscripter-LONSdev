@@ -198,7 +198,6 @@ public:
 	bool LogicCallDeSerialize(BinArray *bin, int *pos);
 
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
-	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnSetVal(LOEventHook *hook);
 	int RunFuncSayFinish(LOEventHook *hook);
 

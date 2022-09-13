@@ -188,7 +188,7 @@ void LOImageModule::HandlingEvents() {
 		}
 	}
 
-	waitEventQue.clear();
+	//waitEventQue.clear();
 }
 
 
@@ -288,8 +288,8 @@ int LOImageModule::CutPrintEffect(LOEventHook *hook, LOEventHook *e) {
 
 int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	switch (hook->param2){
-	//case LOEventHook::FUN_SPSTR:
-	//	return RunFuncSpstr(hook, e);
+	case LOEventHook::FUN_BTNFINISH:
+		return RunFuncBtnFinish(hook, e);
 	case LOEventHook::FUN_SCRIPT_CALL:
 		return RunFuncScriptCall(hook, e);
 	case LOEventHook::FUN_INVILIDE:
@@ -303,10 +303,6 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 		break;
 	}
 
-	return LOEventHook::RUNFUNC_CONTINUE;
-}
-
-int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
@@ -324,11 +320,70 @@ int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
 }
 
 
+//这个函数只能从渲染线程调用
 int LOImageModule::RunFuncBtnClear(LOEventHook *hook, LOEventHook *e) {
 	//能调用到这个函数说明肯定不在刷新图层，以及向图层传递事件，所以是线程安全的
-	//直接删除[btn]命令生成的图层
-	LOLayer::NoUseLayerForce(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255));
-	e->InvalidMe();
+	//直接断开[btn]的图层关系
+	G_baseLayer[LOLayer::LAYER_NSSYS]->RemodeChild(LOLayer::IDEX_NSSYS_BTN);
+
+	//删除所有[btn]按钮，并且无效化所有的spbtn
+	int start = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 0, 0);
+	int end   = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255);
+	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end();) {
+		if (iter->first >= start && iter->first <= end) {
+			delete iter->second;
+			iter = LOLayer::layerCenter.erase(iter);
+		}
+		else {
+			iter->second->data->bak.unSetBtndef();
+			iter->second->data->cur.unSetBtndef();
+			iter++;
+		}
+	}
+
+	//清理队列
+	for (int ii = 0; ii < backDataMaps.size(); ii++) {
+		auto *map = backDataMaps[ii]->map;
+		for (auto iter = map->begin(); iter != map->end();) {
+			if (iter->first >= start && iter->first <= end) iter = map->erase(iter);
+			else iter++;
+		}
+	}
+	//重置[btn]按钮数量
+	BtndefCount = 0;
+
+	//队列清理由脚本线程继续完成
+	if(e) e->InvalidMe();
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+	//来自超时的事件
+	LOUniqEventHook ev;
+	if (!e) {
+		ev.reset(new LOEventHook());
+		e = ev.get();
+		e->PushParam(new LOVariant(-1));
+		//btnval的超时值为-2
+		e->PushParam(new LOVariant(-2));
+	}
+
+	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
+		//没有满足要求
+		if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
+	}
+	//要确定是否清除btndef
+	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
+		if (e->GetParam(1)->GetInt() > 0)
+			RunFuncBtnClear(nullptr, nullptr);
+	}
+	//确定是否要设置变量的值，变量设置要转移到脚本线程中
+	if (hook->GetParam(LOEventHook::PINDS_REFID) != nullptr) {
+		e->paramListMoveTo(hook->GetParamList());
+		hook->FinishMe();
+	}
+	else hook->InvalidMe();
 	return LOEventHook::RUNFUNC_FINISH;
 }
 

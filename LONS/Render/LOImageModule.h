@@ -174,7 +174,7 @@ public:
 	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
-	void ClearBtndef(const char *printName);
+	void ClearBtndef();
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();
@@ -185,9 +185,9 @@ public:
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
 	int RunFuncText(LOEventHook *hook, LOEventHook *e);
-	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 	int RunFuncScriptCall(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnClear(LOEventHook *hook, LOEventHook *e);
+	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	LOEffect* GetEffect(int id);
 	void PrepareEffect(LOEffect *ef, const char *printName);

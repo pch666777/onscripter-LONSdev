@@ -222,7 +222,7 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char 
 	e->catchFlag = ANSWER_BTNCLICK;
 	if (channel >= 0) e->catchFlag |= ANSWER_SEPLAYOVER;
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
-	e->param1 = MOD_SCRIPTER;
+	e->param1 = MOD_RENDER;
 	e->param2 = FUN_BTNFINISH;
 	//最大的等待时间
 	e->paramList.push_back(new LOVariant(waittime));
@@ -333,12 +333,15 @@ LOEventHook* LOEventHook::CreateScriptCallHook() {
 //===========================================//
 
 LOEventQue::LOEventQue() {
-	
+	auto cbb = forwardList.before_begin();
+	forwardList.emplace_after(forwardList.before_begin(), nullptr);
+	auto iter = forwardList.begin();
 }
 
 LOEventQue::~LOEventQue() {
-
 }
+
+
 
 //要保证添加时绝对不删除文件
 void LOEventQue::push_back(LOShareEventHook &e, int level) {
@@ -347,6 +350,7 @@ void LOEventQue::push_back(LOShareEventHook &e, int level) {
 	list->push_back(e);
 	_mutex.unlock();
 }
+
 
 LOShareEventHook LOEventQue::GetEventHook(int &index, int level, bool isenter) {
 	auto *list = GetList(level);
@@ -373,6 +377,25 @@ LOShareEventHook LOEventQue::GetEventHook(int &index, int level, bool isenter) {
 
 	index++;
 	return ret;
+}
+
+
+LOShareEventHook LOEventQue::GetEventHookA(int &index, bool isenter) {
+	auto *list = &highList;
+	if (index & INDEX_LOWHEADER) list = &normalList;
+
+	LOShareEventHook ev;
+	while ((index & INDEX_INDEXAND) < list->size()) {
+		LOShareEventHook ev = list->at(index & INDEX_INDEXAND);
+		//移除无效的
+	}
+
+	//还没有历遍低优先级的
+	if (!ev && (index & INDEX_LOWHEADER) == 0) {
+		index = INDEX_LOWHEADER;
+		return GetEventHookA(index, isenter);
+	}
+	return ev;
 }
 
 

@@ -6,6 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <SDL.h>
+#include <forward_list>
 #include <vector>
 #include <map>
 #include "../Scripter/ONSvariable.h"
@@ -178,6 +179,8 @@ typedef std::unique_ptr<LOEventHook> LOUniqEventHook;
 typedef std::map<int64_t, LOShareEventHook> LOEventMap;
 //=============================
 
+
+//通常来说，只有一端读取，多端写入
 class LOEventQue {
 public:
 	LOEventQue();
@@ -186,11 +189,15 @@ public:
 	enum {
 		LEVEL_NORMAL = 1,
 		LEVEL_HIGH = 2,
+		//第30位为1
+		INDEX_LOWHEADER = 0x40000000,
+		INDEX_INDEXAND = 0xffffff,
 	};
 
-	void push_back(LOShareEventHook &e, int level);
-	void push_header(LOShareEventHook &e, int level);
+	void push_back(LOShareEventHook &e, int level = LEVEL_NORMAL);
+	void push_header(LOShareEventHook &e, int level = LEVEL_NORMAL);
 	LOShareEventHook GetEventHook(int &index, int level, bool isenter);
+	LOShareEventHook GetEventHookA(int &index, bool isenter);
 
 	//整理队列，注意调用的时机
 	void arrangeList();
@@ -208,11 +215,11 @@ private:
 	//优先事件列表
 	std::vector<LOShareEventHook> highList;
 
+	std::forward_list<LOShareEventHook> forwardList;
+
 	//添加、删除时锁定
 	std::mutex _mutex;
-
-	//空的
-	//LOShareEventHook emptyHook;
+	LOShareEventHook m_empty;
 
 	std::vector<LOShareEventHook>* GetList(int level);
 };

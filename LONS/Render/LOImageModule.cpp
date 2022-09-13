@@ -760,45 +760,15 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 }
 
 
-void LOImageModule::ClearBtndef(const char *printName) {
-	//删除当前的按钮
-	for (int ii = 0; ii < G_maxLayerCount[1]; ii++) {
-		int fid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 0, 0);
-		LOLayerData *data = CreateLayerBakData(fid, "_lons");
-		if (data) data->bak.SetDelete();
-	}
-	//立即刷新，不等待帧刷新时间满足要求
-	ExportQuequ("_lons", nullptr, true, true);
+void LOImageModule::ClearBtndef() {
+	//由渲染线程进行必要的清理
+	LOShareEventHook ev(LOEventHook::CreateBtnClearEvent(0));
+	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
 
-
-	//重置变量
-	BtndefCount = 0;
+	while (!ev->isInvalid()) LOTimer::CpuDelay(0.5);
+	return;
 }
 
-////随机字符串
-//void LOImageModule::RandomFileName(LOString *s, char alphamode) {
-//	s->clear();
-//	char tmp[32];
-//	memset(tmp, 0, 32);
-//	tmp[0] = alphamode;
-//	tmp[1] = ';';
-//	for (int ii = 2; ii < 31; ii++) {
-//		tmp[ii] = rand() % ('Z' - 'A' + 1) + 'A';
-//	}
-//	s->assign(tmp);
-//}
-
-
-//LOLayer* LOImageModule::FindLayerInBase(LOLayer::SysLayerType type, const int *ids) {
-//	return G_baseLayer[type].FindChild(ids);
-//}
-//
-//LOLayer* LOImageModule::FindLayerInBase(int fullid) {
-//	LOLayer::SysLayerType type;
-//	int ids[] = { -1,-1,-1 };
-//	GetTypeAndIds( (int*)(&type), ids, fullid);
-//	return G_baseLayer[type].FindChild(ids);
-//}
 
 
 //tag定义：

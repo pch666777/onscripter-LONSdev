@@ -1557,40 +1557,9 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	if (hook->param2 == LOEventHook::FUN_BTNFINISH) return RunFuncBtnFinish(hook, e);
-
 	return LOEventHook::RUNFUNC_CONTINUE;
 }
 
-//按钮完成事件
-int LOScriptReader::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
-	//来自超时的事件
-	LOUniqEventHook ev;
-	if (!e) {
-		ev.reset(new LOEventHook());
-		e = ev.get();
-		e->PushParam(new LOVariant(-1));
-		//btnval的超时值为-2
-		e->PushParam(new LOVariant(-2));
-	}
-
-	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
-		//没有满足要求
-		if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
-	}
-	//要确定是否清除btndef
-	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
-		if (e->GetParam(1)->GetInt() > 0)
-			imgeModule->ClearBtndef(hook->GetParam(LOEventHook::PINDS_PRINTNAME)->GetChars(nullptr));
-	}
-	//确定是否要设置变量的值，变量设置要转移到脚本线程中
-	if (hook->GetParam(LOEventHook::PINDS_REFID) != nullptr) {
-		e->paramListMoveTo(hook->GetParamList());
-		hook->FinishMe();
-	}
-	else hook->InvalidMe();
-	return LOEventHook::RUNFUNC_FINISH;
-}
 
 //变量赋值事件，这个函数应该从脚本线程执行
 int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {

@@ -219,11 +219,11 @@ public:
 	virtual void PrintError(LOString *err) { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);
-	virtual void ClearBtndef(const char *printName) { return; }
 	void PrintErrorStatic(LOString *err);
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
 	void WriteLog(int logt);
+	virtual void ClearBtndef() { return; };
 	virtual void Serialize(BinArray *bin) { return; };
 	virtual bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) { return false; };
 
