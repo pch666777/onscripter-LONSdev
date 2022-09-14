@@ -921,10 +921,15 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		//要先写入tag和存档时间
 		BinArray bin(512,true);
 		bin.InitLpksHeader();
+		//写入存档时间，先时间，再字符串，方便读取
+		time_t t1 = time(nullptr);
+		auto timeinfo = localtime(&t1);
+		//年自1900年起，月0-11，月份要增1，日1-31，时0-23，分0-59，秒0-60
+		int16_t lotime[] = { timeinfo->tm_year + 1900,timeinfo->tm_mon + 1 ,timeinfo->tm_mday ,timeinfo->tm_hour ,
+		timeinfo->tm_min ,timeinfo->tm_sec };
+		bin.Append((const char*)lotime, 6 * 2);
+		//写入存档字符串
 		bin.WriteLOString(&tag);
-		//写入存档时间
-		int64_t t1 = time(nullptr);
-		bin.WriteInt64(t1);
 
 		fwrite(bin.bin, 1, bin.Length(), f);
 		fwrite(GloSaveFS->bin, 1, GloSaveFS->Length(), f);
@@ -1004,24 +1009,23 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 
 
 bool LOScriptReader::LoadCore(int id) {
-	LOString fn = StringFormat(64, "save%d.datl", id);
-	FILE *f = LOIO::GetSaveHandle(fn, "rb");
-	if (!f) {
-		LOLog_e("can't read save file [%s]", fn.c_str());
+
+	std::unique_ptr<BinArray> bin(ReadSaveFile(id, -1));
+	int pos = 0;
+	if (!bin || !bin->CheckLpksHeader(&pos)) {
+		LOLog_e("save file [save%d.datl] error!", id);
 		return false;
 	}
 
-	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, -1));
-	int pos = 0;
-	if (!bin || !bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file [%s] error!", fn.c_str());
-		return false;
-	}
+	//存储的时间
+	char tmp[16];
+	bin->GetArrayAuto(tmp, 6, 2, &pos);
+	//存储的字符串
 	bin->GetLOString(&pos);
-	bin->GetInt64Auto(&pos);
+
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file [%s] error!", fn.c_str());
+		LOLog_e("save file [save%d.datl] error!", id);
 		return false;
 	}
 
@@ -1029,13 +1033,13 @@ bool LOScriptReader::LoadCore(int id) {
 	while (imgeModule->isModuleRunning()) LOTimer::CpuDelay(0.2);
 	//读取变量
 	if (!ONSVariableBase::LoadOnsVar(bin.get(), &pos)) {
-		LOLog_e("save file [%s] ONSVariable read faild!", fn.c_str());
+		LOLog_e("save file [save%d.datl] ONSVariable read faild!", id);
 		return false;
 	}
 	//读取hook钩子
 	LOEventMap evmap;
 	if (!G_hookQue.LoadHooks(bin.get(), &pos, &evmap)) {
-		LOLog_e("save file [%s] EventHook read faild!", fn.c_str());
+		LOLog_e("save file [save%d.datl] EventHook read faild!", id);
 		return false;
 	}
 	//渲染模块
@@ -1088,4 +1092,30 @@ int LOScriptReader::saveonCommand(FunctionInterface *reader) {
 		st_saveonflag = false;
 	}
 	return ret;
+}
+
+
+int LOScriptReader::savetimeCommand(FunctionInterface *reader) {
+	int16_t val[] = { 0,0,0,0,0,0 };
+	std::unique_ptr<BinArray> bin(ReadSaveFile(reader->GetParamInt(0), 128));
+	int pos = 0;
+	if (bin && bin->CheckLpksHeader(&pos)) {
+		bin->GetArrayAuto(val, 6, 2, &pos);
+		for (int ii = 0; ii < 4; ii++) {
+			ONSVariableRef *ref = reader->GetParamRef(ii + 1);
+			ref->SetValue((double)val[ii + 1]);
+		}
+	}
+	else LOLog_i("can't read save file [save%d.datl]", reader->GetParamInt(0));
+	return RET_CONTINUE;
+}
+
+
+BinArray *LOScriptReader::ReadSaveFile(int id, int readLen) {
+	LOString fn = StringFormat(64, "save%d.datl", id);
+	FILE *f = LOIO::GetSaveHandle(fn, "rb");
+	if (!f) return nullptr;
+	BinArray *bin = BinArray::ReadFile(f, 0, readLen);
+	fclose(f);
+	return bin;
 }

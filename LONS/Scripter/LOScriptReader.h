@@ -192,6 +192,7 @@ public:
 	void SaveGlobleVariable();
 	void Serialize(BinArray *bin);
 	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
+	BinArray *ReadSaveFile(int id, int readLen);
 
 	//需要用到脚本的函数，因此运行点的反序列化放在这里，point为null
 	bool ScCallDeSerialize(BinArray *bin, int *pos);
@@ -276,6 +277,7 @@ public:
 	int loadgameCommand(FunctionInterface *reader);
 	int setintvarCommand(FunctionInterface *reader);
 	int saveonCommand(FunctionInterface *reader);
+	int savetimeCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
