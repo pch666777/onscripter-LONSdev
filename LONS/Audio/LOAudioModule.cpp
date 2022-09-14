@@ -185,7 +185,7 @@ void musicFinished() {
 	if (au->afterBgmName.length() > 0) {
 		//模块处于挂起状态时，播放完成事件被存储在待处理区
 		LOShareEventHook ev(LOEventHook::CreateSignal(LOEventHook::MOD_SCRIPTER, LOEventHook::FUN_BGM_AFTER));
-		FunctionInterface::scriptModule->waitEventQue.push_header(ev, LOEventQue::LEVEL_NORMAL);
+		FunctionInterface::scriptModule->waitEventQue.push_N_back(ev);
 	}
 }
 

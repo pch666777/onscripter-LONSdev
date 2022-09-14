@@ -161,8 +161,8 @@ int LOScriptReader::delayCommand(FunctionInterface *reader) {
 		//创建一个时间阻塞事件
 		//除waittimer外，delay和wait均可以左键跳过
 		LOShareEventHook ev(LOEventHook::CreateTimerHook(val, !reader->isName("waittimer")));
-		G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
-		reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+		G_hookQue.push_N_back(ev);
+		reader->waitEventQue.push_N_back(ev);
 	}
 	return RET_CONTINUE;
 }

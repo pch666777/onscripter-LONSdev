@@ -499,16 +499,16 @@ int LOScriptReader::ContinueRun() {
 
 //因为采用了轮询来模拟多线程脚本，所以部分需等待的命令是通过事件存储的
 int LOScriptReader::ContinueEvent() {
-	int level = LOEventQue::LEVEL_NORMAL;
 	int index = 0;
 	bool isfinish = false;
 	bool hasEvent = false;
 	bool isloop = true;
+	auto iter = waitEventQue.begin();
 
 	while (isloop) {
 		isloop = false;
 
-		LOShareEventHook ev = waitEventQue.GetEventHook(index, level, false);
+		LOShareEventHook ev = waitEventQue.GetEventHook(iter, false);
 		if (!ev) break;
 
 		hasEvent = true;
@@ -543,10 +543,7 @@ int LOScriptReader::ContinueEvent() {
 	}
 
 	//返回continue将会阻塞线程
-	if (isfinish) {
-		waitEventQue.arrangeList();
-		return RET_CONTINUE;
-	}
+	if (isfinish) return RET_CONTINUE;
 
 	//事件没完成根据有无事件做处理
 	if (hasEvent) {

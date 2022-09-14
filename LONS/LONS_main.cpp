@@ -136,16 +136,32 @@ int main(int argc, char **argv) {
 
 	GlobalInit();
 
-	int x = 0x8EB90100;
-	int a = (x & 0xff) << 24;
-	int b = (x & 0xff00) << 8;
-	int c = (x & 0x00ff0000) >> 8;
 
-	//BinArray bin(2, true);
-	//bin.WriteInt(1);
-	//bin.WriteInt4(2, 3, 4, 5);
-	//bin.WriteInt4(6, 7, 8, 9);
-	//bin.WriteInt4(10, 11, 12, 13);
+	//LOShareEventHook e1(new LOEventHook());
+	//e1->param1 = 1;
+	//LOShareEventHook e2(new LOEventHook());
+	//e2->param1 = 2;
+	//LOShareEventHook e3(new LOEventHook());
+	//e3->param1 = 3;
+	//LOShareEventHook e4(new LOEventHook());
+	//e4->param1 = 4;
+	//LOShareEventHook e5(new LOEventHook());
+	//e5->param1 = 5;
+
+	//LOEventQue que;
+	//que.push_N_front(e3);
+	//que.push_N_back(e1);
+	//que.push_N_front(e4);
+	//que.push_H_front(e2);
+	//que.push_H_back(e5);
+
+	//auto iter = que.begin();
+	//while (true) {
+		//LOShareEventHook ev = que.GetEventHook(iter, false);
+	//	LOShareEventHook ev = que.TakeOutEvent();
+	//	if (!ev) break;
+	//}
+
 
 	//初始化IO，必须优先进行IO，因为后面要读文件
 	filemodule = new LOFileModule;
@@ -164,7 +180,7 @@ int main(int argc, char **argv) {
 			LOLog_i("image module init ok.");
 			//注册脚本模块呼叫hook
 			LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
-			G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+			G_hookQue.push_N_back(ev);
 
 			//初始化音频模块
 			audiomodule = new LOAudioModule;

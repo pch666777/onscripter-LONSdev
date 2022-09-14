@@ -536,7 +536,7 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	
 	//发出文字事件hook
 	if (ac) {
-		reader->waitEventQue.push_back(ac->hook, LOEventQue::LEVEL_NORMAL);
+		reader->waitEventQue.push_N_back(ac->hook);
 	}
 
 	EnterTextDisplayMode(true);  //will display here
@@ -620,8 +620,8 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	
 	//每次btnwait都需要设置btnovetime
 	btnOverTime = 0;
-	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
-	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	G_hookQue.push_N_back(ev);
+	reader->waitEventQue.push_N_back(ev);
 	return RET_CONTINUE;
 }
 
@@ -762,8 +762,8 @@ int LOImageModule::setwindow2Command(FunctionInterface *reader) {
 int LOImageModule::clickCommand(FunctionInterface *reader) {
 	//click只等待左键，lrclick左键和右键都可以
 	LOShareEventHook ev(LOEventHook::CreateClickHook(true, reader->isName("lrclick")));
-	G_hookQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
-	reader->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	G_hookQue.push_N_back(ev);
+	reader->waitEventQue.push_N_back(ev);
 	return RET_CONTINUE;
 }
 

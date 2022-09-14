@@ -333,118 +333,105 @@ LOEventHook* LOEventHook::CreateScriptCallHook() {
 //===========================================//
 
 LOEventQue::LOEventQue() {
-	auto cbb = forwardList.before_begin();
-	forwardList.emplace_after(forwardList.before_begin(), nullptr);
-	auto iter = forwardList.begin();
+	dLink.emplace_back(nullptr);
+	nIter = dLink.begin();
 }
 
 LOEventQue::~LOEventQue() {
 }
 
 
-
-//要保证添加时绝对不删除文件
-void LOEventQue::push_back(LOShareEventHook &e, int level) {
-	auto *list = GetList(level);
+LOShareEventHook LOEventQue::GetEventHook(std::list<LOShareEventHook>::iterator &iter, bool isenter) {
 	_mutex.lock();
-	list->push_back(e);
-	_mutex.unlock();
-}
-
-
-LOShareEventHook LOEventQue::GetEventHook(int &index, int level, bool isenter) {
-	auto *list = GetList(level);
-	LOShareEventHook ret;
-	_mutex.lock();
-	while (index >= 0 && index < list->size()) {
-		//注意，不判断有消息
-		LOShareEventHook ev = list->at(index);
+	while (iter != dLink.end()) {
+		LOShareEventHook ev = *iter;
 		if (ev) {
+			//清除不可用的对象
+			if (ev->isInvalid()) {
+				iter = dLink.erase(iter);
+				continue;
+			}
+			//尝试进入对象
 			if (isenter) {
 				if (ev->enterEdit()) {
-					ret = ev;
-					break;
+					iter++;
+					_mutex.unlock();
+					return ev;
 				}
+				iter++;
 			}
 			else {
-				ret = ev;
-				break;
+				iter++;
+				_mutex.unlock();
+				return ev;
 			}
 		}
-		index++;
+		else if (iter == nIter) iter++;   //调过低优先级标识符
+		else iter = dLink.erase(iter);  //删除空对象
 	}
+
 	_mutex.unlock();
-
-	index++;
-	return ret;
+	return m_empty;
 }
 
 
-LOShareEventHook LOEventQue::GetEventHookA(int &index, bool isenter) {
-	auto *list = &highList;
-	if (index & INDEX_LOWHEADER) list = &normalList;
-
-	LOShareEventHook ev;
-	while ((index & INDEX_INDEXAND) < list->size()) {
-		LOShareEventHook ev = list->at(index & INDEX_INDEXAND);
-		//移除无效的
-	}
-
-	//还没有历遍低优先级的
-	if (!ev && (index & INDEX_LOWHEADER) == 0) {
-		index = INDEX_LOWHEADER;
-		return GetEventHookA(index, isenter);
-	}
-	return ev;
-}
-
-
-void LOEventQue::push_header(LOShareEventHook &e, int level) {
-	auto *list = GetList(level);
+LOShareEventHook LOEventQue::TakeOutEvent() {
 	_mutex.lock();
-	auto iter = list->begin();
-	list->insert(iter, e);
+	auto iter = dLink.begin();
+	if (iter == nIter) iter++;
+	if (iter != dLink.end()) {
+		LOShareEventHook ev = *iter;
+		dLink.erase(iter);
+		_mutex.unlock();
+		return ev;
+	}
 	_mutex.unlock();
+	return m_empty;
 }
 
 
-std::vector<LOShareEventHook>* LOEventQue::GetList(int level) {
-	if (level == LEVEL_HIGH) {
-		return &highList;
-	}
-	else {
-		return &normalList;
-	}
-}
 
-
-void LOEventQue::arrangeList() {
+void LOEventQue::push_N_back(LOShareEventHook &e) {
 	_mutex.lock();
-	for (int level = 0; level < 2; level++) {
-		auto *list = GetList(level);
-		for (auto iter = list->begin(); iter != list->end(); ) {
-			if ((*iter)->isInvalid()) iter = list->erase(iter);
-			else iter++;
-		}
-	}
+	dLink.push_back(e);
 	_mutex.unlock();
 }
+
+void LOEventQue::push_N_front(LOShareEventHook &e) {
+	_mutex.lock();
+	auto iter = nIter;
+	iter++;
+	dLink.insert(iter, e);
+	_mutex.unlock();
+}
+
+void LOEventQue::push_H_front(LOShareEventHook &e) {
+	_mutex.lock();
+	dLink.push_front(e);
+	_mutex.unlock();
+}
+
+void LOEventQue::push_H_back(LOShareEventHook &e) {
+	_mutex.lock();
+	dLink.insert(nIter, e);
+	_mutex.unlock();
+}
+
 
 
 void LOEventQue::clear() {
 	_mutex.lock();
-	normalList.clear();
-	highList.clear();
+	dLink.clear();
 	_mutex.unlock();
 }
 
 
 void LOEventQue::invalidClear() {
 	_mutex.lock();
-	for (int ii = 0; ii < normalList.size(); ii++) normalList.at(ii)->InvalidMe();
-	for (int ii = 0; ii < highList.size(); ii++) highList.at(ii)->InvalidMe();
-	normalList.clear();
-	highList.clear();
+	for (auto iter = dLink.begin(); iter != dLink.end(); iter++) {
+		if (*iter) (*iter)->InvalidMe();
+	}
+	dLink.clear();
 	_mutex.unlock();
 }
 
@@ -454,11 +441,12 @@ void LOEventQue::SaveHooks(BinArray *bin) {
 	//'hque',len, version
 	int len = bin->WriteLpksEntity("hque", 0, 1);
 
+	/*
 	bin->WriteInt(highList.size());
 	for (int ii = 0; ii < highList.size(); ii++) highList.at(ii)->Serialize(bin);
 	bin->WriteInt(normalList.size());
 	for (int ii = 0; ii < normalList.size(); ii++) normalList.at(ii)->Serialize(bin);
-
+	*/
 	bin->WriteInt(bin->Length() - len, &len);
 	_mutex.unlock();
 }
@@ -467,10 +455,13 @@ void LOEventQue::SaveHooks(BinArray *bin) {
 bool LOEventQue::LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap) {
 	int next = -1;
 	if (!bin->CheckEntity("hque", &next, nullptr, pos)) return false;
+
+	/*
 	//highList
 	if (!LoadHooksList(bin, pos, evmap, &highList)) return false;
 	//normalList
 	if (!LoadHooksList(bin, pos, evmap, &normalList)) return false;
+	*/
 
 	*pos = next;
 }

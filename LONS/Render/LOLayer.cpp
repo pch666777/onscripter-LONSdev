@@ -572,7 +572,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//初始化后才会相应左键跳过事件
 		ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
-		G_hookQue.push_back(ai->hook, LOEventQue::LEVEL_HIGH);
+		G_hookQue.push_H_back(ai->hook);
 	}
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);
@@ -746,7 +746,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 	if (e->catchFlag & LOLayerDataBase::FLAGS_RIGHTCLICK) {
 		//只有按钮才相应右键事件
 		LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), -1, 0));
-		aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+		aswerQue->push_N_back(ev);
 	}
 	else {
 		//左键、长按、悬停，如果是按钮均会触发按钮类操作
@@ -767,7 +767,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 						//产生btnstr事件
 						if (data->cur.btnStr) {
 							LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), data->cur.btnStr.get()));
-							aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+							aswerQue->push_N_back(ev);
 						}
 					}
 					//已经处理active事件
@@ -776,7 +776,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 					//左键和长按会进一步产生按钮响应点击事件
 					if (e->catchFlag & (LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
 						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), data->cur.btnval, 0));
-						aswerQue->push_back(ev, LOEventQue::LEVEL_NORMAL);
+						aswerQue->push_N_back(ev);
 					}
 				}
 			}

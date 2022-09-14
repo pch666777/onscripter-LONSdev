@@ -114,7 +114,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	SDL_UnlockMutex(layerQueMutex);
 	if (ep) {
 		//print2-18会响应点击事件
-		if (ef) G_hookQue.push_back(printHook, LOEventQue::LEVEL_HIGH);
+		if (ef) G_hookQue.push_H_back(printHook);
 		ep->waitEvent(1, -1);
 		//无效化，这样放入其他队列后才有机会整理
 		ep->InvalidMe();
@@ -164,7 +164,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
 			//这里要注意检查事件类型是否被改变
 			int old = ev->catchFlag;
-			if (SendEventToHooks(ev.get(), LOEventQue::LEVEL_HIGH | LOEventQue::LEVEL_NORMAL) == LOEventHook::RUNFUNC_CONTINUE) {
+			if (SendEventToHooks(ev.get(), 0) == LOEventHook::RUNFUNC_CONTINUE) {
 				if(ev->catchFlag == old) {
 					if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
 					else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
@@ -178,52 +178,34 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 
 
 void LOImageModule::HandlingEvents() {
-	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
-		int index = 0;
-		while (true) {
-			LOShareEventHook ev = waitEventQue.GetEventHook(index, level, false);
-			if (!ev) break;
-			//将事件传递给钩子列表处理
-			SendEventToHooks(ev.get(), LOEventQue::LEVEL_HIGH | LOEventQue::LEVEL_NORMAL);
+	while (true) {
+		LOShareEventHook ev = waitEventQue.TakeOutEvent();
+		if (!ev) break;
+		//将事件传递给钩子列表处理
+		if (SendEventToHooks(ev.get(), 0) == LOEventHook::RUNFUNC_CONTINUE) {
+			//没有响应事件
+			int nodoit = 1;
 		}
 	}
-
-	//waitEventQue.clear();
 }
 
 
 //单独立即处理某个事件
 int LOImageModule::SendEventToHooks(LOEventHook *e, int flags) {
 	int state = LOEventHook::RUNFUNC_CONTINUE;
-	int listID[2] = {flags & LOEventQue::LEVEL_NORMAL,flags & LOEventQue::LEVEL_HIGH };
 
-	for (int level = 1; level >= 0; level--) {
-		int index = 0;
-		while (listID[level] && state == LOEventHook::RUNFUNC_CONTINUE) {
-			LOShareEventHook hook = G_hookQue.GetEventHook(index, listID[level], true);
-			if (!hook) break;
-			//printf("%x\n", hook.get());
-			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
-			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
-		}
+	auto iter = G_hookQue.begin();
+	while (state == LOEventHook::RUNFUNC_CONTINUE) {
+		LOShareEventHook hook = G_hookQue.GetEventHook(iter, true);
+		if (!hook) break;
+		//处理符合条件的事件
+		if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
+		//判断事件是否还需要继续传递
+		if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
 	}
+
 	return state;
 }
-
-//int LOImageModule::SendEventToHooks(LOEventHook *e) {
-//	int state = LOEventHook::RUNFUNC_CONTINUE;
-//	for (int level = LOEventQue::LEVEL_HIGH; level >= LOEventQue::LEVEL_NORMAL; level--) {
-//		int index = 0;
-//		while (state == LOEventHook::RUNFUNC_CONTINUE) {
-//			LOShareEventHook hook = G_hookQue.GetEventHook(index, level, true);
-//			if (!hook) break;
-//			if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
-//
-//			if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
-//		}
-//	}
-//	return state;
-//}
 
 
 //转换鼠标位置，超出视口位置等于事件没有发生
@@ -238,12 +220,6 @@ bool LOImageModule::TranzMousePos(int xx, int yy) {
 	return true;
 }
 
-//立刻按钮捕获模式
-//void LOImageModule::LeaveCatchBtn(LOEvent1 *msg) {
-//	lastActiveLayer = nullptr;
-//	//赋值交给脚本线程执行，避免出现线程竞争
-//	msg->FinishMe();
-//}
 
 
 void LOImageModule::ClearDialogText(char flag) {
@@ -308,14 +284,20 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 
 
 int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
+	int ret = LOEventHook::RUNFUNC_FINISH;
+
 	int key = e->GetParam(0)->GetInt();
 	switch (key){
 	case LOEventHook::SCRIPT_CALL_BTNSTR:
+		break;
 	case LOEventHook::SCRIPT_CALL_BTNCLEAR:
-		return RunFuncBtnClear(hook, e);
+		ret = RunFuncBtnClear(hook, e);
+		break;
 	default:
 		break;
 	}
+	//hook是长久有效的
+	hook->closeEdit();
 	return LOEventHook::RUNFUNC_FINISH;
 }
 

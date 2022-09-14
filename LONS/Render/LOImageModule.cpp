@@ -276,8 +276,6 @@ int LOImageModule::MainLoop() {
 			if (RefreshFrame(posTime) == 0) {
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
-				//在进入事件处理之前，先整理一下钩子队列
-				G_hookQue.arrangeList();
 				lastTime = hightTimeNow;
 			}
 			else {
@@ -316,11 +314,12 @@ int LOImageModule::MainLoop() {
 			default:
 				//封装事件
 				CaptureEvents(&ev);
-				//处理事件
-				HandlingEvents();
 				break;
 			}
 		}
+
+		//因为有别的线程的事件，所以要放在外部处理事件
+		HandlingEvents();
 		
 		//降低CPU的使用率
 		if (posTime < fpstime - 1.5) SDL_Delay(1);
@@ -763,7 +762,7 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 void LOImageModule::ClearBtndef() {
 	//由渲染线程进行必要的清理
 	LOShareEventHook ev(LOEventHook::CreateBtnClearEvent(0));
-	imgeModule->waitEventQue.push_back(ev, LOEventQue::LEVEL_NORMAL);
+	imgeModule->waitEventQue.push_N_back(ev);
 
 	while (!ev->isInvalid()) LOTimer::CpuDelay(0.5);
 	return;

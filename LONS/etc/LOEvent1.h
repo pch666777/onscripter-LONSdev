@@ -6,7 +6,7 @@
 #include <atomic>
 #include <mutex>
 #include <SDL.h>
-#include <forward_list>
+#include <list>
 #include <vector>
 #include <map>
 #include "../Scripter/ONSvariable.h"
@@ -186,42 +186,31 @@ public:
 	LOEventQue();
 	~LOEventQue();
 
-	enum {
-		LEVEL_NORMAL = 1,
-		LEVEL_HIGH = 2,
-		//第30位为1
-		INDEX_LOWHEADER = 0x40000000,
-		INDEX_INDEXAND = 0xffffff,
-	};
+	void push_N_front(LOShareEventHook &e);
+	void push_N_back(LOShareEventHook &e);
+	void push_H_front(LOShareEventHook &e);
+	void push_H_back(LOShareEventHook &e);
 
-	void push_back(LOShareEventHook &e, int level = LEVEL_NORMAL);
-	void push_header(LOShareEventHook &e, int level = LEVEL_NORMAL);
-	LOShareEventHook GetEventHook(int &index, int level, bool isenter);
-	LOShareEventHook GetEventHookA(int &index, bool isenter);
+	LOShareEventHook GetEventHook(std::list<LOShareEventHook>::iterator &iter, bool isenter);
+	std::list<LOShareEventHook>::iterator begin() { return dLink.begin(); }
 
-	//整理队列，注意调用的时机
-	void arrangeList();
+	//从头部开始取出
+	LOShareEventHook TakeOutEvent();
+
 	void clear();
 	void invalidClear();
 	void SaveHooks(BinArray *bin);
 	bool LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap);
 	bool LoadHooksList(BinArray *bin, int *pos, LOEventMap *evmap, std::vector<LOShareEventHook> *list);
-	//获取下一个非空的事件，注意，这个函数只应该在主线程调用，会清除已经无效的事件
-	//LOEventHook* GetNextEvent(int *listindex, int *index);
-	
-private:
-	//普通事件列表
-	std::vector<LOShareEventHook> normalList;
-	//优先事件列表
-	std::vector<LOShareEventHook> highList;
 
-	std::forward_list<LOShareEventHook> forwardList;
+private:
+
+	std::list<LOShareEventHook> dLink;
+	std::list<LOShareEventHook>::iterator nIter;
 
 	//添加、删除时锁定
 	std::mutex _mutex;
 	LOShareEventHook m_empty;
-
-	std::vector<LOShareEventHook>* GetList(int level);
 };
 
 extern LOEventQue G_hookQue;
