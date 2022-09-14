@@ -540,51 +540,54 @@ int LOScriptReader::operationCommand(FunctionInterface *reader) {
 	if (!isName("inc") && !isName("dec")) ret = reader->GetParamInt(1);
 	if (isName("rnd2")) ret2 = reader->GetParamInt(2);
 
-	const char* buf = curCmd.c_str();
-	uint32_t optype = 0;
-	for (int ii = 0; ii < 4; ii++) optype = optype * 256 + (unsigned char)(buf[ii]);
+	//LOString gg[] = { "cos" ,"dec" ,"inc" ,"div" ,"mod" ,"mul" ,"rnd" ,"rnd2" ,"sin" ,"sub" ,"tan" };
+	//for (int ii = 0; ii < 11; ii++) printf("%s:%x\n",gg[ii].c_str(),  gg[ii].HashStr());
 
+	int optype = curCmd.HashStr();
 	int val = v1->GetReal();
 	switch (optype)
 	{
-	case 0x61646400: //add,not here,at addCommand()
-		break;
-	case 0x636F7300: //cos
+	//case 0x61646400: //add,not here,at addCommand()
+	//	break;
+	case 0x5a2cbd30: //cos
 		val = cos(M_PI*ret / 180.0)*1000.0;
 		break;
-	case 0x64656300: //dec
+	case 0x5a2cba80: //dec
 		val = val - 1;
 		break;
-	case 0x64697600: //div
+	case 0x5a2cb730: //inc
+		val = val + 1;
+		break;
+	case 0x5a2cba55: //div
 		if (ret == 0) {
 			SimpleError("[div] command,the divisor is zero!");
 			return RET_ERROR;
 		}
 		val = val / ret;
 		break;
-	case 0x696E6300: //inc
-		val = val + 1;
+	case 0x5a2cb327: //mod
+		val = val % ret;
 		break;
-	case 0x6D756C00: //mul
+	case 0x5a2cb28f: //mul
 		val = val * ret;
 		break;
-	case 0x726E6400: //rnd
+	case 0x5a2cac37: //rnd
 		val = rand() % ret;
 		break;
-	case 0x726E6432: //rnd2
+	case 0xa2cac347: //rnd2
 		if (ret2 <= ret) {
 			SimpleError("[rnd2] command faild! second number is less than first number!");
 			return RET_ERROR;
 		}
 		val = rand() % (ret2 - ret + 1) + ret;
 		break;
-	case 0x73696E00: //sin
+	case 0x5a2cad4d: //sin
 		val = sin(M_PI*ret / 180.0)*1000.0;
 		break;
-	case 0x73756200: //sub
+	case 0x5a2cac81: //sub
 		val = val - ret;
 		break;
-	case 0x74616E00:  //tan
+	case 0x5a2caacd:  //tan
 		val = tan(M_PI*ret / 180.0)*1000.0;
 		break;
 	default:
@@ -919,9 +922,9 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		BinArray bin(512,true);
 		bin.InitLpksHeader();
 		bin.WriteLOString(&tag);
-		//写入存档时间，4位整数
-		uint32_t t1 = (uint32_t)(time(nullptr) & 0xffffffff) - 0x50000000;
-		bin.WriteInt(t1);
+		//写入存档时间
+		int64_t t1 = time(nullptr);
+		bin.WriteInt64(t1);
 
 		fwrite(bin.bin, 1, bin.Length(), f);
 		fwrite(GloSaveFS->bin, 1, GloSaveFS->Length(), f);
@@ -1015,7 +1018,7 @@ bool LOScriptReader::LoadCore(int id) {
 		return false;
 	}
 	bin->GetLOString(&pos);
-	bin->GetInt32Auto(&pos);
+	bin->GetInt64Auto(&pos);
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
 		LOLog_e("save file [%s] error!", fn.c_str());

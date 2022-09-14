@@ -20,7 +20,7 @@ bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
 int LOScriptReader::gloableMax = 200;
 int LOScriptReader::loadID = 0;
-int G_lineLog = 0;
+int G_lineLog = 1;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
 	LOScripFile *file = new LOScripFile(buf, length, filename);
