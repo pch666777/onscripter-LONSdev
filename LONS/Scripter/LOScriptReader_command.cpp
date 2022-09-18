@@ -909,13 +909,12 @@ void LOScriptReader::SaveGlobleVariable() {
 
 
 int LOScriptReader::savegameCommand(FunctionInterface *reader) {
-	int no = reader->GetParamInt(0);
-	LOString tag;
-	if (reader->GetParamCount() > 1) tag = reader->GetParamStr(1);
+	s_saveinfo.id = reader->GetParamInt(0);
+	if (reader->GetParamCount() > 1) s_saveinfo.tag = reader->GetParamStr(1);
 
 	//存储全局变量
 	SaveGlobleVariable();
-	LOString fn = "save" + std::to_string(no) + ".datl";
+	LOString fn = "save" + std::to_string(s_saveinfo.id) + ".datl";
 	FILE *f = LOIO::GetSaveHandle(fn, "wb");
 	if (f) {
 		//要先写入tag和存档时间
@@ -925,18 +924,22 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		time_t t1 = time(nullptr);
 		auto timeinfo = localtime(&t1);
 		//年自1900年起，月0-11，月份要增1，日1-31，时0-23，分0-59，秒0-60
-		int16_t lotime[] = { timeinfo->tm_year + 1900,timeinfo->tm_mon + 1 ,timeinfo->tm_mday ,timeinfo->tm_hour ,
-		timeinfo->tm_min ,timeinfo->tm_sec };
-		bin.Append((const char*)lotime, 6 * 2);
+		s_saveinfo.timer[0] = timeinfo->tm_year + 1900;
+		s_saveinfo.timer[1] = timeinfo->tm_mon + 1;
+		s_saveinfo.timer[2] = timeinfo->tm_mday;
+		s_saveinfo.timer[3] = timeinfo->tm_hour;
+		s_saveinfo.timer[4] = timeinfo->tm_min;
+		s_saveinfo.timer[5] = timeinfo->tm_sec;
+		bin.Append((const char*)s_saveinfo.timer, 6 * 2);
 		//写入存档字符串
-		bin.WriteLOString(&tag);
+		bin.WriteLOString(&s_saveinfo.tag);
 
 		fwrite(bin.bin, 1, bin.Length(), f);
 		fwrite(GloSaveFS->bin, 1, GloSaveFS->Length(), f);
 		fflush(f);
 		fclose(f);
 	}
-	else LOLog_e("can't write save data [save%d.datl]!", no);
+	else LOLog_e("can't write save data [save%d.datl]!", s_saveinfo.id);
 	return RET_CONTINUE;
 }
 
@@ -1001,8 +1004,8 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 	//给图像模块发送 load 信号
 	imgeModule->ChangeModuleFlags(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
 	scriptModule->ChangeModuleFlags(MODULE_FLAGE_LOAD | MODULE_FLAGE_CHANNGE);
-	loadID = reader->GetParamInt(0);
-
+	s_saveinfo.reset();
+	s_saveinfo.id = reader->GetParamInt(0);
 	//读档前必须先进行loadReset()
 	return RET_CONTINUE;
 }
@@ -1018,10 +1021,9 @@ bool LOScriptReader::LoadCore(int id) {
 	}
 
 	//存储的时间
-	char tmp[16];
-	bin->GetArrayAuto(tmp, 6, 2, &pos);
+	bin->GetArrayAuto(s_saveinfo.timer, 6, 2, &pos);
 	//存储的字符串
-	bin->GetLOString(&pos);
+	s_saveinfo.tag = bin->GetLOString(&pos);
 
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
@@ -1096,17 +1098,23 @@ int LOScriptReader::saveonCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savetimeCommand(FunctionInterface *reader) {
-	int16_t val[] = { 0,0,0,0,0,0 };
-	std::unique_ptr<BinArray> bin(ReadSaveFile(reader->GetParamInt(0), 128));
-	int pos = 0;
-	if (bin && bin->CheckLpksHeader(&pos)) {
-		bin->GetArrayAuto(val, 6, 2, &pos);
-		for (int ii = 0; ii < 4; ii++) {
-			ONSVariableRef *ref = reader->GetParamRef(ii + 1);
-			ref->SetValue((double)val[ii + 1]);
-		}
+	int no = reader->GetParamInt(0);
+	//没有在缓存中，重新读取文件
+	if (s_saveinfo.id != no || s_saveinfo.timer[0] == 0) ReadSaveInfo(no);
+
+	for (int ii = 0; ii < 4; ii++) {
+		ONSVariableRef *ref = reader->GetParamRef(ii + 1);
+		ref->SetValue((double)s_saveinfo.timer[ii + 1]);
 	}
-	else LOLog_i("can't read save file [save%d.datl]", reader->GetParamInt(0));
+	return RET_CONTINUE;
+}
+
+int LOScriptReader::getsavestrCommand(FunctionInterface *reader) {
+	int no = reader->GetParamInt(1);
+	//没有在缓存中，重新读取文件
+	if (s_saveinfo.id != no || s_saveinfo.timer[0] == 0) ReadSaveInfo(no);
+	ONSVariableRef *ref = reader->GetParamRef(0);
+	ref->SetValue(&s_saveinfo.tag);
 	return RET_CONTINUE;
 }
 
@@ -1118,4 +1126,19 @@ BinArray *LOScriptReader::ReadSaveFile(int id, int readLen) {
 	BinArray *bin = BinArray::ReadFile(f, 0, readLen);
 	fclose(f);
 	return bin;
+}
+
+
+void LOScriptReader::ReadSaveInfo(int id) {
+	std::unique_ptr<BinArray> bin(ReadSaveFile(id, 2048));
+	int pos = 0;
+	if (bin) {
+		if (bin->CheckLpksHeader(&pos)) {
+			s_saveinfo.id = id;
+			bin->GetArrayAuto(s_saveinfo.timer, 6, 2, &pos);
+			s_saveinfo.tag = bin->GetString(&pos);
+		}
+		else LOLog_i("save file error [save%d.datl]", id);
+	}
+	else LOLog_i("can't read save file [save%d.datl]", id);
 }

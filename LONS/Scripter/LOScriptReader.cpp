@@ -19,7 +19,7 @@ bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
 int LOScriptReader::gloableMax = 200;
-int LOScriptReader::loadID = 0;
+LOScriptReader::SaveFileInfo LOScriptReader::s_saveinfo;
 int G_lineLog = 1;
 
 LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
@@ -183,7 +183,7 @@ int LOScriptReader::MainTreadRunning() {
 		if (isStateChange()) {
 			if (isModuleLoading()) {
 				LoadReset();
-				if(!LoadCore(loadID)) ChangeModuleState(MODULE_FLAGE_ERROR);
+				if(!LoadCore(s_saveinfo.id)) ChangeModuleState(MODULE_FLAGE_ERROR);
 				isLableStart = false;
 			}
 			else if (isModuleReset()) {

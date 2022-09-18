@@ -82,6 +82,17 @@ public:
 		
 	};
 
+	struct SaveFileInfo{
+		void reset() {
+			id = -1;
+			memset(this->timer, 0, 6 * 2);
+			tag.clear();
+		}
+		int id = -1;
+		int16_t timer[6];
+		LOString tag;
+	};
+
 
 	int lastCmdCheckFlag;  //部分命令依据上一个命令确定是否追加操作的
 	SCRIPT_TYPE sctype;
@@ -193,6 +204,7 @@ public:
 	void Serialize(BinArray *bin);
 	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
 	BinArray *ReadSaveFile(int id, int readLen);
+	void      ReadSaveInfo(int id);
 
 	//需要用到脚本的函数，因此运行点的反序列化放在这里，point为null
 	bool ScCallDeSerialize(BinArray *bin, int *pos);
@@ -278,6 +290,7 @@ public:
 	int setintvarCommand(FunctionInterface *reader);
 	int saveonCommand(FunctionInterface *reader);
 	int savetimeCommand(FunctionInterface *reader);
+	int getsavestrCommand(FunctionInterface *reader);
 
 private:
 	static LOStack<LOScripFile> filesList;   //脚本存储在这里
@@ -293,7 +306,7 @@ private:
 	static bool st_errorsave; //是否使用错误自动保存
 	static bool st_saveonflag; //是否处于saveon模式
 	static int gloableMax;
-	static int loadID;   //loadgame时加载的序号
+	static SaveFileInfo s_saveinfo;
 
 	//bool isAddLine;
 	int  parseDeep;    //startparse进入多少个嵌套了
