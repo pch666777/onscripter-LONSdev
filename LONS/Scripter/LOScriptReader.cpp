@@ -1560,15 +1560,48 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 //致命错误，弹出对话框，程序退出，生成error.txt
 void FatalError(const char *fmt, ...) {
 	int pos = 0;
-	std::unique_ptr<BinArray> bin(new BinArray(1024));
+	std::unique_ptr<BinArray> bin(new BinArray(1048));
 
 	va_list argptr;
 	va_start(argptr, fmt);
-	pos = vsnprintf(bin->bin + pos, 1024, fmt, argptr);
+	pos = vsnprintf(bin->bin + pos, 1048, fmt, argptr);
 	va_end(argptr);
+	bin->SetLength(pos);
+	bin->Append("\n", 1);
 
+	LOString errfn("error.txt");
+	FILE *f = LOIO::GetWriteHandle(errfn, "rb");
+	if (f) fwrite(bin->bin, 1, bin->Length(), f);
 
+	//添加最多5行的错误信息
+	if (FunctionInterface::scriptModule) {
+		LOString temp = ((LOScriptReader*)FunctionInterface::scriptModule)->GetReport();
+		const char* ebuf = temp.GetLineBuf(6);
+		if (!ebuf) ebuf = temp.e_buf();
+		bin->Append(temp.c_str(), ebuf - temp.c_str());
+		bin->Append("......\n", 7);
+		bin->Append("view more error information[error.txt]", 38);
 
+		if (f) fprintf(f, "script:\n%s\n", temp.c_str());
+	}
+
+	//显示错误信息
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fatal error", bin->bin, nullptr);
+	//生成错误报告
+	if (f) {
+		fprintf(f, "LONS version:%s\n" ONS_VERSION);
+		fclose(f);
+	}
+	//程序退出
+	if (FunctionInterface::scriptModule) {
+		FunctionInterface::scriptModule->ChangeModuleFlags(FunctionInterface::MODULE_FLAGE_ERROR | FunctionInterface::MODULE_FLAGE_CHANNGE | FunctionInterface::MODULE_FLAGE_EXIT);
+	}
+	if (FunctionInterface::imgeModule) {
+		FunctionInterface::imgeModule->ChangeModuleFlags(FunctionInterface::MODULE_FLAGE_ERROR | FunctionInterface::MODULE_FLAGE_CHANNGE | FunctionInterface::MODULE_FLAGE_EXIT);
+	}
+	if (FunctionInterface::audioModule) {
+		FunctionInterface::audioModule->ResetMe();
+	}
 }
 
 

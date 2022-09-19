@@ -11,8 +11,6 @@
 #include "LOTexture.h"
 #include <SDL.h>
 
-#define ONS_VERSION "ver0.5-20220910"
-
 
 class LOImageModule :public FunctionInterface{
 public:

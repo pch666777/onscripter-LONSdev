@@ -91,6 +91,7 @@ public:
 	int HashStr();
 
 	const char* e_buf() { return c_str() + length(); }
+	const char* GetLineBuf(int line);
 
 	static void SetStr(LOString *&s1, LOString *&s2, bool ismove);
 	static LOString RandomStr(int len);

@@ -583,3 +583,19 @@ LOString LOString::PathTypeTo(PATH_TYPE ptype) {
 	delete[] temp;
 	return s;
 }
+
+
+//获取指定行的行首buf，超出范围返回null，注意效率很低
+const char* LOString::GetLineBuf(int line) {
+	const char* buf = c_str();
+	const char* ebuf = e_buf();
+	if (line <= 0) return buf;
+
+	int count = 0;
+	while (buf < ebuf) {
+		buf = NextLine(buf);
+		count++;
+		if (count == line) return buf;
+	}
+	return nullptr;
+}

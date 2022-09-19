@@ -4,6 +4,10 @@
 //2021-2021
 */
 
+#ifndef ONS_VERSION
+#define ONS_VERSION "ver0.5-20220920"
+#endif // !ONS_VERSION
+
 
 extern void LOLog_i(const char *fmt, ...);
 extern void LOLog_e(const char *fmt, ...);
