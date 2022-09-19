@@ -285,7 +285,7 @@ int LOImageModule::MainLoop() {
 
 		//检查模块状态变化
 		if (isStateChange()) {
-			if (!WaitStateEvent()) break;
+			if (!WaitStateEvent()) loopflag = false;
 		}
 		
 		//处理事件

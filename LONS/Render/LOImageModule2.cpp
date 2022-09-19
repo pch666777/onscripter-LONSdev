@@ -554,6 +554,7 @@ bool LOImageModule::WaitStateEvent() {
 		}
 	}
 
+	if (scriptModule->isModuleError()) return false;
 	//恢复模块状态
 	ChangeModuleState(MODULE_STATE_RUNNING);
 	ChangeModuleFlags(0);

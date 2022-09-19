@@ -1016,7 +1016,7 @@ bool LOScriptReader::LoadCore(int id) {
 	std::unique_ptr<BinArray> bin(ReadSaveFile(id, -1));
 	int pos = 0;
 	if (!bin || !bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file [save%d.datl] error!", id);
+		PrintError("save file [save%d.datl] error!", id);
 		return false;
 	}
 
@@ -1027,7 +1027,7 @@ bool LOScriptReader::LoadCore(int id) {
 
 	//实际内容
 	if (!bin->CheckLpksHeader(&pos)) {
-		LOLog_e("save file [save%d.datl] error!", id);
+		PrintError("save file [save%d.datl] error!", id);
 		return false;
 	}
 
@@ -1035,13 +1035,13 @@ bool LOScriptReader::LoadCore(int id) {
 	while (imgeModule->isModuleRunning()) LOTimer::CpuDelay(0.2);
 	//读取变量
 	if (!ONSVariableBase::LoadOnsVar(bin.get(), &pos)) {
-		LOLog_e("save file [save%d.datl] ONSVariable read faild!", id);
+		PrintError("save file [save%d.datl] ONSVariable read faild!", id);
 		return false;
 	}
 	//读取hook钩子
 	LOEventMap evmap;
 	if (!G_hookQue.LoadHooks(bin.get(), &pos, &evmap)) {
-		LOLog_e("save file [save%d.datl] EventHook read faild!", id);
+		PrintError("save file [save%d.datl] EventHook read faild!", id);
 		return false;
 	}
 	//渲染模块

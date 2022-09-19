@@ -183,7 +183,7 @@ int LOScriptReader::MainTreadRunning() {
 		if (isStateChange()) {
 			if (isModuleLoading()) {
 				LoadReset();
-				if(!LoadCore(s_saveinfo.id)) ChangeModuleState(MODULE_FLAGE_ERROR);
+				LoadCore(s_saveinfo.id);
 				isLableStart = false;
 			}
 			else if (isModuleReset()) {
@@ -1344,7 +1344,7 @@ int LOScriptReader::DefaultStep() {
 				buf[ii] ^= 0x84;
 			}
 			AddScript(bin->bin, bin->Length(), fn.c_str());
-			PrintError("scripter[%s] has read.\n", fn.c_str());
+			LOLog_i("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
 			isok = true;
 		}
@@ -1550,7 +1550,28 @@ void LOScriptReader::PrintError(const char *fmt, ...) {
 	LOString tmp = GetReport();
 	tmp.append(uptr->bin);
 	PrintErrorStatic(&tmp);
+
+	imgeModule->ChangeModuleFlags(MODULE_FLAGE_ERROR | MODULE_FLAGE_CHANNGE);
+	scriptModule->ChangeModuleFlags(MODULE_FLAGE_ERROR | MODULE_FLAGE_CHANNGE);
+	audioModule->ResetMe();
 }
+
+
+//致命错误，弹出对话框，程序退出，生成error.txt
+void FatalError(const char *fmt, ...) {
+	int pos = 0;
+	std::unique_ptr<BinArray> bin(new BinArray(1024));
+
+	va_list argptr;
+	va_start(argptr, fmt);
+	pos = vsnprintf(bin->bin + pos, 1024, fmt, argptr);
+	va_end(argptr);
+
+
+
+}
+
+
 
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
