@@ -1539,24 +1539,6 @@ LOString LOScriptReader::GetReport() {
 }
 
 
-void LOScriptReader::PrintError(const char *fmt, ...) {
-	std::unique_ptr<BinArray> uptr(new BinArray(1024));
-	memset(uptr.get()->bin, 0, 1024);
-	va_list argptr;
-	va_start(argptr, fmt);
-	vsnprintf(uptr->bin, 1024, fmt, argptr);
-	va_end(argptr);
-
-	LOString tmp = GetReport();
-	tmp.append(uptr->bin);
-	PrintErrorStatic(&tmp);
-
-	imgeModule->ChangeModuleFlags(MODULE_FLAGE_ERROR | MODULE_FLAGE_CHANNGE);
-	scriptModule->ChangeModuleFlags(MODULE_FLAGE_ERROR | MODULE_FLAGE_CHANNGE);
-	audioModule->ResetMe();
-}
-
-
 //致命错误，弹出对话框，程序退出，生成error.txt
 void FatalError(const char *fmt, ...) {
 	int pos = 0;
@@ -1570,7 +1552,7 @@ void FatalError(const char *fmt, ...) {
 	bin->Append("\n", 1);
 
 	LOString errfn("error.txt");
-	FILE *f = LOIO::GetWriteHandle(errfn, "rb");
+	FILE *f = LOIO::GetWriteHandle(errfn, "wb");
 	if (f) fwrite(bin->bin, 1, bin->Length(), f);
 
 	//添加最多5行的错误信息
@@ -1579,7 +1561,7 @@ void FatalError(const char *fmt, ...) {
 		const char* ebuf = temp.GetLineBuf(6);
 		if (!ebuf) ebuf = temp.e_buf();
 		bin->Append(temp.c_str(), ebuf - temp.c_str());
-		bin->Append("......\n", 7);
+		bin->Append("\n......\n", 8);
 		bin->Append("view more error information[error.txt]", 38);
 
 		if (f) fprintf(f, "script:\n%s\n", temp.c_str());
@@ -1589,19 +1571,12 @@ void FatalError(const char *fmt, ...) {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fatal error", bin->bin, nullptr);
 	//生成错误报告
 	if (f) {
-		fprintf(f, "LONS version:%s\n" ONS_VERSION);
+		fprintf(f, "LONS version:%s\n",ONS_VERSION);
 		fclose(f);
 	}
-	//程序退出
-	if (FunctionInterface::scriptModule) {
-		FunctionInterface::scriptModule->ChangeModuleFlags(FunctionInterface::MODULE_FLAGE_ERROR | FunctionInterface::MODULE_FLAGE_CHANNGE | FunctionInterface::MODULE_FLAGE_EXIT);
-	}
-	if (FunctionInterface::imgeModule) {
-		FunctionInterface::imgeModule->ChangeModuleFlags(FunctionInterface::MODULE_FLAGE_ERROR | FunctionInterface::MODULE_FLAGE_CHANNGE | FunctionInterface::MODULE_FLAGE_EXIT);
-	}
-	if (FunctionInterface::audioModule) {
-		FunctionInterface::audioModule->ResetMe();
-	}
+	//设置错误标记，以便程序退出
+	FunctionInterface::errorFlag = true;
+	if (FunctionInterface::audioModule) FunctionInterface::audioModule->ResetMe();
 }
 
 

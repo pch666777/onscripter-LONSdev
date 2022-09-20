@@ -196,7 +196,6 @@ public:
 	void LoadReset();
 	void ResetBaseConfig();
 	LOString GetReport();
-	void PrintError(const char *fmt, ...);
 	void UpdataGlobleVariable();
 	void ReadGlobleVarFile();
 	void ReadGlobleVariable(BinArray *bin, int *pos);

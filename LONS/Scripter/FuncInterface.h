@@ -96,8 +96,8 @@ public:
 		MODULE_FLAGE_RESET = 0x2000,
 		//退出标记
 		MODULE_FLAGE_EXIT = 0x4000,
-		//错误标记
-		MODULE_FLAGE_ERROR = 0x8000,
+		//错误标记，转为一个单独的静态变量，防止覆盖
+		//MODULE_FLAGE_ERROR = 0x8000,
 		//move_to标记
 		//MODULE_FLAGE_MOVETO = 0x10000,
 	};
@@ -195,7 +195,7 @@ public:
 	bool isModuleSaving() { return moduleState & MODULE_FLAGE_SAVE; }
 	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
 	bool isModuleNoUse() { return (moduleState&0xf) == MODULE_STATE_NOUSE; }
-	bool isModuleError() { return moduleState & MODULE_FLAGE_ERROR; }
+	bool isModuleError() { return errorFlag; }
 	bool isModuleFlagSNone() { return (moduleState >> 4) == 0; }
 	bool isModuleSuspend() { return moduleState & MODULE_STATE_SUSPEND; }
 	bool isModuleRunning() { return moduleState & MODULE_STATE_RUNNING; }
@@ -380,6 +380,7 @@ public:
 	//static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
 	static LOShareEventHook printPreHook;    //要求抓取图像
 	static LOShareEventHook printHook;       //要求等待print完成
+	static bool errorFlag;
 
 	static LOString userGoSubName[3];
 	//存储流

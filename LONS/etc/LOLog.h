@@ -11,3 +11,4 @@
 
 extern void LOLog_i(const char *fmt, ...);
 extern void LOLog_e(const char *fmt, ...);
+extern void FatalError(const char *fmt, ...);

@@ -13,8 +13,7 @@ FunctionInterface *FunctionInterface::scriptModule = NULL;
 FunctionInterface *FunctionInterface::fileModule = NULL;    //文件系统
 BinArray *FunctionInterface::GloVariableFS = new BinArray(1024, true);
 BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
-//std::atomic_int FunctionInterface::flagPrepareEffect{};
-//std::atomic_int FunctionInterface::flagRenderNew{};
+bool FunctionInterface::errorFlag = false;
 
 LOShareEventHook FunctionInterface::printPreHook(new LOEventHook());
 LOShareEventHook FunctionInterface::printHook(new LOEventHook());
