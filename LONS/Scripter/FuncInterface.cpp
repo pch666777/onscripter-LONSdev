@@ -383,19 +383,6 @@ BinArray* LonsReadFile(LOString &fn) {
 }
 
 
-//error以后程序会终止运行
-void FunctionInterface::PrintErrorStatic(LOString *err) {
-	//先输出错误信息
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "LONS", "%s", myLogCache);
-#else
-	if(err->at(err->length() - 1) != '\n') printf("%s\n", err->c_str());
-	else printf("%s", err->c_str());
-#endif
-	//显示错误信息，需要注意渲染模块不能已经退出
-	if (imgeModule && imgeModule->moduleState == MODULE_STATE_RUNNING) imgeModule->PrintError(err);
-	//SetExitFlag(MODULE_STATE_ERROR);
-}
 
 
 void FunctionInterface::SetExitFlag(int flag) {

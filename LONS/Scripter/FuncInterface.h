@@ -190,7 +190,7 @@ public:
 	void ChangeModuleState(int s);
 	void ChangeModuleFlags(int f);
 	bool isStateChange() { return moduleState & MODULE_FLAGE_CHANNGE; }
-	bool isModuleExit() { return moduleState & MODULE_FLAGE_EXIT; }
+	bool isModuleExit() { return (moduleState & MODULE_FLAGE_EXIT) || errorFlag; }
 	bool isModuleReset() { return moduleState & MODULE_FLAGE_RESET; }
 	bool isModuleSaving() { return moduleState & MODULE_FLAGE_SAVE; }
 	bool isModuleLoading() { return moduleState & MODULE_FLAGE_LOAD; }
@@ -216,10 +216,8 @@ public:
 	virtual intptr_t GetSDLRender() { return 0; }
 	virtual void ResetMe() { return; };
 	virtual void LoadFinish() { return; };
-	virtual void PrintError(LOString *err) { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);
-	void PrintErrorStatic(LOString *err);
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
 	void WriteLog(int logt);

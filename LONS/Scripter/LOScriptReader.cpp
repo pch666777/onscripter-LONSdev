@@ -138,7 +138,7 @@ LOScriptReader::~LOScriptReader()
 
 int LOScriptReader::MainTreadRunning() {
 	if (sctype != SCRIPT_TYPE::SCRIPT_TYPE_MAIN) {
-		PrintError("LOScriptReader::MainTreadRunning() must run at main scriptReader!");
+		FatalError("LOScriptReader::MainTreadRunning() must run at main scriptReader!");
 		return -1;
 	}
 
@@ -240,7 +240,7 @@ bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
 	if (!lname || lname->length() == 0) return false;
 	LOScriptPoint *p = GetScriptPoint(*lname);
 	if (!p) {
-		PrintError("not lable name:[%s]", lname->c_str());
+		FatalError("not lable name:[%s]", lname->c_str());
 		return false;
 	}
 	ReadyToRun(p, callby);
@@ -341,7 +341,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		if (paramcount == 0) {
 			if (used[0] == 'N' && !NextSomething()) break;
 			else if (used[0] == 'Y' && !NextSomething()) {
-				PrintError("function paragram %d type error!", paramcount + 1);
+				FatalError("function paragram %d type error!", paramcount + 1);
 				return false;
 			}
 		}
@@ -363,7 +363,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		if (!v && hasvariable) {
 			v = ParseVariableBase();
 			if (!v ||  !(v->vtype & allow_type)) {
-				PrintError("[%s] paragram %d type error!\n",curCmdbuf, paramcount + 1);
+				FatalError("[%s] paragram %d type error!\n",curCmdbuf, paramcount + 1);
 				ClearParams(true);
 				return false;
 			}
@@ -374,7 +374,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 			paramStack.push(v);
 		}
 		else {
-			PrintError("function paragram %d type error!", paramcount + 1);
+			FatalError("function paragram %d type error!", paramcount + 1);
 			ClearParams(true);
 			return false;
 		}
@@ -603,7 +603,7 @@ int LOScriptReader::RunCommand(const char *&buf) {
 			curCmdbuf = curCmd.c_str();
 
 			if (!useit->second) {
-				PrintError("no label for this function:%s!\n", curCmdbuf);
+				FatalError("no label for this function:%s!\n", curCmdbuf);
 				return RET_ERROR;
 			}
 			buf = scriptbuf->SkipSpace(buf);
@@ -764,10 +764,10 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(ONSVariableRef *ref, bool str_
 int LOScriptReader::ParseIntVariable() {
 	ONSVariableRef *v = ParseVariableBase();
 	if (!v) {
-		PrintError("Is not a valid expression");
+		FatalError("Is not a valid expression");
 		return 0;
 	}
-	if (!v->isReal()) PrintError("You should use an integer value!");
+	if (!v->isReal()) FatalError("You should use an integer value!");
 	int ret = (int)v->GetReal();
 	delete v;
 	return ret;
@@ -777,10 +777,10 @@ int LOScriptReader::ParseIntVariable() {
 LOString LOScriptReader::ParseStrVariable() {
 	ONSVariableRef *v = ParseVariableBase(NULL,true);
 	if (!v) {
-		PrintError("Is not a valid expression");
+		FatalError("Is not a valid expression");
 		return LOString();
 	}
-	if (!v->isStr()) PrintError("You should use an string value!");
+	if (!v->isStr()) FatalError("You should use an string value!");
 	LOString s;
 	LOString *vs = v->GetStr();
 	if (vs) s.assign(*vs);
@@ -802,7 +802,7 @@ LOString LOScriptReader::ParseLabel(bool istry) {
 		return LOString(tmp.c_str() + ulen);
 	}
 	else if(!istry){
-		PrintError("it's not a label or a string value!");
+		FatalError("it's not a label or a string value!");
 	}
 	return LOString();
 }
@@ -992,7 +992,7 @@ const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char 
 	}
 	PopRPNstackUtill(&s1, s2, '\0');
 	if (!s2->top() || !s2->top()->isOperator()) 
-		PrintError("Expression error");
+		FatalError("Expression error");
 	return buf;
 }
 
@@ -1008,12 +1008,12 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 		if (op->isOperator()) {
 			//运算符位于首个符号是不可能的
 			if (iter == stack->begin()) 
-				PrintError("Expression error!");
+				FatalError("Expression error!");
 			//该符号需要的操作数
 			docount = op->GetOpCount();
 			//检查操作数的数量是否还符合要求
 			if (stack->size() < docount + 1) {
-				PrintError("[ %c ] Insufficient operands required by operator!", (*iter)->oper);
+				FatalError("[ %c ] Insufficient operands required by operator!", (*iter)->oper);
 				return;
 			}
 			else if (docount == 1) {
@@ -1034,7 +1034,7 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 				}
 				else if((*iter)->oper == '$') v1->UpImToRef(ONSVariableRef::TYPE_STRING);
 				else if ((*iter)->oper == '%') v1->UpImToRef(ONSVariableRef::TYPE_INT);
-				else PrintError("%s","LOScriptReader::CalculatRPNstack() unknow docount = 1 type!");
+				else FatalError("%s","LOScriptReader::CalculatRPNstack() unknow docount = 1 type!");
 				stack->erase(iter, true);  //单操作数只删除符号
 			}
 			else{
@@ -1050,7 +1050,7 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 	}
 
 	//计算完成后堆栈只能剩一个元素
-	if (stack->size() > 1) PrintError("Stack error after calculation, please check the formula!");
+	if (stack->size() > 1) FatalError("Stack error after calculation, please check the formula!");
 	return ;
 }
 
@@ -1070,7 +1070,7 @@ void LOScriptReader::PopRPNstackUtill(LOStack<ONSVariableRef> *s1, LOStack<ONSVa
 		s1->clear(true);
 		return;
 	}
-	PrintError("missing match '%c'", op);
+	FatalError("missing match '%c'", op);
 }
 
 
@@ -1223,14 +1223,14 @@ bool LOScriptReader::ParseLogicExp() {
 			NextAdress();
 		}
 		else {
-			PrintError("Logical expression error!");
+			FatalError("Logical expression error!");
 			return false;
 		}
 
 		if (v2) delete v2;
 		v2 = ParseVariableBase(NULL, true);
 		if (!v2) {
-			PrintError("Logical expression error!");
+			FatalError("Logical expression error!");
 			return false;
 		}
 		int ret0 = v1->Compare(v2, comtype,false);
@@ -1611,6 +1611,8 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 	ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
 	hook->InvalidMe();
+	//如果是saveon模式，则添加存档点
+	if(st_saveonflag) savepointCommand(this);
 	return 0;
 }
 

@@ -335,7 +335,8 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	if (!bin->CheckEntity("base", &next, nullptr, pos)) return false;
 
 	LOString tmp = bin->GetLOString(pos);
-	if (tmp.length() == 0) return false;
+	if (tmp.length() == 0) 
+		return false;
 
 	//要先加载
 	if (!ImgLoadSpForce(this, &tmp)) {

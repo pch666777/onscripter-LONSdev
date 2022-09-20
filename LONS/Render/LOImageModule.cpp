@@ -536,6 +536,8 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 		//maybe has some error!
 		if (!lyr) return true;
 		if (ef->RunEffect(render, lyr->data.get(), effectTex, effmakTex, postime)) {
+			//断开图层连接
+			if (lyr->parent) lyr->parent->RemodeChild(lyr->GetSelfChildID());
 			//重置数据
 			lyr->data->bak.SetDelete();
 			lyr->data->cur.SetDelete();
@@ -1496,7 +1498,7 @@ bool LOImageModule::LOSayState::DeSerialize(BinArray *bin, int *pos) {
 
 bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	if (!LoadLayers(bin, pos, evmap)) {
-		LOLog_e("LoadLayers faild!");
+		FatalError("LoadLayers faild!");
 		return false;
 	}
 	//读取printQue

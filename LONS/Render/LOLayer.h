@@ -148,7 +148,6 @@ public:
 	static LOLayer* GetLayer(int fullid);
 	static LOLayer* LinkLayerLeve(LOLayer *lyr);
 	static void ResetLayer();
-	static bool useLayerCenter;
 	static void InitBaseLayer();
 	static std::map<int, LOLayer*> layerCenter;
 private:

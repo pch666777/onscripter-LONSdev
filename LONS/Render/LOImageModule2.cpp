@@ -313,6 +313,9 @@ int LOImageModule::RunFuncBtnClear(LOEventHook *hook, LOEventHook *e) {
 	int end   = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_BTN, 255, 255);
 	for (auto iter = LOLayer::layerCenter.begin(); iter != LOLayer::layerCenter.end();) {
 		if (iter->first >= start && iter->first <= end) {
+			//移除图层关系
+			iter->second->parent = nullptr;
+			if (iter->second->childs) iter->second->childs->clear();
 			delete iter->second;
 			iter = LOLayer::layerCenter.erase(iter);
 		}
