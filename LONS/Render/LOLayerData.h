@@ -226,6 +226,8 @@ public:
 	int fullid;
 	LOLayerDataBase cur;
 	LOLayerDataBase bak;
+	//bool curNoSave;
+	//bool bakNoSave;
 
 	//get类函数都会检查后台，如果后台有更新则返回后台数据
 	//void GetSimpleDst(SDL_Rect *dst);

@@ -438,12 +438,13 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 
 void LOLayer::SerializeForce(BinArray *bin) {
+
 	//fid很重要，最先读取，以便产生新建对象
 	bin->WriteInt(data->fullid);
 
-	if (data->fullid == 0x0005ffff) {
-		int bbk = 1;
-	}
+	//if (layerType == LOLayer::LAYER_DIALOG && id[0] == LOLayer::IDEX_DIALOG_TEXT) {
+	//	int bbk = 1;
+	//}
 
 	int len = bin->WriteLpksEntity("fdat", 0, 1);
 	if (data->cur.isNothing()) bin->WriteChar(0);
@@ -467,6 +468,10 @@ void LOLayer::SerializeForce(BinArray *bin) {
 bool LOLayer::DeSerializeForce(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("fdat", &next, nullptr, pos)) return false;
+
+	if (layerType == LOLayer::LAYER_DIALOG && id[0] == LOLayer::IDEX_DIALOG_TEXT) {
+		int bbk = 1;
+	}
 
 	if (bin->GetChar(pos) != 0) {
 		if (!data->cur.DeSerialize(bin, pos)) return false;
@@ -492,6 +497,10 @@ bool LOLayer::DeSerializeForce(BinArray *bin, int *pos) {
 void LOLayer::SerializeBak(BinArray *bin) {
 	//fid很重要
 	bin->WriteInt(data->fullid);
+	//if (data->fullid == 0x0005ffff) {
+	//	int bbk = 1;
+	//}
+
 	int len = bin->WriteLpksEntity("bdat", 0, 1);
 	if (data->bak.isNothing()) bin->WriteChar(0);
 	else {

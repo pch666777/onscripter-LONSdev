@@ -335,51 +335,44 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	if (!bin->CheckEntity("base", &next, nullptr, pos)) return false;
 
 	LOString tmp = bin->GetLOString(pos);
-	if (tmp.length() == 0) 
-		return false;
 
-	//要先加载
-	if (!ImgLoadSpForce(this, &tmp)) {
-		*pos = next;
-		//加载失败不影响程序继续执行，只是图像无法显示
-		return true;
+	if (tmp.length() > 0 && ImgLoadSpForce(this, &tmp)) {
+		//参数覆盖回来
+		flags = bin->GetIntAuto(pos);
+		upflags = bin->GetIntAuto(pos);
+		upaction = bin->GetIntAuto(pos);
+		btnval = bin->GetIntAuto(pos);
+		offsetX = bin->GetFloatAuto(pos);
+		offsetY = bin->GetFloatAuto(pos);
+		showWidth = bin->GetFloatAuto(pos);
+		showHeight = bin->GetFloatAuto(pos);
+
+		alpha = bin->GetInt16Auto(pos);
+		centerX = bin->GetInt16Auto(pos);
+		centerY = bin->GetInt16Auto(pos);
+		showSrcX = bin->GetInt16Auto(pos);
+		showSrcY = bin->GetInt16Auto(pos);
+		cellNum = bin->GetChar(pos);
+		//alphaMode = bin->GetChar(pos);
+		//不应该覆盖纹理透明模式
+		bin->GetChar(pos);
+		//texType = bin->GetChar(pos);
+		//不应该覆盖纹理类型
+		bin->GetChar(pos);
+		showType = bin->GetChar(pos);
+		scaleX = bin->GetDoubleAuto(pos);
+		scaleY = bin->GetDoubleAuto(pos);
+		rotate = bin->GetDoubleAuto(pos);
+		btnStr.reset(bin->GetLOStrPtr(pos));
+		//文字样式不需要处理
+		bin->GetChar(pos);
+		//action
+		int count = bin->GetIntAuto(pos);
+		for (int ii = 0; ii < count; ii++) {
+			//do it
+		}
 	}
-
-	//参数覆盖回来
-	flags = bin->GetIntAuto(pos);
-	upflags = bin->GetIntAuto(pos);
-	upaction = bin->GetIntAuto(pos);
-	btnval = bin->GetIntAuto(pos);
-	offsetX = bin->GetFloatAuto(pos);
-	offsetY = bin->GetFloatAuto(pos);
-	showWidth = bin->GetFloatAuto(pos);
-	showHeight = bin->GetFloatAuto(pos);
-
-	alpha = bin->GetInt16Auto(pos);
-	centerX = bin->GetInt16Auto(pos);
-	centerY = bin->GetInt16Auto(pos);
-	showSrcX = bin->GetInt16Auto(pos);
-	showSrcY = bin->GetInt16Auto(pos);
-	cellNum = bin->GetChar(pos);
-	//alphaMode = bin->GetChar(pos);
-	//不应该覆盖纹理透明模式
-	bin->GetChar(pos);
-	//texType = bin->GetChar(pos);
-	//不应该覆盖纹理类型
-	bin->GetChar(pos);
-	showType = bin->GetChar(pos);
-	scaleX = bin->GetDoubleAuto(pos);
-	scaleY = bin->GetDoubleAuto(pos);
-	rotate = bin->GetDoubleAuto(pos);
-	btnStr.reset(bin->GetLOStrPtr(pos));
-	//文字样式不需要处理
-	bin->GetChar(pos);
-	//action
-	int count = bin->GetIntAuto(pos);
-	for (int ii = 0; ii < count; ii++) {
-		//do it
-	}
-
+	//加载失败不影响程序继续执行，只是图像无法显示
 	*pos = next;
 	return true;
 }

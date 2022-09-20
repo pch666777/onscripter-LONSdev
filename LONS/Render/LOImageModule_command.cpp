@@ -749,7 +749,7 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::setwindow2Command(FunctionInterface *reader) {
-	sayWindow.winstr = reader->GetParamStr(11);
+	sayWindow.winstr = reader->GetParamStr(0);
 	if (sayWindow.winstr.length() > 0 && sayWindow.winstr.at(0) == '#') {
 		if (sayWindow.w < 1) sayWindow.w = 1;
 		if (sayWindow.h < 1) sayWindow.h = 1;  //safe value

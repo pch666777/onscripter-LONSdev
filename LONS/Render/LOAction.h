@@ -53,7 +53,7 @@ public:
 	void setFlags(int f) { flags |= f; }
 	void unSetFlags(int f) { flags &= (~f); }
 	int  getFlags() { return flags; }
-	virtual void Serialize(BinArray *bin);
+	virtual int Serialize(BinArray *bin);
 private:
 	int flags;
 };
@@ -67,7 +67,7 @@ public:
 	~LOActionNS();
 	//设置指定格数的动画时间
 	void setSameTime(int32_t t, int count);
-	void Serialize(BinArray *bin);
+	int Serialize(BinArray *bin);
 
 	int16_t cellCount = 1;	 //动画分格总数
 	int8_t  cellForward = 1; //前进方向, -1表示倒放
@@ -81,7 +81,7 @@ class LOActionText :public LOAction {
 public:
 	LOActionText();
 	~LOActionText();
-	void Serialize(BinArray *bin);
+	int Serialize(BinArray *bin);
 
 	int16_t currentPos = 0;  //动画当前运行的位置
 	int16_t initPos = 0; //初始化时需要到底的位置

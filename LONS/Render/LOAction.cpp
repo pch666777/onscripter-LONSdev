@@ -18,10 +18,12 @@ void LOAction::setEnble(bool enble) {
 	else flags &= (~FLAGS_ENBLE);
 }
 
-void LOAction::Serialize(BinArray *bin) {
-	//animi, acType, loopmode
-	bin->WriteInt3(0x6D696E61, acType, loopMode);
-	bin->WriteInt3(lastTime, gVal, flags);
+int LOAction::Serialize(BinArray *bin) {
+	int len = bin->WriteLpksEntity("anim", 0, 1);
+	bin->WriteInt4(acType, loopMode, lastTime, gVal);
+	bin->WriteInt(flags);
+	//返回写入长度的位置
+	return len;
 }
 
 //=========================
@@ -39,13 +41,11 @@ void LOActionNS::setSameTime(int32_t t, int count) {
 	for (int ii = 0; ii < count; ii++) cellTimes.push_back(t);
 }
 
-void LOActionNS::Serialize(BinArray *bin) {
-	LOAction::Serialize(bin);
-	bin->WriteInt16(cellCount);
-	bin->WriteChar((char)cellForward);
+int LOActionNS::Serialize(BinArray *bin) {
+	int len = LOAction::Serialize(bin);
+	//只需要记住当前处于哪一帧
 	bin->WriteChar((char)cellCurrent);
-	bin->WriteInt(cellTimes.size());
-	for (int ii = 0; ii < cellTimes.size(); ii++) bin->WriteInt(cellTimes.at(ii));
+	return 0;
 }
 
 //========================
@@ -57,7 +57,7 @@ LOActionText::LOActionText() {
 LOActionText::~LOActionText() {
 }
 
-void LOActionText::Serialize(BinArray *bin) {
+int LOActionText::Serialize(BinArray *bin) {
 	//animi, acType, loopmode
 	LOAction::Serialize(bin);
 	bin->WriteInt16(currentPos);

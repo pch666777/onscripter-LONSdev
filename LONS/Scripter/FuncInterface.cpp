@@ -340,7 +340,7 @@ int FunctionInterface::GetParamCount() {
 ONSVariableRef *FunctionInterface::GetParamRef(int index) {
 	int max = GetParamCount();
 	if (index > max) {
-		SimpleError("GetParamRef() out of range! max is %d, index is %d.", max, index);
+		FatalError("GetParamRef() out of range! max is %d, index is %d.", max, index);
 		return NULL;
 	}
 	return paramStack.at(paramStack.size() - 1 - max + index);
