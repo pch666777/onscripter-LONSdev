@@ -26,6 +26,24 @@ int LOAction::Serialize(BinArray *bin) {
 	return len;
 }
 
+
+int  LOAction::getTypeFromStream(BinArray *bin, int pos) {
+	if (!bin->CheckEntity("anim", nullptr, nullptr, &pos)) return -1;
+	return bin->GetIntAuto(&pos);
+}
+
+
+bool LOAction::DeSerialize(BinArray *bin, int *pos) {
+	if (!bin->CheckEntity("anim", nullptr, nullptr, pos)) return false;
+	acType = (AnimaType)bin->GetIntAuto(pos);
+	loopMode = (AnimaLoop)bin->GetIntAuto(pos);
+	lastTime = bin->GetIntAuto(pos);
+	gVal = bin->GetIntAuto(pos);
+	flags = bin->GetIntAuto(pos);
+	return true;
+}
+
+
 //=========================
 
 LOActionNS::LOActionNS() {
@@ -45,8 +63,16 @@ int LOActionNS::Serialize(BinArray *bin) {
 	int len = LOAction::Serialize(bin);
 	//只需要记住当前处于哪一帧
 	bin->WriteChar((char)cellCurrent);
+	bin->WriteInt(bin->Length() - len, &len);
 	return 0;
 }
+
+bool LOActionNS::DeSerialize(BinArray *bin, int *pos) {
+	if (!LOAction::DeSerialize(bin, pos)) return false;
+	cellCurrent = bin->GetChar(pos);
+	return true;
+}
+
 
 //========================
 
@@ -59,12 +85,30 @@ LOActionText::~LOActionText() {
 
 int LOActionText::Serialize(BinArray *bin) {
 	//animi, acType, loopmode
-	LOAction::Serialize(bin);
+	int len = LOAction::Serialize(bin);
+	//只需要记录当前位置
 	bin->WriteInt16(currentPos);
-	bin->WriteInt16(initPos);
-	bin->WriteInt16(loopDelay);
-	bin->WriteDouble(perPix);
-	//hook只记录必要的内容
-	//bin->WriteInt(hook->GetParam(0)->GetInt());
-	bin->WriteInt(0);
+	bin->WriteInt(bin->Length() - len, &len);
+	return 0;
+}
+
+
+bool LOActionText::DeSerialize(BinArray *bin, int *pos) {
+	if (!LOAction::DeSerialize(bin, pos)) return false;
+	currentPos = bin->GetIntAuto(pos);
+	return true;
+}
+
+
+LOAction* CreateActionFromType(int acType) {
+	LOAction *acb = nullptr;
+	switch (acType) {
+	case LOAction::ANIM_NSANIM:
+		acb = new LOActionNS();
+	case LOAction::ANIM_TEXT:
+		acb = new LOActionText();
+	default:
+		break;
+	}
+	return acb;
 }

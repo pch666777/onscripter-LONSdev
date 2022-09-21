@@ -85,6 +85,7 @@ public:
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
 	void unSetBtndef();
 	void FirstSNC();
+	void LoadSNC(LOAction *&acb);
 	void SetDefaultShowSize();
 	void GetSimpleSrc(SDL_Rect *src);
 	void GetSimpleDst(SDL_Rect *dst);

@@ -267,6 +267,25 @@ void LOLayerDataBase::FirstSNC() {
 }
 
 
+//读取存档时更新数据
+void LOLayerDataBase::LoadSNC(LOAction *&acb) {
+	if (acb->acType == LOAction::ANIM_NSANIM) {
+		LOActionNS *ai = (LOActionNS*)acb;
+		SetCell(nullptr, ai->cellCurrent);
+
+		delete acb;
+		acb = nullptr;
+	}
+	else if (acb->acType == LOAction::ANIM_TEXT) {
+		LOActionText *ai = (LOActionText*)GetAction(LOAction::ANIM_TEXT);
+		if (ai)ai->initPos = ((LOActionText*)acb)->currentPos;
+
+		delete acb;
+		acb = nullptr;
+	}
+}
+
+
 void LOLayerDataBase::SetDefaultShowSize() {
 	if (actions) {
 		FirstSNC();
@@ -366,10 +385,20 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 		btnStr.reset(bin->GetLOStrPtr(pos));
 		//文字样式不需要处理
 		bin->GetChar(pos);
-		//action
+
+		//处理action
 		int count = bin->GetIntAuto(pos);
 		for (int ii = 0; ii < count; ii++) {
-			//do it
+			int acType = LOAction::getTypeFromStream(bin, *pos);
+			LOAction *acb = CreateActionFromType(acType);
+			if (!acb || !acb->DeSerialize(bin, pos)) return false;
+			//更新的
+			LoadSNC(acb);
+			//替换的
+			if (acb) {
+				//work it
+				LOLog_e("no code at LOLayerDataBase::DeSerialize()");
+			}
 		}
 	}
 	//加载失败不影响程序继续执行，只是图像无法显示

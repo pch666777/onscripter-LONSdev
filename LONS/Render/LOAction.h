@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <SDL.h>
+#include <vector>
 #include "../etc/LOEvent1.h"
 
 class LOAction
@@ -53,7 +54,9 @@ public:
 	void setFlags(int f) { flags |= f; }
 	void unSetFlags(int f) { flags &= (~f); }
 	int  getFlags() { return flags; }
+	static int  getTypeFromStream(BinArray *bin, int pos);
 	virtual int Serialize(BinArray *bin);
+	virtual bool DeSerialize(BinArray *bin, int *pos);
 private:
 	int flags;
 };
@@ -68,6 +71,7 @@ public:
 	//设置指定格数的动画时间
 	void setSameTime(int32_t t, int count);
 	int Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos);
 
 	int16_t cellCount = 1;	 //动画分格总数
 	int8_t  cellForward = 1; //前进方向, -1表示倒放
@@ -82,6 +86,7 @@ public:
 	LOActionText();
 	~LOActionText();
 	int Serialize(BinArray *bin);
+	bool DeSerialize(BinArray *bin, int *pos);
 
 	int16_t currentPos = 0;  //动画当前运行的位置
 	int16_t initPos = 0; //初始化时需要到底的位置
@@ -89,5 +94,7 @@ public:
 	double perPix = 10.0;     //每毫秒显示的像素数
 	LOShareEventHook hook;
 };
+
+extern LOAction* CreateActionFromType(int acType);
 
 #endif // !__H_LOACTION_
