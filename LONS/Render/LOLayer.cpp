@@ -587,8 +587,10 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 		ai->lastTime = curTime;
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//初始化后才会相应左键跳过事件
-		ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
-		G_hookQue.push_H_back(ai->hook);
+		if (ai->hook) {
+			ai->hook->catchFlag = LOEventHook::ANSWER_LEFTCLICK | LOEventHook::ANSWER_PRINGJMP;
+			G_hookQue.push_H_back(ai->hook);
+		}
 	}
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);

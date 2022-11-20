@@ -110,6 +110,14 @@ int ScripterThreadEntry(void *ptr) {
 }
 
 
+//注册基本的事件钩子
+void RegisterBaseHook() {
+	//注册脚本模块呼叫hook
+	LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
+	G_hookQue.push_N_front(ev);
+}
+
+
 
 int main(int argc, char **argv) {
 	SDL_Log("LONS engine has been run from the main() function!\n");
@@ -178,9 +186,8 @@ int main(int argc, char **argv) {
 		//初始化渲染模块
 		if (imagemodule->InitImageModule()) {
 			LOLog_i("image module init ok.");
-			//注册脚本模块呼叫hook
-			LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
-			G_hookQue.push_N_back(ev);
+			//事件支持
+			RegisterBaseHook();
 
 			//初始化音频模块
 			audiomodule = new LOAudioModule;

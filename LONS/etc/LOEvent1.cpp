@@ -432,6 +432,9 @@ void LOEventQue::invalidClear() {
 		if (*iter) (*iter)->InvalidMe();
 	}
 	dLink.clear();
+	//重新初始化
+	dLink.emplace_back(nullptr);
+	nIter = dLink.begin();
 	_mutex.unlock();
 }
 
