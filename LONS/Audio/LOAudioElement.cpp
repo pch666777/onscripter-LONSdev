@@ -46,6 +46,16 @@ void LOAudioElement::SetData(BinArray *bin, int channel, int loops) {
 	else chunk = Mix_LoadWAV_RW(rwpos, 0);
 }
 
+void LOAudioElement::SetData2(BinArray *bin) {
+	if (!bin || bin->Length() == 0) return;
+	rwbin = bin;
+	if (loopCount == 1) flags |= FLAGS_LOOP_ONECE;
+	if (channel < 0) flags |= FLAGS_IS_BGM;
+	rwpos = SDL_RWFromMem(rwbin->bin, rwbin->Length());
+	if (flags & FLAGS_IS_BGM) music = Mix_LoadMUS_RW(rwpos, 0);
+	else chunk = Mix_LoadWAV_RW(rwpos, 0);
+}
+
 bool LOAudioElement::Play(int fade) {
 	if (channel < 0) {
 		if (music) {

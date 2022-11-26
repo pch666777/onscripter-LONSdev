@@ -64,6 +64,9 @@ void LOAudioModule::LoadFinish() {
 	Mix_HookMusicFinished(musicFinished);
 	Mix_ChannelFinished(channelFinish);
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
+		//if (ii == INDEX_MUSIC) {
+		//	int bbk = 1;
+		//}
 		if (audioPtr[ii]) audioPtr[ii]->Play(0);
 	}
 }
@@ -422,10 +425,12 @@ void LOAudioModule::Serialize(BinArray *bin) {
 	int loopCountPos = bin->Length();
 	int loopCount = 0;
 	bin->WriteInt(loopCount);
-	for (int ii = 0; ii < INDEX_MUSIC; ii++) {
-		if (audioPtr[ii] && audioPtr[ii]->isLoop()) {
-			audioPtr[ii]->Serialize(bin);
-			loopCount++;
+	for (int ii = 0; ii <= INDEX_MUSIC; ii++) {
+		if (audioPtr[ii]) {
+			if (audioPtr[ii]->isLoop()) {
+				audioPtr[ii]->Serialize(bin);
+				loopCount++;
+			}
 		}
 	}
 	//回写数量
@@ -448,7 +453,12 @@ bool LOAudioModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 			LOLog_e("LOAudioElement::DeSerialize() faild!");
 			return false;
 		}
-		audioPtr[aue->GetChannel()] = aue;
+		//读取文件数据
+		BinArray *bin = fileModule->ReadFile(&aue->buildStr, false);
+		aue->SetData2(bin);
+
+		if(aue->GetChannel() >= 0) audioPtr[aue->GetChannel()] = aue;
+		else audioPtr[INDEX_MUSIC] = aue;
 	}
 	afterBgmName = bin->GetLOString(pos);
 	*pos = next;

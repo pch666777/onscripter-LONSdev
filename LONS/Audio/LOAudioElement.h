@@ -28,9 +28,10 @@ public:
 	
 	bool isBGM() { flags & FLAGS_IS_BGM; }
 	bool isAvailable();
-	bool isLoop() { return loopCount > 1; }
+	bool isLoop() { return loopCount > 1 || loopCount == -1; }
 	void FreeData();
 	void SetData(BinArray *bin, int channel, int loops);  //chid < 0为music，chid >= 0为se
+	void SetData2(BinArray *bin);  //用于load的时候单纯设置数据
 	void SetLoop(int l) { loopCount = l; }
 	bool Play(int fade);
 	void Stop(int fade);

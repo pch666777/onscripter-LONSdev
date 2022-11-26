@@ -1057,6 +1057,9 @@ bool LOScriptReader::LoadCore(int id) {
 	//让音频模块恢复运行
 	audioModule->LoadFinish();
 
+	//注册事件基本钩子
+	RegisterBaseHook();
+
 	//执行loadgosub
 	if (userGoSubName[USERGOSUB_LOAD].length() > 0) {
 		LOScriptPoint *p = GetScriptPoint(userGoSubName[USERGOSUB_LOAD]);
@@ -1066,8 +1069,7 @@ bool LOScriptReader::LoadCore(int id) {
 		else LOLog_e("[loadgosub] error! no label name:%s", userGoSubName[USERGOSUB_LOAD].c_str());
 	}
 
-	//注册事件基本钩子
-	RegisterBaseHook();
+
 	return true;
 }
 
