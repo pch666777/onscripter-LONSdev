@@ -463,19 +463,8 @@ void LOtexture::SaveSurface(LOString *fname){
 
 
 SDL_Surface *LOtexture::getSurface(){
-	/*
-	if(baseTexture){
-		LOSurface *lsu = baseTexture->GetSurface() ;
-		if(lsu){
-			if(lsu->GetSurface()){
-				return lsu->GetSurface();
-			}
-			else LOLog_i("LOSurface's SDL_Surface is NULL!") ;
-		}
-		else LOLog_i("LOSurface is NULL!") ;
-	}
-	else LOLog_i("baseTexture is NULL!") ;
-	*/
+	if (baseTexture) return baseTexture->GetSurface();
+	if (surfacePtr) return surfacePtr;
 	return nullptr;
 }
 

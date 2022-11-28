@@ -199,6 +199,9 @@ public:
 	//检查surface中是否是同一种颜色
 	bool CheckColor(SDL_Color *cc, int diff);
 
+	void resetSurface();
+	void resetTexture();
+
 
 	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义
 	int16_t Xfix;
@@ -208,8 +211,6 @@ public:
 	std::unique_ptr<TextData> textData;
 private:
 	void NewTexture();
-	void resetSurface();
-	void resetTexture();
 
 	void CreateLineDescribe(LOString *s, LOFont *font, int firstSize);
 	LOLineDescribe *CreateNewLine(LOTextDescribe *&des, TTF_Font *font, LOTextStyle *style, int colorID);

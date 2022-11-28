@@ -2,6 +2,7 @@
 //图像模块命令实现
 */
 #include "../etc/LOString.h"
+#include "../etc/LOIO.h"
 #include "LOImageModule.h"
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
@@ -926,36 +927,24 @@ int LOImageModule::getscreenshotCommand(FunctionInterface *reader) {
 	dst.w = reader->GetParamInt(0);
 	dst.h = reader->GetParamInt(1);
 
-	//if (screenshotSu) delete screenshotSu;
-	//screenshotSu =  ScreenShot(&src, &dst);
-	//SDL_SaveBMP(su->GetSurface(), "test.bmp");
+	screenTex.reset(ScreenShot(src.x, src.y, src.w, src.h, dst.w, dst.h));
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
-	/*
-	if (screenshotSu) {
-		bool delshot = true;
-		ONSVariableRef *v = NULL;
-
-		if (reader->GetParamCount() > 0) v = reader->GetParamRef(0);
+	if (screenTex && screenTex->isAvailable()) {
+		LOString s = reader->GetParamStr(0);
+		LOIO::GetPathForWrite(s);
+		SDL_Surface *su = screenTex->getSurface();
+		if (su) {
+			SDL_SaveBMP(screenTex->getSurface(), s.c_str());
+		}
 		if (reader->isName("savescreenshot")) {
-			LOString *s = v->GetStr();
-			SDL_SaveBMP(screenshotSu->GetSurface(), s->c_str());
-		}
-		else if (reader->isName("savescreenshot2")) {
-			LOString *s = v->GetStr();
-			SDL_SaveBMP(screenshotSu->GetSurface(), s->c_str());
-			delshot = false;
+			screenTex.reset();
 		}
 
-		if (delshot) {
-			delete screenshotSu;
-			screenshotSu = NULL;
-		}
 	}
-	*/
 	return RET_CONTINUE;
 }
 
@@ -1049,16 +1038,10 @@ int LOImageModule::btnCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::spstrCommand(FunctionInterface *reader) {
-	/*
-	LOEventParamBtnRef *param = new LOEventParamBtnRef;
-	param->ref = new ONSVariableRef(ONSVariableRef::TYPE_STRING_IM);
-	param->ref->SetValue(&reader->GetParamStr(0));
-	LOEvent1 *e = new LOEvent1(SCRIPTER_RUN_SPSTR, param);
-	reader->blocksEvent.SendToSlot(e);
-	G_SendEventMulit(e, LOEvent1::EVENT_IMGMODULE_AFTER);
-	*/
-
-
+	LOString s = reader->GetParamStr(0);
+	LOShareEventHook ev(LOEventHook::CreateBtnStr(0, &s));
+	imgeModule->waitEventQue.push_N_back(ev);
+	ev->waitEvent(0.5, -1);
 	return RET_CONTINUE;
 }
 

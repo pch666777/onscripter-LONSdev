@@ -157,7 +157,7 @@ public:
 	static LOEventHook* CreateSePalyFinishEvent(int channel);
 	//创建一个没有参数的信号
 	static LOEventHook* CreateSignal(int param1, int param2);
-	//创建一个脚本模块呼叫call
+	//创建一个脚本模块呼叫call，要求渲染线程响应
 	static LOEventHook* CreateScriptCallHook();
 	//创建一个按钮清除事件
 	static LOEventHook* CreateBtnClearEvent(int val);

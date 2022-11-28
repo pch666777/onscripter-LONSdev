@@ -289,6 +289,7 @@ int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
 	int key = e->GetParam(0)->GetInt();
 	switch (key){
 	case LOEventHook::SCRIPT_CALL_BTNSTR:
+		ret = RunFuncSpstr(hook, e);
 		break;
 	case LOEventHook::SCRIPT_CALL_BTNCLEAR:
 		ret = RunFuncBtnClear(hook, e);
