@@ -418,10 +418,11 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 
 
 int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
-	LOString btnstr = e->GetParam(1)->GetLOString();
+	LOString btnstr = e->GetParam(2)->GetLOString();
 	RunExbtnStr(&btnstr);
 	//这个钩子长期有效
 	hook->closeEdit();
+	e->InvalidMe();
 	return LOEventHook::RUNFUNC_FINISH;
 }
 
@@ -440,7 +441,7 @@ int LOImageModule::RunFuncText(LOEventHook *hook, LOEventHook *e) {
 
 
 void LOImageModule::RunExbtnStr(LOString *s) {
-	/*
+
 	const char *obuf, *buf;
 	obuf = buf = s->c_str();
 	int maxlen = s->length();
@@ -450,20 +451,19 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 		int cc = toupper(buf[0]);
 		if (cc == 'C') {  //隐藏
 			buf++;
-			int ids[] = {s->GetInt(buf) ,255,255 };
-			//LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
-			//if (lyr)  lyr->curInfo->SetVisable(0);
+			int fid = GetFullID(LOLayer::LAYER_SPRINT, s->GetInt(buf), 255, 255);
+			LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
+			if (lyr) lyr->data->cur.SetVisable(0);
 		}
 		else if (cc == 'P') {   //显示
 			buf++;
-			int ids[] = { s->GetInt(buf) ,255,255 };
-			LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
-			if (lyr) lyr->curInfo->SetVisable(1); //只是显示
+			int fid = GetFullID(LOLayer::LAYER_SPRINT, s->GetInt(buf), 255, 255);
+			LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
+			if (lyr) lyr->data->cur.SetVisable(1);
 			if (buf[0] == ',') {  //显示指定cell
 				buf++;
 				int cell = s->GetInt(buf);
 				if (lyr) lyr->setActiveCell(cell);
-					//lyr->ShowNSanima(cell);
 			}
 		}
 		else if (cc == 'S') {  //播放音乐
@@ -480,16 +480,16 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 		}
 		else if (cc == 'M') {
 			buf++;
-			int ids[] = { s->GetInt(buf) ,255,255 };
+			int fid = GetFullID(LOLayer::LAYER_SPRINT, s->GetInt(buf), 255, 255);
 			if (buf[0] == ',') buf++;
 			int xx = s->GetInt(buf);
 			if (buf[0] == ',') buf++;
 			int yy = s->GetInt(buf);
 
-			LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_SPRINT, ids);
+			LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
 			if (lyr) {
-				lyr->curInfo->offsetX = xx;
-				lyr->curInfo->offsetY = yy;
+				lyr->data->cur.offsetX = xx;
+				lyr->data->cur.offsetY = yy;
 			}
 		}
 		else {
@@ -497,7 +497,6 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			return;
 		}
 	}
-	*/
 }
 
 
