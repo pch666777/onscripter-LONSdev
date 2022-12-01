@@ -387,6 +387,10 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	curInfo->texture->setForceAplha(curInfo->alpha);
 	curInfo->texture->activeFlagControl();
 
+	SDL_Vertex vec[6];
+	int bw = curInfo->texture->baseW();
+	int bh = curInfo->texture->baseH();
+	if (bw == 0 || bh == 0) return;
 
 	if (is_ex) {
 		//有旋转和缩放则计算出当前的变换矩阵
@@ -402,7 +406,7 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		dst.y = 0.0f;
 		dst.w = src.w * sx;
 		dst.h = src.h * sy;
-		//计算出四个点的位置
+		//计算出四个点的位置-->这里的规则是左上，右上，左下，右下
 		double dpt[8];
 		//p1
 		dpt[0] = 0; dpt[1] = 0;
@@ -417,13 +421,16 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		matrix.TransPoint(&dpt[4], &dpt[5]);
 		matrix.TransPoint(&dpt[6], &dpt[7]);
 
-		float fpt[8];
-		for (int ii = 0; ii < 8; ii++) fpt[ii] = (float)dpt[ii];
-
+		//从SDL2.0.16版本起，SDL支持渲染任意形状了，我们不再需要特定函数
 		//if(debugbreak) LOLog_i("dst positon fps is %f,%f,%f,%f",dpt[0],dpt[1],dpt[2],dpt[3]) ;
 		//If you do not implement this function, the return value is less than 0 and will not be displayed
 		//check it,please
-		SDL_RenderCopyLONS(render, curInfo->texture->GetTexture(), &src, &dst, fpt);
+		//SDL_RenderCopyLONS(render, curInfo->texture->GetTexture(), &src, &dst, fpt);
+		//上面计算的结果是左上，右上，左下，右下，渲染要求逆时针
+		vec[0].position = { (float)dpt[0], (float)dpt[1] };
+		vec[3].position = { (float)dpt[2], (float)dpt[3] };
+		vec[1].position = { (float)dpt[4], (float)dpt[5] };
+		vec[2].position = { (float)dpt[6], (float)dpt[7] };
 	}
 	else {
 		GetInheritOffset(&dst.x, &dst.y);
@@ -432,8 +439,59 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		dst.w = src.w;
 		dst.h = src.h;
 		//if(debugbreak) LOLog_i("dst positon is %d,%d,%d,%d",dst.x,dst.y,dst.w,dst.h) ;
-		SDL_RenderCopyF(render, curInfo->texture->GetTexture(), &src, &dst);
+		//SDL_RenderCopyF(render, curInfo->texture->GetTexture(), &src, &dst);
+
+		vec[0].position = { dst.x, dst.y };
+		vec[1].position = { dst.x, dst.y + dst.h };
+		vec[2].position = { dst.x + dst.w, dst.y + dst.h };
+		vec[3].position = { dst.x + dst.w, dst.y };
 	}
+	vec[0].tex_coord = { (float)src.x / bw , (float)src.y / bh };
+	vec[1].tex_coord = { (float)src.x / bw , (float)(src.y + src.h) / bh };
+	vec[2].tex_coord = { (float)(src.x + src.w) / bw , (float)(src.y + src.h) / bh };
+	vec[3].tex_coord = { (float)(src.x + src.w) / bw , (float)src.y / bh };
+
+	vec[4] = vec[0];
+	vec[5] = vec[2];
+
+	RenderBaseA(render, curInfo->texture.get(), vec, 6);
+}
+
+
+//统一的渲染函数，要求提供从左上角起，逆时针的四个点坐标，分为两个三角形
+void LOLayer::RenderBaseA(SDL_Renderer *render, LOtexture *tex, SDL_Vertex *vec, int vecCount) {
+	SDL_Texture *stex = tex->GetTexture();
+	//当使用SDL_RenderGeometry时，SDL_SetTextureColorMod和SDL_SetTextureAlphaMod将失效
+	//因此需要一个替代
+	Uint8 r, g, b, a;
+	SDL_GetTextureAlphaMod(stex, &a);
+	SDL_GetTextureColorMod(stex, &r, &g, &b);
+	SDL_Color color = { r, g, b, a };
+
+	for (int ii = 0; ii < vecCount; ii++) vec[ii].color = color;
+
+	/*
+	//p1
+	vers[0].position = { pos[0], pos[1] };
+	vers[0].color = color;
+	vers[0].tex_coord = { 0.0f, 0.0f };
+	//p2
+	vers[1].position = { pos[2], pos[3] };
+	vers[1].color = color;
+	vers[1].tex_coord = { 0.0f, 1.0f };
+	//p3
+	vers[2].position = { pos[4], pos[5] };
+	vers[2].color = color;
+	vers[2].tex_coord = { 1.0f, 1.0f };
+	//p4
+	vers[3].position = { pos[6], pos[7] };
+	vers[3].color = color;
+	vers[3].tex_coord = { 1.0f, 0.0f };
+	vers[4] = vers[0];
+	vers[5] = vers[2];
+	*/
+	//SDL_RenderGeometry使用三角形列表，vertex的数量必须是3的倍数
+	SDL_RenderGeometry(render, stex, vec, vecCount, nullptr, 0);
 }
 
 

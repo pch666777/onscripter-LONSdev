@@ -463,6 +463,7 @@ bool BinArray::CheckEntity(const char *mark, int *next, int *version, int *pos) 
 	if (!CheckPosition(pos[0] + 12)) return false;
 	int markv = *(int*)mark;
 	//if (!(ISBIG)) markv = XCHANGE4(markv);
+	//printf("%x,%x\n", markv, *(int*)(bin + pos[0]));
 	if (markv != *(int*)(bin + pos[0])) return false;
 	pos[0] += 4;
 	if (next) *next = pos[0] + *(int*)(bin + pos[0]);

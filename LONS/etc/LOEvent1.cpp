@@ -467,6 +467,7 @@ bool LOEventQue::LoadHooks(BinArray *bin, int *pos, LOEventMap *evmap) {
 	*/
 
 	*pos = next;
+	return true;
 }
 
 

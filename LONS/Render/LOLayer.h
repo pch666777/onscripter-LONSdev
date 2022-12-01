@@ -140,6 +140,7 @@ public:
 	//获得预期的父对象，注意并不是真的已经挂载到父对象上
 	//只是根据ids预期父对象，识别返回null
 	//static LOLayer* GetExpectFather(int lyrType, int *ids);
+	static void RenderBaseA(SDL_Renderer *render, LOtexture *tex, SDL_Vertex *vec, int vecCount);
 	static LOLayer* FindViewLayer(int fullid, bool isRemove);
 	static void NoUseLayerForce(LOLayer *lyr);
 	static void NoUseLayerForce(int fid);

@@ -184,6 +184,7 @@ bool ONSVariableBase::LoadOnsVar(BinArray *bin, int *pos) {
 	}
 
 	*pos = next;
+	return true;
 }
 
 

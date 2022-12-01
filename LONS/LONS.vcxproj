@@ -106,13 +106,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\vsProject\LONS_win\libs\zlib-1.2.11;D:\vsProject\LONS_win\libs\SDL2_mixer-2.0.4;D:\vsProject\LONS_win\libs\SDL2_image-2.0.5;D:\vsProject\LONS_win\libs\SDL2_ttf-2.0.15;D:\vsProject\LONS_win\libs\SDL2-2.0.12\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\vsProject\LONS_win\libs202212\zlib-1.2.11;D:\vsProject\LONS_win\libs202212\SDL2_mixer-2.0.4;D:\vsProject\LONS_win\libs202212\SDL2_image-2.0.5;D:\vsProject\LONS_win\libs202212\SDL2_ttf-2.0.15;D:\vsProject\LONS_win\libs202212\SDL-release-2.26.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs202212\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2main.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -142,14 +142,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\vsProject\LONS_win\libs\SDL2-2.0.12\include;D:\vsProject\LONS_win\libs\SDL2_ttf-2.0.15;D:\vsProject\LONS_win\libs\SDL2_image-2.0.5;D:\vsProject\LONS_win\libs\SDL2_mixer-2.0.4;D:\vsProject\LONS_win\libs\zlib-1.2.11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\vsProject\LONS_win\libs202212\SDL-release-2.26.0\include;D:\vsProject\LONS_win\libs202212\SDL2_ttf-2.0.15;D:\vsProject\LONS_win\libs202212\SDL2_image-2.0.5;D:\vsProject\LONS_win\libs202212\SDL_mixer-release-2.6.2\include;D:\vsProject\LONS_win\libs202212\zlib-1.2.11;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs202212\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2main.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
