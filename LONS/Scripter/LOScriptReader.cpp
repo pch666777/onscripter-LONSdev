@@ -1320,6 +1320,7 @@ int LOScriptReader::DefaultStep() {
 	//优先考虑00.txt-99.txt
 	for (int ii = 0; ii < 100; ii++) {
 		fn = std::to_string(ii) + ".txt";
+		LOIO::GetPathForRead(fn) ;
 		bin = ReadFile(&fn, false);
 		if (!bin && ii < 10) {
 			fn = "0" + fn;
@@ -1337,6 +1338,8 @@ int LOScriptReader::DefaultStep() {
 	//然后考虑通常的脚本
 	if (!isok) {
 		fn = "nscript.dat";
+		LOIO::GetPathForRead(fn) ;
+        //LOLog_i(fn.c_str()) ;
 		bin = ReadFile(&fn, false);
 		if (bin) {
 			unsigned char *buf = (unsigned char*)bin->bin;

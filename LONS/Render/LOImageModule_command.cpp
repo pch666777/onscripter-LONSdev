@@ -631,7 +631,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (data) {
-		if(reader->GetParamCount() > 2) data->bak.SetBtndef( &reader->GetParamStr(2), reader->GetParamInt(1), true, false);
+		LOString s = reader->GetParamStr(2);
+		if(reader->GetParamCount() > 2) data->bak.SetBtndef( &s, reader->GetParamInt(1), true, false);
 		else data->bak.SetBtndef(nullptr, reader->GetParamInt(1), true, false);
 	}
 	return RET_CONTINUE;
@@ -641,7 +642,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
-	data->bak.SetBtndef(&reader->GetParamStr(0), 0, true, true);
+	LOString s = reader->GetParamStr(0);  //it's safe
+	data->bak.SetBtndef(&s, 0, true, true);
 	return RET_CONTINUE;
 }
 

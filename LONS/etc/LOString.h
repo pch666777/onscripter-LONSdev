@@ -88,7 +88,7 @@ public:
 	LOString substrWord(int start, int len);
 	LOString Itoa2(int number);
 	LOString PathTypeTo(PATH_TYPE ptype);
-	int HashStr();
+	unsigned int HashStr();
 
 	const char* e_buf() { return c_str() + length(); }
 	const char* GetLineBuf(int line);
@@ -96,7 +96,7 @@ public:
 	static void SetStr(LOString *&s1, LOString *&s2, bool ismove);
 	static LOString RandomStr(int len);
 	static uintptr_t HexToNum(const char* buf);
-	static int HashStr(const char* buf);
+	static unsigned int HashStr(const char* buf);
 	static void SetDefaultEncoder(int codeID); 
 private:
 	enum {

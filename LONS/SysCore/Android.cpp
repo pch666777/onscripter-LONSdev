@@ -3,9 +3,7 @@
 //pngchs@qq.com
 */
 
-#include "../Scripter/FuncInterface.h"
-
-#include <android/log.h>
+#include "../etc/LOIO.h"
 #include <unistd.h>
 #include <jni.h>
 #include <string>
@@ -13,7 +11,8 @@
 
 enum ANDROID_SET{
     SET_READ_DIR = 1,
-    SET_WRITE_DIR = 2
+    SET_WRITE_DIR = 2,
+    SET_SAVE_DIR = 3
 };
 
 std::string JStringToString(JNIEnv* env, jstring *js){
@@ -37,7 +36,7 @@ std::string JStringToString(JNIEnv* env, jstring *js){
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_xc_gitee_lons_SDLActivity_variableSetStringFromJNI(
+Java_com_xc_lons_SDLActivity_LonsSetStringFromJNI(
         JNIEnv* env, jobject,
         jint param, jstring value) {
 
@@ -46,12 +45,15 @@ Java_xc_gitee_lons_SDLActivity_variableSetStringFromJNI(
 
     switch (param) {
         case SET_READ_DIR:
-            FunctionInterface::readDir = s_value ;
+            LOIO::ioReadDir = s_value ;
             //__android_log_print(ANDROID_LOG_INFO, "LONS", "readDir is:%s",s_value.c_str());
             break;
         case SET_WRITE_DIR:
-            FunctionInterface::writeDir = s_value ;
+            LOIO::ioWriteDir = s_value;
             //__android_log_print(ANDROID_LOG_INFO, "LONS", "writeDir is:%s",s_value.c_str());
+            break;
+        case SET_SAVE_DIR:
+            LOIO::ioSaveDir = s_value;
             break;
     }
 

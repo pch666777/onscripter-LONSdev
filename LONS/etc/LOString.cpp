@@ -548,8 +548,8 @@ uintptr_t LOString::HexToNum(const char* buf) {
 }
 
 
-int LOString::HashStr(const char* buf) {
-	int hash = 0x7BCA5D32; 
+unsigned int LOString::HashStr(const char* buf) {
+	unsigned int hash = 0x7BCA5D32;
 	while (buf[0] != 0) {
 		hash = (hash << 4) ^ (hash >> 28) ^ buf[0];
 		buf++;
@@ -557,7 +557,7 @@ int LOString::HashStr(const char* buf) {
 	return hash;
 }
 
-int LOString::HashStr() {
+unsigned int LOString::HashStr() {
 	return HashStr(c_str());
 }
 

@@ -371,7 +371,7 @@ int BinArray::WriteString(std::string *s, int *pos) {
 		char c = 0;
 		return WriteUnOrder(&c, pos, 1);
 	}
-	else WriteUnOrder( (void*)s->c_str(), pos, s->length() + 1);
+	else return WriteUnOrder( (void*)s->c_str(), pos, s->length() + 1);
 }
 
 

@@ -23,7 +23,7 @@ add_definitions(
 include_directories(../../SDL2_image-2.0.5)
 include_directories(../../SDL2_ttf-2.0.15)
 include_directories(../../SDL2_mixer-2.0.4)
-include_directories(../../SDL2-2.0.16/include)
+include_directories(${MY_SDL2_HEADER})
 
 #self
 #include_directories(Audio)
@@ -32,7 +32,7 @@ include_directories(../../SDL2-2.0.16/include)
 #include_directories(Render)
 #include_directories(Scripter)
 
-set(MY_LIBS_NAME "app_ONS_LONS")
+set(MY_LIBS_NAME "LONS")
 
 if(${MY_STATIC_LIBS} MATCHES "#${MY_LIBS_NAME}#")
     set(IS_LIBS_STATIC STATIC)
@@ -44,33 +44,40 @@ endif()
 set(SRCFILES1
         ./Audio/LOAudioElement.cpp
         ./Audio/LOAudioModule.cpp
-        ./etc/Android.cpp
+
         ./etc/BinArray.cpp
         ./etc/LOCodePage.cpp
         ./etc/LOEvent1.cpp
+        ./etc/LOIO.cpp
         ./etc/LOLog.cpp
         ./etc/LOString.cpp
+        ./etc/LOTimer.cpp
+        ./etc/LOVariant.cpp
         ./etc/SDL_mem.cpp
+
         ./File/LOCompressInfo.cpp
         ./File/LOFileModule.cpp
         ./File/LOPackFile.cpp
-        ./Render/LOAnimation.cpp
+
+        ./Render/LOAction.cpp
         ./Render/LOEffect.cpp
-        ./Render/LOFontBase.cpp
-        ./Render/LOFontInfo.cpp
+        ./Render/LOFont.cpp
         ./Render/LOImageModule.cpp
         ./Render/LOImageModule2.cpp
         ./Render/LOImageModule_command.cpp
         ./Render/LOLayer.cpp
-        ./Render/LOLayerInfo.cpp
+        ./Render/LOLayerData.cpp
         ./Render/LOMatrix2d.cpp
-        ./Render/LOSurface.cpp
+        ./Render/LOTextDescribe.cpp
         ./Render/LOTexture.cpp
+
         ./Scripter/FuncInterface.cpp
         ./Scripter/LOScriptPoint.cpp
         ./Scripter/LOScriptReader.cpp
         ./Scripter/LOScriptReader_command.cpp
         ./Scripter/ONSvariable.cpp
+
+        ./SysCore/Android.cpp
         LONS_main.cpp
         )
 
@@ -93,10 +100,10 @@ find_library( # Sets the name of the path variable.
         log-lib
         #lua
         #bz2
-        SDL2_image
-        SDL2_mixer
-        SDL2_ttf
-        SDL2
+        XSDL2_image
+        XSDL2_mixer
+        XSDL2_ttf
+        XSDL2
         # Specifies the name of the NDK library that
         # you want CMake to locate.
         log)
@@ -109,10 +116,10 @@ target_link_libraries( # Specifies the target library.
         ${MY_LIBS_NAME}
         #lua
         #bz2
-        SDL2_image
-        SDL2_mixer
-        SDL2_ttf
-        SDL2
+        XSDL2_image
+        XSDL2_mixer
+        XSDL2_ttf
+        XSDL2
         ###
         #GLESv1_CM
         GLESv2
