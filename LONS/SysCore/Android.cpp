@@ -36,7 +36,7 @@ std::string JStringToString(JNIEnv* env, jstring *js){
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_xc_lons_SDLActivity_LonsSetStringFromJNI(
+Java_com_xc_lons_MainActivity_LonsSetStringFromJNI(
         JNIEnv* env, jobject,
         jint param, jstring value) {
 

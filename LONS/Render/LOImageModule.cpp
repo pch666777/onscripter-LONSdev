@@ -758,6 +758,7 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 	if (buf[0] == ';') buf++;
 
 	bak->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+	return true ;
 }
 
 

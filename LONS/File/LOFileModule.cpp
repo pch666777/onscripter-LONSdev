@@ -41,6 +41,7 @@ BinArray *LOFileModule::ReadFile(LOString *fileName, bool err) {
 
 BinArray *LOFileModule::ReadFileFromFileSys(LOString *fn) {
 	LOString truePath = fn->PathTypeTo(LOString::PATH_LINUX);
+	//LOLog_i("file is:%s", truePath.c_str()) ;
 	BinArray *bin = LOIO::ReadAllBytes(truePath);
 	return bin;
 }

@@ -184,6 +184,7 @@ bool LOLineDescribe::CreateLocation(std::vector<LOTextDescribe*> *textList, std:
 		if (maxy < des->yy + des->maxy) maxy = des->yy + des->maxy;
 	}
 	if (minx == 0x7fff) minx = miny = 0;
+	return true ;
 }
 
 

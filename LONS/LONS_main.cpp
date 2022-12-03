@@ -10,6 +10,7 @@
 #include "Audio/LOAudioModule.h"
 #include "etc/LOEvent1.h"
 #include "etc/LOLog.h"
+#include "etc/LOIO.h"
 
 #include "etc/LOVariant.h"
 
@@ -121,6 +122,7 @@ void RegisterBaseHook() {
 
 int main(int argc, char **argv) {
 	SDL_Log("LONS engine has been run from the main() function!\n");
+    SDL_Log("word dir:%s", LOIO::ioReadDir.c_str()) ;
 	//check base type byte len
 	if (sizeof(int) != 4) SDL_Log("The basic data type [int] length does not meet the requirements!!!\n");
 	if (sizeof(double) != 8) SDL_Log("The basic data type [double] length does not meet the requirements!!!\n");

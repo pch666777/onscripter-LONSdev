@@ -631,8 +631,11 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255);
 	LOLayerData *data = CreateLayerBakData(fullid, reader->GetPrintName());
 	if (data) {
-		LOString s = reader->GetParamStr(2);
-		if(reader->GetParamCount() > 2) data->bak.SetBtndef( &s, reader->GetParamInt(1), true, false);
+		//exbtn
+		if(reader->GetParamCount() > 2) {
+			LOString s = reader->GetParamStr(2);
+			data->bak.SetBtndef( &s, reader->GetParamInt(1), true, false);
+		}
 		else data->bak.SetBtndef(nullptr, reader->GetParamInt(1), true, false);
 	}
 	return RET_CONTINUE;

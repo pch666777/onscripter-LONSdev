@@ -519,6 +519,7 @@ bool LOtexture::CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fo
 		if (line->xx + line->minx < Xfix) Xfix = line->xx + line->minx;
 		if (line->yy + line->miny < Yfix) Yfix = line->yy + line->miny;
 	}
+	return true ;
 }
 
 LOLineDescribe *LOtexture::CreateNewLine(LOTextDescribe *&des, TTF_Font *font, LOTextStyle *style, int colorID) {
