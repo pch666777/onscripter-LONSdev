@@ -16,6 +16,7 @@ LOEventHook::LOEventHook() {
 	catchFlag = 0;
 	param1 = 0;
 	param2 = 0;
+	state.store(STATE_NONE);
 }
 
 
