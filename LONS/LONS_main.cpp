@@ -46,8 +46,38 @@ void GetIntSet(int *a, int *b, char *buf) {
 	//}
 }
 
-//读取lons.cfg的配置文件
+//读取lons.cfg的配置文件,ANSI only，do not use any two byte char
 void ReadConfig() {
+	LOString s("lons.cfg");
+	FILE *f = LOIO::GetReadHandle(s, "rb");
+	if (!f) return;
+	std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, 1000000));
+	fclose(f);
+	if (!bin) return;
+	s.assign(bin->bin, bin->Length());
+
+	const char *buf = s.SkipSpace(s.c_str());
+	const char *ebuf = s.c_str() + s.length();
+	LOString key;
+
+	while (buf < ebuf) {
+		buf = s.SkipSpace(buf);
+		key = s.GetWord(buf);
+
+		buf = s.SkipSpace(buf);
+		if (buf >= ebuf - 1 || buf[0] != '=') return;
+		buf++;
+
+		buf = s.SkipSpace(buf);
+
+		if (key == "window") {
+			G_destWidth = s.GetInt(buf);
+			buf = s.SkipSpace(buf) + 1; //skip ','
+			G_destHeight = s.GetInt(buf);
+		}
+
+		buf = s.NextLine(buf);
+	}
 	//FILE *f = tryOpenFile("lons.cfg", "r");
 	//if (!f)return;
 	//char *line = new char[256];
@@ -145,32 +175,6 @@ int main(int argc, char **argv) {
 	srand((unsigned)time(NULL));   //初始化随机数种子
 
 	GlobalInit();
-
-
-	//LOShareEventHook e1(new LOEventHook());
-	//e1->param1 = 1;
-	//LOShareEventHook e2(new LOEventHook());
-	//e2->param1 = 2;
-	//LOShareEventHook e3(new LOEventHook());
-	//e3->param1 = 3;
-	//LOShareEventHook e4(new LOEventHook());
-	//e4->param1 = 4;
-	//LOShareEventHook e5(new LOEventHook());
-	//e5->param1 = 5;
-
-	//LOEventQue que;
-	//que.push_N_front(e3);
-	//que.push_N_back(e1);
-	//que.push_N_front(e4);
-	//que.push_H_front(e2);
-	//que.push_H_back(e5);
-
-	//auto iter = que.begin();
-	//while (true) {
-		//LOShareEventHook ev = que.GetEventHook(iter, false);
-	//	LOShareEventHook ev = que.TakeOutEvent();
-	//	if (!ev) break;
-	//}
 
 
 	//初始化IO，必须优先进行IO，因为后面要读文件

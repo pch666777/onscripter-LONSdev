@@ -360,7 +360,7 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	/*bool debugbreak = false ;*/
 	//全透明或者不可见，不渲染对象
 	//LONS::printInfo("alpha:%d visiable:%d", ptr[LOLayerInfo::alpha], ptr[LOLayerInfo::visiable]);
-	//if (id[0] == 9) {
+	//if (layerType == LOLayer::LAYER_NSSYS && id[0] == LOLayer::IDEX_NSSYS_EFFECT) {
 	//	int bbk = 1;
 	//}
 
@@ -396,10 +396,10 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		//有旋转和缩放则计算出当前的变换矩阵
 		matrix = GetTranzMatrix();
 		matrix = parent->matrix * matrix;  //继承父对象的变换
-		if(!(parent->parent)){
-			LOMatrix2d tmp = LOMatrix2d::GetScaleMatrix(G_gameScaleX, G_gameScaleY) ; //继承游戏画面缩放
-			matrix = tmp * matrix ;
-		}
+		//if(!(parent->parent)){
+		//	LOMatrix2d tmp = LOMatrix2d::GetScaleMatrix(G_gameScaleX, G_gameScaleY) ; //继承游戏画面缩放
+		//	matrix = tmp * matrix ;
+		//}
 		double sx, sy;
 		GetInheritScale(&sx, &sy);
 		dst.x = 0.0f;

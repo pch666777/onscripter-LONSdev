@@ -544,7 +544,7 @@ int LOScriptReader::operationCommand(FunctionInterface *reader) {
 	//LOString gg[] = { "cos" ,"dec" ,"inc" ,"div" ,"mod" ,"mul" ,"rnd" ,"rnd2" ,"sin" ,"sub" ,"tan" };
 	//for (int ii = 0; ii < 11; ii++) printf("%s:%x\n",gg[ii].c_str(),  gg[ii].HashStr());
 
-	unsigned int optype = curCmd.HashStr();
+	unsigned int optype = (unsigned int)curCmd.HashStr();
 	int val = v1->GetReal();
 	switch (optype)
 	{
