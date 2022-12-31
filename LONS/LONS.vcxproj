@@ -186,6 +186,7 @@
     <ClCompile Include="Scripter\LOScriptReader.cpp" />
     <ClCompile Include="Scripter\LOScriptReader_command.cpp" />
     <ClCompile Include="Scripter\ONSvariable.cpp" />
+    <ClCompile Include="SysCore\windows.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

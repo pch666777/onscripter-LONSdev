@@ -28,6 +28,9 @@
     <Filter Include="源文件\Audio">
       <UniqueIdentifier>{67ba9697-75ac-4c79-bc7c-60b2599268b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\SysCore">
+      <UniqueIdentifier>{0e8fb52e-41f8-4eef-b8f2-ccab915f86f8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="LONS_main.cpp">
@@ -125,6 +128,9 @@
     </ClCompile>
     <ClCompile Include="etc\LOTimer.cpp">
       <Filter>源文件\etc</Filter>
+    </ClCompile>
+    <ClCompile Include="SysCore\windows.cpp">
+      <Filter>源文件\SysCore</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
