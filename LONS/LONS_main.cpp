@@ -24,9 +24,9 @@
 #include <unistd.h>
 #endif
 
-//#ifdef WIN32
-//
-//#endif // 
+#ifdef WIN32
+extern void LoadLibs();
+#endif // 
 
 
 extern void LonsReadEnvData();
@@ -152,10 +152,16 @@ void RegisterBaseHook() {
 
 int main(int argc, char **argv) {
 	SDL_Log("LONS engine has been run from the main() function!\n");
-    SDL_Log("word dir:%s", LOIO::ioReadDir.c_str()) ;
+    SDL_Log("work dir:%s", LOIO::ioReadDir.c_str()) ;
 	//check base type byte len
 	if (sizeof(int) != 4) SDL_Log("The basic data type [int] length does not meet the requirements!!!\n");
 	if (sizeof(double) != 8) SDL_Log("The basic data type [double] length does not meet the requirements!!!\n");
+
+	//某些平台可能需要一些初始化的操作
+#ifdef WIN32
+	LoadLibs();
+#endif // WIN32
+
 
 	ReadConfig();
 	//if (G_useLogFile) UseLogFile();

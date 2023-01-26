@@ -22,11 +22,5 @@ std::wstring GetLibDir() {
 
 void LoadLibs() {
 	std::wstring s = GetLibDir();
-	WIN32_FIND_DATA p;
-	HANDLE h = FindFirstFile(s.c_str(), &p);
-	while (h != INVALID_HANDLE_VALUE) {
-		CloseHandle(h);
-		LoadLibraryW((s + L"\\" + p.cFileName).c_str());
-		if(! FindNextFileW(h, &p)) break;
-	}
+	SetDllDirectoryW(s.c_str());
 }
