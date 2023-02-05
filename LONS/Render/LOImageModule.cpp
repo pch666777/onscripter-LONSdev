@@ -10,6 +10,7 @@
 
 bool LOImageModule::isShowFps = false;
 bool LOImageModule::st_filelog;  //是否使用文件记录
+extern void FatalError(const char *fmt, ...);
 
 LOImageModule::LOImageModule(){
 	FunctionInterface::imgeModule = this;
@@ -834,7 +835,7 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 			break;
 		default:
 			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", bak->texType);
-			SimpleError(errs.c_str());
+			FatalError(errs.c_str());
 			break;
 		}
 		/*
@@ -1065,7 +1066,7 @@ LOtextureBase* LOImageModule::SurfaceFromFile(LOString *filename) {
 	LOtextureBase *base = new LOtextureBase(bin->bin, bin->Length());
 	if (!base->isValid()) {
 		delete base;
-		SimpleError("LOImageModule::SurfaceFromFile() unsupported file format!");
+		FatalError("LOImageModule::SurfaceFromFile() unsupported file format!");
 		return nullptr;
 	}
 	return base;

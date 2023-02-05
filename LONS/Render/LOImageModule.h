@@ -259,6 +259,8 @@ public:
 	int btnCommand(FunctionInterface *reader);
 	int spstrCommand(FunctionInterface *reader);
 	int filelogCommand(FunctionInterface *reader);
+	int movieCommand(FunctionInterface *reader);
+	int aviCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

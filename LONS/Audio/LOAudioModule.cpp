@@ -7,6 +7,7 @@
 
 extern void musicFinished();
 extern void channelFinish(int channel);
+extern void FatalError(const char *fmt, ...);
 
 LOAudioModule::LOAudioModule() {
 	audioModule = this;
@@ -93,7 +94,7 @@ void LOAudioModule::SetSevol(int channel, int vol) {
 
 bool LOAudioModule::CheckChannel(int channel, const char* info) {
 	if (channel < 0 || channel > 49) {
-		SimpleError(info, channel);
+		FatalError(info, channel);
 		return false;
 	}
 	else return true;

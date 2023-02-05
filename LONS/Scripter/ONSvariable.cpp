@@ -1,5 +1,7 @@
 #include "ONSvariable.h"
 
+extern void FatalError(const char *fmt, ...);
+
 ONSVariableBase GNSvariable[MAXVARIABLE_COUNT];
 
 ONSVariableBase::ONSVariableBase(){
@@ -133,7 +135,8 @@ void ONSVariableBase::ResetAll() {
 
 ONSVariableBase *ONSVariableBase::GetVariable(int id) {
 	if (id < 0 || id >= MAXVARIABLE_COUNT) {
-		SimpleError("%s%d", "ONSVariableBase::GetVariable() out of range:", id);
+		FatalError("%s%d", "ONSVariableBase::GetVariable() out of range:", id);
+		return nullptr;
 	}
 	return &GNSvariable[id];
 }
@@ -312,14 +315,14 @@ int  ONSVariableRef::GetArrayIndex(int index) {
 }
 
 void ONSVariableRef::DimArray() {
-	if(!arrayIndex) SimpleError("%s","ONSVariableRef::DimArray() null arrayIndex!");
+	if(!arrayIndex) FatalError("%s","ONSVariableRef::DimArray() null arrayIndex!");
 	nsv = ONSVariableBase::GetVariable(nsvId);
 	nsv->DimArray(arrayIndex);
 }
 
 //将立即数升级为变量引用，参数为要改变为的引用类型 数字变量、文字变量或数组变量
 void ONSVariableRef::UpImToRef(int tp) {
-	if (tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) SimpleError("%s", "ONSVariableRef::UpImToRef() error type!");
+	if (tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s", "ONSVariableRef::UpImToRef() error type!");
 	nsvId = (int)GetReal();
 	vtype = (ONSVAR_TYPE)tp;
 	nsv = ONSVariableBase::GetVariable(nsvId);
@@ -327,7 +330,10 @@ void ONSVariableRef::UpImToRef(int tp) {
 
 //将nsv的值复制到本地
 void ONSVariableRef::DownRefToIm(int tp) {
-	if(!isStr() && !isReal()) SimpleError("%s","ONSVariableRef::DownRefToIm() error type!");
+	if (!isStr() && !isReal()) {
+		FatalError("%s", "ONSVariableRef::DownRefToIm() error type!");
+		return;
+	}
 	if (tp == TYPE_REAL) {
 		im_val = GetReal();
 		vtype = TYPE_REAL;
@@ -336,11 +342,11 @@ void ONSVariableRef::DownRefToIm(int tp) {
 		if (vtype != TYPE_STRING_IM) ONSVariableBase::SetStrCore(im_str, GetStr());
 		vtype = TYPE_STRING_IM;
 	}
-	else SimpleError("%s","ONSVariableRef::DownRefToIm() error type!");
+	else FatalError("%s","ONSVariableRef::DownRefToIm() error type!");
 }
 
 void ONSVariableRef::SetRef(int tp, int id) {
-	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) SimpleError("%s","ONSVariableRef::SetRef() error type!");
+	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s","ONSVariableRef::SetRef() error type!");
 	vtype = (ONSVAR_TYPE)tp;
 	nsvId = id;
 }
@@ -367,7 +373,8 @@ void ONSVariableRef::SetValue(double v) {
 		nsv = ONSVariableBase::GetVariable(nsvId);
 		errinfo = nsv->CheckAarryIndex(arrayIndex);
 		if (errinfo) {
-			SimpleError("%s%s", "ONSVariableRef::SetValue(double v) array faild:" , errinfo);
+			FatalError("%s%s", "ONSVariableRef::SetValue(double v) array faild:" , errinfo);
+			return;
 		}
 		nsv->SetArrayValue(arrayIndex, (int)v);
 		break;
@@ -375,7 +382,8 @@ void ONSVariableRef::SetValue(double v) {
 		im_val = v;
 		break;
 	default:
-		SimpleError("%s", "ONSVariableRef::SetValue(double v) unsupported assignment type!");
+		FatalError("%s", "ONSVariableRef::SetValue(double v) unsupported assignment type!");
+		return;
 		break;
 	}
 }
@@ -392,7 +400,7 @@ void ONSVariableRef::SetValue(LOString *s) {
 		ONSVariableBase::SetStrCore(im_str, s);
 		break;
 	default:
-		SimpleError("%s","ONSVariableRef::SetValue(LOString *s) unsupported assignment type!");
+		FatalError("%s","ONSVariableRef::SetValue(LOString *s) unsupported assignment type!");
 		break;
 	}
 }
@@ -414,7 +422,7 @@ void ONSVariableRef::SetValue(ONSVariableRef *ref) {
 		SetValue(ref->GetStr());
 		break;
 	default:
-		SimpleError("%s","ONSVariableRef::SetValue(ONSVariableRef *ref) unsupported assignment type!");
+		FatalError("%s","ONSVariableRef::SetValue(ONSVariableRef *ref) unsupported assignment type!");
 		break;
 	}
 }
@@ -427,7 +435,7 @@ void ONSVariableRef::SetAutoVal(double v) {
 		LOString s = std::to_string(ret);
 		SetValue(&s);
 	}
-	else SimpleError("%s","ONSVariableRef::SetAutoReal(double v) unsupported type!");
+	else FatalError("%s","ONSVariableRef::SetAutoReal(double v) unsupported type!");
 }
 
 //如果自身为整数则自动转换为整数
@@ -440,7 +448,7 @@ void ONSVariableRef::SetAutoVal(LOString *s) {
 		}
 		else SetValue(0.0);
 	}
-	else SimpleError("%s","ONSVariableRef::SetAutoReal(LOString *s) unsupported type!");
+	else FatalError("%s","ONSVariableRef::SetAutoReal(LOString *s) unsupported type!");
 }
 
 double ONSVariableRef::GetReal() {
@@ -460,14 +468,15 @@ double ONSVariableRef::GetReal() {
 		nsv = ONSVariableBase::GetVariable(nsvId);
 		errinfo = nsv->CheckAarryIndex(arrayIndex);
 		if (errinfo) {
-			SimpleError("%s%s", "ONSVariableRef::GetReal() array faild:", errinfo);
+			FatalError("%s%s", "ONSVariableRef::GetReal() array faild:", errinfo);
+			return -1.0;
 		}
 		return nsv->GetArrayValue(arrayIndex);
 	default:
-		SimpleError("ONSVariableRef::GetReal() Unsupported assignment type!");
+		FatalError("ONSVariableRef::GetReal() Unsupported assignment type!");
 		break;
 	}
-	return -1;
+	return -1.0;
 }
 
 
@@ -497,11 +506,12 @@ LOString *ONSVariableRef::GetStr() {
 		if (errinfo) {
 			LOString errs = "ONSVariableRef::GetStr() array faild:";
 			errs.append(errinfo);
-			SimpleError(errs.c_str());
+			FatalError(errs.c_str());
+			return nullptr;
 		}
 		return IntToStr(nsv->GetArrayValue(arrayIndex));
 	default:
-		SimpleError("ONSVariableRef::GetStr() Unsupported assignment type!");
+		FatalError("ONSVariableRef::GetStr() Unsupported assignment type!");
 		break;
 	}
 	return NULL;
@@ -703,7 +713,7 @@ bool ONSVariableRef::SetArryVals(int *v, int count) {
 	nsv = ONSVariableBase::GetVariable(nsvId);
 	int dime = nsv->ArrayDimension(arrayIndex);
 	if (!arrayIndex || (nsv->ArrayDimension(nullptr) != dime + 1) || dime > MAXVARIABLE_ARRAY - 1) {
-		SimpleError("SetArryVals() dimension error!");
+		FatalError("SetArryVals() dimension error!");
 		return false;
 	}
 

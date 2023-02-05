@@ -14,6 +14,7 @@
 
 extern int G_lineLog;
 extern void RegisterBaseHook();
+extern void FatalError(const char *fmt, ...);
 
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -186,7 +187,7 @@ int LOScriptReader::resettimerCommand(FunctionInterface *reader) {
 int LOScriptReader::endifCommand(FunctionInterface *reader) {
 	std::unique_ptr<LogicPointer> p(loopStack.pop());
 	if (!p || !p->isIFthen()) {
-		SimpleError("if...then...else....endif Mismatch!");
+		("if...then...else....endif Mismatch!");
 		return RET_ERROR;
 	}
 	return RET_CONTINUE;
@@ -204,7 +205,7 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 		//逻辑跳过
 		int jump = LogicJump(false);
 		if (jump < 0) {
-			SimpleError("if...then...else...endif Mismatch!");
+			FatalError("if...then...else...endif Mismatch!");
 			return RET_ERROR;
 		}
 		loopStack.pop(true);
@@ -229,7 +230,7 @@ int LOScriptReader::ifCommand(FunctionInterface *reader) {
 		//不成立跳到else 或者endif
 		int jump = LogicJump(true);
 		if (jump < 0) {
-			SimpleError("if...then  else then ....endif Mismatch!");
+			FatalError("if...then  else then ....endif Mismatch!");
 			return RET_ERROR;
 		}
 		if (jump == 1) return elseCommand(reader); //有else执行else
@@ -248,7 +249,7 @@ int LOScriptReader::ifCommand(FunctionInterface *reader) {
 int LOScriptReader::breakCommand(FunctionInterface *reader) {
 	std::unique_ptr<LogicPointer> p(loopStack.pop());
 	if (!p || (!p->isFor() && !p->isWhile()) ) {
-		SimpleError("[break] Not used in the [for] loop!\n");
+		FatalError("[break] Not used in the [for] loop!\n");
 		return RET_ERROR;
 	}
 	JumpNext();
@@ -283,20 +284,20 @@ int LOScriptReader::forCommand(FunctionInterface *reader) {
 	p->forVar = ParseVariableBase(); //%
 
 	if (!NextStartFrom('=')) {
-		SimpleError("[for] command Missing '='");
+		FatalError("[for] command Missing '='");
 		return RET_ERROR;
 	}
 
 	NextAdress();
 	p->forVar->SetValue((double)ParseIntVariable()); // = number
 	if (!NextStartFrom("to")) {
-		SimpleError("[for] command Missing 'to'!");
+		FatalError("[for] command Missing 'to'!");
 		return RET_ERROR;
 	}
 
 	p->dstVar = ParseVariableBase();  //dest
 	if (!p->dstVar->isReal()) {
-		SimpleError("[for] command the target must be an integer!");
+		FatalError("[for] command the target must be an integer!");
 		return RET_ERROR;
 	}
 	if (NextStartFrom("step")) p->step = ParseIntVariable(); //step
@@ -332,7 +333,7 @@ void LOScriptReader::JumpNext() {
 int LOScriptReader::tablegotoCommand(FunctionInterface *reader) {
 	int val = reader->GetParamInt(0);
 	if (val < 0 || val > reader->GetParamCount() - 2) {
-		SimpleError("tablegoto is a error value:%d\n", val);
+		FatalError("tablegoto is a error value:%d\n", val);
 		return RET_ERROR;
 	}
 	else {
@@ -392,7 +393,7 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 			return RET_CONTINUE;
 		}
 	}
-	SimpleError("jumpb faild! not find '~' Symbol!\n");
+	FatalError("jumpb faild! not find '~' Symbol!\n");
 	return RET_ERROR;
 }
 
@@ -404,7 +405,7 @@ int LOScriptReader::gotoCommand(FunctionInterface *reader) {
 		return RET_CONTINUE;
 	}
 	else {
-		SimpleError("not find label:\"%s\"\n", reader->GetParamStr(0).c_str());
+		FatalError("not find label:\"%s\"\n", reader->GetParamStr(0).c_str());
 	}
 	return RET_ERROR;
 }
@@ -462,7 +463,7 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 			else errs.append("\"\"");
 		}
 		else {
-			SimpleError("at file:[ %s ],line:[ %d ],What information do you want to debug output?",
+			FatalError("at file:[ %s ],line:[ %d ],What information do you want to debug output?",
 				GetCurrentFile().c_str(), currentLable->c_line);
 		}
 	}
@@ -512,7 +513,7 @@ int LOScriptReader::movCommand(FunctionInterface *reader) {
 	while (true) {
 		ONSVariableRef *v1 = ParseVariableBase();
 		if (!NextComma()) {
-			SimpleError("[%s] command not match!\n", curCmd.c_str());
+			FatalError("[%s] command not match!\n", curCmd.c_str());
 			return RET_ERROR;
 		}
 		ONSVariableRef *v2 = ParseVariableBase(NULL,v1->isStrRef());
@@ -561,7 +562,7 @@ int LOScriptReader::operationCommand(FunctionInterface *reader) {
 		break;
 	case 0x5a2cba55: //div
 		if (ret == 0) {
-			SimpleError("[div] command,the divisor is zero!");
+			FatalError("[div] command,the divisor is zero!");
 			return RET_ERROR;
 		}
 		val = val / ret;
@@ -577,7 +578,7 @@ int LOScriptReader::operationCommand(FunctionInterface *reader) {
 		break;
 	case 0xa2cac347: //rnd2
 		if (ret2 <= ret) {
-			SimpleError("[rnd2] command faild! second number is less than first number!");
+			FatalError("[rnd2] command faild! second number is less than first number!");
 			return RET_ERROR;
 		}
 		val = rand() % (ret2 - ret + 1) + ret;
@@ -616,7 +617,7 @@ int LOScriptReader::intlimitCommand(FunctionInterface *reader) {
 	int no = reader->GetParamInt(0);
 	int min = reader->GetParamInt(1);
 	int max = reader->GetParamInt(2);
-	if (min >= max) SimpleError("[intlimit] command use an error range!");
+	if (min >= max) FatalError("[intlimit] command use an error range!");
 	ONSVariableBase *nsv = ONSVariableBase::GetVariable(no);
 	nsv->SetLimit(min, max);
 	return RET_CONTINUE;
@@ -746,7 +747,7 @@ int LOScriptReader::chkValueCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
 	if (!v1->Compare(v2, ONSVariableRef::LOGIC_EQUAL,false)) {
-		SimpleError("[%s]:[%d]:[%s]\n", currentLable->file->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
+		FatalError("[%s]:[%d]:[%s]\n", currentLable->file->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
 	}
 	return RET_CONTINUE;
 }

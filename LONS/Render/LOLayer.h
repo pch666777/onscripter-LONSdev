@@ -39,12 +39,16 @@ public:
 
 	//一些特别的编号
 	enum {
+		//在LAYER_DIALOG层
 		IDEX_DIALOG_TEXT = 5,    //在LAYER_DIALOG层
 		IDEX_DIALOG_WINDOW = 50, //在LAYER_DIALOG层
 		IDEX_DIALOG_TEXT_CHILD = 100,  //多句标准对话时，挂在在text的子层
+		//在LAYER_NSSYS层
+		IDEX_NSSYS_MOVIE = 4,  //avi,mpegplay在此层
 		IDEX_NSSYS_EFFECT = 5, //effect 2-18使用的层，在LAYER_NSSYS层
 		IDEX_NSSYS_BTN = 6,    //btn定义的按钮，在LAYER_NSSYS层
 		IDEX_NSSYS_CUR = 7,    //Cursor在的层，在LAYER_NSSYS层
+
 		IDEX_NSSYS_RMENU = 20,
 		IDEX_BG_BTNEND = 1022,
 	};
@@ -118,6 +122,7 @@ public:
 	void DoAction(LOLayerData *data, Uint32 curTime);
 	void DoNsAction(LOLayerData *data, LOActionNS *ai,  Uint32 curTime);
 	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);
+	void DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime);
 	bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
 	//void Serialize(BinArray *bin);

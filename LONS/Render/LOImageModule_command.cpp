@@ -5,6 +5,8 @@
 #include "../etc/LOIO.h"
 #include "LOImageModule.h"
 
+extern void FatalError(const char *fmt, ...);
+
 int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//if (reader->GetCurrentLine() == 9) {
 	//	int debugbreak = 1;
@@ -552,7 +554,7 @@ int LOImageModule::effectCommand(FunctionInterface *reader) {
 	int no = reader->GetParamInt(0);
 	if (reader->isName("effect")) {
 		if (no >= 1 && no <= 18) {
-			SimpleError("[effect] command id can't use 1~18,that's ONScripter system used!");
+			FatalError("[effect] command id can't use 1~18,that's ONScripter system used!");
 			return RET_ERROR;
 		}
 	}
@@ -1054,5 +1056,37 @@ int LOImageModule::spstrCommand(FunctionInterface *reader) {
 int LOImageModule::filelogCommand(FunctionInterface *reader) {
 	st_filelog = true;
 	ReadLog(LOGSET_FILELOG);
+	return RET_CONTINUE;
+}
+
+
+int LOImageModule::movieCommand(FunctionInterface *reader) {
+	LOString fn = reader->GetParamStr(0);
+	int isClickOver = 1;
+	return RET_CONTINUE;
+}
+
+
+int LOImageModule::aviCommand(FunctionInterface *reader) {
+	LOString fn = reader->GetParamStr(0);
+	int isClickOver = reader->GetParamInt(1);
+	LOIO::GetPathForRead(fn);
+	//准备smpeg
+	LOActionMovie *video = new LOActionMovie();
+	LOShareAction ev(video);
+	char *err = video->InitSmpeg(fn.c_str());
+	if (err) {
+		FatalError("%s", err);
+		return RET_ERROR;
+	}
+	//准备纹理
+	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
+	LOString s("**;_?_empty_?_");
+	loadSpCore(info, s, 0, 0, -1, true);
+	info->bak.showWidth = G_gameWidth;
+	info->bak.showHeight = G_gameHeight;
+	info->bak.SetAction(ev);
+
+	ExportQuequ("_lons", nullptr, true);
 	return RET_CONTINUE;
 }

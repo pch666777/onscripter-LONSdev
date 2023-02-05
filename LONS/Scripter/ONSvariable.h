@@ -9,7 +9,6 @@ extern void LOLog_e(const char *fmt, ...);
 
 #define MAXVARIABLE_COUNT 5120  //允许的最大变量数
 #define MAXVARIABLE_ARRAY 4      //允许的最大数组维数
-#define SimpleError LOLog_e
 
 //===========================================================
 

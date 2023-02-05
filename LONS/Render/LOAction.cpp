@@ -74,6 +74,49 @@ bool LOActionNS::DeSerialize(BinArray *bin, int *pos) {
 }
 
 
+//============= movie ==============
+SmpegContext::SmpegContext() {
+	frame = nullptr;
+	lock = SDL_CreateMutex();
+	frameCount = 0;
+}
+
+SmpegContext::~SmpegContext() {
+	frame = nullptr;
+	SDL_DestroyMutex(lock);
+	frameCount = 0;
+}
+
+LOActionMovie::LOActionMovie() {
+	acType = ANIM_VIDEO;
+	mpeg = nullptr;
+	frameID = 0;
+	setFlags(FLAGS_INIT);   //要求首次运行时初始化
+}
+
+LOActionMovie::~LOActionMovie() {
+	if (mpeg) {
+		SMPEG_stop(mpeg);
+		SMPEG_delete(mpeg);
+	}
+	mpeg = nullptr;
+}
+
+char* LOActionMovie::InitSmpeg(const char *fn) {
+	mpeg = SMPEG_new(fn, &info, 1);
+	//检查是否有错误
+	if (SMPEG_error(mpeg)) {
+		SMPEG_delete(mpeg);
+		mpeg = nullptr;
+		return SMPEG_error(mpeg);
+	}
+	SMPEG_enableaudio(mpeg, 1);
+	SMPEG_enablevideo(mpeg, 1);
+
+	//在action首次初始化时绑定播放纹理
+	return nullptr;
+}
+
 //========================
 
 LOActionText::LOActionText() {

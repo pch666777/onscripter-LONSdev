@@ -937,11 +937,15 @@ void LOtexture::CopySurfaceToTexture(SDL_Texture *dst, SDL_Surface *src, SDL_Rec
 
 
 void LOtexture::CreateDstTexture(int w, int h, int access) {
+	CreateDstTexture2(w, h, G_Texture_format, access);
+}
+
+void LOtexture::CreateDstTexture2(int w, int h, Uint32 format, int access) {
 	resetSurface();
 	resetTexture();
 	bw = w; bh = h;
 	isRef = false;
-	texturePtr = CreateTexture(LOtextureBase::render, G_Texture_format, access, w, h);
+	texturePtr = CreateTexture(LOtextureBase::render, format, access, w, h);
 }
 
 

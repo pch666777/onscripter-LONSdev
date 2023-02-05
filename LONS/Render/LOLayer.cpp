@@ -597,6 +597,9 @@ void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
 			case LOAction::ANIM_TEXT:
 				DoTextAction(data, (LOActionText*)acb.get(), curTime);
 				break;
+			case LOAction::ANIM_VIDEO:
+				DoMovieAction(data, (LOActionMovie*)acb.get(), curTime);
+				break;
 			default:
 				break;
 			}
@@ -604,6 +607,60 @@ void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
 	}
 }
 
+
+//帧更新函数，播放过程中不断的更新frameCount
+void SmpegUpdateFrame(void *data, SMPEG_Frame *frame){
+	SmpegContext *context = (SmpegContext *)data;
+	context->frame = frame;
+	context->frameCount++;
+}
+
+void LOLayer::DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime) {
+	if (ai->isInit()) { //初始化
+		//对齐?从plaympeg.c中抄来的
+		int fw = (ai->info.width + 15) & ~15;
+		int fh = (ai->info.height + 15) & ~15;
+		data->cur.texture->CreateDstTexture2(fw, fh, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING);
+		//设置好纹理的复制参数
+		data->cur.SetShowRect(0, 0, ai->info.width, ai->info.height);
+		if (ai->info.width != G_gameWidth || ai->info.height != G_gameHeight) {
+			data->cur.SetPosition2(0, 0, (double)ai->info.width / G_gameWidth, (double)ai->info.height / G_gameHeight);
+		}
+		ai->unSetFlags(LOAction::FLAGS_INIT);
+		//开始播放
+		SMPEG_enableaudio(ai->mpeg, 1);
+		SMPEG_setdisplay(ai->mpeg, SmpegUpdateFrame, &ai->context, ai->context.lock);
+		SMPEG_play(ai->mpeg);
+	}
+	else {
+		if (SMPEG_status(ai->mpeg) == SMPEG_PLAYING) {
+			//帧还没更新
+			if (ai->context.frameCount <= ai->frameID) return;
+			//更新纹理
+			SDL_LockMutex(ai->context.lock);
+			//检查宽高是否正确，因为是直接复制的，防止越界
+			
+			if (ai->context.frame->image_width != data->cur.texture->baseW() || !ai->context.frame ||
+				ai->context.frame->image_height != data->cur.texture->baseH()) {
+				FatalError("When playing mpeg, get an error!");
+				ai->setEnble(false);
+				SMPEG_stop(ai->mpeg);
+			}
+			else {
+				SDL_UpdateTexture(data->cur.texture->GetTexture(), NULL, ai->context.frame->image, 
+					ai->context.frame->image_width);
+			}
+			SDL_UnlockMutex(ai->context.lock);
+			ai->frameID = ai->context.frameCount;
+		}
+		else {
+			//播放完成了
+			ai->setEnble(false);
+			SMPEG_stop(ai->mpeg);
+			//播放完成事件
+		}
+	}
+}
 
 void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 	if (curTime - ai->lastTime > ai->cellTimes[ai->cellCurrent]) {

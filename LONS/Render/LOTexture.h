@@ -20,9 +20,6 @@
 extern void GetFormatBit(SDL_PixelFormat *format, char *bit);
 extern void GetFormatBit(Uint32 format, char *bit);
 extern bool EqualRect(SDL_Rect *r1, SDL_Rect *r2);
-
-extern void SimpleError(const char *format, ...);
-
 //我希望尽可能的缓存纹理，可以利用SDL的纹理特性对同一个纹理进行透明、混合模式、颜色叠加
 //以小写文件名作为key，此外还需要加入NS的透明模式，比如对JPG来说 :a 和 :c的结果是不同的
 //LOtextureBase直接对应图像文件，LOtexture则是LOtextureBase要显示的范围，或者是对LOtextureBase
@@ -194,6 +191,7 @@ public:
 
 	//创建一个纹理
 	void CreateDstTexture(int w, int h, int access);
+	void CreateDstTexture2(int w, int h, Uint32 format ,int access);
 	//将纹理中的数据转移到surface
 	void CopyTextureToSurface(bool freeTex);
 	//检查surface中是否是同一种颜色

@@ -11,6 +11,7 @@
 #include <SDL.h>
 #include <vector>
 #include "../etc/LOEvent1.h"
+#include "smpeg.h"
 
 class LOAction
 {
@@ -26,6 +27,7 @@ public:
 		ANIM_MOVE = 8,
 		ANIM_ROTATE = 16,
 		ANIM_SCALE = 32,
+		ANIM_VIDEO = 64,
 	};
 
 	enum AnimaLoop{
@@ -95,6 +97,35 @@ public:
 	LOShareEventHook hook;
 };
 
+//smpeg结构
+struct SmpegContext{
+	SMPEG_Frame *frame;
+	SDL_mutex *lock;
+	int frameCount;
+	//int lastFrameID;
+
+	SmpegContext();
+	~SmpegContext();
+};
+
+//视频播放
+class LOActionMovie :public LOAction {
+public:
+	LOActionMovie();
+	~LOActionMovie();
+	char* InitSmpeg(const char *fn);
+
+	SmpegContext context;
+	SMPEG *mpeg;
+	SMPEG_Info info;
+	int frameID;
+};
+
+
+
 extern LOAction* CreateActionFromType(int acType);
 
 #endif // !__H_LOACTION_
+
+
+

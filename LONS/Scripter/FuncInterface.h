@@ -302,6 +302,8 @@ public:
 	virtual int savetimeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int getsavestrCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
+	virtual int movieCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
+	virtual int aviCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int lspCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int printCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int bgCommand(FunctionInterface *reader) { return RET_VIRTUAL; }

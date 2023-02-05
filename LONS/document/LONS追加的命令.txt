@@ -23,6 +23,7 @@ getenvironment $VAR[,$VAR][,$VAR]
 loadscript STR
 加载脚本，比如 abc.txt 或者 abc.xyz，只要是文本格式的都可以，但是要保证文件编码与主脚本一致
 
+;暂时无效
 getspshowsize NUM,%VAR,%VAR[,%VAR]
 获取精灵的显示大小，与getspsize不同的是会计算缩放的影响
 	数值：精灵编号
@@ -42,3 +43,9 @@ delaygosub *label,NUM
 ！！！请不要在非主线程中使用进行对话显示，LONS的多线程脚本是通过轮询实现的，这意味着在多线程环境下延时类命令的误差会变大
 	标签：指定的标签，可以使用文字变量
 	数值：延迟时间，单位为毫秒，设置为0时马上执行
+	
+moviex
+参数列表：精灵编号,文件名,[,'pos',NUM,NUM,NUM,NUM][,'click'][,'loop'][,'async']
+movie命令的扩展模式，相比于movie增加一个参数，其他与movie命令一致
+在指定位置处绘制视频，异步模式时非常有用，作为背景、配景使用。注意不要同时大量播放视频，会出现性能问题。
+注意：使用print后才开始播放
