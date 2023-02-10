@@ -170,9 +170,6 @@ int LOScriptReader::delayCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::gettimerCommand(FunctionInterface *reader) {
-	//STEADY_CLOCK::time_point t1 = STEADY_CLOCK::now();
-	//auto it = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - ttimer);
-	//int val = it.count() & 0xfffffff;
 	ONSVariableRef *v = GetParamRef(0);
 	v->SetValue(LOTimer::GetHighTimeDiff(ttimer));
 	return RET_CONTINUE;

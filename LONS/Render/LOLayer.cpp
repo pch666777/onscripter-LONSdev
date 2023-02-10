@@ -623,9 +623,9 @@ void LOLayer::DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime
 		data->cur.texture->CreateDstTexture2(fw, fh, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING);
 		//设置好纹理的复制参数
 		data->cur.SetShowRect(0, 0, ai->info.width, ai->info.height);
-		//if (ai->info.width != G_gameWidth || ai->info.height != G_gameHeight) {
-		//	data->cur.SetPosition2(0, 0, (double)ai->info.width / G_gameWidth, (double)ai->info.height / G_gameHeight);
-		//}
+		if (ai->info.width != G_gameWidth || ai->info.height != G_gameHeight) {
+			data->cur.SetPosition2(0, 0, (double)G_gameWidth /ai->info.width , (double)G_gameHeight/ ai->info.height);
+		}
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//开始播放
 		SMPEG_setdisplay(ai->mpeg, SmpegUpdateFrame, &ai->context, ai->context.lock);
