@@ -610,9 +610,10 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	ExportQuequ(prin_name, nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
+	//要排除btnOverTime很小的情况，这可能导致无法接收到点击事件
 	pos = SDL_GetTicks() - timesnap;
 	if (btnOverTime > 0) {
-		btnOverTime -= pos;
+		if(btnOverTime - pos > 5) btnOverTime -= pos;
 		if (btnOverTime <= 0) btnOverTime = 1;
 	}
 

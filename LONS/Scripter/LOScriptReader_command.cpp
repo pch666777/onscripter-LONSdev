@@ -121,21 +121,45 @@ int LOScriptReader::labelexistCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::getparamCommand(FunctionInterface *reader) {
-	//转移运行点到之前的位置
-	if (!ChangePointer(1)) {
-		LOLog_e("You can not use [getparam] command in non child functions");
-		return RET_ERROR;
-	}
-	int count = reader->GetParamCount();
-	for (int ii = 0; ii < count; ii++) {
-		ONSVariableRef *v1 = reader->GetParamRef(ii);
+	for (int ii = 1; ii < 999; ii++) {
+		//检查是否是 i或者s开头，是的话表示获取的是变量的编号
+		bool isID = false;
+		char cc = CurrentOP();
+		if (cc == 'i' || cc == 'I' || cc == 's' || cc == 'S') {
+			isID = true; NextAdress();
+		}
+		//获取要设置内容的变量
+		ONSVariableRef *v1 = ParseVariableBase();
+		if (!v1) return RET_ERROR;
+		if (!v1->isRef()) {  //不是变量表达式，则产生一个错误
+			FatalError("[getparam] not use an ref variable at arguments %d!", ii);
+			return RET_ERROR;
+		}
+		//转移运行点到之前的位置
+		if (!ChangePointer(1)) {
+			FatalError("You can not use [getparam] command in non child functions!");
+			return RET_ERROR;
+		}
+		//获取原变量
 		ONSVariableRef *v2 = ParseVariableBase();
-		v1->SetValue(v2);
-		delete v2;
+		if (!v2) return RET_ERROR;
+ 		if (isID) {
+			//获取参数编号模式则需要提供一个ref变量
+			if (!v2->isRef()) {
+				FatalError("[getparam] use i%Num or s%Num model, but not provide an ref variable!", ii);
+				return RET_ERROR;
+			}
+			v1->SetValue((double)v2->nsvId);
+		}
+		else v1->SetValue(v2);
+		if (v1) delete v1;
+		if (v2) delete v2;
+		//调用前的位置前进一个逗号
+		NextComma(true);
+		//当前位置前进一个逗号，失败则退出
+		ChangePointer(0);
 		if (!NextComma(true)) break;
 	}
-	//返回原运行点
-	ChangePointer(0);
 	return RET_CONTINUE;
 }
 
@@ -216,6 +240,9 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
+	if (reader->GetCurrentLine() == 312) {
+		int bbk = 0;
+	}
 
 	bool ret = ParseLogicExp();
 	if (isName("notif")) ret = !ret;
@@ -1073,11 +1100,14 @@ bool LOScriptReader::LoadCore(int id) {
 
 
 int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
-	int hash = reader->GetParamStr(0).HashStr();
+	int hash = reader->GetParamStr(0).toLower().HashStr();
 	int val = reader->GetParamInt(1);
 	switch (hash){
 	case 0x4db490bb:  //linelog
 		G_lineLog = val;
+		break;
+	case 0x42d5f389: //console
+
 		break;
 	default:
 		break;

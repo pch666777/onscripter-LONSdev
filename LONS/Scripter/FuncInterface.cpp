@@ -82,7 +82,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"game",      "\0",       "\0",        &FunctionInterface::gameCommand},
 	{"end",       "\0",       "\0",        &FunctionInterface::endCommand},
 	{"defsub",    "N",        "Y",         &FunctionInterface::defsubCommand},
-	{"getparam",  "r,#",      "Y,#",       &FunctionInterface::getparamCommand},
+	//getparam有一些特殊的参数，由函数获取参数
+	{"getparam",   "\0",      "\0",        &FunctionInterface::getparamCommand},
 	{"labelexist", "I,L",     "Y,Y",       &FunctionInterface::labelexistCommand},
 	{"fileexist",  "I,s",     "Y,Y",       &FunctionInterface::fileexistCommand},
 	{"fileremove",  "s",      "Y",         &FunctionInterface::fileremoveCommand},
@@ -492,6 +493,7 @@ void FunctionInterface::WriteLog(int logt) {
 
 bool FunctionInterface::CheckTimer(LOEventHook *e, int waittmer) {
 	Uint32 postime = SDL_GetTicks() - e->timeStamp;
+	//postime = 1;
 	int maxtime = e->GetParam(0)->GetInt();
 	if (postime >= maxtime) return true;
 	else if (postime + waittmer >= maxtime) {

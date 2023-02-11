@@ -89,6 +89,7 @@ public:
 	void SetDefaultShowSize();
 	void GetSimpleSrc(SDL_Rect *src);
 	void GetSimpleDst(SDL_Rect *dst);
+	int  GetFlagBtnEnum();
 
 	enum {
 		UP_BTNVAL = 1,

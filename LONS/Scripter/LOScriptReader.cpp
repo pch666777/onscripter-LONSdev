@@ -515,7 +515,10 @@ int LOScriptReader::ContinueEvent() {
 
 		//如果ev带有timer则验证是否超时
 		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
-			if (CheckTimer(ev.get(), 5)) RunFuncBase(ev.get(), nullptr);
+			if (CheckTimer(ev.get(), 2)) {
+				//即使是超时，也要检查hook是否还有效，可能已经被设置了值
+				if(ev->enterEdit()) RunFuncBase(ev.get(), nullptr);
+			}
 		}
 		else if (ev->catchFlag == LOEventHook::ANSWER_NONE) {
 			if (ev->param2 == LOEventHook::FUN_BGM_AFTER) {
@@ -977,7 +980,9 @@ const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char 
 			s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
 			//别名作为立即数处理
 			bool isok;
-			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, GetAliasRef(s, false, isok));
+			int numaliaval = GetAliasRef(s, false, isok);
+			//没有获取到则不正确
+			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, numaliaval);
 			s2->push(v);
 		}
 		else {
@@ -1600,6 +1605,7 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 	if (var->IsType(LOVariant::TYPE_INT)) {
 		//LOLog_i("btnwait is:%d", var->GetInt());
 		ref->SetValue((double)var->GetInt());
+		//printf("btn set time:%d, var is %d\n", SDL_GetTicks(), var->GetInt());
 	}
 	else {
 		//似乎有字符串版本的命令？

@@ -908,6 +908,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 					//左键和长按会进一步产生按钮响应点击事件
 					if (e->catchFlag & (LOLayerDataBase::FLAGS_LONGCLICK | LOLayerDataBase::FLAGS_LEFTCLICK)) {
 						LOShareEventHook ev(LOEventHook::CreateBtnClickEvent(GetFullID(layerType, id), data->cur.btnval, 0));
+						//printf("click catch at %d\n", SDL_GetTicks());
 						aswerQue->push_N_back(ev);
 					}
 				}

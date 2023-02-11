@@ -49,3 +49,9 @@ moviex
 movie命令的扩展模式，相比于movie增加一个参数，其他与movie命令一致
 在指定位置处绘制视频，异步模式时非常有用，作为背景、配景使用。注意不要同时大量播放视频，会出现性能问题。
 注意：使用print后才开始播放
+
+setintvar STR,NUM
+设定LONS内部变量的值，STR和NUM的组合如下：
+linelog：设定是否在控制台输出行信息（控制台存在的情况下），1为输出，0位关闭输出
+
+例子：setintvar "linelog",1

@@ -285,6 +285,10 @@ void LOLayerDataBase::LoadSNC(LOAction *&acb) {
 	}
 }
 
+int  LOLayerDataBase::GetFlagBtnEnum() {
+	return (FLAGS_BTNDEF | FLAGS_LEFTCLICK | FLAGS_RIGHTCLICK | FLAGS_LONGCLICK | FLAGS_MOUSEMOVE);
+}
+
 
 void LOLayerDataBase::SetDefaultShowSize() {
 	if (actions) {
@@ -538,7 +542,11 @@ void LOLayerData::UpdataToForce() {
 		//更新单个状态
 	}
 	
-	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) cur.btnval = bak.btnval;
+	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) {
+		cur.btnval = bak.btnval;
+		//对应的按钮flag也要更新
+		cur.flags |= (bak.GetFlagBtnEnum() & bak.flags);
+	}
 	if (bak.upflags & LOLayerDataBase::UP_OFFX) cur.offsetX = bak.offsetX;
 	if (bak.upflags & LOLayerDataBase::UP_OFFY) cur.offsetY = bak.offsetY;
 	if (bak.upflags & LOLayerDataBase::UP_ALPHA) cur.alpha = bak.alpha;
