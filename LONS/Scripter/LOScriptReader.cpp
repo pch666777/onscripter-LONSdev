@@ -362,7 +362,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		if (!v && haslabel) v = ParseLabel2();
 		if (!v && hasvariable) {
 			v = ParseVariableBase();
-			if (!v ||  !(v->vtype & allow_type)) {
+			if (!v ||  !v->isAllowType(allow_type)) {
 				FatalError("[%s] paragram %d type error!\n",curCmdbuf, paramcount + 1);
 				ClearParams(true);
 				return false;
@@ -813,8 +813,8 @@ LOString LOScriptReader::ParseLabel(bool istry) {
 ONSVariableRef *LOScriptReader::ParseLabel2() {
 	LOString tmp = ParseLabel(true);
 	if (tmp.length() > 0) {
-		ONSVariableRef *v = new ONSVariableRef(ONSVariableRef::TYPE_STRING_IM);
-		v->SetValue(&tmp);
+		ONSVariableRef *v = new ONSVariableRef();
+		v->SetImVal(&tmp);
 		return v;
 	}
 	else return NULL;
@@ -997,6 +997,113 @@ const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char 
 	}
 	PopRPNstackUtill(&s1, s2, '\0');
 	if (!s2->top() || !s2->top()->isOperator()) 
+		FatalError("Expression error");
+	return buf;
+}
+
+
+const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
+	LOStack<ONSVariableRef> s1;
+	ONSVariableRef *v = nullptr;
+	int curAllow, tint, curType, tdouble;
+	LOString ts;
+
+	bool isfirst = true;
+	curAllow = 0;
+
+	while (true) {
+		buf = scriptbuf->SkipSpace(buf);
+		//根据之前的类型，获取下一个允许的类型
+		curAllow = ONSVariableRef::GetYFnextAllow(curAllow);
+		//获取当前的语法类型
+		curType = ONSVariableRef::GetYFtype(buf, isfirst);
+
+		//解释别名
+		if (isalias && curType == ONSVariableRef::YF_Alias) {
+
+		}
+
+		//表达式无法再继续了，不一定是错误
+		if ((curType & curAllow) == 0 || curType == ONSVariableRef::YF_Error || curType == ONSVariableRef::YF_Break) break;
+
+		//根据类型获取参数
+		switch (curType){
+		case ONSVariableRef::YF_Negative:
+		case ONSVariableRef::YF_Int:
+			if (v) s2->push(v);  //已经经过别名解释
+			else if (curType == ONSVariableRef::YF_Int) {
+				tdouble = scriptbuf->GetReal(buf);
+				s2->push(new ONSVariableRef(ONSVariableRef::TYPE_REAL, tdouble));
+			}
+			else {
+				buf++;
+				tdouble = 0 - scriptbuf->GetReal(buf);
+				s2->push(new ONSVariableRef(ONSVariableRef::TYPE_REAL, tdouble));
+			}
+			break;
+		case ONSVariableRef::YF_Str:
+			if (v) s2->push(v); //已经经过别名解释
+			else {
+				v = new ONSVariableRef();
+				ts = scriptbuf->GetString(buf);
+				v->SetImVal(&ts);
+				s2->push(v);
+			}
+			break;
+		case ONSVariableRef::YF_IntRef: //%
+		case ONSVariableRef::YF_StrRef: //$
+		case ONSVariableRef::YF_Array:  //?
+		case ONSVariableRef::YF_Oper:   //+-*/^%
+			v = new ONSVariableRef();
+			buf += v->GetOperator(buf);
+			//如果是数组，则压入一个特殊符号
+			if (curType == ONSVariableRef::YF_Array) s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG, -1));
+			auto iter = s1.end() - 1;
+			if (v->GetOrder() > (*iter)->GetOrder()) s1.push(v);  //当前符号优先级高，则直接入临时，相当于在正式栈优先执行
+			//%$是平级的，因此需要直接加入
+			else if (v->GetOrder() == (*iter)->GetOrder() && v->GetOrder() == ONSVariableRef::ORDER_GETVAR) s1.push(v);
+			else {
+				//当前优先级低于临时栈的
+				while (v->GetOrder() <= (*iter)->GetOrder() && (*iter)->GetOperator() != '(' &&
+					(*iter)->GetOperator() != '[') {
+					s2->push(*iter);
+					s1.erase(iter--);
+				}
+				s1.push(v);
+			}
+			break;
+		case ONSVariableRef::YF_Left_PA:  //'('
+			v = new ONSVariableRef;
+			buf += v->GetOperator(buf);
+			s1.push(v);
+			break;
+		case ONSVariableRef::YF_Right_PA:  //')'
+			buf++;
+			PopRPNstackUtill(&s1, s2, '(');
+			break;
+		case ONSVariableRef::YF_Left_SQ: //'['
+			v = new ONSVariableRef;
+			buf += v->GetOperator(buf);
+			PopRPNstackUtill(&s1, s2, '?');
+			s1.push(v);
+			break;
+		case ONSVariableRef::YF_Right_SQ:  //']'
+			buf++;
+			PopRPNstackUtill(&s1, s2, '[');
+			break;
+		default:
+			break;
+		}
+
+		//左括号总是可以接受一个负数
+		if (curType == ONSVariableRef::YF_Left_PA) isfirst = true;
+		else isfirst = false;
+		//v都应该push
+		v = nullptr;
+	}
+	//
+	PopRPNstackUtill(&s1, s2, '\0');
+	if (!s2->top() || !s2->top()->isOperator())
 		FatalError("Expression error");
 	return buf;
 }

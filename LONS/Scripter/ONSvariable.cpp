@@ -270,62 +270,58 @@ ONSVariableRef::ONSVariableRef() {
 ONSVariableRef::ONSVariableRef(ONSVAR_TYPE t, int idd) {
 	BaseInit();
 	vtype = t;
-	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) nsvId = idd;
-	else im_val = idd;
+	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) SetRef(t, idd);
+	else SetImVal((double)idd);
 }
 
-ONSVariableRef::ONSVariableRef(ONSVAR_TYPE t) {
-	BaseInit();
-	vtype = t;
-}
 
 void ONSVariableRef::BaseInit() {
+	tm_out = nullptr;
 	vtype = TYPE_NONE;
-	order = ORDER_NONE;
-	oper = '\0';
-	nsvId = -1;
-	nsv = NULL;
-	im_tmpout = NULL;
-	im_str = NULL;
-	arrayIndex = NULL ;
+	oper = 0;
+	order = 0;
+	memset(&data, 0, sizeof(data));
+}
+
+void ONSVariableRef::FreeData() {
+	if (vtype == TYPE_ARRAY) delete[] data.arrayIndex;
+	if (vtype == TYPE_STRING_IM) delete data.strPtr;
+	memset(&data, 0, sizeof(data));
 }
 
 ONSVariableRef::~ONSVariableRef() {
-	if (arrayIndex) delete[] arrayIndex;
-	if (im_str) delete im_str;
-	if (im_tmpout) delete im_tmpout;
-	arrayIndex = NULL;
-	im_str = NULL;
-	im_tmpout = NULL;
+	FreeData();
+	if (tm_out) delete tm_out;
 }
 
+//初始化数组
 void ONSVariableRef::InitArrayIndex() {
-	if (arrayIndex) delete[] arrayIndex;
-	arrayIndex = new int[MAXVARIABLE_ARRAY];
-	for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) arrayIndex[ii] = -1;
+	FreeData();
+	data.arrayIndex = new int[MAXVARIABLE_ARRAY];
+	for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) data.arrayIndex[ii] = -1;
 }
 
 void ONSVariableRef::SetArrayIndex(int val, int index) {
-	arrayIndex[index] = val;
+	if (vtype != TYPE_ARRAY || !data.arrayIndex) return;
+	data.arrayIndex[index] = val;
 }
 
 int  ONSVariableRef::GetArrayIndex(int index) {
-	if (!arrayIndex || index < 0 || index > MAXVARIABLE_ARRAY) return -1;
-	return arrayIndex[index];
+	if (vtype != TYPE_ARRAY || !data.arrayIndex || index < 0 || index > MAXVARIABLE_ARRAY) return -1;
+	return data.arrayIndex[index];
 }
 
 void ONSVariableRef::DimArray() {
-	if(!arrayIndex) FatalError("%s","ONSVariableRef::DimArray() null arrayIndex!");
-	nsv = ONSVariableBase::GetVariable(nsvId);
-	nsv->DimArray(arrayIndex);
+	if(vtype != TYPE_ARRAY || !data.arrayIndex) FatalError("%s","ONSVariableRef::DimArray() null arrayIndex!");
+	ONSVariableBase *nsv = ONSVariableBase::GetVariable(nsvID);
+	nsv->DimArray(data.arrayIndex);
 }
 
 //将立即数升级为变量引用，参数为要改变为的引用类型 数字变量、文字变量或数组变量
 void ONSVariableRef::UpImToRef(int tp) {
 	if (tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s", "ONSVariableRef::UpImToRef() error type!");
-	nsvId = (int)GetReal();
+	nsvID = (int16_t)GetReal();
 	vtype = (ONSVAR_TYPE)tp;
-	nsv = ONSVariableBase::GetVariable(nsvId);
 }
 
 //将nsv的值复制到本地
@@ -334,52 +330,48 @@ void ONSVariableRef::DownRefToIm(int tp) {
 		FatalError("%s", "ONSVariableRef::DownRefToIm() error type!");
 		return;
 	}
-	if (tp == TYPE_REAL) {
-		im_val = GetReal();
-		vtype = TYPE_REAL;
-	}
-	else if (tp == TYPE_STRING_IM) {
-		if (vtype != TYPE_STRING_IM) ONSVariableBase::SetStrCore(im_str, GetStr());
-		vtype = TYPE_STRING_IM;
-	}
+	if (tp == TYPE_REAL) SetImVal(GetReal());
+	else if (tp == TYPE_STRING_IM) SetImVal(GetStr());
 	else FatalError("%s","ONSVariableRef::DownRefToIm() error type!");
 }
 
 void ONSVariableRef::SetRef(int tp, int id) {
 	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s","ONSVariableRef::SetRef() error type!");
-	vtype = (ONSVAR_TYPE)tp;
-	nsvId = id;
+	vtype = tp;
+	nsvID = id;
 }
 
 void ONSVariableRef::SetImVal(double v) {
+	FreeData();
 	vtype = TYPE_REAL;
-	im_val = v;
+	data.real = v;
 }
 
 void ONSVariableRef::SetImVal(LOString *v) {
+	FreeData();
 	vtype = TYPE_STRING_IM;
-	ONSVariableBase::SetStrCore(im_str, v);
+	ONSVariableBase::SetStrCore(data.strPtr, v);
 }
 
 void ONSVariableRef::SetValue(double v) {
 	const char *errinfo = NULL;
-	switch (vtype)
-	{
+	ONSVariableBase *nsv = nullptr;
+	switch (vtype){
 	case TYPE_INT:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		nsv->SetValue(v);
 		break;
 	case TYPE_ARRAY:
-		nsv = ONSVariableBase::GetVariable(nsvId);
-		errinfo = nsv->CheckAarryIndex(arrayIndex);
+		nsv = ONSVariableBase::GetVariable(nsvID);
+		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
 			FatalError("%s%s", "ONSVariableRef::SetValue(double v) array faild:" , errinfo);
 			return;
 		}
-		nsv->SetArrayValue(arrayIndex, (int)v);
+		nsv->SetArrayValue(data.arrayIndex, (int)v);
 		break;
 	case TYPE_REAL:
-		im_val = v;
+		data.real = v;
 		break;
 	default:
 		FatalError("%s", "ONSVariableRef::SetValue(double v) unsupported assignment type!");
@@ -390,19 +382,23 @@ void ONSVariableRef::SetValue(double v) {
 
 void ONSVariableRef::SetValue(LOString *s) {
 	const char *errinfo = NULL;
-	switch (vtype)
-	{
+	ONSVariableBase *nsv = nullptr;
+	switch (vtype){
 	case TYPE_STRING:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		nsv->SetString(s);
 		break;
 	case TYPE_STRING_IM:
-		ONSVariableBase::SetStrCore(im_str, s);
+		ONSVariableBase::SetStrCore(data.strPtr, s);
 		break;
 	default:
 		FatalError("%s","ONSVariableRef::SetValue(LOString *s) unsupported assignment type!");
 		break;
 	}
+}
+
+void ONSVariableRef::SetValue(LOString &s) {
+	SetValue(&s);
 }
 
 void ONSVariableRef::SetValue(LOCodePage *encode, const char *buf, int len) {
@@ -453,25 +449,26 @@ void ONSVariableRef::SetAutoVal(LOString *s) {
 
 double ONSVariableRef::GetReal() {
 	const char *errinfo = NULL;
+	ONSVariableBase *nsv = nullptr;
 	switch (vtype) {
 	case TYPE_INT:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		return nsv->GetValue();
 	case TYPE_STRING:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		return ONSVariableBase::StrToIntSafe(nsv->GetString());
 	case TYPE_STRING_IM:
-		return ONSVariableBase::StrToIntSafe(im_str);
+		return ONSVariableBase::StrToIntSafe(data.strPtr);
 	case TYPE_REAL:
-		return im_val;
+		return data.real;
 	case TYPE_ARRAY:
-		nsv = ONSVariableBase::GetVariable(nsvId);
-		errinfo = nsv->CheckAarryIndex(arrayIndex);
+		nsv = ONSVariableBase::GetVariable(nsvID);
+		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
 			FatalError("%s%s", "ONSVariableRef::GetReal() array faild:", errinfo);
 			return -1.0;
 		}
-		return nsv->GetArrayValue(arrayIndex);
+		return nsv->GetArrayValue(data.arrayIndex);
 	default:
 		FatalError("ONSVariableRef::GetReal() Unsupported assignment type!");
 		break;
@@ -481,35 +478,36 @@ double ONSVariableRef::GetReal() {
 
 
 LOString *ONSVariableRef::IntToStr(int v) {
-	if (im_tmpout) delete im_tmpout;
-	im_tmpout = new LOString(std::to_string(v));
-	return im_tmpout;
+	if (tm_out) delete tm_out;
+	tm_out = new LOString(std::to_string(v));
+	return tm_out;
 }
 
 //非文字变量会尝试转换为文字
 LOString *ONSVariableRef::GetStr() {
 	const char *errinfo = NULL;
+	ONSVariableBase *nsv = nullptr;
 	switch (vtype) {
 	case TYPE_INT:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		return IntToStr((int)nsv->GetValue());
 	case TYPE_STRING:
-		nsv = ONSVariableBase::GetVariable(nsvId);
+		nsv = ONSVariableBase::GetVariable(nsvID);
 		return nsv->GetString();
 	case TYPE_STRING_IM:
-		return im_str;
+		return data.strPtr;
 	case TYPE_REAL:
-		return IntToStr((int)im_val);
+		return IntToStr((int)data.real);
 	case TYPE_ARRAY:
-		nsv = ONSVariableBase::GetVariable(nsvId);
-		errinfo = nsv->CheckAarryIndex(arrayIndex);
+		nsv = ONSVariableBase::GetVariable(nsvID);
+		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
 			LOString errs = "ONSVariableRef::GetStr() array faild:";
 			errs.append(errinfo);
 			FatalError(errs.c_str());
 			return nullptr;
 		}
-		return IntToStr(nsv->GetArrayValue(arrayIndex));
+		return IntToStr(nsv->GetArrayValue(data.arrayIndex));
 	default:
 		FatalError("ONSVariableRef::GetStr() Unsupported assignment type!");
 		break;
@@ -520,7 +518,10 @@ LOString *ONSVariableRef::GetStr() {
 //返回的是获取的符号长度
 int ONSVariableRef::GetOperator(const char *buf) {
 	int ret = 0;
-	vtype = TYPE_NONE;
+	FreeData();
+	oper = buf[0];
+	vtype = TYPE_OPERATOR;
+
 	switch (buf[0])
 	{
 	case '+':case '-':
@@ -550,65 +551,57 @@ int ONSVariableRef::GetOperator(const char *buf) {
 			oper = '~';
 			order = ORDER_MULDIRMOD;
 		}
-		else return ret;
+		else vtype = TYPE_NONE;
 		break;
 	default:
-		return ret;
+		vtype = TYPE_NONE;
 		break;
 	}
-	if (oper == 0) {
-		oper = buf[0];
-		ret = 1;
-	}
-	else ret = 3;  //mod
-	vtype = TYPE_OPERATOR;
-	return ret;
+
+	if (vtype == TYPE_NONE) return 0;
+	else if (oper == '~') return 3; //mod
+	return 1;
 }
 
 //进过计算，ref都会编程im_，除非遇到 ? % $ 这种变量操作代表
 bool ONSVariableRef::Calculator(ONSVariableRef *v, char op, bool isreal) {
 	if (!v) return false;
 	if (op == '+' && isStr()) {
-		if (vtype != TYPE_STRING_IM) {  //must be str_im
-			LOString *s = GetStr();
-			ONSVariableBase::SetStrCore(im_str, s);
-		}
-		vtype = TYPE_STRING_IM;
-		ONSVariableBase::AppendStrCore(im_str, v->GetStr());
+		//must be str_im，注意im的时候getstr()会造成错误
+		if (vtype != TYPE_STRING_IM) SetImVal(GetStr());
+		ONSVariableBase::AppendStrCore(data.strPtr, v->GetStr());
 		return true;
 	}
 	else {
 		if (!isReal()) return false;
 		double dst = GetReal();      //注意必须先获取值再改类型，不然会出现错误的结果
 		double src = v->GetReal();
-		int dsti = dst;
-		int srci = src;
+		int itmp;
+		//转为整数计算
+		if (isreal) {
+			itmp = dst; dst = (double)itmp;
+			itmp = src; src = (double)itmp;
+		}
 
-		vtype = TYPE_REAL;
 		switch (op)
 		{
 		case '+':
-			if(isreal) im_val = dst + src;
-			else im_val = dsti + srci;
+			SetImVal(dst + src);
 			break;
 		case '-':
-			if(isreal)im_val = dst - src;
-			else im_val = dsti - srci;
+			SetImVal(dst - src);
 			break;
 		case '*':
-			if(isreal) im_val = dst * src; 
-			else im_val = dsti * srci;
+			SetImVal(dst * src);
 			break;
 		case '/':
-			if(isreal)im_val = dst / src; 
-			else im_val = dsti / srci;
+			SetImVal(dst / src);
 			break;
 		case '~':
-			im_val = dsti % srci;
+			SetImVal((int)dst % (int)src);
 			break;
 		case '^':
-			if (isreal) im_val = pow(dst, srci);
-			else im_val = pow(dsti, srci);
+			SetImVal(pow(dst, src));
 			break;
 		default:
 			return false;
@@ -694,41 +687,39 @@ int ONSVariableRef::Compare(ONSVariableRef *v2, int comtype, bool isreal) {
 
 
 void ONSVariableRef::CopyFrom(ONSVariableRef *v) {
+	FreeData();
 	vtype = v->vtype;
-	oper = v->oper;
-	order = v->order;
-	nsvId = v->nsvId;
-	ONSVariableBase::SetStrCore(im_str, v->im_str);
-	im_val = v->im_val;
-	if (arrayIndex) delete[] arrayIndex;
-	arrayIndex = NULL;
-	if (v->arrayIndex) {
-
+	nsvID = v->nsvID;
+	if(vtype == TYPE_STRING_IM) ONSVariableBase::SetStrCore(data.strPtr, v->data.strPtr);
+	else if (vtype == TYPE_ARRAY) {
 		InitArrayIndex();
-		for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) arrayIndex[ii] = v->arrayIndex[ii];
+		for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) data.arrayIndex[ii] = v->data.arrayIndex[ii];
 	}
 }
 
 bool ONSVariableRef::SetArryVals(int *v, int count) {
-	nsv = ONSVariableBase::GetVariable(nsvId);
-	int dime = nsv->ArrayDimension(arrayIndex);
-	if (!arrayIndex || (nsv->ArrayDimension(nullptr) != dime + 1) || dime > MAXVARIABLE_ARRAY - 1) {
+	ONSVariableBase *nsv = ONSVariableBase::GetVariable(nsvID);
+	int dime = nsv->ArrayDimension(data.arrayIndex);
+	if (!data.arrayIndex || (nsv->ArrayDimension(nullptr) != dime + 1) || dime > MAXVARIABLE_ARRAY - 1) {
 		FatalError("SetArryVals() dimension error!");
 		return false;
 	}
 
 	for (int ii = 0; ii < count; ii++) {
-		arrayIndex[dime] = ii;
-		nsv->SetArrayValue(arrayIndex, *(v + ii));
+		data.arrayIndex[dime] = ii;
+		nsv->SetArrayValue(data.arrayIndex, *(v + ii));
 	}
-	arrayIndex[dime] = -1;
+	data.arrayIndex[dime] = -1;
 	return true;
 }
 
 
 //获取type和操作ID的组合数
 int  ONSVariableRef::GetTypeRefid() {
-	return ((int)vtype << 16) | nsvId;
+	int v = vtype;
+	v <<= 16;
+	v |= nsvID;
+	return v;
 }
 
 ONSVariableRef* ONSVariableRef::GetRefFromTypeRefid(int refid) {
@@ -763,3 +754,68 @@ int  ONSVariableRef::GetTypeAllow(const char *param) {
 	}
 	return ret;
 }
+
+
+//获取语法类型
+int ONSVariableRef::GetYFtype(const char *buf, bool isfirst) {
+	int ctype = LOString::GetCharacter(buf);
+	if (ctype == LOCodePage::CHARACTER_NUMBER) return YF_Int;
+	else if (ctype == LOCodePage::CHARACTER_SYMBOL) {
+		if (isfirst && buf[0] == '-') { //检测负数
+			if (LOString::GetCharacter(buf + 1) == LOCodePage::CHARACTER_NUMBER) return YF_Negative;
+		}
+		if (buf[0] == '+' || buf[0] == '-' || buf[0] == '*' || buf[0] == '/' || buf[0] == '^') return YF_Oper;
+		if (buf[0] == '"') return YF_Str;
+		if (buf[0] == '%') return YF_IntRef;
+		if (buf[0] == '$') return YF_StrRef;
+		if (buf[0] == '(') return YF_Left_PA;
+		if (buf[0] == ')') return YF_Right_PA;
+		if (buf[0] == '[') return YF_Left_SQ;
+		if (buf[0] == ']') return YF_Right_SQ;
+		if (buf[0] == '?') return YF_Array;
+		if ((buf[0] == 'm' || buf[0] == 'M') && (buf[0] == 'o' || buf[0] == 'O') && (buf[0] == 'd' || buf[0] == 'D')) return YF_Oper;
+		if (buf[0] == '\n' || buf[0] == ',' || buf[0] == ':') return YF_Break;
+		return YF_Error;
+	}
+
+	return YF_Alias;
+}
+
+
+bool ONSVariableRef::isYFoperator(int yftype) {
+	int flag = YF_Oper | YF_IntRef | YF_StrRef;
+	return flag;
+}
+
+
+//获取下一个语法允许的类型
+int  ONSVariableRef::GetYFnextAllow(int cur) {
+	switch (cur){
+	case 0:
+		return YF_Value | YF_Negative;
+	case YF_Int:  //{+-*/^%} ] )
+		return YF_Oper | YF_Right_PA | YF_Right_SQ;
+	case YF_IntRef: // % -> %%, %(, %?0[], %num
+		return YF_IntRef | YF_Left_PA | YF_Array| YF_Int;
+	case YF_Str: // "" -> "" + 
+		return YF_Oper;
+	case YF_StrRef: //$ -> $(, $%, $num
+		return YF_Left_PA | YF_IntRef | YF_Int;
+	case YF_Array: // ? -> ?num, ?%, ?(
+		return YF_Int | YF_IntRef | YF_Left_PA;
+	case YF_Oper:  // + -> +val, +(
+		return YF_Value | YF_Left_PA;
+	case YF_Left_SQ: // [%num], [?num]
+		return YF_Int | YF_IntRef | YF_Array;
+	case YF_Right_SQ: //] -> ][, ]+
+		return YF_Left_SQ | YF_Oper;
+	case YF_Left_PA: //( -> (first  //左括号相当于重新开始
+		return YF_Value | YF_Negative;
+	case YF_Right_PA: //) --> )+
+		return YF_Oper;
+	default:
+		break;
+	}
+	return YF_Error;
+}
+

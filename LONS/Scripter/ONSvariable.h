@@ -94,36 +94,56 @@ public:
 		ORDER_ROUNDBRA, //圆括号
 	};
 
+	//语法
+	enum {
+		YF_Int = 1,
+		YF_IntRef = 2,
+		YF_Str = 4,
+		YF_StrRef = 8,
+		YF_Array = 0x10,
+		YF_Value = 0x1F,
+		YF_Oper =  0x20,
+		YF_Left_SQ = 0x40,  //左方括号
+		YF_Right_SQ = 0x80,  //右方括号
+		YF_Left_PA = 0x100,  //左圆括号
+		YF_Right_PA = 0x200, //右圆括号
+		YF_Alias = 0x400,    //别名，如果存在的话
+		YF_Error = 0x800,
+		YF_Negative = 0x1000, //负数
+		YF_Break = 0x2000,
+	};
+
 	ONSVariableRef();
 	ONSVariableRef(ONSVAR_TYPE t, int idd);
-	ONSVariableRef(ONSVAR_TYPE t);
 
 	~ONSVariableRef();
-
-	ONSVAR_TYPE vtype;    //变量的类型 % $ ? 算数符号
-	char oper;			//运算符
-	int order;			//运算顺序
-	int nsvId;				//该变量的id
 	
 	void UpImToRef(int tp);
 	void DownRefToIm(int tp);
-	void SetRef(int tp, int id);
+
+	void SetRef(int tp, int id);   //设置引用模式
 	void SetImVal(double v);
 	void SetImVal(LOString *v);
 	void SetValue(ONSVariableRef *ref);
 	void SetValue(double v);
 	void SetValue(LOString *s);
+	void SetValue(LOString &s);
 	void SetValue(LOCodePage *encode,const char *buf, int len);
 	void SetAutoVal(double v);
 	bool SetArryVals(int *v, int count);
 	void SetAutoVal(LOString *s);
+
 	void InitArrayIndex();
 	void DimArray();
 	void SetArrayIndex(int val,int index);
 	int  GetArrayIndex(int index);
 	int  GetTypeRefid();
+	int  GetOrder() { return order; }
+	int  GetOperator() { return oper; }
 
 	static int  GetTypeAllow(const char *param);
+	static int  GetYFtype(const char *buf, bool isfirst);
+	static int  GetYFnextAllow(int cur);
 	static ONSVariableRef* GetRefFromTypeRefid(int refid);
 	LOString *GetStr();
 	double GetReal();
@@ -135,22 +155,34 @@ public:
 	bool isRef() { return (vtype == TYPE_INT || vtype == TYPE_ARRAY || vtype == TYPE_STRING); }
 	bool isRealRef(){ return (vtype == TYPE_INT || vtype == TYPE_ARRAY); }
 	bool isStrRef() { return vtype == TYPE_STRING; }
+	bool isAllowType(int allow) { return vtype & allow; };
+	static bool isYFoperator(int yftype);
 	//获取操作符需要的操作数
 	int GetOpCount() {
-		if (oper == '$' || oper == '%' || oper == '?') return 1;
-		else return 2;
+		//if (oper == '$' || oper == '%' || oper == '?') return 1;
+		//else return 2;
+		return 0;
 	}
 
 	bool Calculator(ONSVariableRef *v, char op, bool isreal);
 	int Compare(ONSVariableRef *v2, int comtype, bool isreal);
 	void CopyFrom(ONSVariableRef *v);
 private:
-	ONSVariableBase *nsv;
-	LOString *im_str;
-	LOString *im_tmpout;
-	double im_val;
-	int *arrayIndex;
+	union ONSVARTIAN{
+		LOString *strPtr;
+		int *arrayIndex;
+		double real;
+	};
+
+	int16_t vtype;   //ref的类型，只会同时存在一种
+	int16_t nsvID;   //ref操作的编号
+	char oper;       //符号
+	char order;      //顺序
+	ONSVARTIAN data;
+	LOString *tm_out;
+
 	void BaseInit();
+	void FreeData();
 	LOString *IntToStr(int v);
 };
 typedef std::unique_ptr<ONSVariableRef> LOUniqVariableRef;
