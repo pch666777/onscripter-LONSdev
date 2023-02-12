@@ -897,111 +897,111 @@ const char* LOScriptReader::TryGetStrAlias(int &ret, const char *buf, bool &isok
 	return obuf;
 }
 
+////获取逆波兰式的堆栈
+//const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
+//	//初始化符号栈
+//	LOStack<ONSVariableRef> s1;
+//	ONSVariableRef *v = new ONSVariableRef;
+//	LOString s;
+//	bool first = true;
+//	s1.push(v);
+//	//===================//
+//	int type;
+//	while (true) {
+//		buf = scriptbuf->SkipSpace(buf);
+//		//LOLog_i("char is:%d",buf[0]) ;
+//		type = scriptbuf->GetCharacter(buf);
+//		//LOLog_i("type is:%d",type) ;
+//		if (type == LOCodePage::CHARACTER_NUMBER || (buf[0] == '-' && first)) { //必须处理首个负数
+//			double tdd;
+//			if (buf[0] == '-') {
+//				buf++;
+//				tdd = 0 - scriptbuf->GetReal(buf);
+//			}
+//			else tdd = scriptbuf->GetReal(buf);
+//			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, tdd);
+//			s2->push(v);  //操作数立即入栈
+//			//检查符号栈，如果是% $则全部弹出这两个符号
+//			//while (s1.top()->oper == '%' || s1.top()->oper == '$') s2->push(s1.pop());
+//
+//			//下一个符号不是运算符则停止
+//			buf = scriptbuf->SkipSpace(buf);
+//			if (!scriptbuf->IsOperator(buf)) break;
+//		}
+//		else if (type == LOString::CHARACTER_SYMBOL || scriptbuf->IsMod(buf) ) { //因为有mod这种特殊的，所以不能只使用类型判断
+//			v = new ONSVariableRef;
+//			buf += v->GetOperator(buf);
+//			if (v->isOperator()) {
+//				//数组用的方括号不在这里处理
+//				if (v->oper == '(') {
+//					s1.push(v);
+//				}
+//				else if (v->oper == ')') PopRPNstackUtill(&s1, s2, '(');
+//				else if (v->oper == '[') {
+//					PopRPNstackUtill(&s1, s2, '?');
+//					s1.push(v);
+//				}
+//				else if (v->oper == ']') PopRPNstackUtill(&s1,s2,'[');
+//				else {
+//					//如果是数组，则压入一个特殊符号
+//					if (v->oper == '?') {
+//						s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG));
+//					}
+//					//
+//					auto iter = s1.end() - 1;
+//					if (v->order > (*iter)->order) s1.push(v);
+//					else if (v->order == (*iter)->order && v->order == ONSVariableRef::ORDER_GETVAR) s1.push(v);
+//					else {
+//						while (v->order <= (*iter)->order && (*iter)->oper != '(' &&
+//							(*iter)->oper != '[') {
+//							s2->push(*iter);
+//							s1.erase(iter--);
+//						}
+//						s1.push(v);
+//					}
+//				}
+//
+//			}
+//			else if (buf[0] == '"') { //string
+//				v->vtype = ONSVariableRef::TYPE_STRING_IM;
+//				LOString s = scriptbuf->GetString(buf);
+//				v->SetValue(&s);
+//				s2->push(v);
+//				buf = scriptbuf->SkipSpace(buf);
+//				if (!scriptbuf->IsOperator(buf)) break;
+//			}
+//			else {
+//				delete v;
+//				break;
+//			}
+//
+//		}
+//		else if (isalias && type == LOCodePage::CHARACTER_LETTER) { //允许别名则处理别名
+//			s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+//			//别名作为立即数处理
+//			bool isok;
+//			int numaliaval = GetAliasRef(s, false, isok);
+//			//没有获取到则不正确
+//			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, numaliaval);
+//			s2->push(v);
+//		}
+//		else {
+//			//正常语句结束
+//			char ch = buf[0];
+//			if (ch == ',' || ch == '\n' || ch == ':') break; 
+//			else LOLog_i("line at [%d] may be have error.\n", currentLable->c_line);
+//			break;
+//		}
+//
+//		first = false;
+//	}
+//	PopRPNstackUtill(&s1, s2, '\0');
+//	if (!s2->top() || !s2->top()->isOperator()) 
+//		FatalError("Expression error");
+//	return buf;
+//}
+
 //获取逆波兰式的堆栈
-const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
-	//初始化符号栈
-	LOStack<ONSVariableRef> s1;
-	ONSVariableRef *v = new ONSVariableRef;
-	LOString s;
-	bool first = true;
-	s1.push(v);
-	//===================//
-	int type;
-	while (true) {
-		buf = scriptbuf->SkipSpace(buf);
-		//LOLog_i("char is:%d",buf[0]) ;
-		type = scriptbuf->GetCharacter(buf);
-		//LOLog_i("type is:%d",type) ;
-		if (type == LOCodePage::CHARACTER_NUMBER || (buf[0] == '-' && first)) { //必须处理首个负数
-			double tdd;
-			if (buf[0] == '-') {
-				buf++;
-				tdd = 0 - scriptbuf->GetReal(buf);
-			}
-			else tdd = scriptbuf->GetReal(buf);
-			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, tdd);
-			s2->push(v);  //操作数立即入栈
-			//检查符号栈，如果是% $则全部弹出这两个符号
-			//while (s1.top()->oper == '%' || s1.top()->oper == '$') s2->push(s1.pop());
-
-			//下一个符号不是运算符则停止
-			buf = scriptbuf->SkipSpace(buf);
-			if (!scriptbuf->IsOperator(buf)) break;
-		}
-		else if (type == LOString::CHARACTER_SYMBOL || scriptbuf->IsMod(buf) ) { //因为有mod这种特殊的，所以不能只使用类型判断
-			v = new ONSVariableRef;
-			buf += v->GetOperator(buf);
-			if (v->isOperator()) {
-				//数组用的方括号不在这里处理
-				if (v->oper == '(') {
-					s1.push(v);
-				}
-				else if (v->oper == ')') PopRPNstackUtill(&s1, s2, '(');
-				else if (v->oper == '[') {
-					PopRPNstackUtill(&s1, s2, '?');
-					s1.push(v);
-				}
-				else if (v->oper == ']') PopRPNstackUtill(&s1,s2,'[');
-				else {
-					//如果是数组，则压入一个特殊符号
-					if (v->oper == '?') {
-						s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG));
-					}
-					//
-					auto iter = s1.end() - 1;
-					if (v->order > (*iter)->order) s1.push(v);
-					else if (v->order == (*iter)->order && v->order == ONSVariableRef::ORDER_GETVAR) s1.push(v);
-					else {
-						while (v->order <= (*iter)->order && (*iter)->oper != '(' &&
-							(*iter)->oper != '[') {
-							s2->push(*iter);
-							s1.erase(iter--);
-						}
-						s1.push(v);
-					}
-				}
-
-			}
-			else if (buf[0] == '"') { //string
-				v->vtype = ONSVariableRef::TYPE_STRING_IM;
-				LOString s = scriptbuf->GetString(buf);
-				v->SetValue(&s);
-				s2->push(v);
-				buf = scriptbuf->SkipSpace(buf);
-				if (!scriptbuf->IsOperator(buf)) break;
-			}
-			else {
-				delete v;
-				break;
-			}
-
-		}
-		else if (isalias && type == LOCodePage::CHARACTER_LETTER) { //允许别名则处理别名
-			s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-			//别名作为立即数处理
-			bool isok;
-			int numaliaval = GetAliasRef(s, false, isok);
-			//没有获取到则不正确
-			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, numaliaval);
-			s2->push(v);
-		}
-		else {
-			//正常语句结束
-			char ch = buf[0];
-			if (ch == ',' || ch == '\n' || ch == ':') break; 
-			else LOLog_i("line at [%d] may be have error.\n", currentLable->c_line);
-			break;
-		}
-
-		first = false;
-	}
-	PopRPNstackUtill(&s1, s2, '\0');
-	if (!s2->top() || !s2->top()->isOperator()) 
-		FatalError("Expression error");
-	return buf;
-}
-
-
 const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
 	LOStack<ONSVariableRef> s1;
 	ONSVariableRef *v = nullptr;
@@ -1009,6 +1009,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 	LOString ts;
 
 	bool isfirst = true;
+	bool strmodel = false;  //文本模式下运算模式只有+，同时也影响别名的获取
 	curAllow = 0;
 
 	while (true) {
@@ -1019,8 +1020,28 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		curType = ONSVariableRef::GetYFtype(buf, isfirst);
 
 		//解释别名
-		if (isalias && curType == ONSVariableRef::YF_Alias) {
-
+		tint = ONSVariableRef::YF_Int | ONSVariableRef::YF_Str;
+		if (isalias && curType == ONSVariableRef::YF_Alias && (curAllow & tint) ) {
+			bool isok = false;
+			const char *obuf = buf;
+			ts = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+			tint = GetAliasRef(ts, strmodel, isok);
+			if (isok) {
+				v = new ONSVariableRef();
+				if (strmodel) {
+					v->SetImVal(&strAliasList[tint]);
+					curType = ONSVariableRef::YF_Str;
+				}
+				else {
+					v->SetImVal((double)tint);
+					curType = ONSVariableRef::YF_Int;
+				}
+			}
+			else {
+				buf = obuf;
+				curType = ONSVariableRef::YF_Error;
+				break;
+			}
 		}
 
 		//表达式无法再继续了，不一定是错误
@@ -1049,9 +1070,11 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 				v->SetImVal(&ts);
 				s2->push(v);
 			}
+			strmodel = true;
 			break;
-		case ONSVariableRef::YF_IntRef: //%
 		case ONSVariableRef::YF_StrRef: //$
+			strmodel = true;
+		case ONSVariableRef::YF_IntRef: //%
 		case ONSVariableRef::YF_Array:  //?
 		case ONSVariableRef::YF_Oper:   //+-*/^%
 			v = new ONSVariableRef();
