@@ -149,7 +149,7 @@ int LOScriptReader::getparamCommand(FunctionInterface *reader) {
 				FatalError("[getparam] use i%Num or s%Num model, but not provide an ref variable!", ii);
 				return RET_ERROR;
 			}
-			v1->SetValue((double)v2->nsvId);
+			v1->SetValue((double)v2->GetNSid());
 		}
 		else v1->SetValue(v2);
 		if (v1) delete v1;
@@ -462,26 +462,26 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 	LOString errs;
 	for (int ii = 0; ii < reader->GetParamCount(); ii++) {
 		ONSVariableRef *v = GetParamRef(ii);
-		if (v->vtype == ONSVariableRef::TYPE_INT) {
-			errs.append("   %%" + std::to_string(v->nsvId) + "=" + std::to_string((int)v->GetReal()));
+		if (v->isIntRef()) {
+			errs.append("   %%" + std::to_string(v->GetNSid()) + "=" + std::to_string((int)v->GetReal()));
 		}
-		else if (v->vtype == ONSVariableRef::TYPE_STRING) {
-			errs.append("   $" + std::to_string(v->nsvId) + "=\"");
+		else if (v->isStrRef()) {
+			errs.append("   $" + std::to_string(v->GetNSid()) + "=\"");
 			LOString *s = v->GetStr();
 			if (s) errs.append(*s);
 			errs.append("\"");
 		}
-		else if (v->vtype == ONSVariableRef::TYPE_ARRAY) {
-			errs.append("   ?" + std::to_string(v->nsvId));
+		else if (v->isArray()) {
+			errs.append("   ?" + std::to_string(v->GetNSid()));
 			for (int ii = 0; ii < MAXVARIABLE_ARRAY && v->GetArrayIndex(ii) >= 0; ii++) {
 				errs.append("[" + std::to_string(v->GetArrayIndex(ii)) + "]");
 			}
 			errs.append("=" + std::to_string((int)v->GetReal()));
 		}
-		else if (v->vtype == ONSVariableRef::TYPE_REAL) {
+		else if (v->isReal()) {
 			errs.append("   number=" + std::to_string((int)v->GetReal()));
 		}
-		else if (v->vtype == ONSVariableRef::TYPE_STRING_IM) {
+		else if (v->isStr()) {
 			LOString *s = v->GetStr();
 			if (s) errs.append("   \"" + *s + "\"");
 			else errs.append("\"\"");
@@ -628,7 +628,7 @@ int LOScriptReader::operationCommand(FunctionInterface *reader) {
 int LOScriptReader::addCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
-	ONSVariableRef *v3 = new ONSVariableRef(v1->vtype, v1->nsvId);
+	ONSVariableRef *v3 = new ONSVariableRef(v1->GetType(), v1->GetNSid());
 
 	//Calculator会改变ref的类型
 	v1->Calculator(v2, '+', false);
@@ -703,12 +703,12 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 
 	text = text.TrimEnd();
 
-	ONSVariableRef *v1 = new ONSVariableRef(ONSVariableRef::TYPE_STRING_IM);
+	ONSVariableRef *v1 = new ONSVariableRef();
 	if (text.length() > 0) ExpandStr(text);
-	v1->SetValue(&text);
+	v1->SetImVal(&text);
 	paramStack.push(v1);
 
-	v1 = new ONSVariableRef(ONSVariableRef::TYPE_REAL);
+	v1 = new ONSVariableRef();
 	v1->SetImVal((double)currentEndFlag);
 	paramStack.push(v1);
 

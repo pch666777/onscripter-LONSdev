@@ -270,8 +270,21 @@ ONSVariableRef::ONSVariableRef() {
 ONSVariableRef::ONSVariableRef(ONSVAR_TYPE t, int idd) {
 	BaseInit();
 	vtype = t;
-	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) SetRef(t, idd);
-	else SetImVal((double)idd);
+	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) nsvID = idd;
+	else if (t == TYPE_REAL) data.real = idd;
+	else vtype = TYPE_NONE;   //无效的
+}
+
+ONSVariableRef::ONSVariableRef(double v) {
+	BaseInit();
+	vtype = TYPE_REAL;
+	data.real = v;
+}
+
+ONSVariableRef::ONSVariableRef(LOString *s) {
+	BaseInit();
+	vtype = TYPE_STRING_IM;
+	ONSVariableBase::SetStrCore(data.strPtr, s);
 }
 
 
@@ -321,6 +334,7 @@ void ONSVariableRef::DimArray() {
 void ONSVariableRef::UpImToRef(int tp) {
 	if (tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s", "ONSVariableRef::UpImToRef() error type!");
 	nsvID = (int16_t)GetReal();
+	FreeData();
 	vtype = (ONSVAR_TYPE)tp;
 }
 
@@ -331,12 +345,16 @@ void ONSVariableRef::DownRefToIm(int tp) {
 		return;
 	}
 	if (tp == TYPE_REAL) SetImVal(GetReal());
-	else if (tp == TYPE_STRING_IM) SetImVal(GetStr());
+	else if (tp == TYPE_STRING_IM) {
+		//不需要设置自身 = 自身
+		if (vtype != TYPE_STRING_IM) SetImVal(GetStr());
+	}
 	else FatalError("%s","ONSVariableRef::DownRefToIm() error type!");
 }
 
 void ONSVariableRef::SetRef(int tp, int id) {
 	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s","ONSVariableRef::SetRef() error type!");
+	FreeData();
 	vtype = tp;
 	nsvID = id;
 }
@@ -447,6 +465,12 @@ void ONSVariableRef::SetAutoVal(LOString *s) {
 	else FatalError("%s","ONSVariableRef::SetAutoReal(LOString *s) unsupported type!");
 }
 
+
+void ONSVariableRef::SetArrayFlag() {
+	FreeData();
+	vtype = TYPE_ARRAY_FLAG;
+}
+
 double ONSVariableRef::GetReal() {
 	const char *errinfo = NULL;
 	ONSVariableBase *nsv = nullptr;
@@ -516,7 +540,7 @@ LOString *ONSVariableRef::GetStr() {
 }
 
 //返回的是获取的符号长度
-int ONSVariableRef::GetOperator(const char *buf) {
+int ONSVariableRef::SetOperator(const char *buf) {
 	int ret = 0;
 	FreeData();
 	oper = buf[0];

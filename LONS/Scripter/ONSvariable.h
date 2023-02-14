@@ -115,6 +115,8 @@ public:
 
 	ONSVariableRef();
 	ONSVariableRef(ONSVAR_TYPE t, int idd);
+	ONSVariableRef(double v);
+	ONSVariableRef(LOString *s);
 
 	~ONSVariableRef();
 	
@@ -132,6 +134,8 @@ public:
 	void SetAutoVal(double v);
 	bool SetArryVals(int *v, int count);
 	void SetAutoVal(LOString *s);
+	void SetArrayFlag();
+	int  SetOperator(const char *buf);
 
 	void InitArrayIndex();
 	void DimArray();
@@ -140,6 +144,8 @@ public:
 	int  GetTypeRefid();
 	int  GetOrder() { return order; }
 	int  GetOperator() { return oper; }
+	int  GetNSid() { return nsvID; }
+	ONSVAR_TYPE  GetType() { return (ONSVAR_TYPE)vtype; }
 
 	static int  GetTypeAllow(const char *param);
 	static int  GetYFtype(const char *buf, bool isfirst);
@@ -148,7 +154,7 @@ public:
 	LOString *GetStr();
 	double GetReal();
 
-	int  GetOperator(const char *buf);
+	
 	bool isOperator() { return (vtype == TYPE_OPERATOR); }
 	bool isStr() { return (vtype == TYPE_STRING || vtype == TYPE_STRING_IM); }
 	bool isReal() { return (vtype == TYPE_INT || vtype == TYPE_ARRAY || vtype == TYPE_REAL); }
@@ -156,6 +162,11 @@ public:
 	bool isRealRef(){ return (vtype == TYPE_INT || vtype == TYPE_ARRAY); }
 	bool isStrRef() { return vtype == TYPE_STRING; }
 	bool isAllowType(int allow) { return vtype & allow; };
+	bool isArrayFlag() { return vtype == TYPE_ARRAY_FLAG; }
+	bool isIntRef() { return vtype == TYPE_INT; }
+	bool isArray() { return vtype == TYPE_ARRAY; }
+	bool isNone() { return vtype == TYPE_NONE; }
+
 	static bool isYFoperator(int yftype);
 	//获取操作符需要的操作数
 	int GetOpCount() {
