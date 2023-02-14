@@ -1034,8 +1034,14 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 			}
 			else {
 				v = new ONSVariableRef();
-				if (isStrAlia) v->SetImVal(&strAliasList[tint]);
-				else v->SetImVal((double)tint);
+				if (isStrAlia) {
+					v->SetImVal(&strAliasList[tint]);
+					curType = ONSVariableRef::YF_Str;
+				}
+				else {
+					v->SetImVal((double)tint);
+					curType = ONSVariableRef::YF_Int;
+				}
 			}
 		}
 
@@ -1047,12 +1053,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		if (curType & (ONSVariableRef::YF_Negative | ONSVariableRef::YF_Int)) {
 			//整数处理
 			if (v->isNone()) {
-				if (curType == ONSVariableRef::YF_Negative) {
-					buf++;
-					tdouble = 0 - scriptbuf->GetReal(buf);
-				}
-				else tdouble = scriptbuf->GetReal(buf);
-				v->SetImVal(tdouble);
+				v->SetImVal(scriptbuf->GetReal(buf));
 			}
 			s2->push(v); //已经经过别名解释
 			v = nullptr;

@@ -67,6 +67,7 @@ public:
 	int ThisCharLen(const char *buf);
 	double GetReal(int &cur);
 	double GetReal(const char *&buf);
+	double GetRealNe(const char *&buf);
 	LOString TrimEnd();
 	int GetInt(int &cur, int size = 32);
 	int GetInt(const char *&buf, int size = 32);

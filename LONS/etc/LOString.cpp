@@ -392,6 +392,14 @@ double LOString::GetReal(const char *&buf) {
 	return isum;
 }
 
+double LOString::GetRealNe(const char *&buf) {
+	if (buf[0] == '-') {
+		buf++;
+		return 0.0 - GetReal(buf);
+	}
+	return GetReal(buf);
+}
+
 
 LOString LOString::TrimEnd() {
 	int cur = length() - 1;
