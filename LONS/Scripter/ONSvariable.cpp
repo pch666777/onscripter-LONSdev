@@ -271,8 +271,7 @@ ONSVariableRef::ONSVariableRef(ONSVAR_TYPE t, int idd) {
 	BaseInit();
 	vtype = t;
 	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) nsvID = idd;
-	else if (t == TYPE_REAL) data.real = idd;
-	else vtype = TYPE_NONE;   //无效的
+	else data.real = (double)idd;
 }
 
 ONSVariableRef::ONSVariableRef(double v) {
@@ -817,8 +816,8 @@ int  ONSVariableRef::GetYFnextAllow(int cur) {
 	switch (cur){
 	case 0:
 		return YF_Value | YF_Negative;
-	case YF_Int:  //{+-*/^%} ] )
-		return YF_Oper | YF_Right_PA | YF_Right_SQ;
+	case YF_Int:  //{+-*/^%} ] ) 0[
+		return YF_Oper | YF_Right_PA | YF_Right_SQ | YF_Left_SQ;
 	case YF_IntRef: // % -> %%, %(, %?0[], %num
 		return YF_IntRef | YF_Left_PA | YF_Array| YF_Int;
 	case YF_Str: // "" -> "" + 

@@ -703,7 +703,7 @@ bool LOScriptReader::isName(const char* name) {
 
 ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isalias) {
 	LOStack<ONSVariableRef> s2;
-	buf = GetRPNstack(&s2, buf, true);
+	buf = GetRPNstack2(&s2, buf, true);
 	//auto ss = TransformStack(&s2);
 	CalculatRPNstack(&s2);
 	return *(s2.begin());
@@ -1005,12 +1005,14 @@ const char* LOScriptReader::TryGetStrAlias(int &ret, const char *buf, bool &isok
 
 const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstr) {
 	LOStack<ONSVariableRef> s1;
-	ONSVariableRef *v = nullptr;
+	std::unique_ptr<ONSVariableRef> v;
 	int curAllow, tint, curType, tdouble;
 	LOString ts;
 
 	bool isfirst = true;
 	bool isStrAlia = isstr;
+	bool isOpAdd = false;
+	s1.push(new ONSVariableRef());   //插入一个空对象
 	curAllow = 0;
 
 	while (true) {
@@ -1033,7 +1035,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 				buf = obuf; curType = ONSVariableRef::YF_Error;   //别名获取失败，无法继续了
 			}
 			else {
-				v = new ONSVariableRef();
+				v.reset(new ONSVariableRef());
 				if (isStrAlia) {
 					v->SetImVal(&strAliasList[tint]);
 					curType = ONSVariableRef::YF_Str;
@@ -1049,14 +1051,13 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		if ((curType & curAllow) == 0 || curType == ONSVariableRef::YF_Error || curType == ONSVariableRef::YF_Break) break;
 
 		//根据类型获取参数
-		if(!v) v = new ONSVariableRef();  //先生成一个，由后面处理
+		if(!v) v.reset(new ONSVariableRef());  //先生成一个，由后面处理
 		if (curType & (ONSVariableRef::YF_Negative | ONSVariableRef::YF_Int)) {
 			//整数处理
 			if (v->isNone()) {
 				v->SetImVal(scriptbuf->GetReal(buf));
 			}
-			s2->push(v); //已经经过别名解释
-			v = nullptr;
+			s2->push(v.release()); //已经经过别名解释
 		}
 		else if (curType & ONSVariableRef::YF_Str) {
 			//文本处理
@@ -1064,21 +1065,17 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 				ts = scriptbuf->GetString(buf);
 				v->SetImVal(&ts);
 			}
-			s2->push(v);
-			v = nullptr;
+			s2->push(v.release());
 		}
 		else if (curType & (ONSVariableRef::YF_IntRef | ONSVariableRef::YF_StrRef | ONSVariableRef::YF_Array | ONSVariableRef::YF_Oper)) {
 			//符号处理
 			buf += v->SetOperator(buf);
 			//如果是数组，则压入一个特殊符号
-			if (curType == ONSVariableRef::YF_Array) {
-				v->SetRef(ONSVariableRef::TYPE_ARRAY_FLAG, -1);
-				s2->push(v);
-			}
+			if (curType == ONSVariableRef::YF_Array) s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG, 0));
 			auto iter = s1.end() - 1;
-			if (v->GetOrder() > (*iter)->GetOrder()) s1.push(v);  //当前符号优先级高，则直接入临时，相当于在正式栈优先执行
+			if (v->GetOrder() > (*iter)->GetOrder()) s1.push(v.release());  //当前符号优先级高，则直接入临时，相当于在正式栈优先执行
 			//%$是平级的，因此需要直接加入
-			else if (v->GetOrder() == (*iter)->GetOrder() && v->GetOrder() == ONSVariableRef::ORDER_GETVAR) s1.push(v);
+			else if (v->GetOrder() == (*iter)->GetOrder() && v->GetOrder() == ONSVariableRef::ORDER_GETVAR) s1.push(v.release());
 			else {
 				//当前优先级低于临时栈的
 				while (v->GetOrder() <= (*iter)->GetOrder() && (*iter)->GetOperator() != '(' &&
@@ -1086,14 +1083,12 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 					s2->push(*iter);
 					s1.erase(iter--);
 				}
-				s1.push(v);
+				s1.push(v.release());
 			}
-			v = nullptr;
 		}
 		else if (curType & ONSVariableRef::YF_Left_PA) { //'('
 			buf += v->SetOperator(buf);
-			s1.push(v);
-			v = nullptr;
+			s1.push(v.release());
 		}
 		else if (curType & ONSVariableRef::YF_Right_PA) {  //')'
 			buf++;
@@ -1102,8 +1097,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else if (curType & ONSVariableRef::YF_Left_SQ) { //'['
 			buf += v->SetOperator(buf);
 			PopRPNstackUtill(&s1, s2, '?');
-			s1.push(v);
-			v = nullptr;
+			s1.push(v.release());
 		}
 		else if (curType & ONSVariableRef::YF_Right_SQ) {//']'
 			buf++;
@@ -1119,8 +1113,8 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else isStrAlia = false;
 
 		//已经push的v都应该为 nullptr ;
-		if (v) delete v;
-		v = nullptr;
+		v.release();
+		isOpAdd = false;
 	}
 	//
 	PopRPNstackUtill(&s1, s2, '\0');

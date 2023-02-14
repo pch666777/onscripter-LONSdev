@@ -338,7 +338,7 @@ private:
 	void NewThreadGosub(LOString *pname, LOString threadName);
 	//int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
-	const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
+	//const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
 	const char* GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstr = false);
 	void CalculatRPNstack(LOStack<ONSVariableRef> *stack);
 	//弹出堆栈s1的值到 s2，直到指定符号，如果到最后一个值则产生错误
