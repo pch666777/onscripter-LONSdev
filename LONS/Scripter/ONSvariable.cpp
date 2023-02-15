@@ -267,22 +267,23 @@ ONSVariableRef::ONSVariableRef() {
 	BaseInit();
 }
 
+//只要是ref类型的，都设置nsvID,否则均设置值，设置为str_im 或者array会导致错误
 ONSVariableRef::ONSVariableRef(ONSVAR_TYPE t, int idd) {
 	BaseInit();
 	vtype = t;
-	if (t == TYPE_INT || t == TYPE_ARRAY || t == TYPE_STRING) nsvID = idd;
+	if (t & TYPE_REF_FLAG) nsvID = idd;
 	else data.real = (double)idd;
 }
 
 ONSVariableRef::ONSVariableRef(double v) {
 	BaseInit();
-	vtype = TYPE_REAL;
+	vtype = TYPE_REAL_IM;
 	data.real = v;
 }
 
 ONSVariableRef::ONSVariableRef(LOString *s) {
 	BaseInit();
-	vtype = TYPE_STRING_IM;
+	vtype = TYPE_STR_IM;
 	ONSVariableBase::SetStrCore(data.strPtr, s);
 }
 
@@ -296,8 +297,8 @@ void ONSVariableRef::BaseInit() {
 }
 
 void ONSVariableRef::FreeData() {
-	if (vtype == TYPE_ARRAY) delete[] data.arrayIndex;
-	if (vtype == TYPE_STRING_IM) delete data.strPtr;
+	if (isArrayRef()) delete[] data.arrayIndex;
+	if (isStr()) delete data.strPtr;
 	memset(&data, 0, sizeof(data));
 }
 
@@ -309,76 +310,81 @@ ONSVariableRef::~ONSVariableRef() {
 //初始化数组
 void ONSVariableRef::InitArrayIndex() {
 	FreeData();
+	vtype = TYPE_ARRAY_REF;
 	data.arrayIndex = new int[MAXVARIABLE_ARRAY];
 	for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) data.arrayIndex[ii] = -1;
 }
 
 void ONSVariableRef::SetArrayIndex(int val, int index) {
-	if (vtype != TYPE_ARRAY || !data.arrayIndex) return;
+	if (!isArrayRef() || !data.arrayIndex) return;
 	data.arrayIndex[index] = val;
 }
 
 int  ONSVariableRef::GetArrayIndex(int index) {
-	if (vtype != TYPE_ARRAY || !data.arrayIndex || index < 0 || index > MAXVARIABLE_ARRAY) return -1;
+	if (!isArrayRef() || !data.arrayIndex || index < 0 || index > MAXVARIABLE_ARRAY) return -1;
 	return data.arrayIndex[index];
 }
 
 void ONSVariableRef::DimArray() {
-	if(vtype != TYPE_ARRAY || !data.arrayIndex) FatalError("%s","ONSVariableRef::DimArray() null arrayIndex!");
+	if(!isArrayRef() || !data.arrayIndex) FatalError("%s","ONSVariableRef::DimArray() null arrayIndex!");
 	ONSVariableBase *nsv = ONSVariableBase::GetVariable(nsvID);
 	nsv->DimArray(data.arrayIndex);
 }
 
+
 //将立即数升级为变量引用，参数为要改变为的引用类型 数字变量、文字变量或数组变量
 void ONSVariableRef::UpImToRef(int tp) {
-	if (tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s", "ONSVariableRef::UpImToRef() error type!");
-	nsvID = (int16_t)GetReal();
-	FreeData();
-	vtype = (ONSVAR_TYPE)tp;
+	if ((tp & (TYPE_REAL_IM| TYPE_STR_IM|TYPE_ARRAY_FLAG)) == 0) FatalError("%s", "ONSVariableRef::UpImToRef() error type!");
+	else {
+		nsvID = (int16_t)GetReal();
+		FreeData();
+		vtype = (ONSVAR_TYPE)tp;
+	}
 }
 
 //将nsv的值复制到本地
 void ONSVariableRef::DownRefToIm(int tp) {
-	if (!isStr() && !isReal()) {
+	if ((tp & (TYPE_REAL_IM | TYPE_STR_IM | TYPE_ARRAY_FLAG)) == 0) {
 		FatalError("%s", "ONSVariableRef::DownRefToIm() error type!");
 		return;
 	}
-	if (tp == TYPE_REAL) SetImVal(GetReal());
-	else if (tp == TYPE_STRING_IM) {
+	if (tp & (TYPE_REAL_IM | TYPE_ARRAY_FLAG)) SetImVal(GetReal());
+	else if (tp & TYPE_STR_IM) {
 		//不需要设置自身 = 自身
-		if (vtype != TYPE_STRING_IM) SetImVal(GetStr());
+		if (vtype != TYPE_STR_IM) SetImVal(GetStr());
 	}
 	else FatalError("%s","ONSVariableRef::DownRefToIm() error type!");
 }
 
-void ONSVariableRef::SetRef(int tp, int id) {
-	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s","ONSVariableRef::SetRef() error type!");
-	FreeData();
-	vtype = tp;
-	nsvID = id;
-}
+//void ONSVariableRef::SetRef(int tp, int id) {
+//	if(tp != TYPE_INT && tp != TYPE_STRING && tp != TYPE_ARRAY) FatalError("%s","ONSVariableRef::SetRef() error type!");
+//	FreeData();
+//	vtype = tp;
+//	nsvID = id;
+//}
 
 void ONSVariableRef::SetImVal(double v) {
 	FreeData();
-	vtype = TYPE_REAL;
+	vtype = TYPE_REAL_IM;
 	data.real = v;
 }
 
 void ONSVariableRef::SetImVal(LOString *v) {
 	FreeData();
-	vtype = TYPE_STRING_IM;
+	vtype = TYPE_STR_IM;
 	ONSVariableBase::SetStrCore(data.strPtr, v);
 }
 
 void ONSVariableRef::SetValue(double v) {
 	const char *errinfo = NULL;
 	ONSVariableBase *nsv = nullptr;
+
 	switch (vtype){
-	case TYPE_INT:
+	case TYPE_INT_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		nsv->SetValue(v);
 		break;
-	case TYPE_ARRAY:
+	case TYPE_ARRAY_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
@@ -387,7 +393,7 @@ void ONSVariableRef::SetValue(double v) {
 		}
 		nsv->SetArrayValue(data.arrayIndex, (int)v);
 		break;
-	case TYPE_REAL:
+	case TYPE_REAL_IM:
 		data.real = v;
 		break;
 	default:
@@ -401,11 +407,11 @@ void ONSVariableRef::SetValue(LOString *s) {
 	const char *errinfo = NULL;
 	ONSVariableBase *nsv = nullptr;
 	switch (vtype){
-	case TYPE_STRING:
+	case TYPE_STR_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		nsv->SetString(s);
 		break;
-	case TYPE_STRING_IM:
+	case TYPE_STR_IM:
 		ONSVariableBase::SetStrCore(data.strPtr, s);
 		break;
 	default:
@@ -428,10 +434,10 @@ void ONSVariableRef::SetValue(ONSVariableRef *ref) {
 	if (!ref) return;
 	switch (vtype)
 	{
-	case TYPE_INT: case TYPE_ARRAY: case TYPE_REAL:
+	case TYPE_INT_REF: case TYPE_ARRAY_REF: case TYPE_REAL_IM:
 		SetValue(ref->GetReal());
 		break;
-	case TYPE_STRING: case TYPE_STRING_IM:
+	case TYPE_STR_REF: case TYPE_STR_IM:
 		SetValue(ref->GetStr());
 		break;
 	default:
@@ -474,17 +480,17 @@ double ONSVariableRef::GetReal() {
 	const char *errinfo = NULL;
 	ONSVariableBase *nsv = nullptr;
 	switch (vtype) {
-	case TYPE_INT:
+	case TYPE_INT_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		return nsv->GetValue();
-	case TYPE_STRING:
+	case TYPE_STR_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		return ONSVariableBase::StrToIntSafe(nsv->GetString());
-	case TYPE_STRING_IM:
+	case TYPE_STR_IM:
 		return ONSVariableBase::StrToIntSafe(data.strPtr);
-	case TYPE_REAL:
+	case TYPE_REAL_IM:
 		return data.real;
-	case TYPE_ARRAY:
+	case TYPE_ARRAY_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
@@ -511,17 +517,17 @@ LOString *ONSVariableRef::GetStr() {
 	const char *errinfo = NULL;
 	ONSVariableBase *nsv = nullptr;
 	switch (vtype) {
-	case TYPE_INT:
+	case TYPE_INT_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		return IntToStr((int)nsv->GetValue());
-	case TYPE_STRING:
+	case TYPE_STR_REF:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		return nsv->GetString();
-	case TYPE_STRING_IM:
+	case TYPE_STR_IM:
 		return data.strPtr;
-	case TYPE_REAL:
+	case TYPE_REAL_IM:
 		return IntToStr((int)data.real);
-	case TYPE_ARRAY:
+	case TYPE_ARRAY_FLAG:
 		nsv = ONSVariableBase::GetVariable(nsvID);
 		errinfo = nsv->CheckAarryIndex(data.arrayIndex);
 		if (errinfo) {
@@ -591,7 +597,7 @@ bool ONSVariableRef::Calculator(ONSVariableRef *v, char op, bool isreal) {
 	if (!v) return false;
 	if (op == '+' && isStr()) {
 		//must be str_im，注意im的时候getstr()会造成错误
-		if (vtype != TYPE_STRING_IM) SetImVal(GetStr());
+		if (vtype != TYPE_STR_IM) SetImVal(GetStr());
 		ONSVariableBase::AppendStrCore(data.strPtr, v->GetStr());
 		return true;
 	}
@@ -713,11 +719,14 @@ void ONSVariableRef::CopyFrom(ONSVariableRef *v) {
 	FreeData();
 	vtype = v->vtype;
 	nsvID = v->nsvID;
-	if(vtype == TYPE_STRING_IM) ONSVariableBase::SetStrCore(data.strPtr, v->data.strPtr);
-	else if (vtype == TYPE_ARRAY) {
+	oper = v->oper;
+	order = v->order;
+	if(vtype == TYPE_STR_IM) ONSVariableBase::SetStrCore(data.strPtr, v->data.strPtr);
+	else if (vtype == TYPE_ARRAY_REF) {
 		InitArrayIndex();
 		for (int ii = 0; ii < MAXVARIABLE_ARRAY; ii++) data.arrayIndex[ii] = v->data.arrayIndex[ii];
 	}
+	else memcpy(&data, &v->data, sizeof(data));
 }
 
 bool ONSVariableRef::SetArryVals(int *v, int count) {
@@ -753,24 +762,29 @@ ONSVariableRef* ONSVariableRef::GetRefFromTypeRefid(int refid) {
 
 //R-ref, I-realref, S-strref, N-normal word, L-label, A-arrayref, C-color
 //r-any, i-real, s-string, *-repeat, #-repeat last
-int  ONSVariableRef::GetTypeAllow(const char *param) {
+int  ONSVariableRef::GetTypeAllow(const char *param, bool &mustRef) {
 	int ret = 0;
+	mustRef = false;
 	for (int ii = 0; param[ii] != ',' && param[ii] != 0; ii++) {
 		switch (param[ii]) {
 		case 'R':
-			ret |= (TYPE_INT | TYPE_ARRAY | TYPE_STRING); break;
+			mustRef = true;
+			ret |= (TYPE_INT_REF | TYPE_ARRAY_REF | TYPE_STR_REF); break;
 		case 'I':
-			ret |= (TYPE_INT | TYPE_ARRAY); break;
+			mustRef = true;
+			ret |= (TYPE_INT_REF | TYPE_ARRAY_REF); break;
 		case 'S':
-			ret |= TYPE_STRING; break;
+			mustRef = true;
+			ret |= TYPE_STR_REF; break;
 		case 'A':
-			ret |= TYPE_ARRAY; break;
+			mustRef = true;
+			ret |= TYPE_ARRAY_REF; break;
 		case 'i':
-			ret |= (TYPE_INT | TYPE_REAL | TYPE_ARRAY); break;
+			ret |= (TYPE_REAL_IM | TYPE_ARRAY_FLAG | TYPE_REF_FLAG); break;
 		case 's':
-			ret |= (TYPE_STRING | TYPE_STRING_IM); break;
+			ret |= (TYPE_STR_IM | TYPE_REF_FLAG); break;
 		case 'r':
-			ret |= (TYPE_INT | TYPE_ARRAY | TYPE_STRING | TYPE_REAL | TYPE_STRING_IM); break;
+			ret |= (TYPE_INT_REF | TYPE_ARRAY_REF | TYPE_STR_REF); break;
 		default:
 			break;
 		}

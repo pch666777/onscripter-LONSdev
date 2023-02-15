@@ -327,9 +327,9 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
-	if (GetCurrentLine() == 281) {
-		int debugint = 0;
-	}
+	//if (GetCurrentLine() == 281) {
+	//	int debugint = 0;
+	//}
 
 	bool hasnormal, haslabel, hasvariable;
 	int allow_type, paramcount = 0;
@@ -1013,12 +1013,12 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 	bool isStrAlia = isstr;
 	bool isOpAdd = false;
 	s1.push(new ONSVariableRef());   //插入一个空对象
-	curAllow = 0;
+	curType = 0;
 
 	while (true) {
 		buf = scriptbuf->SkipSpace(buf);
 		//根据之前的类型，获取下一个允许的类型
-		curAllow = ONSVariableRef::GetYFnextAllow(curAllow);
+		curAllow = ONSVariableRef::GetYFnextAllow(curType);
 		//获取当前的语法类型
 		curType = ONSVariableRef::GetYFtype(buf, isfirst);
 
@@ -1070,6 +1070,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else if (curType & (ONSVariableRef::YF_IntRef | ONSVariableRef::YF_StrRef | ONSVariableRef::YF_Array | ONSVariableRef::YF_Oper)) {
 			//符号处理
 			buf += v->SetOperator(buf);
+			if (v->GetOperator() == '+') isOpAdd = true;
 			//如果是数组，则压入一个特殊符号
 			if (curType == ONSVariableRef::YF_Array) s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG, 0));
 			auto iter = s1.end() - 1;
@@ -1109,7 +1110,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else isfirst = false;
 
 		//文字别名之后出现在'+'后面
-		if (isstr && v->GetOperator() == '+') isStrAlia = true;
+		if (isstr && isOpAdd) isStrAlia = true;
 		else isStrAlia = false;
 
 		//已经push的v都应该为 nullptr ;
