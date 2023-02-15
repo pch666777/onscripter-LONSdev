@@ -717,18 +717,20 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isalia
 
 //isstr决定是文字类型还是整数类型，默认都是整数类型的
 ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
-	const char *buf, *obuf;
-	buf = obuf = scriptbuf->SkipSpace(currentLable->c_buf);
+	const char *buf, *sbuf, *obuf;
+	int flag = 0;
+	LOString ts;
+	double tval;
+
+
+	sbuf = buf = scriptbuf->SkipSpace(currentLable->c_buf);
 	//优先尝试%XX $XX立即数，速度最快，最多尝试两层，失败则转到表达式计算
 	//表达式计算功能强大，但是速度比较慢，而且需要更多的内存
 
 	//跳过很容易解释的部分
 	if (buf[0] == '-' || buf[0] == '%' || buf[0] == '$') buf++;
 	if (buf[0] == '%' || buf[0] == '$') buf++;
-
-	LOString ts;
-	double tval;
-	int flag = 0;
+	obuf = buf;
 
 	//获取当前可以立即获取的值
 	if (buf[0] >= '0' && buf[0] <= '9') { //num
@@ -746,7 +748,7 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	//首先判断接下来的是否是符号
 	if (LOString::GetCharacter(scriptbuf->SkipSpace(buf)) == LOCodePage::CHARACTER_SYMBOL) {
 		//是符号，只能进入表达式计算
-		buf = obuf;
+		buf = sbuf;
 		ONSVariableRef *v = ParseIntExpression(buf, true);
 		currentLable->c_buf = buf;
 		return v;
@@ -774,41 +776,35 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 		if (flag == 2) v->SetImVal(&ts);
 		else v->SetImVal(tval);
 		//解释符号
-		for (int ii = 0; buf - ii != obuf; ii++) {
-			if (*(buf - ii) == '%') v->UpImToRef(ONSVariableRef::TYPE_INT_REF);
-			else if(*(buf - ii) == '$') v->UpImToRef(ONSVariableRef::TYPE_STR_REF);
-			else if (*(buf - ii) == '-') v->SetImVal(0 - v->GetReal());
+		while (obuf > sbuf) {
+			obuf--;   
+			if (obuf[0] == '%') v->UpImToRef(ONSVariableRef::TYPE_INT_REF);
+			else if(obuf[0] == '$') v->UpImToRef(ONSVariableRef::TYPE_STR_REF);
+			else if (obuf[0] == '-') v->SetImVal(0 - v->GetReal());
 		}
+		currentLable->c_buf = buf;
 		return v;
 	}
 }
 
 //只允许数值型
 int LOScriptReader::ParseIntVariable() {
-	ONSVariableRef *v = ParseVariableBase();
-	if (!v) {
-		FatalError("Is not a valid expression");
-		return 0;
+	std::unique_ptr<ONSVariableRef> v(ParseVariableBase());
+	if (!v || !v->isReal()) {
+		FatalError("LOScriptReader::ParseIntVariable() get int faild!");
+		return -1;
 	}
-	if (!v->isReal()) FatalError("You should use an integer value!");
-	int ret = (int)v->GetReal();
-	delete v;
-	return ret;
+	return (int)v->GetReal();
 }
 
 
 LOString LOScriptReader::ParseStrVariable() {
-	ONSVariableRef *v = ParseVariableBase(NULL,true);
-	if (!v) {
-		FatalError("Is not a valid expression");
+	std::unique_ptr<ONSVariableRef> v(ParseVariableBase());
+	if (!v || !v->isStr()) {
+		FatalError("LOScriptReader::ParseIntVariable() get int faild!");
 		return LOString();
 	}
-	if (!v->isStr()) FatalError("You should use an string value!");
-	LOString s;
-	LOString *vs = v->GetStr();
-	if (vs) s.assign(*vs);
-	delete v;
- 	return s;
+	return LOString( *(v->GetStr()));
 }
 
 //返回的字符串不包含'*'
