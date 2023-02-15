@@ -133,7 +133,7 @@ public:
 	bool NextStartFromStrVal();
 	
 	
-	ONSVariableRef *ParseVariableBase(ONSVariableRef *ref = NULL , bool str_alias = false );
+	ONSVariableRef *ParseVariableBase(bool isstr = false );
 	ONSVariableRef* TryNextNormalWord();
 	int ParseIntVariable();
 	LOString ParseStrVariable();

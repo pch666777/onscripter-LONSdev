@@ -331,7 +331,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 	//	int debugint = 0;
 	//}
 
-	bool hasnormal, haslabel, hasvariable;
+	bool hasnormal, haslabel, hasvariable, mustref;
 	int allow_type, paramcount = 0;
 	const char *fromparam = param;
 	const char *fromuse = used;
@@ -348,7 +348,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		
 		lastparam = param; lastused = used;
 		hasvariable = hasnormal = haslabel = false;
-		allow_type = ONSVariableRef::GetTypeAllow(param);
+		allow_type = ONSVariableRef::GetTypeAllow(param, mustref);
 
 		for (int ii = 0; param[ii] != ',' && param[ii] != 0; ii++) {
 			if (param[ii] == 'N') hasnormal = true;
@@ -364,6 +364,11 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 			v = ParseVariableBase();
 			if (!v ||  !v->isAllowType(allow_type)) {
 				FatalError("[%s] paragram %d type error!\n",curCmdbuf, paramcount + 1);
+				ClearParams(true);
+				return false;
+			}
+			if (mustref && !v->isRef()) {
+				FatalError("[%s] paragram %d must be ref!\n", curCmdbuf, paramcount + 1);
 				ClearParams(true);
 				return false;
 			}
@@ -710,57 +715,71 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isalia
 }
 
 
-//str_alias决定是文字类型还是整数类型，默认都是整数类型的
-ONSVariableRef *LOScriptReader::ParseVariableBase(ONSVariableRef *ref, bool str_alias) {
-
+//isstr决定是文字类型还是整数类型，默认都是整数类型的
+ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	const char *buf, *obuf;
 	buf = obuf = scriptbuf->SkipSpace(currentLable->c_buf);
-	int ret, vardeep = 1;
-	bool isok = false;
-	bool isstr_alias = false;
-	
-	//优先尝试%XX $XX立即数，速度最快
-	char vart = buf[0];
-	if (vart == '%' || vart == '$' || vart == '"' || vart == '-') buf++;
-	char ch = buf[0];
-	if (ch == '%' && (vart == '%' || vart == '$')) {  //最多搜索两层，更多的交给表达式处理
-		buf++;
-		vardeep++; 
+	//优先尝试%XX $XX立即数，速度最快，最多尝试两层，失败则转到表达式计算
+	//表达式计算功能强大，但是速度比较慢，而且需要更多的内存
+
+	//跳过很容易解释的部分
+	if (buf[0] == '-' || buf[0] == '%' || buf[0] == '$') buf++;
+	if (buf[0] == '%' || buf[0] == '$') buf++;
+
+	LOString ts;
+	double tval;
+	int flag = 0;
+
+	//获取当前可以立即获取的值
+	if (buf[0] >= '0' && buf[0] <= '9') { //num
+		tval = scriptbuf->GetReal(buf);
+		flag = 1;
 	}
-	if(vart == '"') buf = TryGetImmediateStr(ret, buf, isok);
-	else buf = TryGetImmediate(ret, buf, true, isok);
-	if (!isok && str_alias) buf = TryGetStrAlias(ret, buf, isstr_alias); //这里有个风险，同名的整数别名可能会覆盖掉文字别名
-	if (isok || isstr_alias) {
-		if(!ref) ref = new ONSVariableRef;
-		if (vart == '-' && !isstr_alias) ret = 0 - ret;
-		if (vardeep > 1) { //获取最里面一层的%值
-			ref->SetRef(ONSVariableRef::TYPE_INT, ret);
-			ret = ref->GetReal();
-		}
-		//包装结果
-		if (vart == '"') {
-			LOString s = scriptbuf->substr(obuf + 1, ret);
-			ref->SetImVal(&s);
-		}
-		else if (isstr_alias)ref->SetImVal(&strAliasList[ret]);
-		else if (vart == '$') ref->SetRef(ONSVariableRef::TYPE_STRING, ret);
-		else if(vart == '%') ref->SetRef(ONSVariableRef::TYPE_INT, ret);
-		else ref->SetImVal((double)ret);
+	else if (buf[0] == '"') {
+		ts = scriptbuf->GetString(buf);
+		flag = 2;
+	}
+	else if((buf[0] >= 'a' && buf[0] <= 'z') || (buf[0] >= 'A' && buf[0] <= 'Z')){
+		ts = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+		flag = 3;
+	}
+	//首先判断接下来的是否是符号
+	if (LOString::GetCharacter(scriptbuf->SkipSpace(buf)) == LOCodePage::CHARACTER_SYMBOL) {
+		//是符号，只能进入表达式计算
+		buf = obuf;
+		ONSVariableRef *v = ParseIntExpression(buf, true);
 		currentLable->c_buf = buf;
-		return ref;
+		return v;
 	}
-
-	//if (GetCharacter(buf) != CHARACTER_NUMBER)return NULL; //不是数字开头，也不是别名
-
-	//尝试表达式
-	buf = obuf;
-	ONSVariableRef *v = ParseIntExpression(buf, true);
-	currentLable->c_buf = buf;
-	if (!ref) return v;
 	else {
-		ref->CopyFrom(v);
-		delete v;
-		return ref;
+		//解释别名
+		if (flag == 3) {
+			bool isok = false;
+			int alias = GetAliasRef(ts, isstr && buf == obuf, isok);
+			if (!isok) {
+				FatalError("LOScriptReader::ParseVariableBase can't get alias name!");
+				return false;
+			}
+			if (isstr && buf == obuf) {
+				ts = strAliasList[alias];
+				flag = 2;  //转为文字解释
+			}
+			else {
+				tval = (double)alias;
+				flag = 1;  //转为整数解释
+			}
+		}
+		//解释数值
+		ONSVariableRef *v = new ONSVariableRef();
+		if (flag == 2) v->SetImVal(&ts);
+		else v->SetImVal(tval);
+		//解释符号
+		for (int ii = 0; buf - ii != obuf; ii++) {
+			if (*(buf - ii) == '%') v->UpImToRef(ONSVariableRef::TYPE_INT_REF);
+			else if(*(buf - ii) == '$') v->UpImToRef(ONSVariableRef::TYPE_STR_REF);
+			else if (*(buf - ii) == '-') v->SetImVal(0 - v->GetReal());
+		}
+		return v;
 	}
 }
 
@@ -1151,17 +1170,17 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 					while ( (*iter)->isArrayFlag() == false) iter--;
 					stack->erase(iter);   //删除数组标记
 					v1 = (*iter);  //被操作的数组编号
-					v1->DownRefToIm(ONSVariableRef::TYPE_REAL);
+					v1->DownRefToIm(ONSVariableRef::TYPE_REAL_IM);
+					v1->UpImToRef(ONSVariableRef::TYPE_ARRAY_REF);
 					v1->InitArrayIndex();
 					iter++;
 					for (int ii = 0; ii < MAXVARIABLE_ARRAY && !(*iter)->isOperator(); ii++) {
 						v1->SetArrayIndex((int)(*iter)->GetReal(), ii);
 						stack->erase(iter, true);  //删除，同时指向下一个指针
 					}
-					v1->UpImToRef(ONSVariableRef::TYPE_ARRAY);
 				}
-				else if((*iter)->GetOperator() == '$') v1->UpImToRef(ONSVariableRef::TYPE_STRING);
-				else if ((*iter)->GetOperator() == '%') v1->UpImToRef(ONSVariableRef::TYPE_INT);
+				else if((*iter)->GetOperator() == '$') v1->UpImToRef(ONSVariableRef::TYPE_STR_REF);
+				else if ((*iter)->GetOperator() == '%') v1->UpImToRef(ONSVariableRef::TYPE_INT_REF);
 				else FatalError("%s","LOScriptReader::CalculatRPNstack() unknow docount = 1 type!");
 				stack->erase(iter, true);  //单操作数只删除符号
 			}
