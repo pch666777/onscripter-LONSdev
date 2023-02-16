@@ -129,7 +129,7 @@ int LOScriptReader::getparamCommand(FunctionInterface *reader) {
 			isID = true; NextAdress();
 		}
 		//获取要设置内容的变量
-		ONSVariableRef *v1 = ParseVariableBase();
+		ONSVariableRef *v1 = ParseVariableBase(false);
 		if (!v1) return RET_ERROR;
 		if (!v1->isRef()) {  //不是变量表达式，则产生一个错误
 			FatalError("[getparam] not use an ref variable at arguments %d!", ii);
@@ -141,7 +141,7 @@ int LOScriptReader::getparamCommand(FunctionInterface *reader) {
 			return RET_ERROR;
 		}
 		//获取原变量
-		ONSVariableRef *v2 = ParseVariableBase();
+		ONSVariableRef *v2 = ParseVariableBase(v1->isStr());
 		if (!v2) return RET_ERROR;
  		if (isID) {
 			//获取参数编号模式则需要提供一个ref变量
@@ -305,7 +305,7 @@ int LOScriptReader::nextCommand(FunctionInterface *reader) {
 int LOScriptReader::forCommand(FunctionInterface *reader) {
 	LogicPointer *p = loopStack.push(new LogicPointer(LogicPointer::TYPE_FOR));
 
-	p->forVar = ParseVariableBase(); //%
+	p->forVar = ParseVariableBase(false); //%
 
 	if (!NextStartFrom('=')) {
 		FatalError("[for] command Missing '='");
@@ -319,7 +319,7 @@ int LOScriptReader::forCommand(FunctionInterface *reader) {
 		return RET_ERROR;
 	}
 
-	p->dstVar = ParseVariableBase();  //dest
+	p->dstVar = ParseVariableBase(false);  //dest
 	if (!p->dstVar->isReal()) {
 		FatalError("[for] command the target must be an integer!");
 		return RET_ERROR;
@@ -471,7 +471,7 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 			if (s) errs.append(*s);
 			errs.append("\"");
 		}
-		else if (v->isArray()) {
+		else if (v->isArrayRef()) {
 			errs.append("   ?" + std::to_string(v->GetNSid()));
 			for (int ii = 0; ii < MAXVARIABLE_ARRAY && v->GetArrayIndex(ii) >= 0; ii++) {
 				errs.append("[" + std::to_string(v->GetArrayIndex(ii)) + "]");
@@ -535,12 +535,12 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
 	while (true) {
-		ONSVariableRef *v1 = ParseVariableBase();
+		ONSVariableRef *v1 = ParseVariableBase(false);
 		if (!NextComma()) {
 			FatalError("[%s] command not match!\n", curCmd.c_str());
 			return RET_ERROR;
 		}
-		ONSVariableRef *v2 = ParseVariableBase(NULL,v1->isStrRef());
+		ONSVariableRef *v2 = ParseVariableBase(v1->isStrRef());
 		if (v1 && v1->isRef() && v2) v1->SetValue(v2);
 		if (v1) delete v1;
 		if (v2) delete v2;

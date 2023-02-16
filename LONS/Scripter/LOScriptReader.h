@@ -82,6 +82,11 @@ public:
 		
 	};
 
+	enum {
+		ALIAS_INT = 1,
+		ALIAS_STR = 2,
+	};
+
 	struct SaveFileInfo{
 		void reset() {
 			id = -1;
@@ -133,7 +138,7 @@ public:
 	bool NextStartFromStrVal();
 	
 	
-	ONSVariableRef *ParseVariableBase(bool isstr = false );
+	ONSVariableRef *ParseVariableBase(bool isstr);
 	ONSVariableRef* TryNextNormalWord();
 	int ParseIntVariable();
 	LOString ParseStrVariable();
@@ -155,7 +160,7 @@ public:
 	bool isName(const char* name);
 
 	//计算下一个应该是数值的值，展开% ? 和算式表达式，采用逆波兰算法
-	ONSVariableRef* ParseIntExpression(const char *&buf, bool isalias);
+	ONSVariableRef* ParseIntExpression(const char *&buf, bool isstrAlias);
 
 	LOString GetTextTagString();
 
@@ -332,14 +337,15 @@ private:
 
 	virtual int   FileRemove(const char *name);
 	
-	int GetAliasRef(LOString &s, bool isstr, bool &isok);
+	int GetAliasRef(LOString &s, bool isstr, int &out);
+	int GetAliasRef(const char *&buf, bool isstr, int &out);
 	int ReturnEvent(int ret,const char *&buf, int &line);
 	LOString GetCurrentFile();
 	void NewThreadGosub(LOString *pname, LOString threadName);
 	//int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	//const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
-	const char* GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstr = false);
+	const char* GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstrAlia);
 	void CalculatRPNstack(LOStack<ONSVariableRef> *stack);
 	//弹出堆栈s1的值到 s2，直到指定符号，如果到最后一个值则产生错误
 	void PopRPNstackUtill(LOStack<ONSVariableRef> *s1, LOStack<ONSVariableRef> *s2, char op);

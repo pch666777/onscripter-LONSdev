@@ -331,7 +331,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 	//	int debugint = 0;
 	//}
 
-	bool hasnormal, haslabel, hasvariable, mustref;
+	bool hasnormal, haslabel, hasvariable, mustref, isstr;
 	int allow_type, paramcount = 0;
 	const char *fromparam = param;
 	const char *fromuse = used;
@@ -347,13 +347,16 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		}
 		
 		lastparam = param; lastused = used;
-		hasvariable = hasnormal = haslabel = false;
+		isstr = hasvariable = hasnormal = haslabel = false;
 		allow_type = ONSVariableRef::GetTypeAllow(param, mustref);
 
 		for (int ii = 0; param[ii] != ',' && param[ii] != 0; ii++) {
 			if (param[ii] == 'N') hasnormal = true;
 			else if (param[ii] == 'L') haslabel = true;
-			else hasvariable = true;
+			else {
+				hasvariable = true;
+				if (param[ii] == 's' || param[ii] == 'r') isstr = true;
+			}
 		}
 		//get it
 		ONSVariableRef *v = nullptr;
@@ -361,7 +364,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 			v = TryNextNormalWord();
 		if (!v && haslabel) v = ParseLabel2();
 		if (!v && hasvariable) {
-			v = ParseVariableBase();
+			v = ParseVariableBase(isstr);
 			if (!v ||  !v->isAllowType(allow_type)) {
 				FatalError("[%s] paragram %d type error!\n",curCmdbuf, paramcount + 1);
 				ClearParams(true);
@@ -706,22 +709,21 @@ bool LOScriptReader::isName(const char* name) {
 }
 
 
-ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isalias) {
+ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrAlias) {
 	LOStack<ONSVariableRef> s2;
-	buf = GetRPNstack2(&s2, buf, true);
+	buf = GetRPNstack2(&s2, buf, isstrAlias);
 	//auto ss = TransformStack(&s2);
 	CalculatRPNstack(&s2);
 	return *(s2.begin());
 }
 
 
-//isstr决定是文字类型还是整数类型，默认都是整数类型的
+//isstr决定是文字类型还是整数类型，默认都是整数类型的，文字类型只会出现在文字变量的首位置和+号之后
 ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	const char *buf, *sbuf, *obuf;
 	int flag = 0;
 	LOString ts;
 	double tval;
-
 
 	sbuf = buf = scriptbuf->SkipSpace(currentLable->c_buf);
 	//优先尝试%XX $XX立即数，速度最快，最多尝试两层，失败则转到表达式计算
@@ -749,26 +751,27 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	if (LOString::GetCharacter(scriptbuf->SkipSpace(buf)) == LOCodePage::CHARACTER_SYMBOL) {
 		//是符号，只能进入表达式计算
 		buf = sbuf;
-		ONSVariableRef *v = ParseIntExpression(buf, true);
+		ONSVariableRef *v = ParseIntExpression(buf, isstr);
 		currentLable->c_buf = buf;
 		return v;
 	}
 	else {
 		//解释别名
 		if (flag == 3) {
-			bool isok = false;
-			int alias = GetAliasRef(ts, isstr && buf == obuf, isok);
-			if (!isok) {
+			int alias, ret;
+			//对于立即模式来说，文字别名只会出现在行首
+			ret = GetAliasRef(ts, isstr && obuf == sbuf, alias);
+			if (ret == 0) {
 				FatalError("LOScriptReader::ParseVariableBase can't get alias name!");
 				return false;
 			}
-			if (isstr && buf == obuf) {
-				ts = strAliasList[alias];
-				flag = 2;  //转为文字解释
+			else if (ret == ALIAS_INT) {
+				tval = (double)alias;
+				flag = 1;
 			}
 			else {
-				tval = (double)alias;
-				flag = 1;  //转为整数解释
+				ts = strAliasList[alias];
+				flag = 2;
 			}
 		}
 		//解释数值
@@ -789,7 +792,7 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 
 //只允许数值型
 int LOScriptReader::ParseIntVariable() {
-	std::unique_ptr<ONSVariableRef> v(ParseVariableBase());
+	std::unique_ptr<ONSVariableRef> v(ParseVariableBase(ALIAS_INT));
 	if (!v || !v->isReal()) {
 		FatalError("LOScriptReader::ParseIntVariable() get int faild!");
 		return -1;
@@ -799,7 +802,7 @@ int LOScriptReader::ParseIntVariable() {
 
 
 LOString LOScriptReader::ParseStrVariable() {
-	std::unique_ptr<ONSVariableRef> v(ParseVariableBase());
+	std::unique_ptr<ONSVariableRef> v(ParseVariableBase(ALIAS_STR));
 	if (!v || !v->isStr()) {
 		FatalError("LOScriptReader::ParseIntVariable() get int faild!");
 		return LOString();
@@ -836,82 +839,29 @@ ONSVariableRef *LOScriptReader::ParseLabel2() {
 	else return NULL;
 }
 
-//尝试取得立即数
-const char* LOScriptReader::TryGetImmediate(int &val, const char *buf, bool isalias, bool &isok) {
+
+//获取别名是有文字和整数之分的
+int LOScriptReader::GetAliasRef(LOString &s, bool isstr, int &out) {
+	auto *map = &numAliasMap;
+	if (isstr) map = &strAliasMap;
+	auto iter = map->find(s);
+	if (iter != map->end()) {
+		out = iter->second;
+		return isstr ? ALIAS_STR : ALIAS_INT;
+	}
+	return 0;
+}
+
+int LOScriptReader::GetAliasRef(const char *&buf, bool isstr, int &out) {
 	const char *obuf = buf;
-	isok = false;
-
-	buf = scriptbuf->SkipSpace(buf);
-	int type = scriptbuf->GetCharacter(buf);
-	if (type == LOCodePage::CHARACTER_NUMBER) {
-		double vv = scriptbuf->GetReal(buf);
-		buf = scriptbuf->SkipSpace(buf);
-		if (scriptbuf->IsOperator(buf)) return obuf; //后面有计算符号，说明是复杂算式
-		val = (int)vv;
-		isok = true;
-		return buf;
-	}
-	else if (buf[0] == '-') { //负数
-		int ret;
-		buf = TryGetImmediate(ret, buf + 1, false, isok);
-		if (isok) {
-			val = 0 - ret;
-			return buf;
-		}
-	}
-	else if (isalias && type == LOCodePage::CHARACTER_LETTER) {
-		LOString s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-		buf = scriptbuf->SkipSpace(buf);
-		if (scriptbuf->IsOperator(buf) ) return obuf;  //后面有计算符号，说明是复杂算式
-		val = GetAliasRef(s, false, isok);
-		if (isok) return buf;
-		else return obuf;
-	}
-	else return obuf;
-	return obuf;
+	scriptbuf->SkipSpace(buf);
+	LOString s = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+	int ret = GetAliasRef(s, isstr, out);
+	//失败了，重置buf位置
+	if(ret == 0) buf = obuf;
+	return ret;
 }
 
-int LOScriptReader::GetAliasRef(LOString &s, bool isstr, bool &isok) {
-	std::unordered_map<std::string, int> *tmap = &numAliasMap;
-	if (isstr) tmap = &strAliasMap;
-
-	auto iter = tmap->find(s);
-	if (iter == tmap->end()) {
-		isok = false;
-		return -1;
-	}
-	else {
-		isok = true;
-		return iter->second;
-	}
-}
-
-const char*  LOScriptReader::TryGetImmediateStr(int &len, const char *buf, bool &isok) {
-	const char *obuf = buf;
-	isok = false;
-	len = scriptbuf->GetStringLen(buf);
-	buf += len;
-	if (buf[0] == '"') buf++;
-	buf = scriptbuf->SkipSpace(buf);
-	if (buf[0] == '+') return obuf;
-	else {
-		isok = true;
-		return buf;
-	}
-}
-
-const char* LOScriptReader::TryGetStrAlias(int &ret, const char *buf, bool &isok) {
-	const char *obuf = buf;
-	isok = false;
-	if (strAliasMap.size() < 1) return obuf;
-	if (scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_LETTER) {
-		LOString s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-		ret = GetAliasRef(s, true, isok);
-		if (isok) return buf;
-		else return obuf;
-	}
-	return obuf;
-}
 
 ////获取逆波兰式的堆栈
 //const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
@@ -1018,14 +968,14 @@ const char* LOScriptReader::TryGetStrAlias(int &ret, const char *buf, bool &isok
 //}
 
 
-const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstr) {
+const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstrAlia) {
 	LOStack<ONSVariableRef> s1;
 	std::unique_ptr<ONSVariableRef> v;
 	int curAllow, tint, curType, tdouble;
 	LOString ts;
 
 	bool isfirst = true;
-	bool isStrAlia = isstr;
+	bool strAlia = isstrAlia;
 	bool isOpAdd = false;
 	s1.push(new ONSVariableRef());   //插入一个空对象
 	curType = 0;
@@ -1041,24 +991,18 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		if (curType == ONSVariableRef::YF_Alias) {
 			//别名就相当于值，那么首先允许的类型要是值类型，否则无法继续下去
 			if ((curAllow & ONSVariableRef::YF_Value) == 0) break;
-			const char *obuf = buf;
-			bool isok = false;
-			ts = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-			//文字别名只会出现在行头或者'+'的后面
-			tint = GetAliasRef(ts, isStrAlia, isok);
-			if (!isok) {
-				buf = obuf; curType = ONSVariableRef::YF_Error;   //别名获取失败，无法继续了
+			//获取别名的值
+			int ret = GetAliasRef(buf, strAlia, tint);
+			if(ret == 0) curType = ONSVariableRef::YF_Error;   //别名获取失败，无法继续了
+			else if (ret == ALIAS_INT) {
+				v.reset(new ONSVariableRef());
+				v->SetImVal((double)tint);
+				curType = ONSVariableRef::YF_Int;
 			}
 			else {
 				v.reset(new ONSVariableRef());
-				if (isStrAlia) {
-					v->SetImVal(&strAliasList[tint]);
-					curType = ONSVariableRef::YF_Str;
-				}
-				else {
-					v->SetImVal((double)tint);
-					curType = ONSVariableRef::YF_Int;
-				}
+				v->SetImVal(&strAliasList[tint]);
+				curType = ONSVariableRef::YF_Str;
 			}
 		}
 
@@ -1067,6 +1011,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 
 		//根据类型获取参数
 		if(!v) v.reset(new ONSVariableRef());  //先生成一个，由后面处理
+
 		if (curType & (ONSVariableRef::YF_Negative | ONSVariableRef::YF_Int)) {
 			//整数处理
 			if (v->isNone()) {
@@ -1124,9 +1069,9 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		if (curType == ONSVariableRef::YF_Left_PA) isfirst = true;
 		else isfirst = false;
 
-		//文字别名之后出现在'+'后面
-		if (isstr && isOpAdd) isStrAlia = true;
-		else isStrAlia = false;
+		//文字别名之后出现在'+'后面，因此+号之后会重置文本别名类型
+		if (isOpAdd) strAlia = isstrAlia;
+		else strAlia = false; //有符号之后就只能是整数别名
 
 		//已经push的v都应该为 nullptr ;
 		v.release();
@@ -1257,7 +1202,7 @@ ONSVariableRef* LOScriptReader::TryNextNormalWord() {
 		currentLable->c_buf = buf + 7;
 		return v;
 	}
-	else if (NextStartFrom('"') || NextStartFrom('$')) return ParseVariableBase();
+	else if (NextStartFrom('"') || NextStartFrom('$')) return ParseVariableBase(ALIAS_INT);
 	else {
 		NextNormalWord(false);
 		auto iter = strAliasMap.find(word);
@@ -1348,7 +1293,7 @@ bool LOScriptReader::ParseLogicExp() {
 	ONSVariableRef *v2 = nullptr;
 	while (true) {
 		if (v1) delete v1;
-		v1 = ParseVariableBase(NULL,true);
+		v1 = ParseVariableBase(ALIAS_INT| ALIAS_STR);
 		if (NextStartFrom("==")) comtype = ONSVariableRef::LOGIC_EQUAL;
 		else if (NextStartFrom("!=") || NextStartFrom("<>"))comtype = ONSVariableRef::LOGIC_UNEQUAL;
 		else if (NextStartFrom(">="))comtype = ONSVariableRef::LOGIC_BIGANDEQUAL;
@@ -1371,7 +1316,7 @@ bool LOScriptReader::ParseLogicExp() {
 		}
 
 		if (v2) delete v2;
-		v2 = ParseVariableBase(NULL, true);
+		v2 = ParseVariableBase(ALIAS_INT | ALIAS_STR);
 		if (!v2) {
 			FatalError("Logical expression error!");
 			return false;
@@ -1413,7 +1358,7 @@ bool LOScriptReader::ExpandStr(LOString &s) {
 			scriptbuf = &s;
 			currentLable->c_buf = buf;
 
-			ONSVariableRef *v1 = ParseVariableBase();
+			ONSVariableRef *v1 = ParseVariableBase(false);
 			ONSVariableBase::AppendStrCore(tmp, v1->GetStr());
 			delete v1;
 
