@@ -748,6 +748,15 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 		flag = 3;
 	}
 	//首先判断接下来的是否是符号
+	int curtype = ONSVariableRef::GetYFtype(scriptbuf->SkipSpace(buf), false);
+	if (curtype == ONSVariableRef::YF_Oper) {
+		//是符号，只能进入表达式计算
+		buf = sbuf;
+		ONSVariableRef *v = ParseIntExpression(buf, isstr);
+		currentLable->c_buf = buf;
+		return v;
+	}
+
 	if (LOString::GetCharacter(scriptbuf->SkipSpace(buf)) == LOCodePage::CHARACTER_SYMBOL) {
 		//是符号，只能进入表达式计算
 		buf = sbuf;
@@ -788,6 +797,7 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 		currentLable->c_buf = buf;
 		return v;
 	}
+	return nullptr;
 }
 
 //只允许数值型
@@ -842,13 +852,20 @@ ONSVariableRef *LOScriptReader::ParseLabel2() {
 
 //获取别名是有文字和整数之分的
 int LOScriptReader::GetAliasRef(LOString &s, bool isstr, int &out) {
-	auto *map = &numAliasMap;
-	if (isstr) map = &strAliasMap;
-	auto iter = map->find(s);
-	if (iter != map->end()) {
-		out = iter->second;
-		return isstr ? ALIAS_STR : ALIAS_INT;
+	//整数别名只查找整数，文字别名先查找文字，再查找整数
+	if (isstr) {
+		auto iter = strAliasMap.find(s);
+		if (iter != strAliasMap.end()) {
+			out = iter->second;
+			return ALIAS_STR;
+		}
 	}
+	auto iter = numAliasMap.find(s);
+	if (iter != numAliasMap.end()) {
+		out = iter->second;
+		return ALIAS_INT;
+	}
+
 	return 0;
 }
 
