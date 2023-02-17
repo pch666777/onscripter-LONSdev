@@ -237,6 +237,15 @@ if %500 < 20 || %500 > 120 debuglog "[intlimit]不通过"
 mov %500,200
 if %500 < 20 || %500 > 120 debuglog "[intlimit]不通过"
 
+;追加新发现的一个错误
+dim ?0[100]
+mov %13,0
+numalias acPtr,999
+mov ?0[%acPtr+4],777
+mov %11,888
+;往右移动的情况
+if ?0[%acPtr+4] > ?0[%acPtr+3] && %11 >= ?0[%acPtr+4] mov %13,1
+_chkval_ %13,1,"if逻辑测试不通过"
 return
 
 *字符串测试

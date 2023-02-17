@@ -240,7 +240,7 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
-	if (reader->GetCurrentLine() == 312) {
+	if (reader->GetCurrentLine() == 247) {
 		int bbk = 0;
 	}
 
@@ -771,7 +771,7 @@ int LOScriptReader::chkValueCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
 	if (!v1->Compare(v2, ONSVariableRef::LOGIC_EQUAL,false)) {
-		FatalError("[%s]:[%d]:[%s]\n", currentLable->file->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
+		LOLog_i("[%s]:[%d]:[%s]\n", currentLable->file->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
 	}
 	return RET_CONTINUE;
 }

@@ -724,7 +724,7 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	LOString ts;
 	double tval;
 
-	//if (currentLable->c_line == 40) {
+	//if (currentLable->c_line == 220) {
 	//	int bbq = 1;
 	//}
 
@@ -734,7 +734,7 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	char op[] = { 0,0,0,0 };
 	int curtype, ii, alias, aret = 0;
 	for (ii = 0; ii < 4; ii++) {
-		curtype = ONSVariableRef::GetYFtype(buf, ii == 0 && isstr);
+		curtype = ONSVariableRef::GetYFtype(buf, ii == 0);
 		//只有两种情况会继续，一种是整数表达式，一种是文字表达式
 		if (curtype == ONSVariableRef::YF_IntRef) { op[ii] = '%'; buf++; }
 		else if (curtype == ONSVariableRef::YF_StrRef) { 
@@ -749,18 +749,22 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	}
 
 	//是别名，尝试展开别名
-	if (curtype == ONSVariableRef::YF_Alias) {
-		//文字别名只会出现在行首
-		ts = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-		aret = -3;
-	}
-	else if (curtype == ONSVariableRef::YF_Int) {
-		tval = scriptbuf->GetReal(buf);
-		aret = -1;
-	}
-	else if (curtype == ONSVariableRef::YF_Str) {
-		ts = scriptbuf->GetString(buf);
-		aret = -2;
+	switch (curtype){
+	case ONSVariableRef::YF_Alias:
+		ts = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+		aret = -3; 
+		break;
+	case ONSVariableRef::YF_Int:
+		tval = scriptbuf->GetReal(buf); aret = -1;
+		break;
+	case ONSVariableRef::YF_Str:
+		ts = scriptbuf->GetString(buf); aret = -2;
+		break;
+	case ONSVariableRef::YF_Negative:
+		tval = scriptbuf->GetRealNe(buf); aret = -1;
+		break;
+	default:
+		break;
 	}
 
 	//检查立即处理模式的后一个对象是否为符号，符号交给表达式处理
@@ -868,7 +872,7 @@ int LOScriptReader::GetAliasRef(LOString &s, bool isstr, int &out) {
 int LOScriptReader::GetAliasRef(const char *&buf, bool isstr, int &out) {
 	const char *obuf = buf;
 	scriptbuf->SkipSpace(buf);
-	LOString s = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+	LOString s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
 	int ret = GetAliasRef(s, isstr, out);
 	//失败了，重置buf位置
 	if(ret == 0) buf = obuf;
@@ -1028,7 +1032,8 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		if (curType & (ONSVariableRef::YF_Negative | ONSVariableRef::YF_Int)) {
 			//整数处理
 			if (v->isNone()) {
-				v->SetImVal(scriptbuf->GetReal(buf));
+				if (curType == ONSVariableRef::YF_Negative) v->SetImVal(scriptbuf->GetRealNe(buf));
+				else v->SetImVal(scriptbuf->GetReal(buf));
 			}
 			s2->push(v.release()); //已经经过别名解释
 		}
@@ -1103,6 +1108,10 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 	auto iter = stack->begin();
 	int docount;  //操作数的个数
 	ONSVariableRef *op,*v1 = nullptr,*v2 = nullptr;
+
+	//if (currentLable->c_line == 47) {
+	//	int bbq = 1;
+	//}
 
 	while (iter != stack->end()) {
 		op = (*iter);
@@ -1302,11 +1311,9 @@ bool LOScriptReader::ChangePointer(LOScriptPoint *label) {
 bool LOScriptReader::ParseLogicExp() {
 	int comtype,ret = 1; //默认为真
 	int nextconet = ONSVariableRef::LOGIC_AND;
-	ONSVariableRef *v1 = nullptr;
-	ONSVariableRef *v2 = nullptr;
+	std::unique_ptr<ONSVariableRef> v1, v2;
 	while (true) {
-		if (v1) delete v1;
-		v1 = ParseVariableBase(ALIAS_INT| ALIAS_STR);
+		v1.reset(ParseVariableBase(true));
 		if (NextStartFrom("==")) comtype = ONSVariableRef::LOGIC_EQUAL;
 		else if (NextStartFrom("!=") || NextStartFrom("<>"))comtype = ONSVariableRef::LOGIC_UNEQUAL;
 		else if (NextStartFrom(">="))comtype = ONSVariableRef::LOGIC_BIGANDEQUAL;
@@ -1328,13 +1335,12 @@ bool LOScriptReader::ParseLogicExp() {
 			return false;
 		}
 
-		if (v2) delete v2;
-		v2 = ParseVariableBase(ALIAS_INT | ALIAS_STR);
+		v2.reset(ParseVariableBase(true));
 		if (!v2) {
 			FatalError("Logical expression error!");
 			return false;
 		}
-		int ret0 = v1->Compare(v2, comtype,false);
+		int ret0 = v1->Compare(v2.get(), comtype, false);
 		if (nextconet == ONSVariableRef::LOGIC_AND) ret &= ret0;
 		else if (nextconet == ONSVariableRef::LOGIC_OR) ret |= ret0;
 		if (NextStartFrom("&&") || NextStartFrom("&")) nextconet = ONSVariableRef::LOGIC_AND;
@@ -1342,8 +1348,6 @@ bool LOScriptReader::ParseLogicExp() {
 		else break;
 	}
 
-	if (v1) delete v1;
-	if (v2) delete v2;
 	if (ret == 0) return false;
 	else return true;
 }

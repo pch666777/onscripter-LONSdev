@@ -602,7 +602,7 @@ bool ONSVariableRef::Calculator(ONSVariableRef *v, char op, bool isreal) {
 		return true;
 	}
 	else {
-		if (!isReal()) return false;
+		if (!isReal() && !isArrayRef()) return false;
 		double dst = GetReal();      //注意必须先获取值再改类型，不然会出现错误的结果
 		double src = v->GetReal();
 		int itmp;
@@ -640,6 +640,7 @@ bool ONSVariableRef::Calculator(ONSVariableRef *v, char op, bool isreal) {
 	return true;
 }
 
+//isreal表示是否采用实数比较
 int ONSVariableRef::Compare(ONSVariableRef *v2, int comtype, bool isreal) {
 	//类型不同，直接不相等
 	if ((isReal() && !v2->isReal()) || (isStr() && !v2->isStr())) return 0;
@@ -810,9 +811,12 @@ int ONSVariableRef::GetYFtype(const char *buf, bool isfirst) {
 		if (buf[0] == '[') return YF_Left_SQ;
 		if (buf[0] == ']') return YF_Right_SQ;
 		if (buf[0] == '?') return YF_Array;
-		if ((buf[0] == 'm' || buf[0] == 'M') && (buf[0] == 'o' || buf[0] == 'O') && (buf[0] == 'd' || buf[0] == 'D')) return YF_Oper;
 		if (buf[0] == '\n' || buf[0] == ',' || buf[0] == ':') return YF_Break;
 		return YF_Error;
+	}
+	else if ((buf[0] == 'm' || buf[0] == 'M') && (buf[1] == 'o' || buf[1] == 'O') && (buf[2] == 'd' || buf[2] == 'D')) {
+		int c = LOString::GetCharacter(buf + 3);
+		if (c == LOCodePage::CHARACTER_SYMBOL || c == LOCodePage::CHARACTER_SPACE) return YF_Oper;
 	}
 
 	return YF_Alias;
@@ -830,6 +834,7 @@ int  ONSVariableRef::GetYFnextAllow(int cur) {
 	switch (cur){
 	case 0:
 		return YF_Value | YF_Negative;
+	case YF_Negative:
 	case YF_Int:  //{+-*/^%} ] ) 0[
 		return YF_Oper | YF_Right_PA | YF_Right_SQ | YF_Left_SQ;
 	case YF_IntRef: // % -> %%, %(, %?0[], %num

@@ -159,7 +159,7 @@ public:
 	
 	bool isOperator() { return (vtype == TYPE_OPERATOR); }
 	bool isStr() { return (vtype & TYPE_STR_IM); }
-	bool isReal() { return (vtype & TYPE_REAL_IM ); }
+	bool isReal() { return (vtype & (TYPE_REAL_IM | TYPE_ARRAY_FLAG)); }
 	bool isRef() { return (vtype & TYPE_REF_FLAG); }
 	bool isIntRef(){ return vtype == TYPE_INT_REF; }
 	bool isStrRef() { return vtype == TYPE_STR_REF; }
