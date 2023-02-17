@@ -16,8 +16,8 @@ mov %2,4
 mul %2,40
 btnwait %0
 
-gosub *save_test
-btnwait %0
+;gosub *save_test
+;btnwait %0
 
 debuglog "分辨率是否是1024*576？"
 

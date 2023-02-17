@@ -720,79 +720,75 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrA
 
 //isstr决定是文字类型还是整数类型，默认都是整数类型的，文字类型只会出现在文字变量的首位置和+号之后
 ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
-	const char *buf, *sbuf, *obuf;
-	int flag = 0;
+	const char *buf, *sbuf;
 	LOString ts;
 	double tval;
 
+	//if (currentLable->c_line == 40) {
+	//	int bbq = 1;
+	//}
+
 	sbuf = buf = scriptbuf->SkipSpace(currentLable->c_buf);
-	//优先尝试%XX $XX立即数，速度最快，最多尝试两层，失败则转到表达式计算
+	//遇到立即数或者立即文字跳出循环，别名也是立即数。优先尝试%XX $XX立即数，速度最快
 	//表达式计算功能强大，但是速度比较慢，而且需要更多的内存
-
-	//跳过很容易解释的部分
-	if (buf[0] == '-' || buf[0] == '%' || buf[0] == '$') buf++;
-	if (buf[0] == '%' || buf[0] == '$') buf++;
-	obuf = buf;
-
-	//获取当前可以立即获取的值
-	if (buf[0] >= '0' && buf[0] <= '9') { //num
-		tval = scriptbuf->GetReal(buf);
-		flag = 1;
-	}
-	else if (buf[0] == '"') {
-		ts = scriptbuf->GetString(buf);
-		flag = 2;
-	}
-	else if((buf[0] >= 'a' && buf[0] <= 'z') || (buf[0] >= 'A' && buf[0] <= 'Z')){
-		ts = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-		flag = 3;
-	}
-	//首先判断接下来的是否是符号
-	int curtype = ONSVariableRef::GetYFtype(scriptbuf->SkipSpace(buf), false);
-	if (curtype == ONSVariableRef::YF_Oper) {
-		//是符号，只能进入表达式计算
-		buf = sbuf;
-		ONSVariableRef *v = ParseIntExpression(buf, isstr);
-		currentLable->c_buf = buf;
-		return v;
-	}
-
-	if (LOString::GetCharacter(scriptbuf->SkipSpace(buf)) == LOCodePage::CHARACTER_SYMBOL) {
-		//是符号，只能进入表达式计算
-		buf = sbuf;
-		ONSVariableRef *v = ParseIntExpression(buf, isstr);
-		currentLable->c_buf = buf;
-		return v;
-	}
-	else {
-		//解释别名
-		if (flag == 3) {
-			int alias, ret;
-			//对于立即模式来说，文字别名只会出现在行首
-			ret = GetAliasRef(ts, isstr && obuf == sbuf, alias);
-			if (ret == 0) {
-				FatalError("LOScriptReader::ParseVariableBase can't get alias name!");
-				return false;
+	char op[] = { 0,0,0,0 };
+	int curtype, ii, alias, aret = 0;
+	for (ii = 0; ii < 4; ii++) {
+		curtype = ONSVariableRef::GetYFtype(buf, ii == 0 && isstr);
+		//只有两种情况会继续，一种是整数表达式，一种是文字表达式
+		if (curtype == ONSVariableRef::YF_IntRef) { op[ii] = '%'; buf++; }
+		else if (curtype == ONSVariableRef::YF_StrRef) { 
+			//文字表达式只出现在行首，不允许出现 %$1这种情况
+			if (ii != 0) {
+				FatalError("Expression error!");
+				return nullptr;
 			}
-			else if (ret == ALIAS_INT) {
-				tval = (double)alias;
-				flag = 1;
-			}
-			else {
-				ts = strAliasList[alias];
-				flag = 2;
-			}
+			op[ii] = '$'; buf++;
 		}
-		//解释数值
+		else break;  //其他的均转表达式处理
+	}
+
+	//是别名，尝试展开别名
+	if (curtype == ONSVariableRef::YF_Alias) {
+		//文字别名只会出现在行首
+		ts = scriptbuf->GetWordUntil(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
+		aret = -3;
+	}
+	else if (curtype == ONSVariableRef::YF_Int) {
+		tval = scriptbuf->GetReal(buf);
+		aret = -1;
+	}
+	else if (curtype == ONSVariableRef::YF_Str) {
+		ts = scriptbuf->GetString(buf);
+		aret = -2;
+	}
+
+	//检查立即处理模式的后一个对象是否为符号，符号交给表达式处理
+	buf = scriptbuf->SkipSpace(buf);
+	if (aret != 0 && ONSVariableRef::GetYFtype(buf, false) == ONSVariableRef::YF_Oper) aret = 0;
+	if (aret == 0) {
+		buf = sbuf;
+		ONSVariableRef *v = ParseIntExpression(buf, isstr);
+		currentLable->c_buf = buf;
+		return v;
+	}
+	else { //立即模式成功
+		//解释别名
+		if (aret == -3) aret = GetAliasRef(ts, isstr && ii == 0, alias);
+		if (aret == 0) {
+			FatalError("Expression error!");
+			return nullptr;
+		}
+		//设置数值
 		ONSVariableRef *v = new ONSVariableRef();
-		if (flag == 2) v->SetImVal(&ts);
+		if (aret == ALIAS_INT) v->SetImVal((double)alias);
+		else if (aret == ALIAS_STR) v->SetImVal(&strAliasList[alias]);
+		else if (aret == -2) v->SetImVal(&ts);
 		else v->SetImVal(tval);
-		//解释符号
-		while (obuf > sbuf) {
-			obuf--;   
-			if (obuf[0] == '%') v->UpImToRef(ONSVariableRef::TYPE_INT_REF);
-			else if(obuf[0] == '$') v->UpImToRef(ONSVariableRef::TYPE_STR_REF);
-			else if (obuf[0] == '-') v->SetImVal(0 - v->GetReal());
+		//解释数值
+		for (ii = 3; ii >= 0; ii--) {
+			if (op[ii] == '%')  v->UpImToRef(ONSVariableRef::TYPE_INT_REF);
+			else if (op[ii] == '$') v->UpImToRef(ONSVariableRef::TYPE_STR_REF);
 		}
 		currentLable->c_buf = buf;
 		return v;
