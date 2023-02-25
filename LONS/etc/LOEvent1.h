@@ -38,6 +38,7 @@ public:
 		ANSWER_PRINGJMP = 128,
 		//某些操作需要从脚本模块调用渲染模块
 		ANSWER_SCRIPTCALL = 0x100,
+
 	};
 
 	//一些参数的位置
