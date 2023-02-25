@@ -100,7 +100,7 @@ int LOVariant::GetInt() {
 }
 
 void LOVariant::SetDoule(double val) {
-	NewMem(sizeof(double));
+	if(bytes[CFG_RECORED] != TYPE_DOUBLE) NewMem(sizeof(double));
 	bytes[CFG_RECORED] = TYPE_DOUBLE;
 	*(double*)(bytes + CFG_DATAS) = val;
 }

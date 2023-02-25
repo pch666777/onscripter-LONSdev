@@ -164,7 +164,7 @@ public:
 	//创建一个按钮清除事件
 	static LOEventHook* CreateBtnClearEvent(int val);
 	//创建一个音频淡入淡出事件
-	static LOEventHook* CreateAudioFadeEvent(int channel, int val, int timer);
+	static LOEventHook* CreateAudioFadeEvent(int channel, double per, double curVol);
 
 	//读取存档的时候需要一个时间搓作为参考
 	static Uint32 loadTimeTick;

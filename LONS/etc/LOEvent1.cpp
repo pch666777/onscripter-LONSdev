@@ -276,13 +276,13 @@ LOEventHook* LOEventHook::CreateBtnClearEvent(int val) {
 }
 
 
-LOEventHook* LOEventHook::CreateAudioFadeEvent(int channel, int val, int timer) {
+LOEventHook* LOEventHook::CreateAudioFadeEvent(int channel, double per, double curVol) {
 	auto *e = CreateHookBase();
 	e->catchFlag = ANSWER_SCRIPTCALL;
 	e->param1 = SCRIPT_CALL_AUDIOFADE;
 	e->param2 = channel & 0xffff;
-	e->paramList.push_back(new LOVariant(val));
-	e->paramList.push_back(new LOVariant(timer));
+	e->paramList.push_back(new LOVariant(per));
+	e->paramList.push_back(new LOVariant(curVol));
 	return e;
 }
 
