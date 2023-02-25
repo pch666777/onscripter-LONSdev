@@ -14,7 +14,7 @@
 
 LOFileModule::LOFileModule() {
 	FunctionInterface::fileModule = this;
-	nsaHasRead = false;
+	nsaHasRead[0] = nsaHasRead[1] = nsaHasRead[2] = false;
 }
 
 LOFileModule::~LOFileModule() {
@@ -96,7 +96,7 @@ int LOFileModule::nsadirCommand(FunctionInterface *reader) {
 }
 
 void LOFileModule::ResetMe() {
-	nsaHasRead = false;
+	nsaHasRead[0] = nsaHasRead[1] = nsaHasRead[2] = false;
 	for (auto iter = packFiles.begin(); iter != packFiles.end(); iter++) {
 		delete (LOPackFile*)(*iter);
 	}
@@ -105,38 +105,43 @@ void LOFileModule::ResetMe() {
 
 
 int LOFileModule::nsaCommand(FunctionInterface *reader) {
-	if (nsaHasRead) return RET_CONTINUE;
-	
+	//不管执行的是哪一个，*.arc *.ns2 *.ns3都会被打开
 	int FileCount = 0;
 	LOString s;
-	LOPackFile::PACKTYPE packtype = LOPackFile::PACK_ARC;
-	if (reader->isName("ns2") || reader->isName("ns3")) packtype = LOPackFile::PACK_NS2;
+	//LOPackFile::PACKTYPE packtype = LOPackFile::PACK_ARC;
+	//if (reader->isName("ns2") || reader->isName("ns3")) packtype = LOPackFile::PACK_NS2;
+	for (int pakType = LOPackFile::PACK_ARC; pakType <= LOPackFile::PACK_NS2; pakType++) {
+		//防止封包被反复读取
+		if (nsaHasRead[pakType]) continue;
+		//read it
+		for (int ii = 0; ii < 100; ii++) {
+			//create file name
+			if (pakType == LOPackFile::PACK_ARC) {
+				if (ii == 0) s = "arc.nsa";
+				else s = "arc" + std::to_string(ii) + ".nsa";
+			}
+			else if (pakType == LOPackFile::PACK_NS2) {
+				if (ii < 10) s = "0" + std::to_string(ii) + ".ns2";
+				else s = std::to_string(ii) + ".ns2";
+			}
+			else break;
+			//try open it
+			FILE *f = LOIO::GetReadHandle(s, "rb");
+			if (!f && nsaDir.length() > 0) {
+				s = nsaDir + "/" + s;
+				f = LOIO::GetReadHandle(s, "rb");
+			}
+			if (!f) break;
 
-	for (int ii = 0; ii < 100; ii++) {
-		//create file name
-		if (packtype == LOPackFile::PACK_ARC) {
-			if (ii == 0) s = "arc.nsa";
-			else s = "arc" + std::to_string(ii) + ".nsa";
+			LOPackFile *file = new LOPackFile;
+			file->Name = s;
+			file->ReadFileIndexs(f, (LOPackFile::PACKTYPE)pakType);
+			packFiles.push_back((intptr_t)file);
+			FileCount += file->FilesCount();
 		}
-		else if (packtype == LOPackFile::PACK_NS2) {
-			if (ii < 10) s = "0" + std::to_string(ii) + ".ns2";
-			else s = std::to_string(ii) + ".ns2";
-		}
-		//try open it
-		FILE *f = LOIO::GetReadHandle(s, "rb");
-		if (!f && nsaDir.length() > 0) {
-			s = nsaDir + "/" + s;
-			f = LOIO::GetReadHandle(s, "rb");
-		}
-		if (!f) break;
-		//get file index
-		LOPackFile *file = new LOPackFile;
-		file->Name = s;
-		file->ReadFileIndexs(f, packtype);
-		packFiles.push_back((intptr_t)file);
-		FileCount += file->FilesCount();
+
+		nsaHasRead[pakType] = true;
 	}
-
 	return RET_CONTINUE;
 }
 

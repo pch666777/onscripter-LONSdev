@@ -24,6 +24,7 @@ public:
 	void Serialize(BinArray *bin);
 	static LOAudioElement* DeSerialize(BinArray *bin, int *pos);
 
+	//loopbgm直接在'\0'后面再接一个bgm的名称
 	LOString buildStr;
 	
 	bool isBGM() { flags & FLAGS_IS_BGM; }

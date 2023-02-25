@@ -38,7 +38,7 @@ public:
 private:
 	//static BinArray *built_in_font;
 	LOString nsaDir;
-	bool nsaHasRead;
+	bool nsaHasRead[3];
 	std::vector<intptr_t> packFiles;   //不直接使用指针，不然vector可能会有一些奇葩问题
 };
 #endif // !__LOFILEMODULE_H__

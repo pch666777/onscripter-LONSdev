@@ -116,20 +116,32 @@ int LOAudioModule::bgmonceCommand(FunctionInterface *reader) {
 void LOAudioModule::BGMCore(LOString &s, int looptimes) {
 	//停止播放时会触发Mix_ChannelFinished/Mix_HookMusicFinished回调
 	//先取出就不会在回调线程中再操作音频对象了
-	LOAudioElement *aue = takeChannelSafe(INDEX_MUSIC);
-	if (aue) {
-		aue->Stop(bgmFadeOutTime);
-		delete aue;
+	LOAudioElement *oue = takeChannelSafe(INDEX_MUSIC);
+	//加载新的音频
+	LOAudioElement *nau = new LOAudioElement();
+	BinArray *bin = fileModule->ReadFile(&s, false);
+	nau->SetData(bin, -1, looptimes);
+	nau->buildStr = s;
+	inputChannelSafe(INDEX_MUSIC, nau);
+
+	//如果
+	if (oue) {
+		//如果新音频无效，且有fadeout，那么相当于执行bgmstop
+		if (oue->isAvailable() && !nau->isAvailable()) {
+			//淡出事件
+			//work it
+		}
+		delete oue;
 	}
 
-	aue = new LOAudioElement();
-	BinArray *bin = fileModule->ReadFile(&s, false);
-	aue->SetData(bin, -1, looptimes);
-	aue->buildStr = s;
-
-	inputChannelSafe(INDEX_MUSIC, aue);
-	if (aue->isAvailable()) {
-		aue->Play(bgmFadeInTime);
+	if (nau->isAvailable()) {
+		//SDL2的渐入是阻塞式的，而ONS是非阻塞式的，因此必须自己实现
+		if (bgmFadeInTime > 0) {
+			Mix_VolumeMusic(0);  //首先设置为0
+			//创建音频渐入事件
+			//work it
+		}
+		nau->Play(0);
 	}
 }
 
