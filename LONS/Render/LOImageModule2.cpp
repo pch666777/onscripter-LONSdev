@@ -286,13 +286,16 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
 	int ret = LOEventHook::RUNFUNC_FINISH;
 
-	int key = e->GetParam(0)->GetInt();
+	int key = e->param1;
 	switch (key){
 	case LOEventHook::SCRIPT_CALL_BTNSTR:
 		ret = RunFuncSpstr(hook, e);
 		break;
 	case LOEventHook::SCRIPT_CALL_BTNCLEAR:
 		ret = RunFuncBtnClear(hook, e);
+		break;
+	case LOEventHook::SCRIPT_CALL_AUDIOFADE:
+		ret = audioModule->RunFunc(hook, e);
 		break;
 	default:
 		break;
@@ -418,7 +421,7 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 
 
 int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
-	LOString btnstr = e->GetParam(2)->GetLOString();
+	LOString btnstr = e->GetParam(1)->GetLOString();
 	RunExbtnStr(&btnstr);
 	//这个钩子长期有效
 	hook->closeEdit();

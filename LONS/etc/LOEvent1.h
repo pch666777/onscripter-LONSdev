@@ -90,6 +90,7 @@ public:
 	enum {
 		SCRIPT_CALL_BTNSTR = 1,
 		SCRIPT_CALL_BTNCLEAR = 2,
+		SCRIPT_CALL_AUDIOFADE = 3,
 	};
 
 	LOEventHook();
@@ -162,6 +163,8 @@ public:
 	static LOEventHook* CreateScriptCallHook();
 	//创建一个按钮清除事件
 	static LOEventHook* CreateBtnClearEvent(int val);
+	//创建一个音频淡入淡出事件
+	static LOEventHook* CreateAudioFadeEvent(int channel, int val, int timer);
 
 	//读取存档的时候需要一个时间搓作为参考
 	static Uint32 loadTimeTick;
@@ -193,6 +196,7 @@ public:
 	void push_H_back(LOShareEventHook &e);
 
 	LOShareEventHook GetEventHook(std::list<LOShareEventHook>::iterator &iter, bool isenter);
+	LOShareEventHook FilterEvent(int catchFlag, int16_t param1, int16_t param2, bool isenter);
 	std::list<LOShareEventHook>::iterator begin() { return dLink.begin(); }
 
 	//从头部开始取出

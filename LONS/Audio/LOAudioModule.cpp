@@ -24,6 +24,7 @@ LOAudioModule::~LOAudioModule() {
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
 		if(audioPtr[ii]) delete audioPtr[ii];
 	}
+	for (int ii = 0; ii < fadeList.size(); ii++) delete (FadeData*)fadeList[ii];
 }
 
 void LOAudioModule::lock() {
@@ -116,32 +117,30 @@ int LOAudioModule::bgmonceCommand(FunctionInterface *reader) {
 void LOAudioModule::BGMCore(LOString &s, int looptimes) {
 	//停止播放时会触发Mix_ChannelFinished/Mix_HookMusicFinished回调
 	//先取出就不会在回调线程中再操作音频对象了
-	LOAudioElement *oue = takeChannelSafe(INDEX_MUSIC);
-	//加载新的音频
-	LOAudioElement *nau = new LOAudioElement();
-	BinArray *bin = fileModule->ReadFile(&s, false);
-	nau->SetData(bin, -1, looptimes);
-	nau->buildStr = s;
-	inputChannelSafe(INDEX_MUSIC, nau);
-
-	//如果
-	if (oue) {
-		//如果新音频无效，且有fadeout，那么相当于执行bgmstop
-		if (oue->isAvailable() && !nau->isAvailable()) {
-			//淡出事件
-			//work it
-		}
-		delete oue;
+	LOAudioElement *aue = takeChannelSafe(INDEX_MUSIC);
+	if (aue) {
+		aue->Stop(0);
+		delete aue;
 	}
 
-	if (nau->isAvailable()) {
+	aue = new LOAudioElement();
+	BinArray *bin = fileModule->ReadFile(&s, false);
+	aue->SetData(bin, -1, looptimes);
+	aue->buildStr = s;
+	inputChannelSafe(INDEX_MUSIC, aue);
+
+	if (aue->isAvailable()) {
 		//SDL2的渐入是阻塞式的，而ONS是非阻塞式的，因此必须自己实现
 		if (bgmFadeInTime > 0) {
-			Mix_VolumeMusic(0);  //首先设置为0
-			//创建音频渐入事件
-			//work it
+			FadeData *fade = GetFadeData(INDEX_MUSIC);
+			fade->ResetMe();
+			fade->fadeInEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, audioVol[INDEX_MUSIC], bgmFadeInTime));
+			//由静音开始
+			SetBGMvol(0, 0);
+			//提交到主线程
+			imgeModule->waitEventQue.push_N_back(fade->fadeInEvent);
 		}
-		nau->Play(0);
+		aue->Play(0);
 	}
 }
 
@@ -174,9 +173,22 @@ void LOAudioModule::StopCore(int channel) {
 	//先取出就不会在回调线程中再操作音频对象了
 	LOAudioElement *aue = takeChannelSafe(channel);
 	if (aue) {
-		if(channel == INDEX_MUSIC) aue->Stop(bgmFadeOutTime);
+		if (channel == INDEX_MUSIC) {
+			if (bgmFadeOutTime > 0) {
+				FadeData *fade = GetFadeData(INDEX_MUSIC);
+				fade->ResetMe();
+				fade->fadeOutEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, 0, bgmFadeOutTime));
+				//aue需要重新放回，由播放结束事件清理
+				inputChannelSafe(INDEX_MUSIC, aue);
+				aue = nullptr;
+				//提交主线程
+				imgeModule->waitEventQue.push_N_back(fade->fadeOutEvent);
+			}
+			else aue->Stop(0);
+		}
 		else aue->Stop(0);
-		delete aue;
+
+		if(aue) delete aue;
 		//channelActiveFlag &= (~(1 << channel));
 	}
 }
@@ -476,4 +488,66 @@ bool LOAudioModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	afterBgmName = bin->GetLOString(pos);
 	*pos = next;
 	return true;
+}
+
+
+void LOAudioModule::FadeData::ResetMe() {
+	if (fadeInEvent) fadeInEvent->InvalidMe();
+	if (fadeOutEvent) fadeOutEvent->InvalidMe();
+	//注意不能使用reset()，因为可能在两个线程中同时操作，设置ptr的过程并不是线程安全的
+	fadeInEvent = LOShareEventHook();
+	fadeOutEvent = LOShareEventHook();
+}
+
+LOAudioModule::FadeData *LOAudioModule::GetFadeData(int channel) {
+	FadeData *fade = nullptr;
+	for (int ii = 0; ii < fadeList.size(); ii++) {
+		fade = (FadeData*)fadeList[ii];
+		if (fade->channel == channel) return fade;
+	}
+	fade = new FadeData();
+	fadeList.push_back((intptr_t)fade);
+	return fade;
+}
+
+
+int LOAudioModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
+	if (e->param1 == LOEventHook::SCRIPT_CALL_AUDIOFADE) RunFuncAudioFade(hook, e);
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
+	Uint32 curTick = SDL_GetTicks();
+	if(curTick - e->timeStamp < 2) return LOEventHook::RUNFUNC_FINISH;
+
+	int channel = e->param2;
+	double per = e->GetParam(0)->GetDoule();
+	double curVol = e->GetParam(1)->GetDoule();
+	per *= (curTick - e->timeStamp);
+	if( per < 1.0) return LOEventHook::RUNFUNC_FINISH;
+	curVol -= per;
+	e->GetParam(1)->SetDoule(curVol);
+
+	if (curVol < 0.0) curVol = 0.0;
+	if (curVol > audioVol[channel]) curVol = (double)audioVol[channel];
+
+	//到达音量边界
+	if (curVol <= 0 || curVol >= audioVol[channel]) e->InvalidMe();
+
+	//百分比转到SDL的音量比
+	curVol = curVol / 100 *  MIX_MAX_VOLUME;
+	if (channel == INDEX_MUSIC) Mix_VolumeMusic((int)curVol);
+	else Mix_Volume(channel, (int)curVol);
+
+	//fade out finish delete it
+	if (curVol <= 0) {
+		LOAudioElement *aue = takeChannelSafe(channel);
+		if (aue) {
+			aue->Stop(0);
+			delete aue;
+		}
+	}
+
+	return LOEventHook::RUNFUNC_FINISH;
 }

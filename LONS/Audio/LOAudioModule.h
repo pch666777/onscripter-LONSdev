@@ -40,6 +40,15 @@ public:
 		LOCK_ON = 1
 	};
 
+	//需要淡入淡出的事件比较少，因此将其独立出来
+	struct FadeData{
+		int channel;
+		LOShareEventHook fadeInEvent;
+		LOShareEventHook fadeOutEvent;
+
+		void ResetMe();
+	};
+
 	LOString afterBgmName;
 	int InitAudioModule();
 
@@ -49,6 +58,9 @@ public:
 	bool isChannelALLEv() { return flags & FLAGS_SE_SIGNAL_ALL; }
 	bool isSePalyBgmDown() { return flags & FLAGS_SEPLAY_BGMDOWN; }
 	bool isBgmCallback() { return flags & flags & FLAGS_BGM_CALLBACK; }
+
+	int RunFunc(LOEventHook *hook, LOEventHook *e);
+	int RunFuncAudioFade(LOEventHook *hook, LOEventHook *e);
 
 	void ResetMe();
 	void LoadFinish();
@@ -86,6 +98,8 @@ private:
 	//频道激活情况
 	int64_t channelActiveFlag;
 
+	std::vector<intptr_t> fadeList;
+
 	//锁的时间都很短，采用自旋锁
 	std::atomic_int lockFlag;
 	void lock();
@@ -112,6 +126,7 @@ private:
 	void SetBGMvol(int vol, double ratio);
 	void SetSevol(int channel, int vol);
 	bool CheckChannel(int channel,const char* info);
+	FadeData *GetFadeData(int channel);
 };
 
 

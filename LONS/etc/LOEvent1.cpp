@@ -258,7 +258,8 @@ LOEventHook* LOEventHook::CreateClickHook(bool isleft, bool isright) {
 LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
 	auto *e = CreateHookBase();
 	e->catchFlag = ANSWER_SCRIPTCALL;
-	e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNSTR));
+	e->param1 = SCRIPT_CALL_BTNSTR;
+	//e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNSTR));
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnstr));
 	return e;
@@ -268,8 +269,20 @@ LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
 LOEventHook* LOEventHook::CreateBtnClearEvent(int val) {
 	auto *e = CreateHookBase();
 	e->catchFlag = ANSWER_SCRIPTCALL;
-	e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNCLEAR));
+	e->param1 = SCRIPT_CALL_BTNCLEAR;
+	//e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNCLEAR));
 	e->paramList.push_back(new LOVariant(val));
+	return e;
+}
+
+
+LOEventHook* LOEventHook::CreateAudioFadeEvent(int channel, int val, int timer) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_SCRIPTCALL;
+	e->param1 = SCRIPT_CALL_AUDIOFADE;
+	e->param2 = channel & 0xffff;
+	e->paramList.push_back(new LOVariant(val));
+	e->paramList.push_back(new LOVariant(timer));
 	return e;
 }
 
@@ -373,6 +386,38 @@ LOShareEventHook LOEventQue::GetEventHook(std::list<LOShareEventHook>::iterator 
 
 	_mutex.unlock();
 	return m_empty;
+}
+
+//返回队列中第一个符合要求的值
+LOShareEventHook LOEventQue::FilterEvent(int catchFlag, int16_t param1, int16_t param2, bool isenter) {
+	_mutex.lock();
+	auto iter = dLink.begin();
+	while (iter != dLink.end()) {
+		LOShareEventHook ev = *iter;
+		if (!ev) continue;
+
+		//清除不可用的对象
+		if (ev->isInvalid()) {
+			iter = dLink.erase(iter);
+			continue;
+		}
+
+		if ((ev->catchFlag & catchFlag) && ev->param1 == param1 && ev->param2 == param2) {
+			//尝试进入对象
+			if (isenter) {
+				if (ev->enterEdit()) {
+					_mutex.unlock();
+					return ev;
+				}
+			}
+			else {
+				_mutex.unlock();
+				return ev;
+			}
+		}
+	}
+	_mutex.unlock();
+	return LOShareEventHook();
 }
 
 
