@@ -93,13 +93,21 @@ public:
 		SCRIPT_CALL_AUDIOFADE = 3,
 	};
 
+	enum {
+		FLAGS_NO_SAVE = 1,  //只有含有此标记的事件/钩子不会存档
+		FLAGS_FINISH_NOTABKE = 2,  //含有此标记的事件，在完成之前不会从事件列表中移除
+	};
+
 	LOEventHook();
 	~LOEventHook();
 
 	bool isFinish();
+	//事件/钩子是否已经完成或者无效
+	bool isAfterFinish();
 	bool isState(int sa);
 	bool FinishMe();
 	bool isInvalid();
+	bool isFinishTakeOut() { return flags & FLAGS_FINISH_NOTABKE; }
 
 	//是否处于可编辑状态
 	bool isActive();
@@ -173,6 +181,7 @@ private:
 	//参数表
 	std::vector<LOVariant*> paramList;
 	std::atomic_int state;
+	int16_t flags;
 	static std::atomic_int exitFlag;
 	//===================================
 	static LOEventHook* CreateHookBase();
@@ -192,6 +201,7 @@ public:
 
 	void push_N_front(LOShareEventHook &e);
 	void push_N_back(LOShareEventHook &e);
+	void push_N_back(std::vector<LOShareEventHook> &list);
 	void push_H_front(LOShareEventHook &e);
 	void push_H_back(LOShareEventHook &e);
 

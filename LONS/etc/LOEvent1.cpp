@@ -16,6 +16,7 @@ LOEventHook::LOEventHook() {
 	catchFlag = 0;
 	param1 = 0;
 	param2 = 0;
+	flags = 0;
 	state.store(STATE_NONE);
 }
 
@@ -33,6 +34,10 @@ LOEventHook::~LOEventHook() {
 bool LOEventHook::isFinish() {
 	return state.load() == STATE_FINISH;
 };
+
+bool LOEventHook::isAfterFinish() {
+	return state.load() >= STATE_FINISH;
+}
 
 bool LOEventHook::isInvalid() {
 	return state.load() == STATE_INVALID;
@@ -283,6 +288,8 @@ LOEventHook* LOEventHook::CreateAudioFadeEvent(int channel, double per, double c
 	e->param2 = channel & 0xffff;
 	e->paramList.push_back(new LOVariant(per));
 	e->paramList.push_back(new LOVariant(curVol));
+	e->flags |= FLAGS_FINISH_NOTABKE;
+	e->flags |= FLAGS_NO_SAVE;
 	return e;
 }
 
@@ -440,6 +447,12 @@ LOShareEventHook LOEventQue::TakeOutEvent() {
 void LOEventQue::push_N_back(LOShareEventHook &e) {
 	_mutex.lock();
 	dLink.push_back(e);
+	_mutex.unlock();
+}
+
+void LOEventQue::push_N_back(std::vector<LOShareEventHook> &list) {
+	_mutex.lock();
+	for (int ii = 0; ii < list.size(); ii++) dLink.push_back(list[ii]);
 	_mutex.unlock();
 }
 

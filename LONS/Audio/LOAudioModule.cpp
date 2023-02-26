@@ -12,6 +12,9 @@ extern void FatalError(const char *fmt, ...);
 LOAudioModule::LOAudioModule() {
 	audioModule = this;
 	memset(audioPtr, NULL, sizeof(LOAudioElement*) * (INDEX_MUSIC + 1));
+	//默认的音量为100
+	memset(channelVol, 0x64, INDEX_MUSIC + 1);
+	bgmVolBk = 0x64;
 	bgmFadeInTime = 0;
 	bgmFadeOutTime = 0;
 	currentChannel = 0;
@@ -53,9 +56,11 @@ void LOAudioModule::ResetMe() {
 			audioPtr[ii]->Stop(0);
 			delete audioPtr[ii];
 			audioPtr[ii] = nullptr;
-			audioVol[ii] = 100;
+			channelVol[ii] = 100;
 		}
 	}
+	bgmVolBk = 100;
+
 	ChangeModuleState(MODULE_STATE_NOUSE);
 	unlock();
 }
@@ -74,24 +79,20 @@ void LOAudioModule::LoadFinish() {
 }
 
 
-void LOAudioModule::SetBGMvol(int vol, double ratio) {
-	vol = ratio * vol / 100 * MIX_MAX_VOLUME;
-	Mix_VolumeMusic(vol);
+void LOAudioModule::SetChannelVol(int channel, int vol) {
+	double tvol = (double)vol / 100 * MIX_MAX_VOLUME;
+	if (channel == INDEX_MUSIC) {
+		//对话时如果背景音乐减量，检查所有声道的播放情况
+		if(isSePalyBgmDown() && channelActiveFlag != 0) tvol *= 0.6;
+		Mix_VolumeMusic((int)tvol);
+	}
+	else Mix_Volume(channel, (int)tvol);
 }
 
-void LOAudioModule::SetSevol(int channel, int vol) {
-	vol = (double)vol / 100 * MIX_MAX_VOLUME;
-	Mix_Volume(channel, vol);
+void LOAudioModule::SetChannelVol(int channel) {
+	SetChannelVol(channel, channelVol[channel]);
 }
-//
-//void LOAudioModule::FreeAudioEl(int index) {
-//	LOAudioElement *aue = GetAudioEl(index);
-//	if (aue) {
-//		if (aue->isBGM()) aue->Stop(bgmFadeOutTime);
-//		else aue->Stop(0);
-//		delete aue;
-//	}
-//}
+
 
 bool LOAudioModule::CheckChannel(int channel, const char* info) {
 	if (channel < 0 || channel > 49) {
@@ -135,13 +136,15 @@ void LOAudioModule::BGMCore(LOString &s, int looptimes) {
 	if (aue->isAvailable()) {
 		//SDL2的渐入是阻塞式的，而ONS是非阻塞式的，因此必须自己实现
 		if (bgmFadeInTime > 0) {
-			double per = (double)audioVol[INDEX_MUSIC] / bgmFadeInTime;
+			double per = (double)channelVol[INDEX_MUSIC] / bgmFadeInTime;
 			fade->fadeInEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, 0.0));
 			//由静音开始
-			SetBGMvol(0, 0);
+			channelVol[INDEX_MUSIC] = 0;
+			SetChannelVol(INDEX_MUSIC);
 			//提交到主线程
 			imgeModule->waitEventQue.push_N_back(fade->fadeInEvent);
 		}
+		else SetChannelVol(INDEX_MUSIC);  //恢复音量
 		aue->Play(0);
 	}
 }
@@ -153,10 +156,6 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 	aue->SetData(bin, channel, looptimes);
 	aue->buildStr = s;
 
-	if (isSePalyBgmDown()) {
-		SetBGMvol(audioVol[INDEX_MUSIC], 0.6);
-	}
-
 	inputChannelSafe(channel, aue);
 	if (aue->isAvailable()) {
 		channelActiveFlag |= (1 << channel);
@@ -165,8 +164,10 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 	else if (isSePalyBgmDown()) {
 		//播放失败应该尝试恢复bgm音量
 		channelActiveFlag &= (~(1 << channel));
-		RebackBgmVol();
 	}
+
+	//需要的话降低/恢复bgm的音量
+	if (isSePalyBgmDown()) SetChannelVol(INDEX_MUSIC);
 }
 
 
@@ -183,8 +184,9 @@ void LOAudioModule::StopCore(int channel) {
 	if (aue) {
 		if (channel == INDEX_MUSIC) {
 			if (bgmFadeOutTime > 0) {
-				double per = (double)audioVol[INDEX_MUSIC] / bgmFadeOutTime;
-				fade->fadeOutEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, bgmFadeOutTime));
+				double per = (double)channelVol[INDEX_MUSIC] / bgmFadeOutTime;
+				per = 0 - per;
+				fade->fadeOutEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, (double)channelVol[INDEX_MUSIC]));
 				//aue需要重新放回，由播放结束事件清理
 				inputChannelSafe(INDEX_MUSIC, aue);
 				aue = nullptr;
@@ -197,12 +199,6 @@ void LOAudioModule::StopCore(int channel) {
 
 		if(aue) delete aue;
 		//channelActiveFlag &= (~(1 << channel));
-	}
-}
-
-void LOAudioModule::RebackBgmVol() {
-	if (channelActiveFlag == 0) {
-		SetBGMvol(audioVol[INDEX_MUSIC], 1.0);
 	}
 }
 
@@ -234,7 +230,7 @@ void LOAudioModule::channelFinish_t(int channel) {
 	//注意回调既不在脚本线程，也不在渲染线程，是另外的线程，线程安全比较重要
 	StopCore(channel);
 	channelActiveFlag &= (~(1 << channel));
-	if (isSePalyBgmDown()) RebackBgmVol();
+	if (isSePalyBgmDown()) SetChannelVol(INDEX_MUSIC);
 
 	//0频道绑定了按钮超时事件，频道播放完成事件
 	if ((isChannelZeroEv() && channel == 0) || isChannelALLEv()) {
@@ -320,10 +316,11 @@ void LOAudioModule::inputChannelSafe(int channel, LOAudioElement *aue) {
 int LOAudioModule::bgmdownmodeCommand(FunctionInterface *reader) {
 	if( reader->GetParamInt(0)) SetFlags(FLAGS_SEPLAY_BGMDOWN) ;
 	else UnsetFlags(FLAGS_SEPLAY_BGMDOWN);
-	if (!isSePalyBgmDown()) {
-		channelActiveFlag = 0;
-		RebackBgmVol();
-	}
+	//if (!isSePalyBgmDown()) {
+	//	channelActiveFlag = 0;
+	//	RebackBgmVol();
+	//}
+	SetChannelVol(INDEX_MUSIC);
 	return RET_CONTINUE;
 }
 
@@ -334,17 +331,17 @@ int LOAudioModule::voicevolCommand(FunctionInterface *reader) {
 	if (vol < 0 || vol > 100) vol = 100;
 
 	if (reader->isName("bgmvol") || reader->isName("mp3vol")) {
-		audioVol[INDEX_MUSIC] = vol;
-		SetBGMvol(vol, 1.0);
+		channelVol[INDEX_MUSIC] = vol;
+		SetChannelVol(INDEX_MUSIC);
 	}
 	else if (reader->isName("voicevol")) {
-		audioVol[INDEX_WAVE] = vol;
-		SetSevol(INDEX_WAVE, vol);
+		channelVol[INDEX_WAVE] = vol;
+		SetChannelVol(INDEX_WAVE);
 	}
 	else {
 		for (int ii = 0; ii < INDEX_WAVE; ii++) {
-			audioVol[ii] = vol;
-			SetSevol(ii, vol);
+			channelVol[ii] = vol;
+			SetChannelVol(ii);
 		}
 	}
 
@@ -357,9 +354,8 @@ int LOAudioModule::chvolCommand(FunctionInterface *reader) {
 	if (vol < 0 || vol > 100) vol = 100;
 	if (!CheckChannel(channel, "[chvol] channel out of range:%d")) return RET_CONTINUE;
 
-	audioVol[channel] = vol;
-	SetSevol(channel, audioVol[channel]);
-
+	channelVol[channel] = vol;
+	SetChannelVol(channel);
 	return RET_CONTINUE;
 }
 
@@ -414,9 +410,9 @@ int LOAudioModule::dwavestopCommand(FunctionInterface *reader) {
 
 int LOAudioModule::getvoicevolCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	int vol = audioVol[INDEX_MUSIC];
-	if (reader->isName("getvoicevol")) vol = audioVol[INDEX_WAVE];
-	else if (reader->isName("getsevol")) vol = audioVol[currentChannel];
+	int vol = channelVol[INDEX_MUSIC];
+	if (reader->isName("getvoicevol")) vol = channelVol[INDEX_WAVE];
+	else if (reader->isName("getsevol")) vol = channelVol[currentChannel];
 	v->SetValue((double)vol);
 	return RET_CONTINUE;
 }
@@ -517,6 +513,7 @@ LOAudioModule::FadeData *LOAudioModule::GetFadeData(int channel) {
 		if (fade->channel == channel) return fade;
 	}
 	fade = new FadeData();
+	fade->channel = channel;
 	fadeList.push_back((intptr_t)fade);
 	return fade;
 }
@@ -532,7 +529,9 @@ int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 	Uint32 curTick = SDL_GetTicks();
 	double per = e->GetParam(0)->GetDoule();
 	per *= (curTick - e->timeStamp);
-	if (per < 1.0) return LOEventHook::RUNFUNC_FINISH;
+	//while (abs(per) < 1.0) per *= 1.2;
+	if ( abs(per) < 1.0) return LOEventHook::RUNFUNC_FINISH;
+
 	//更新时间戳
 	e->timeStamp = curTick;
 	int channel = e->param2;
@@ -540,19 +539,19 @@ int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 	curVol += per;
 	e->GetParam(1)->SetDoule(curVol);
 
-	if (curVol >= audioVol[channel]) {
+	if (curVol >= channelVol[channel]) {
 		e->InvalidMe();
-		curVol = (double)audioVol[channel];
+		curVol = (double)channelVol[channel];
 	}
 	else if (curVol <= 0) {
 		e->InvalidMe();
 		curVol = 0.0;
 	}
 
-	//百分比转到SDL的音量比
-	int tVol = curVol / 100 *  MIX_MAX_VOLUME;
-	if (channel == INDEX_MUSIC) Mix_VolumeMusic(tVol);
-	else Mix_Volume(channel, tVol);
+	
+
+	//设置音量
+	SetChannelVol(channel, (int)curVol);
 
 	//fade out finish delete it
 	if (curVol <= 0) {

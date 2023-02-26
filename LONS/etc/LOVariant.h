@@ -31,6 +31,7 @@ public:
 	//需要小心的指明用的哪一个构造函数
 	LOVariant(void *ptr);
 	LOVariant(const char *ptr, int len);
+	LOVariant(double val);
 	LOVariant& operator=(const LOVariant &obj) {
 		if (this != &obj) {
 			if (obj.bytes) {

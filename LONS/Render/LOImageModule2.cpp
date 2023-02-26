@@ -178,6 +178,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 
 
 void LOImageModule::HandlingEvents() {
+	std::vector<LOShareEventHook> backEvList;
 	while (true) {
 		LOShareEventHook ev = waitEventQue.TakeOutEvent();
 		if (!ev) break;
@@ -186,7 +187,12 @@ void LOImageModule::HandlingEvents() {
 			//没有响应事件
 			int nodoit = 1;
 		}
+
+		//某些需要持久运行的事件
+		if (ev->isFinishTakeOut() && !ev->isAfterFinish()) backEvList.push_back(ev);
 	}
+
+	if (backEvList.size() > 0) waitEventQue.push_N_back(backEvList);
 }
 
 

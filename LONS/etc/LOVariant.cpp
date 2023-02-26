@@ -18,6 +18,11 @@ LOVariant::LOVariant(int val) {
 	SetInt(val);
 }
 
+LOVariant::LOVariant(double val) {
+	bytes = nullptr;
+	SetDoule(val);
+}
+
 LOVariant::LOVariant(void *ptr) {
 	bytes = nullptr;
 	SetPtr(ptr);
@@ -100,7 +105,7 @@ int LOVariant::GetInt() {
 }
 
 void LOVariant::SetDoule(double val) {
-	if(bytes[CFG_RECORED] != TYPE_DOUBLE) NewMem(sizeof(double));
+	if(!bytes || bytes[CFG_RECORED] != TYPE_DOUBLE) NewMem(sizeof(double));
 	bytes[CFG_RECORED] = TYPE_DOUBLE;
 	*(double*)(bytes + CFG_DATAS) = val;
 }

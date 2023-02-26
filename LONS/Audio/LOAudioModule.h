@@ -106,7 +106,9 @@ private:
 	void unlock();
 
 	LOAudioElement *audioPtr[INDEX_MUSIC + 1];
-	int audioVol[INDEX_MUSIC + 1];
+	//设定的音量大小0-100
+	int8_t channelVol[INDEX_MUSIC + 1];
+	int8_t bgmVolBk;
 
 	//取出音频，存储的指针北置为null
 	LOAudioElement* takeChannelSafe(int channel);
@@ -122,9 +124,9 @@ private:
 	void BGMCore(LOString &s, int looptimes);
 	void SeCore(int channel, LOString &s, int looptimes);
 	void StopCore(int channel);
-	void RebackBgmVol();
-	void SetBGMvol(int vol, double ratio);
-	void SetSevol(int channel, int vol);
+	void SetChannelVol(int channel, int vol);
+	void SetChannelVol(int channel);
+
 	bool CheckChannel(int channel,const char* info);
 	FadeData *GetFadeData(int channel);
 };
