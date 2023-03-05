@@ -422,6 +422,10 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::gotoCommand(FunctionInterface *reader) {
+	if (is_eval) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
+	}
 
 	LOScriptPoint *p = reader->GetParamLable(0);
 	if (p) {
@@ -845,6 +849,11 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
+	if (is_eval) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
+	}
+
 	//音频、渲染模块进入save模式，不要调整这几个的顺序
 	audioModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
 	imgeModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
@@ -1117,6 +1126,11 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::saveonCommand(FunctionInterface *reader) {
+	if (is_eval) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
+	}
+
 	int ret = RET_CONTINUE;
 	if (reader->isName("saveon")) {
 		//saveon

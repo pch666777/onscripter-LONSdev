@@ -53,6 +53,7 @@ public:
 		LINE_CAMMAND,  //字母开头，字母和数字组成的命令
 		LINE_EXPRESSION,  //$1 $%1，这类表达式，需展开
 		LINE_END,       //到达换行符了
+		LINE_ZERO,      //遇到了一个/0
 	};
 
 	//校验算式允许的操作类型
@@ -147,14 +148,6 @@ public:
 	LOScriptPoint  *GetParamLable(int index);
 
 	bool ParseLogicExp();
-
-	//尝试获取一个立即数，指的是别名或者实数
-	const char* TryGetImmediate(int &val,const char *buf, bool isalias,bool &isok);
-
-	//尝试获取一个单一的""字符串
-	const char* TryGetImmediateStr(int &len, const char *buf, bool &isok);
-
-	const char* TryGetStrAlias(int &ret, const char *buf, bool &isok);
 
 	//当前命令是否指定名称
 	bool isName(const char* name);
@@ -317,6 +310,9 @@ private:
 	//LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
 	//运行点堆栈，gosub sub用，每次增长时都会重新取currentlabel的指针，因此用vector时安全的
 	std::vector<LOScriptPointCall> subStack;
+	//eval堆栈，数量 >0 时说明正位于eval模式，eval模式时无法使用goto gosub和saveon saveoff savepoint指令
+	std::vector<LOScriptPointCall> evalStack;
+	bool is_eval;
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
@@ -329,6 +325,7 @@ private:
 	int ContinueRun();
 	int ContinueEvent();
 	void InserCommand(LOString *incmd);   //插入命令，比如 $xxx ，eval "xxx"
+	bool InserCommand();   //从当前脚本的位置获取文字变量值，然后插入命令并运行
 	bool PushParams(const char *param, const char* used);  //根据参数将变量推入paramStack中
 	void ClearParams(bool isall);
 	int TextPushParams(const char *&buf);   //将文本的参数推入paramStack中

@@ -31,6 +31,7 @@ public:
 	const char* s_buf;
 	//运行点开始的行
 	int s_line;
+	//calltype为CALL_BY_EVAL时，这个指针表示为LOString*
 	LOScripFile* file;  //位于哪个脚本中
 };
 

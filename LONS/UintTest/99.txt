@@ -2,6 +2,15 @@
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
 setintvar "linelog",1
+
+mov $1,"这是一个测试"
+$1\
+
+mov $1,"mov %1,1+1+1"
+$1
+
+
+
 globalon
 filelog
 labellog

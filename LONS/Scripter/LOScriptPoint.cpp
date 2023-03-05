@@ -64,7 +64,8 @@ LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {
 }
 
 LOScriptPointCall::~LOScriptPointCall() {
-
+	if (callType == CALL_BY_EVAL) delete (LOString*)file;
+	file = nullptr;
 }
 
 

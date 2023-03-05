@@ -247,6 +247,10 @@ bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
 	return true;
 }
 
+//void LOScriptReader::ReadyToEval(LOScriptPointCall &p) {
+//	evalStack.push_back(p);
+//}
+
 //准备返回上一个运行点，同时抛弃本个运行点
 int LOScriptReader::ReadyToBack() {
 	LOScriptPointCall lastCall = subStack.at(subStack.size() - 1);
@@ -453,8 +457,6 @@ int LOScriptReader::ContinueRun() {
 	//LOString cmd;
 	int ret = RET_CONTINUE;
 	int callby = 0;
-	LOString sss;
-
 	//遇到一些空行直接就跳过去了，不需要检查event
 	int nextType = IdentifyLine(currentLable->c_buf);
 
@@ -467,6 +469,10 @@ int LOScriptReader::ContinueRun() {
 	case LINE_CONNECT:
 		currentLable->c_buf++;
 		return ret;
+	case LINE_ZERO:
+		//到达脚本的尾部，通常是eval中的，尝试从eval中退出，如果失败，则脚本无法继续进行下去了
+
+		break;
 	}
 
 	//正式有效的命令前，先执行阻塞事件
@@ -477,10 +483,10 @@ int LOScriptReader::ContinueRun() {
 	switch (nextType)
 	{
 	case LINE_TEXT:
-		//这个过程看起来有点奇怪，显示文本前我们必须进入 pretextgosub ，等到从pretextgosub返回时再进入到文字显示
-		//文字显示后进入 textgosub，预先准备好tagstring
+		//首先尝试获取TagString，然后开始获取文字内容，期间可以反复进入eval模式，直到文字开始显示
 		TagString = scriptbuf->GetTagString(currentLable->c_buf);
-		ReadyToRun(&userGoSubName[USERGOSUB_PRETEXT], LOScriptPoint::CALL_BY_PRETEXT_GOSUB);
+		TextPushParams(currentLable->c_buf);
+		//ReadyToRun(&userGoSubName[USERGOSUB_PRETEXT], LOScriptPoint::CALL_BY_PRETEXT_GOSUB);
 		return RET_CONTINUE;
 	case LINE_CAMMAND:
 		ret = RunCommand(currentLable->c_buf);
@@ -491,8 +497,10 @@ int LOScriptReader::ContinueRun() {
 		currentLable->c_buf++;
 		break;
 	case LINE_EXPRESSION:
-		sss = ParseStrVariable();
-		InserCommand(&sss);
+		if (!InserCommand()) {
+			FatalError("eval command faild!");
+			return RET_ERROR;
+		}
 		break;
 	default:
 		currentLable->c_buf = scriptbuf->NextLine(currentLable->c_buf);
@@ -594,6 +602,7 @@ int LOScriptReader::IdentifyLine(const char *&buf) {
 		return LINE_EXPRESSION;
 	if (ch == '~') return LINE_JUMP;
 	if(ch == '\\' || ch == '@' || ch == '/') return LINE_TEXT;
+	if (ch == '\0') return LINE_ZERO;
 	int type = scriptbuf->GetCharacter(buf);
 	if (type == LOCodePage::CHARACTER_LETTER) return LINE_CAMMAND;
 	else if (type == LOCodePage::CHARACTER_MULBYTE) return LINE_TEXT;
@@ -1549,20 +1558,32 @@ const char* LOScriptReader::debugCharPtr(int cur) {
 	return scriptbuf->c_str() + cur;
 }
 
+bool LOScriptReader::InserCommand() {
+	std::unique_ptr<ONSVariableRef> v(ParseVariableBase(true));
+	if (!v || !v->isStr()) return false;
+	LOString *s = v->GetStr();
+	//不执行任何操作
+	if (s->length() <= 0) return true;
+	InserCommand(s);
+	return true;
+}
+
 void LOScriptReader::InserCommand(LOString *incmd) {
 	if (!incmd || incmd->length() == 0) return;
-	//插入命令相当于 gosub *随机标签   xxxx   return
-	//随机标签名
-	LOString lname = LOString::RandomStr(16);
-	//生成一个最小脚本，这样save的时候可以将脚本一起存储
-	//从inser返回时注意将脚本删除
-	LOString tmp = "*" + lname + "\n";
-	tmp += *incmd;
-	tmp += "\nreturn";
-
-	AddScript(&tmp, nullptr);
-	ReadyToRun(&lname, LOScriptPoint::CALL_BY_EVAL);
-	//在 LOScriptReader::ReadyToBack()中删除添加的eval
+	//进入eval后不能使用goto gosub saveon saveoff savepoint命令
+	//eval并不绑定脚本文件
+	//直接在队列尾部构造一个对象
+	evalStack.emplace_back();
+	LOScriptPointCall *p = &evalStack.at(evalStack.size()-1);
+	LOString *s = new LOString(*incmd);
+	p->callType = LOScriptPoint::CALL_BY_EVAL;
+	p->file = (LOScripFile*)s;
+	p->s_buf = s->c_str();
+	p->s_line = 0;
+	p->c_buf = p->s_buf;
+	p->c_line = p->s_line;
+	//直接切换到eval
+	currentLable = p;
 }
 
 
@@ -1575,6 +1596,7 @@ void LOScriptReader::ResetBaseConfig() {
 	st_globalon = false;
 	st_errorsave = false;
 	st_labellog = false;
+	is_eval = false;
 }
 
 //重置脚本模块，注意只应该从主脚本调用这个函数

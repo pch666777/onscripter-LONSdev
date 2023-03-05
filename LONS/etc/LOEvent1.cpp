@@ -136,6 +136,7 @@ void LOEventHook::Serialize(BinArray *bin) {
 	bin->WriteInt3(catchFlag, 0, (int)(SDL_GetTicks() - timeStamp));
 	bin->WriteInt16(param1);
 	bin->WriteInt16(param2);
+	bin->WriteInt16(flags);
 	bin->WriteInt(state.load());
 	//参数列表
 	bin->WriteInt(paramList.size());
@@ -155,6 +156,7 @@ bool LOEventHook::Deserialize(BinArray *bin, int *pos) {
 	timeStamp = loadTimeTick + bin->GetIntAuto(pos);
 	param1 = bin->GetInt16Auto(pos);
 	param2 = bin->GetInt16Auto(pos);
+	flags = bin->GetInt16Auto(pos);
 	state.store(bin->GetIntAuto(pos));
 
 	int count = bin->GetIntAuto(pos);
