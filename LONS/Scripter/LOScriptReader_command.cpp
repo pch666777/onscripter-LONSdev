@@ -422,9 +422,11 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::gotoCommand(FunctionInterface *reader) {
-	if (is_eval) {
-		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-		return RET_ERROR;
+	for (int ii = 0; ii < evalStack.size(); ii++) {
+		if (evalStack[ii] != 0) {
+			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+			return RET_ERROR;
+		}
 	}
 
 	LOScriptPoint *p = reader->GetParamLable(0);
@@ -660,17 +662,14 @@ int LOScriptReader::dimCommand(FunctionInterface *reader) {
 }
 
 //返回的是增加的行数
-int LOScriptReader::TextPushParams(const char *&buf) {
-	int currentEndFlag, lineadd = 0;
+void LOScriptReader::TextPushParams() {
+	int currentEndFlag;
 
 	//获取要显示的文字
 	LOString text;
+	const char* buf = scriptbuf->SkipSpace(currentLable->c_buf);
 
-	buf = scriptbuf->SkipSpace(buf);
-	const char *obuf = buf;
-	const char *ebuf = scriptbuf->e_buf();
-
-	while (buf < ebuf) {
+	while (true) {
 		if (buf[0] == '\\') {  //强结束符
 			currentEndFlag = buf[0];
 			buf++;
@@ -679,7 +678,7 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 		else if (buf[0] == '@') {
 			currentEndFlag = buf[0]; //将检查下一个符号是否 \n，\n遇到texec时从下一行开始，否则接着开始
 			buf++;
-			obuf = scriptbuf->SkipSpace(buf);
+			const char *obuf = scriptbuf->SkipSpace(buf);
 			if (obuf[0] == '\n' || obuf[0] == ';') currentEndFlag |= 0x1000; //换行符号
 			break;
 		}
@@ -690,13 +689,24 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 		}
 		else if (buf[0] == '\n') {
 			buf++;
-			lineadd++;
+			currentLable->c_line++;
 			//check next line start english?
 			buf = scriptbuf->SkipSpace(buf);
 			if (scriptbuf->ThisCharLen(buf) == 1) {
 				currentEndFlag = '/';
 				break;
 			}
+		}
+		else if (buf[0] == '\0') {//end of text
+			if (!ReadyToBackEval()) {
+				FatalError("end of script at LOScriptReader::TextPushParams()!");
+				break;
+			}
+		}
+		else if (buf[0] == '$') {
+			//work here!
+			LOString ss = ParseStrVariable();
+			if(ss.length() > 0) ReadyToRunEval(ss);
 		}
 		else {
 			int ulen = scriptbuf->ThisCharLen(buf);
@@ -708,7 +718,7 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 	text = text.TrimEnd();
 
 	ONSVariableRef *v1 = new ONSVariableRef();
-	if (text.length() > 0) ExpandStr(text);
+	//if (text.length() > 0) ExpandStr(text);
 	v1->SetImVal(&text);
 	paramStack.push(v1);
 
@@ -717,8 +727,6 @@ int LOScriptReader::TextPushParams(const char *&buf) {
 	paramStack.push(v1);
 
 	paramStack.push((ONSVariableRef*)(2));
-
-	return lineadd;
 }
 
 
@@ -849,9 +857,11 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
-	if (is_eval) {
-		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-		return RET_ERROR;
+	for (int ii = 0; ii < evalStack.size(); ii++) {
+		if (evalStack[ii] != 0) {
+			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+			return RET_ERROR;
+		}
 	}
 
 	//音频、渲染模块进入save模式，不要调整这几个的顺序
@@ -1126,9 +1136,11 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::saveonCommand(FunctionInterface *reader) {
-	if (is_eval) {
-		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-		return RET_ERROR;
+	for (int ii = 0; ii < evalStack.size(); ii++) {
+		if (evalStack[ii] != 0) {
+			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+			return RET_ERROR;
+		}
 	}
 
 	int ret = RET_CONTINUE;

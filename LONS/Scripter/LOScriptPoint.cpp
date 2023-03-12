@@ -19,6 +19,12 @@ void LOScriptPointCall::CheckCurrentLine() {
 	else LOLog_e("LOScriptPointCall::CheckCurrentLine() can't find right line ID!");
 }
 
+LOString *LOScriptPointCall::GetScriptStr() {
+	if (!file) return nullptr;
+	if (callType == CALL_BY_EVAL) return (LOString*)file;
+	else return file->GetBuf();
+}
+
 void LOScriptPointCall::Serialize(BinArray *bin) {
 	//'poin', len, version
 	int len = bin->WriteLpksEntity("poin", 0, 1);
@@ -52,6 +58,8 @@ LOScriptPointCall::LOScriptPointCall() {
 	c_line = 0;
 	//当前执行到的位置
 	c_buf = nullptr;
+	//eval的编号
+	e_id = 0;
 }
 
 LOScriptPointCall::LOScriptPointCall(LOScriptPoint *p) {

@@ -163,6 +163,8 @@ public:
 	//void PushCurrent(bool canfree);
 	void ReadyToRun(LOScriptPoint *label, int callby = LOScriptPoint::CALL_BY_NORMAL);
 	bool ReadyToRun(LOString *lname, int callby = LOScriptPoint::CALL_BY_NORMAL);
+	bool ReadyToRunEval(LOString &eval);
+	bool ReadyToBackEval();
 	int ReadyToBack();
 
 	LOScriptPointCall *currentLable;
@@ -310,9 +312,9 @@ private:
 	//LOStack<LOScriptPoint> *subStack;		//运行点堆栈，gosub sub用
 	//运行点堆栈，gosub sub用，每次增长时都会重新取currentlabel的指针，因此用vector时安全的
 	std::vector<LOScriptPointCall> subStack;
-	//eval堆栈，数量 >0 时说明正位于eval模式，eval模式时无法使用goto gosub和saveon saveoff savepoint指令
-	std::vector<LOScriptPointCall> evalStack;
-	bool is_eval;
+	//标识有eval的运行状态
+	std::vector<int8_t> evalStack;
+	
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
@@ -328,7 +330,7 @@ private:
 	bool InserCommand();   //从当前脚本的位置获取文字变量值，然后插入命令并运行
 	bool PushParams(const char *param, const char* used);  //根据参数将变量推入paramStack中
 	void ClearParams(bool isall);
-	int TextPushParams(const char *&buf);   //将文本的参数推入paramStack中
+	void TextPushParams();   //将文本的参数推入paramStack中
 	void JumpNext();    //跳过next执行
 	bool LoadCore(int id);
 

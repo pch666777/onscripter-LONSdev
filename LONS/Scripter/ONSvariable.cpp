@@ -812,6 +812,7 @@ int ONSVariableRef::GetYFtype(const char *buf, bool isfirst) {
 		if (buf[0] == ']') return YF_Right_SQ;
 		if (buf[0] == '?') return YF_Array;
 		if (buf[0] == '\n' || buf[0] == ',' || buf[0] == ':') return YF_Break;
+		if (buf[0] == '\0') return YF_ZERO;
 		return YF_Error;
 	}
 	else if ((buf[0] == 'm' || buf[0] == 'M') && (buf[1] == 'o' || buf[1] == 'O') && (buf[2] == 'd' || buf[2] == 'D')) {

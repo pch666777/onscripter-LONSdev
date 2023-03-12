@@ -45,11 +45,15 @@ public:
 
 	//纠正当前行ID
 	void CheckCurrentLine();
+	LOString *GetScriptStr();
 	void Serialize(BinArray *bin);
+	bool isEval() { return callType == CALL_BY_EVAL; }
 
 	int callType;
 	//当前执行到的行
 	int c_line;
+	//eval编号
+	int e_id;
 	//当前执行到的位置
 	const char* c_buf;
 };

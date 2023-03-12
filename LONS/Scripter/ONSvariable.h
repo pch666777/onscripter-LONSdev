@@ -98,6 +98,7 @@ public:
 
 	//语法
 	enum {
+		YF_ZERO = 0,
 		YF_Int = 1,
 		YF_IntRef = 2,
 		YF_Str = 4,
