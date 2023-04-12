@@ -27,7 +27,7 @@ public:
 	//loopbgm直接在'\0'后面再接一个bgm的名称
 	LOString buildStr;
 	
-	bool isBGM() { flags & FLAGS_IS_BGM; }
+	bool isBGM() { return flags & FLAGS_IS_BGM; }
 	bool isAvailable();
 	bool isLoop() { return loopCount > 1 || loopCount == -1; }
 	void FreeData();

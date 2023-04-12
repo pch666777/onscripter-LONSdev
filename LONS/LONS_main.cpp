@@ -131,7 +131,7 @@ int ScripterThreadEntry(void *ptr) {
 	delete [] srand_ptr;
 
 	//init labels
-	LOScriptReader::InitScriptLabels();
+	LOScripFile::InitScriptLabels();
 	LOScriptReader *reader = (LOScriptReader*)ptr;
 	reader->MainTreadRunning();
 	LOLog_i("main scripter thread has exit.");
@@ -141,16 +141,17 @@ int ScripterThreadEntry(void *ptr) {
 }
 
 
-//注册基本的事件钩子
-void RegisterBaseHook() {
-	//注册脚本模块呼叫hook，有些事件总是需要响应，比如脚本的spstr、音频的淡入淡出事件
-	LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
-	G_hookQue.push_N_front(ev);
-}
+////注册基本的事件钩子
+//void RegisterBaseHook() {
+//	//注册脚本模块呼叫hook，有些事件总是需要响应，比如脚本的spstr、音频的淡入淡出事件
+//	LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
+//	G_hookQue.push_N_front(ev);
+//}
 
 
 
 int main(int argc, char **argv) {
+
 	SDL_Log("LONS engine has been run from the main() function!\n");
     SDL_Log("work dir:%s", LOIO::ioReadDir.c_str()) ;
 	//check base type byte len
@@ -199,7 +200,7 @@ int main(int argc, char **argv) {
 		if (imagemodule->InitImageModule()) {
 			LOLog_i("image module init ok.");
 			//事件支持
-			RegisterBaseHook();
+			//RegisterBaseHook();
 
 			//初始化音频模块
 			audiomodule = new LOAudioModule;

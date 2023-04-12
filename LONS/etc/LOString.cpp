@@ -54,6 +54,8 @@ LOString::LOString(const std::string &str) : std::string(str) {
 
 LOString::LOString(const LOString &str) : std::string(str){
 	_encoder = str._encoder;
+	//if(&str) _encoder = str._encoder;
+	//else _encoder = LOCodePage::GetEncoder(LOString::defaultEncoder);
 }
 
 LOString::LOString(const LOString &str, int start, int slen) : std::string(str.c_str() + start, slen) {

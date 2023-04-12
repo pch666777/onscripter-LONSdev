@@ -2,6 +2,7 @@
 //图像渲染模块
 */
 
+#include "../etc/LOIO.h"
 #include "../etc/LOEvent1.h"
 #include "../etc/LOString.h"
 #include "../etc/LOTimer.h"
@@ -320,7 +321,7 @@ int LOImageModule::MainLoop() {
 		}
 
 		//因为有别的线程的事件，所以要放在外部处理事件
-		HandlingEvents();
+		HandlingEvents(false);
 		
 		//降低CPU的使用率
 		if (posTime < fpstime - 1.5) SDL_Delay(1);
@@ -660,6 +661,10 @@ bool LOImageModule::ParseTag(LOLayerDataBase *bak, LOString *tag) {
 				//** 空纹理，基本上只是为了挂载子对象
 				bak->SetTextureType(LOtexture::TEX_CONTROL);
 			}
+			else if (buf[0] == 'v') {
+				bak->SetTextureType(LOtexture::TEX_VIDEO);
+				bak->SetAlphaMode(LOLayerData::TRANS_COPY);
+			}
 			buf += 2;
 			bak->keyStr.reset(new LOString(buf, tag->GetEncoder()));
 		}
@@ -766,6 +771,8 @@ bool LOImageModule::ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *
 void LOImageModule::ClearBtndef() {
 	//由渲染线程进行必要的清理
 	LOShareEventHook ev(LOEventHook::CreateBtnClearEvent(0));
+
+
 	imgeModule->waitEventQue.push_N_back(ev);
 
 	while (!ev->isInvalid()) LOTimer::CpuDelay(0.5);
@@ -783,6 +790,7 @@ void LOImageModule::ClearBtndef() {
 //"*S;文本" 多行sp
 //"*>;50,100,#ff00ff#ffffff" 绘制一个色块，并使用正片叠底模式
 //"**;_?_empty_?_"  操作式纹理，比如_?_empty_?_表示空纹理， _?_effect_?_ 表示print时的效果纹理
+//"*v/200,100;mov\test.mpg"  加载一个视频
 bool LOImageModule::loadSpCore(LOLayerData *info, LOString &tag, int x, int y, int alpha, bool visiable) {
 	bool ret = loadSpCoreWith(&info->bak, tag, x, y, alpha, 0);
 	info->bak.SetVisable(visiable);
@@ -832,6 +840,9 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 			break;
 		case LOtexture::TEX_COLOR_AREA:
 			TextureFromColor(bak, tstr.get());
+			break;
+		case LOtexture::TEX_VIDEO:
+			TextureFromVideo(bak, tstr.get());
 			break;
 		default:
 			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", bak->texType);
@@ -1000,13 +1011,35 @@ void LOImageModule::TextureFromColor(LOLayerDataBase *bak, LOString *s) {
 	texture->CreateSimpleColor(w, h, cc);
 	return ;
 }
-/*
-LOtextureBase* LOImageModule::TextureFromNSbtn(LOLayerInfo*info, LOString *s) {
-	LOtextureBase *base = nullptr;
-	return base;
-}           
-*/
 
+void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
+	const char *buf = s->SkipSpace(s->c_str());
+	bak->showWidth = s->GetInt(buf);
+	while (buf[0] == ',' || buf[0] == ' ') buf++;
+	bak->showHeight = s->GetInt(buf);
+	while (buf[0] == ',' || buf[0] == ' ') buf++;
+	LOString sufix = s->GetWordStill(buf, LOCodePage::CHARACTER_LETTER);
+	while (buf[0] == ';' || buf[0] == ' ') buf++;
+	buf = s->SkipSpace(buf);
+	//文件名，注意不支持读取封包内的视频
+	LOString fn(buf);
+	fn.SetEncoder(s->GetEncoder());
+	LOIO::GetPathForRead(fn);
+
+	LOActionMovie *m = new LOActionMovie();
+	LOShareAction video(m);
+	char *errs = m->InitSmpeg(fn.c_str());
+	if (errs) {
+		FatalError("LOImageModule::TextureFromVideo() faild:%s", errs);
+		return;
+	}
+	bak->SetAction(video);
+
+	LOShareTexture tex(new LOtexture());
+	tex->setEmpty(bak->showWidth, bak->showHeight);
+	bak->SetNewFile(tex);
+	return;
+}
 
 void LOImageModule::TextureFromControl(LOLayerDataBase *bak, LOString *s) {
 	LOShareTexture texture(new LOtexture());
@@ -1224,6 +1257,7 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 	}
 
 	LOString tag = "*s;" + (*s);
+	tag.SetEncoder(s->GetEncoder());
 
 	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255, true);
 	if (!info->bak.texture) return nullptr ;

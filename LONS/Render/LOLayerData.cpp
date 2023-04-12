@@ -67,7 +67,7 @@ LOLayerDataBase::LOLayerDataBase() {
 }
 
 void LOLayerDataBase::resetBase() {
-	flags = upflags = upaction = 0;
+	flags = upflags = 0;
 	offsetX = offsetY = centerX = centerY = 0;
 	alpha = -1;
 	showSrcX = showSrcY = showWidth = showHeight = 0;
@@ -80,6 +80,7 @@ void LOLayerDataBase::resetBase() {
 	buildStr.reset();
 	texture.reset();
 	actions.reset();
+	events.reset();
 }
 
 LOLayerDataBase::~LOLayerDataBase() {
@@ -110,7 +111,22 @@ void LOLayerDataBase::SetAction(LOShareAction &ac) {
 		else iter++;
 	}
 	actions->push_back(ac);
-	upaction |= ac->acType;
+	upflags |= UP_ACTIONS;
+	//upaction |= ac->acType;
+}
+
+//相同类型的事件会被替换
+void LOLayerDataBase::SetEvent(LOShareEventHook &ev) {
+	if (!events) events.reset(new std::vector<LOShareEventHook>());
+	int etype = ev->GetParam(0)->GetInt();
+	auto iter = events->begin();
+	while (iter != events->end()) {
+		LOShareEventHook e = *iter;
+		if (e->GetParam(0)->GetInt() == etype) iter = events->erase(iter);
+		else iter++;
+	}
+	events->push_back(ev);
+	upflags |= UP_EVENTS;
 }
 
 int LOLayerDataBase::GetCellCount() {
@@ -223,7 +239,7 @@ void LOLayerDataBase::SetNewFile(LOShareTexture &tex) {
 	texture = tex;
 	flags |= FLAGS_NEWFILE;
 	upflags |= UP_NEWFILE;
-	upaction |= UP_ACTION_ALL;
+	//upaction |= UP_ACTION_ALL;
 	//清理删除标记
 	flags &= (~FLAGS_DELETE);
 }
@@ -244,6 +260,7 @@ void LOLayerDataBase::SetBtndef(LOString *s, int val, bool isleft, bool isright)
 	upflags |= UP_BTNSTR;
 	upflags |= UP_BTNVAL;
 }
+
 
 void LOLayerDataBase::unSetBtndef() {
 	flags &= (~(FLAGS_BTNDEF | FLAGS_LEFTCLICK | FLAGS_RIGHTCLICK | FLAGS_MOUSEMOVE));
@@ -319,7 +336,7 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	//优先存储重生成字符串
 	bin->WriteLOString(buildStr.get());
 
-	bin->WriteInt3(flags, upflags, upaction);
+	bin->WriteInt2(flags, upflags);
 	bin->WriteInt(btnval);
 	float fvals[] = { offsetX, offsetY, showWidth , showHeight };
 	bin->Append((char*)fvals, 4 * 4);
@@ -363,7 +380,7 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 		//参数覆盖回来
 		flags = bin->GetIntAuto(pos);
 		upflags = bin->GetIntAuto(pos);
-		upaction = bin->GetIntAuto(pos);
+		//upaction = bin->GetIntAuto(pos);
 		btnval = bin->GetIntAuto(pos);
 		offsetX = bin->GetFloatAuto(pos);
 		offsetY = bin->GetFloatAuto(pos);
@@ -537,11 +554,17 @@ void LOLayerData::cpuDelay() {
 
 void LOLayerData::UpdataToForce() {
 	//首先更新action，后面有用
-	if (bak.upaction == LOLayerDataBase::UP_ACTION_ALL) cur.actions = std::move(bak.actions);
-	else if (bak.upaction != 0) {
-		//更新单个状态
+	//新文件整个替换actions
+	if (bak.isNewFile()) {
+		cur.actions = std::move(bak.actions);
+		cur.events = std::move(bak.events);
 	}
-	
+	else{
+		//相同类型的替换,wrok here
+		if (bak.upflags & LOLayerDataBase::UP_ACTIONS) FatalError("LOLayerData::UpdataToForce() not write updata one actions!");
+		if(bak.upflags & LOLayerDataBase::UP_EVENTS)  FatalError("LOLayerData::UpdataToForce() not write updata one events!");
+	}
+
 	if (bak.upflags & LOLayerDataBase::UP_BTNVAL) {
 		cur.btnval = bak.btnval;
 		//对应的按钮flag也要更新

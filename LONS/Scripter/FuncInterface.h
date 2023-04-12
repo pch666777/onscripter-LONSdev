@@ -217,6 +217,7 @@ public:
 	virtual void ResetMe() { return; };
 	virtual void LoadFinish() { return; };
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
+	//virtual int DoMustEvent(int val) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);
 	void SetExitFlag(int flag);
 	void ReadLog(int logt);
@@ -354,6 +355,8 @@ public:
 	virtual int btnCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int spstrCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int filelogCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int speventCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int quakeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int bgmonceCommand(FunctionInterface *reader) { return RET_VIRTUAL; }

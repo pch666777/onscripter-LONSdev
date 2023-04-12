@@ -1047,7 +1047,7 @@ int LOImageModule::btnCommand(FunctionInterface *reader) {
 
 int LOImageModule::spstrCommand(FunctionInterface *reader) {
 	LOString s = reader->GetParamStr(0);
-	LOShareEventHook ev(LOEventHook::CreateBtnStr(0, &s));
+	LOShareEventHook ev(LOEventHook::CreateSpStrEvent(0, &s));
 	imgeModule->waitEventQue.push_N_back(ev);
 	ev->waitEvent(0.5, -1);
 	return RET_CONTINUE;
@@ -1070,24 +1070,61 @@ int LOImageModule::movieCommand(FunctionInterface *reader) {
 
 int LOImageModule::aviCommand(FunctionInterface *reader) {
 	LOString fn = reader->GetParamStr(0);
-	int isClickOver = reader->GetParamInt(1);
-	LOIO::GetPathForRead(fn);
-	//准备smpeg
-	LOActionMovie *video = new LOActionMovie();
-	LOShareAction ev(video);
-	char *err = video->InitSmpeg(fn.c_str());
-	if (err) {
-		FatalError("%s", err);
-		return RET_ERROR;
-	}
+	int isClickOver = 1;
+	if(reader->GetParamCount() > 1) reader->GetParamInt(1);
+	//默认的情况都是铺满屏幕
+	LOString tmp = StringFormat(512, "*v/%d,%d,mpg;%s", G_gameWidth, G_gameHeight, fn.c_str());
 	//准备纹理
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
-	LOString s("**;_?_empty_?_");
-	loadSpCore(info, s, 0, 0, -1, true);
-	info->bak.showWidth = G_gameWidth;
-	info->bak.showHeight = G_gameHeight;
-	info->bak.SetAction(ev);
+	//必须检查是否已经有正在播放的对象
+	if (info->cur.texture) {
+		FatalError("A video is playing!");
+		return RET_CONTINUE;
+	}
+
+	loadSpCore(info, tmp, 0, 0, -1, true);
+	//添加播放事件
+	LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, isClickOver));
+	G_hookQue.push_N_back(ev);
+	reader->waitEventQue.push_N_back(ev);
 
 	ExportQuequ("_lons", nullptr, true);
+	return RET_CONTINUE;
+}
+
+
+
+int LOImageModule::speventCommand(FunctionInterface *reader) {
+	LOLayerData *data = CreateLayerBakData(GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255), reader->GetPrintName());
+	if (data) {
+		int eint = reader->GetParamInt(1);  //1-表示click左键/点击，2表示press长按
+		if (eint & 1) { //含有左键事件
+
+		}
+	}
+
+
+	return RET_CONTINUE;
+}
+
+
+
+int LOImageModule::quakeCommand(FunctionInterface *reader) {
+	LOEffect ef;
+	ef.nseffID = LOEffect::EFFECT_ID_QUAKE;
+	ef.time = reader->GetParamInt(1);
+	ef.id = 0;
+	int val = abs(reader->GetParamInt(0)) & 0xffff;
+	if (ef.time < val * 4) ef.time = val * 4;
+	//借用一下ef的ID编号
+	if (reader->isName("quakex")) ef.id |= val;
+	else if (reader->isName("quakey")) ef.id |= val << 16;
+	else {
+		ef.id |= val;
+		ef.id |= val << 16;
+	}
+	//摇晃命令必须等到执行完成才会执行下一个命令
+	ExportQuequ("_lons", &ef, true, true, true);
+
 	return RET_CONTINUE;
 }

@@ -12,6 +12,10 @@
 #include "../Scripter/ONSvariable.h"
 #include "LOVariant.h"
 
+//如果你想修改/增加事件，那么理解LONS的线程通讯模式是十分重要的
+//LONS主线程运行渲染和SDL事件，渲染包括硬件纹理的生成（因为在安卓系统上，如果在非主线程生成纹理会有几率卡死），脚本运行在子线程上
+//LONS的图层分为前台数据和后台数据，前台数据就是当前正在显示的内容，后台为重新lsp以后的内容，两者在print时进行数据交换
+
 //=====================================
 
 class LOEventHook
@@ -37,8 +41,11 @@ public:
 		//转换成PRINGJMP事件
 		ANSWER_PRINGJMP = 128,
 		//某些操作需要从脚本模块调用渲染模块
-		ANSWER_SCRIPTCALL = 0x100,
-
+		ANSWER_RENDER_DO = 0x100,
+		//响应视频播放完成
+		ANSWER_VIDEOFINISH = 0x200,
+		//某些操作需要由渲染模块调用脚本模块
+		ANSWER_SCRIPT_DO = 0x400
 	};
 
 	//一些参数的位置
@@ -82,16 +89,21 @@ public:
 		FUN_CONTINUE_EFF,
 		FUN_SE_PLAYFINISH,
 		FUN_BGM_AFTER,
-		FUN_SCRIPT_CALL,
+		//FUN_SCRIPT_CALL,
+		FUN_VIDEO_FINISH,
+		FUN_Video_Finish_After,
+		FUN_BtnClear,
+		FUN_AudioFade,
+		FUN_DelLayer,
 		//直接hook失效
 		FUN_INVILIDE,
 	};
 
-	enum {
-		SCRIPT_CALL_BTNSTR = 1,
-		SCRIPT_CALL_BTNCLEAR = 2,
-		SCRIPT_CALL_AUDIOFADE = 3,
-	};
+	//enum {
+	//	SCRIPT_CALL_BTNSTR = 1,
+	//	SCRIPT_CALL_BTNCLEAR = 2,
+	//	SCRIPT_CALL_AUDIOFADE = 3,
+	//};
 
 	enum {
 		FLAGS_NO_SAVE = 1,  //只有含有此标记的事件/钩子不会存档
@@ -103,7 +115,7 @@ public:
 
 	bool isFinish();
 	//事件/钩子是否已经完成或者无效
-	bool isAfterFinish();
+	bool isStateAfterFinish();
 	bool isState(int sa);
 	bool FinishMe();
 	bool isInvalid();
@@ -154,8 +166,8 @@ public:
 	static LOEventHook* CreateBtnClickEvent(int fullid, int btnval, int islong);
 	//创建一个鼠标左键或右键钩子
 	static LOEventHook* CreateClickHook(bool isleft, bool isright);
-	//创建一个btnstr事件
-	static LOEventHook* CreateBtnStr(int fullid, LOString *btnstr);
+	//创建一个spstr事件
+	static LOEventHook* CreateSpStrEvent(int fullid, LOString *btnstr);
 
 	//创建一个时间阻塞钩子，参数可设置是否响应左键
 	static LOEventHook* CreateTimerHook(int outtime, bool isleft);
@@ -168,14 +180,24 @@ public:
 	//创建一个没有参数的信号
 	static LOEventHook* CreateSignal(int param1, int param2);
 	//创建一个脚本模块呼叫call，要求渲染线程响应
-	static LOEventHook* CreateScriptCallHook();
+	//static LOEventHook* CreateScriptCallHook();
 	//创建一个按钮清除事件
 	static LOEventHook* CreateBtnClearEvent(int val);
 	//创建一个音频淡入淡出事件
 	static LOEventHook* CreateAudioFadeEvent(int channel, double per, double curVol);
+	//创建一个视频播放hook，用来接受视频播放完成或者点击事件
+	static LOEventHook* CreateVideoPlayHook(int fid, bool isclick);
+	//创建一个播放完成事件
+	static LOEventHook* CreateVideoFinish(int fid);
+	//创建一个图层事件，类型于图层被点击等
+
+	//创建一个图层清除事件，vdo = 1表示非newfile时删除图层，注意，只是进入列表，不需要print
+	//static LOEventHook* CreateScriaptDelLayer(int fid, int vdo);
 
 	//读取存档的时候需要一个时间搓作为参考
 	static Uint32 loadTimeTick;
+	//static int PushDoEventList(std::shared_ptr<LOEventHook> &ev);
+	//static void PopDoEventList(int index, bool isInvalidEvent);
 private:
 	bool upState(int sa);
 	//参数表
@@ -183,6 +205,7 @@ private:
 	std::atomic_int state;
 	int16_t flags;
 	static std::atomic_int exitFlag;
+	//static std::vector<std::shared_ptr<LOEventHook>> doEventList;
 	//===================================
 	static LOEventHook* CreateHookBase();
 };

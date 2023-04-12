@@ -10,6 +10,8 @@ LOEventQue G_hookQue;
 //==================== LOEvent1 ===================
 std::atomic_int LOEventHook::exitFlag{};
 Uint32 LOEventHook::loadTimeTick = 0;
+//doEvent在传递过程中，使用的是index
+//std::vector<std::shared_ptr<LOEventHook>> LOEventHook::doEventList;
 
 
 LOEventHook::LOEventHook() {
@@ -35,7 +37,7 @@ bool LOEventHook::isFinish() {
 	return state.load() == STATE_FINISH;
 };
 
-bool LOEventHook::isAfterFinish() {
+bool LOEventHook::isStateAfterFinish() {
 	return state.load() >= STATE_FINISH;
 }
 
@@ -262,10 +264,10 @@ LOEventHook* LOEventHook::CreateClickHook(bool isleft, bool isright) {
 
 
 
-LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
+LOEventHook* LOEventHook::CreateSpStrEvent(int fullid, LOString *btnstr) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_SCRIPTCALL;
-	e->param1 = SCRIPT_CALL_BTNSTR;
+	e->catchFlag = ANSWER_RENDER_DO;
+	e->param2 = FUN_SPSTR;
 	//e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNSTR));
 	e->paramList.push_back(new LOVariant(fullid));
 	e->paramList.push_back(new LOVariant(btnstr));
@@ -275,8 +277,9 @@ LOEventHook* LOEventHook::CreateBtnStr(int fullid, LOString *btnstr) {
 
 LOEventHook* LOEventHook::CreateBtnClearEvent(int val) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_SCRIPTCALL;
-	e->param1 = SCRIPT_CALL_BTNCLEAR;
+	e->catchFlag = ANSWER_RENDER_DO;
+	e->param2 = FUN_BtnClear;
+	//e->param1 = SCRIPT_CALL_BTNCLEAR;
 	//e->paramList.push_back(new LOVariant(SCRIPT_CALL_BTNCLEAR));
 	e->paramList.push_back(new LOVariant(val));
 	return e;
@@ -285,9 +288,10 @@ LOEventHook* LOEventHook::CreateBtnClearEvent(int val) {
 
 LOEventHook* LOEventHook::CreateAudioFadeEvent(int channel, double per, double curVol) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_SCRIPTCALL;
-	e->param1 = SCRIPT_CALL_AUDIOFADE;
-	e->param2 = channel & 0xffff;
+	e->catchFlag = ANSWER_RENDER_DO;
+	e->param2 = FUN_AudioFade;
+	//e->param1 = channel & 0xffff;
+	e->paramList.push_back(new LOVariant(channel));
 	e->paramList.push_back(new LOVariant(per));
 	e->paramList.push_back(new LOVariant(curVol));
 	e->flags |= FLAGS_FINISH_NOTABKE;
@@ -343,15 +347,74 @@ LOEventHook* LOEventHook::CreateSignal(int param1, int param2) {
 	return e;
 }
 
+//
+//LOEventHook* LOEventHook::CreateScriptCallHook() {
+//	auto *e = CreateHookBase();
+//	e->catchFlag = ANSWER_SCRIPTCALL;
+//	e->param1 = MOD_RENDER;
+//	e->param2 = FUN_SCRIPT_CALL;
+//	return e;
+//}
 
-LOEventHook* LOEventHook::CreateScriptCallHook() {
+
+LOEventHook* LOEventHook::CreateVideoPlayHook(int fid, bool isclick) {
 	auto *e = CreateHookBase();
-	e->catchFlag = ANSWER_SCRIPTCALL;
+	e->catchFlag = ANSWER_VIDEOFINISH;
+	if (isclick) e->catchFlag |= ANSWER_LEFTCLICK;
 	e->param1 = MOD_RENDER;
-	e->param2 = FUN_SCRIPT_CALL;
+	e->param2 = FUN_VIDEO_FINISH;
+	e->paramList.push_back(new LOVariant(fid));
 	return e;
 }
 
+
+LOEventHook* LOEventHook::CreateVideoFinish(int fid) {
+	auto *e = CreateHookBase();
+	e->catchFlag = ANSWER_VIDEOFINISH;
+	e->paramList.push_back(new LOVariant(fid));
+	return e;
+}
+
+
+//LOEventHook* LOEventHook::CreateScriaptDelLayer(int fid, int vdo) {
+//	auto *e = CreateHookBase();
+//	e->catchFlag = ANSWER_SCRIPT_DO;
+//	e->param1 = MOD_SCRIPTER;
+//	e->param2 = FUN_DelLayer;
+//	e->paramList.push_back(new LOVariant(fid));
+//	e->paramList.push_back(new LOVariant(vdo));
+//}
+
+
+//LOEventHook* LOEventHook::CreateScriptDoEvent(std::shared_ptr<LOEventHook> &ev, uint16_t func) {
+//	auto *e = CreateHookBase();
+//	e->catchFlag = ANSWER_SCRIPT_DO;
+//	e->param1 = MOD_SCRIPTER;
+//	e->param2 = func;
+//	int index = PushDoEventList(ev);
+//	e->paramList.push_back(new LOVariant(index));
+//	return e;
+//}
+
+//int LOEventHook::PushDoEventList(std::shared_ptr<LOEventHook> &ev) {
+//	for (int ii = 0; ii < doEventList.size(); ii++) {
+//		LOShareEventHook oev = doEventList[ii];
+//		if (!oev || oev->isInvalid()) {
+//			doEventList[ii] = ev;
+//			return ii;
+//		}
+//	}
+//	doEventList.push_back(ev);
+//	return doEventList.size() - 1;
+//}
+//
+//void LOEventHook::PopDoEventList(int index, bool isInvalidEvent) {
+//	if (index >= 0 && index < doEventList.size()) {
+//		if (isInvalidEvent) doEventList[index]->InvalidMe();
+//		//释放掉原来的事件
+//		doEventList[index] = LOShareEventHook(nullptr);
+//	}
+//}
 
 //===========================================//
 

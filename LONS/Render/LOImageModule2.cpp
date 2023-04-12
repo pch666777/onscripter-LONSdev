@@ -13,6 +13,13 @@ void AddPreEvent(LOShareEventHook &e) {
 	}
 }
 
+void AddRenderEvent(LOShareEventHook &e) {
+	if (FunctionInterface::imgeModule) {
+		LOImageModule *img = (LOImageModule*)FunctionInterface::imgeModule;
+		img->waitEventQue.push_N_back(e);
+	}
+}
+
 
 //在正式处理事件前必须处理帧刷新时遗留的事件
 void LOImageModule::DoPreEvent(double postime) {
@@ -48,13 +55,13 @@ void LOImageModule::DoPreEvent(double postime) {
 
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
-int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM) {
+int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM, bool isEmptyContine) {
 	//考虑到需要存档
 	iswait = true;
 
 	//检查是不是有需要刷新的
 	auto *map = GetPrintNameMap(print_name)->map;
-	if (map->size() == 0) return 0;
+	if (map->size() == 0 && !isEmptyContine) return 0;
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
@@ -177,19 +184,20 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 }
 
 
-void LOImageModule::HandlingEvents() {
+void LOImageModule::HandlingEvents(bool justMustDo) {
 	std::vector<LOShareEventHook> backEvList;
 	while (true) {
 		LOShareEventHook ev = waitEventQue.TakeOutEvent();
 		if (!ev) break;
-		//将事件传递给钩子列表处理
-		if (SendEventToHooks(ev.get(), 0) == LOEventHook::RUNFUNC_CONTINUE) {
-			//没有响应事件
-			int nodoit = 1;
-		}
+		//首先考虑事件是不是Render_do
+		if (ev->catchFlag & LOEventHook::ANSWER_RENDER_DO) RunRenderDo(nullptr, ev.get());
+		else{
+			//存档前的立即处理会设置justMustDo，将事件传递给钩子列表处理
+			if (!justMustDo) SendEventToHooks(ev.get(), 0);
 
-		//某些需要持久运行的事件
-		if (ev->isFinishTakeOut() && !ev->isAfterFinish()) backEvList.push_back(ev);
+		}
+		////某些需要持久运行的事件
+		if (ev->isFinishTakeOut() && !ev->isStateAfterFinish()) backEvList.push_back(ev);
 	}
 
 	if (backEvList.size() > 0) waitEventQue.push_N_back(backEvList);
@@ -204,8 +212,7 @@ int LOImageModule::SendEventToHooks(LOEventHook *e, int flags) {
 	while (state == LOEventHook::RUNFUNC_CONTINUE) {
 		LOShareEventHook hook = G_hookQue.GetEventHook(iter, true);
 		if (!hook) break;
-		//处理符合条件的事件
-		if (hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
+		if(hook->catchFlag & e->catchFlag) state = RunFuncBase(hook.get(), e);
 		//判断事件是否还需要继续传递
 		if (state != LOEventHook::RUNFUNC_FINISH) hook->closeEdit();
 	}
@@ -272,8 +279,6 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	switch (hook->param2){
 	case LOEventHook::FUN_BTNFINISH:
 		return RunFuncBtnFinish(hook, e);
-	case LOEventHook::FUN_SCRIPT_CALL:
-		return RunFuncScriptCall(hook, e);
 	case LOEventHook::FUN_INVILIDE:
 		hook->InvalidMe();
 		return LOEventHook::RUNFUNC_FINISH;
@@ -281,6 +286,10 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 		return RunFuncText(hook, e);
 	case LOEventHook::FUN_CONTINUE_EFF:
 		return CutPrintEffect(hook, e);
+	case LOEventHook::FUN_VIDEO_FINISH:
+		return RunFuncVideoFinish(hook, e);
+	case LOEventHook::FUN_Video_Finish_After:
+		return RunFuncVideoFinishAfter(hook);
 	default:
 		break;
 	}
@@ -289,31 +298,30 @@ int LOImageModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 }
 
 
-int LOImageModule::RunFuncScriptCall(LOEventHook *hook, LOEventHook *e) {
+int LOImageModule::RunRenderDo(LOEventHook *hook, LOEventHook *e) {
 	int ret = LOEventHook::RUNFUNC_FINISH;
-
-	int key = e->param1;
-	switch (key){
-	case LOEventHook::SCRIPT_CALL_BTNSTR:
-		ret = RunFuncSpstr(hook, e);
+	//对于render_do来说，事件的param2才是处理的函数
+	switch (e->param2){
+	case LOEventHook::FUN_SPSTR:
+		ret = RunFuncSpstr(e);
 		break;
-	case LOEventHook::SCRIPT_CALL_BTNCLEAR:
-		ret = RunFuncBtnClear(hook, e);
+	case LOEventHook::FUN_BtnClear:
+		ret = RunFuncBtnClear(e);
 		break;
-	case LOEventHook::SCRIPT_CALL_AUDIOFADE:
+	case LOEventHook::FUN_AudioFade:
 		ret = audioModule->RunFunc(hook, e);
 		break;
 	default:
 		break;
 	}
 	//hook是长久有效的
-	hook->closeEdit();
+	if(hook) hook->closeEdit();
 	return LOEventHook::RUNFUNC_FINISH;
 }
 
 
 //这个函数只能从渲染线程调用
-int LOImageModule::RunFuncBtnClear(LOEventHook *hook, LOEventHook *e) {
+int LOImageModule::RunFuncBtnClear(LOEventHook *e) {
 	//能调用到这个函数说明肯定不在刷新图层，以及向图层传递事件，所以是线程安全的
 	//直接断开[btn]的图层关系
 	G_baseLayer[LOLayer::LAYER_NSSYS]->RemodeChild(LOLayer::IDEX_NSSYS_BTN);
@@ -371,7 +379,7 @@ int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 	//要确定是否清除btndef
 	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
 		if (e->GetParam(1)->GetInt() > 0)
-			RunFuncBtnClear(nullptr, nullptr);
+			RunFuncBtnClear(nullptr);
 	}
 	//确定是否要设置变量的值，变量设置要转移到脚本线程中
 	if (hook->GetParam(LOEventHook::PINDS_REFID) != nullptr) {
@@ -380,6 +388,42 @@ int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 	}
 	else hook->InvalidMe();
 	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+int LOImageModule::RunFuncVideoFinish(LOEventHook *hook, LOEventHook *e) {
+	//播放完成事件要判断图层ID是否一致
+	if ((e->catchFlag & LOEventHook::ANSWER_VIDEOFINISH) &&
+		hook->GetParam(0)->GetInt() != e->GetParam(0)->GetInt()) {
+		return LOEventHook::RUNFUNC_CONTINUE;
+	}
+	//隐藏图层
+	bool issys = false;
+	LOLayer *lyr = LOLayer::GetLayer(e->GetParam(0)->GetInt());
+	if (lyr) {
+		lyr->data->cur.SetVisable(0);
+		//这里有个隐含的条件，如果是非sp和spex图层的，在有播放内容的时候不允许再次进入
+		lyr->data->cur.SetDelete();
+		//如果位于sys层，则要求脚本线程调用渲染模块删除图层
+		if (lyr->layerType != LOLayer::LAYER_SPRINT && lyr->layerType != LOLayer::LAYER_SPRINTEX) issys = true;
+	}
+	if (issys) hook->InvalidMe();
+	else hook->FinishMe();
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+int LOImageModule::RunFuncVideoFinishAfter(LOEventHook *hook) {
+	int fid = hook->GetParam(0)->GetInt();
+	LOLayerData* data = CreateLayerBakData(fid, scriptModule->GetPrintName());
+	if (data) data->bak.SetDelete();
+	hook->InvalidMe();
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+//存档前，某些在队列中的事件必须马上完成
+int LOImageModule::DoMustEvent(int val) {
+	HandlingEvents(true);
+	return 0;
 }
 
 
@@ -426,11 +470,9 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 
 
 
-int LOImageModule::RunFuncSpstr(LOEventHook *hook, LOEventHook *e) {
+int LOImageModule::RunFuncSpstr(LOEventHook *e) {
 	LOString btnstr = e->GetParam(1)->GetLOString();
 	RunExbtnStr(&btnstr);
-	//这个钩子长期有效
-	hook->closeEdit();
 	e->InvalidMe();
 	return LOEventHook::RUNFUNC_FINISH;
 }

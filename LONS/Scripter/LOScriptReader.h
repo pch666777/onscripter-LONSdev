@@ -163,7 +163,7 @@ public:
 	//void PushCurrent(bool canfree);
 	void ReadyToRun(LOScriptPoint *label, int callby = LOScriptPoint::CALL_BY_NORMAL);
 	bool ReadyToRun(LOString *lname, int callby = LOScriptPoint::CALL_BY_NORMAL);
-	bool ReadyToRunEval(LOString &eval);
+	bool ReadyToRunEval(LOString *eval);
 	bool ReadyToBackEval();
 	int ReadyToBack();
 
@@ -212,12 +212,13 @@ public:
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncBtnSetVal(LOEventHook *hook);
 	int RunFuncSayFinish(LOEventHook *hook);
+	int RunEventAfterFinish(LOEventHook *e);
 
 	//添加新的脚本到缓冲区
-	static LOScripFile* AddScript(const char *buf, int length, const char* filename);
-	static LOScripFile* AddScript(LOString *s, const char* filename);
-	static void RemoveScript(LOScripFile *f);
-	static void InitScriptLabels();
+	//static LOScripFile* AddScript(const char *buf, int length, const char* filename);
+	//static LOScripFile* AddScript(LOString *s, const char* filename);
+	//static void RemoveScript(LOScripFile *f);
+	//static void InitScriptLabels();
 	const char* debugCharPtr(int cur);
 
 	//启动一个新的脚本
@@ -292,7 +293,6 @@ public:
 	int getsavestrCommand(FunctionInterface *reader);
 
 private:
-	static LOStack<LOScripFile> filesList;   //脚本存储在这里
 	static std::unordered_map<std::string, int> numAliasMap;   //整数别名
 	static std::unordered_map<std::string, int> strAliasMap;   //字符串别名，存的是字符串位置
 	static std::vector<LOString> strAliasList;  //字符串别名
@@ -313,7 +313,7 @@ private:
 	//运行点堆栈，gosub sub用，每次增长时都会重新取currentlabel的指针，因此用vector时安全的
 	std::vector<LOScriptPointCall> subStack;
 	//标识有eval的运行状态
-	std::vector<int8_t> evalStack;
+	//std::vector<int8_t> evalStack;
 	
 	Uint64 ttimer;  //SDL计时器
 	LOScriptReader *activeReader;          //当前激活的脚本
@@ -322,7 +322,7 @@ private:
 	
 	
 	
-	LOScriptPoint* GetScriptPoint(LOString lname);
+	//LOScriptPoint* GetScriptPoint(LOString lname);
 	int GetCurrentLableIndex();
 	int ContinueRun();
 	int ContinueEvent();

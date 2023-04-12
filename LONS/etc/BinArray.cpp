@@ -381,6 +381,20 @@ int BinArray::WriteLOString(LOString *s, int *pos) {
 		return WriteUnOrder(&v, pos, 2);
 	}
 	else {
+		//debug use
+		if (s->GetEncoder()->codeID == LOCodePage::ENCODER_UTF8) {
+			const char *buf = s->c_str();
+			const char *end = buf + s->length();
+			auto *encoder = s->GetEncoder();
+			while (buf < end) {
+				int ulen = encoder->GetCharLen(buf);
+				if (ulen < 1 || ulen > 3) {
+					int errbreak = 1;
+				}
+				buf += ulen;
+			}
+		}
+
 		int len = WriteUnOrder((void*)s->c_str(), pos, s->length() + 1);
 		char code = s->GetEncoder()->codeID;
 		if(pos) (*pos) += len;

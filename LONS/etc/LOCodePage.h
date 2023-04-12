@@ -12,6 +12,7 @@ class LOCodePage
 {
 public:
 	enum ENCODERTYPE {
+		ENCODER_DEFAULT,
 		ENCODER_UTF8,
 		ENCODER_GBK,
 		ENCODER_SHJIS,

@@ -13,7 +13,7 @@
 #endif // !M_PI
 
 extern int G_lineLog;
-extern void RegisterBaseHook();
+//extern void RegisterBaseHook();
 extern void FatalError(const char *fmt, ...);
 
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
@@ -165,15 +165,13 @@ int LOScriptReader::getparamCommand(FunctionInterface *reader) {
 
 int LOScriptReader::defsubCommand(FunctionInterface *reader) {
 	LOString s = reader->GetParamStr(0).toLower();
-	LOScriptPoint *p = GetScriptPoint(s);
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(s);
 	defsubMap[s] = p;
 	return RET_CONTINUE;
 }
 
 int LOScriptReader::endCommand(FunctionInterface *reader) {
-	//scriptModule->moduleState = MODULE_STATE_EXIT;
-	//audioModule->ResetMe();
-	//imgeModule->moduleState = MODULE_STATE_EXIT;
+	SetExitFlag(MODULE_FLAGE_EXIT | MODULE_FLAGE_CHANNGE);
 	return RET_RETURN;
 }
 
@@ -422,11 +420,9 @@ int LOScriptReader::jumpCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::gotoCommand(FunctionInterface *reader) {
-	for (int ii = 0; ii < evalStack.size(); ii++) {
-		if (evalStack[ii] != 0) {
-			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-			return RET_ERROR;
-		}
+	if (LOScripFile::HasEval()) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
 	}
 
 	LOScriptPoint *p = reader->GetParamLable(0);
@@ -540,17 +536,20 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
-	while (true) {
-		ONSVariableRef *v1 = ParseVariableBase(false);
-		if (!NextComma()) {
-			FatalError("[%s] command not match!\n", curCmd.c_str());
+	ONSVariableRef *v1 = ParseVariableBase(false);
+	if (!v1->isRef()) {
+		FatalError("[%s] command not start variable!");
+		return RET_ERROR;
+	}
+	while (NextComma(true)) {
+		ONSVariableRef *v2 = ParseVariableBase(v1->isStrRef());
+		if (!v2) {
+			FatalError("[%s] command Expression error!");
 			return RET_ERROR;
 		}
-		ONSVariableRef *v2 = ParseVariableBase(v1->isStrRef());
-		if (v1 && v1->isRef() && v2) v1->SetValue(v2);
-		if (v1) delete v1;
-		if (v2) delete v2;
-		if (!NextComma(true)) break;
+		v1->SetValue(v2);
+		delete v2;
+		v1->NextNSid();
 	}
 	return RET_CONTINUE;
 }
@@ -663,10 +662,11 @@ int LOScriptReader::dimCommand(FunctionInterface *reader) {
 
 //返回的是增加的行数
 void LOScriptReader::TextPushParams() {
-	int currentEndFlag;
+	int currentEndFlag = '/';
 
 	//获取要显示的文字
 	LOString text;
+	text.SetEncoder(scriptbuf->GetEncoder());
 	const char* buf = scriptbuf->SkipSpace(currentLable->c_buf);
 
 	while (true) {
@@ -702,11 +702,12 @@ void LOScriptReader::TextPushParams() {
 				FatalError("end of script at LOScriptReader::TextPushParams()!");
 				break;
 			}
+			buf = scriptbuf->SkipSpace(currentLable->c_buf);
 		}
 		else if (buf[0] == '$') {
 			//work here!
 			LOString ss = ParseStrVariable();
-			if(ss.length() > 0) ReadyToRunEval(ss);
+			if(ss.length() > 0) ReadyToRunEval(&ss);
 		}
 		else {
 			int ulen = scriptbuf->ThisCharLen(buf);
@@ -725,8 +726,9 @@ void LOScriptReader::TextPushParams() {
 	v1 = new ONSVariableRef();
 	v1->SetImVal((double)currentEndFlag);
 	paramStack.push(v1);
-
 	paramStack.push((ONSVariableRef*)(2));
+
+	currentLable->c_buf = buf;
 }
 
 
@@ -743,7 +745,7 @@ int LOScriptReader::loadscriptCommand(FunctionInterface *reader) {
 	BinArray *bin = ReadFile(&fname,true);
 	if (bin) {
 		if (bin->Length() > 0) {
-			LOScripFile *file = AddScript(bin->bin, bin->Length(), fname.c_str());
+			LOScripFile *file = LOScripFile::AddScript(bin->bin, bin->Length(), fname.c_str());
 			file->InitLables();
 			ret = 1;
 		}
@@ -783,7 +785,7 @@ int LOScriptReader::chkValueCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
 	if (!v1->Compare(v2, ONSVariableRef::LOGIC_EQUAL,false)) {
-		LOLog_i("[%s]:[%d]:[%s]\n", currentLable->file->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
+		LOLog_i("[%s]:[%d]:[%s]\n", currentLable->file()->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
 	}
 	return RET_CONTINUE;
 }
@@ -796,7 +798,7 @@ int LOScriptReader::cselCommand(FunctionInterface *reader) {
 		cselList.push_back(reader->GetParamStr(ii * 2));
 		cselList.push_back(reader->GetParamStr(ii * 2 + 1));
 	}
-	LOScriptPoint *p = GetScriptPoint("customsel");
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint("customsel");
 	gosubCore(p, true);
 	return RET_CONTINUE;
 }
@@ -818,7 +820,7 @@ int LOScriptReader::getcselstrCommand(FunctionInterface *reader) {
 	else{
 		int index = reader->GetParamInt(0);
 		if (index < cselList.size() / 2) {
-			LOScriptPoint *p = GetScriptPoint(cselList.at(index * 2 + 1));
+			LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(cselList.at(index * 2 + 1));
 			gosubCore(p, true);
 		}
 		else LOLog_e("[cselgoto] value is out range!");
@@ -857,11 +859,9 @@ int LOScriptReader::savefileexistCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::savepointCommand(FunctionInterface *reader) {
-	for (int ii = 0; ii < evalStack.size(); ii++) {
-		if (evalStack[ii] != 0) {
-			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-			return RET_ERROR;
-		}
+	if (LOScripFile::HasEval()) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
 	}
 
 	//音频、渲染模块进入save模式，不要调整这几个的顺序
@@ -869,6 +869,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	imgeModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
 	scriptModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
 
+	//完成队列中需要立即完成的事件
 	//做一些初始化工作
 	GloSaveFS->InitLpksHeader();
 	//等待img进入挂起状态
@@ -1102,11 +1103,11 @@ bool LOScriptReader::LoadCore(int id) {
 	audioModule->LoadFinish();
 
 	//注册事件基本钩子
-	RegisterBaseHook();
+	//RegisterBaseHook();
 
 	//执行loadgosub
 	if (userGoSubName[USERGOSUB_LOAD].length() > 0) {
-		LOScriptPoint *p = GetScriptPoint(userGoSubName[USERGOSUB_LOAD]);
+		LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(userGoSubName[USERGOSUB_LOAD]);
 		if (p) {
 			gosubCore(p, false);
 		}
@@ -1136,11 +1137,9 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 
 
 int LOScriptReader::saveonCommand(FunctionInterface *reader) {
-	for (int ii = 0; ii < evalStack.size(); ii++) {
-		if (evalStack[ii] != 0) {
-			FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
-			return RET_ERROR;
-		}
+	if (LOScripFile::HasEval()) {
+		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
+		return RET_ERROR;
 	}
 
 	int ret = RET_CONTINUE;

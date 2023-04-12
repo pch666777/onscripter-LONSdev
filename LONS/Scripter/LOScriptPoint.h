@@ -22,8 +22,12 @@ public:
 		CALL_BY_LOAD_GOSUB,
 		CALL_BY_EVAL,
 	};
+
+	enum {
+		INDEX_FILE_FLAG = 0x80000000
+	};
+
 	LOScriptPoint();
-	virtual ~LOScriptPoint();
 
 	//标签名称
 	LOString name;
@@ -31,8 +35,8 @@ public:
 	const char* s_buf;
 	//运行点开始的行
 	int s_line;
-	//calltype为CALL_BY_EVAL时，这个指针表示为LOString*
-	LOScripFile* file;  //位于哪个脚本中
+	//LOFile或者LOString的索引
+	int i_index;
 };
 
 
@@ -41,19 +45,19 @@ class LOScriptPointCall :public LOScriptPoint {
 public:
 	LOScriptPointCall();
 	LOScriptPointCall(LOScriptPoint *p);
-	~LOScriptPointCall();
 
 	//纠正当前行ID
 	void CheckCurrentLine();
 	LOString *GetScriptStr();
 	void Serialize(BinArray *bin);
 	bool isEval() { return callType == CALL_BY_EVAL; }
+	void freeEval();
+	LOScripFile *file();
+	static LOScriptPoint* GetScriptPoint(LOString lname);
 
 	int callType;
 	//当前执行到的行
 	int c_line;
-	//eval编号
-	int e_id;
 	//当前执行到的位置
 	const char* c_buf;
 };
@@ -124,8 +128,9 @@ public:
 		const char* buf = nullptr;
 	};
 
-	LOScripFile(const char *cbuf, int len, const char *filename);
-	LOScripFile(LOString *s, const char *filename);
+	//LOScripFile(const char *cbuf, int len, const char *filename);
+	//LOScripFile(LOString *s, const char *filename);
+	LOScripFile();
 	~LOScripFile();
 
 	LOString Name;
@@ -136,11 +141,17 @@ public:
 	//获取指定行的信息，需要提供行号或者buf
 	//AMD zen1 1400  100次查找release耗时0.5ms -->行记录设定为80行
 	LineData GetLineInfo(const char *buf, int lineID, bool isLine);
+
+	static LOScripFile* AddScript(const char *buf, int length, const char* filename);
+	static int AddEval(LOString *s);
+	static bool HasEval();
+	static void InitScriptLabels();
 private:
 	LOString scriptbuf;
 	//每100行打一个记录点
 	std::vector<LineData> lineInfo;
 	std::unordered_map<std::string, LOScriptPoint*> labels;
+	int i_index;
 
 	void ClearLables();
 	void CreateRootLabel();
@@ -151,6 +162,7 @@ private:
 	void NextFindDest(const char *dst, int dstLine, const char *&startBuf, int &startLine, bool isLine);
 };
 
+//extern LOScripFile* AddScript(LOString *s, const char* filename);
 
 
 

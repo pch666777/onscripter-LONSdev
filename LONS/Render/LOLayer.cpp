@@ -2,7 +2,11 @@
 #include "LOLayerData.h"
 
 
+//从外部向render模块添加前置处理事件
 extern void AddPreEvent(LOShareEventHook &e);
+
+//从外部向render模块添加事件
+extern void AddRenderEvent(LOShareEventHook &e);
 
 LOLayer *G_baseLayer[LOLayer::LAYER_BASE_COUNT];
 int G_maxLayerCount[3] = { 1024, 255,255 };  //对应的层级编号必须比这个数字小
@@ -620,11 +624,21 @@ void LOLayer::DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime
 		//对齐?从plaympeg.c中抄来的
 		int fw = (ai->info.width + 15) & ~15;
 		int fh = (ai->info.height + 15) & ~15;
+		int dw = data->cur.showWidth;
+		int dh = data->cur.showHeight;
 		data->cur.texture->CreateDstTexture2(fw, fh, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING);
-		//设置好纹理的复制参数
+		//源显示位置
 		data->cur.SetShowRect(0, 0, ai->info.width, ai->info.height);
-		if (ai->info.width != G_gameWidth || ai->info.height != G_gameHeight) {
-			data->cur.SetPosition2(0, 0, (double)G_gameWidth /ai->info.width , (double)G_gameHeight/ ai->info.height);
+		//目标大小和位置
+		if (data->cur.showWidth == 0 || data->cur.showHeight == 0) {
+			data->cur.SetPosition(0, 0);
+			data->cur.showHeight = G_gameWidth; data->cur.showHeight = G_gameHeight;
+		}
+		//设置好缩放参数
+		if (dw <= 0) dw = G_gameWidth;
+		if (dh <= 0) dh = G_gameHeight;
+		if (abs(dw - data->cur.showWidth) >= 0.0001 || abs(dh - data->cur.showHeight) >= 0.0001) {
+			data->cur.SetPosition2(data->cur.offsetX, data->cur.offsetY, dw / data->cur.showWidth, dh / data->cur.showHeight);
 		}
 		ai->unSetFlags(LOAction::FLAGS_INIT);
 		//开始播放
@@ -657,6 +671,8 @@ void LOLayer::DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime
 			ai->setEnble(false);
 			SMPEG_stop(ai->mpeg);
 			//播放完成事件
+			LOShareEventHook ev(LOEventHook::CreateVideoFinish(data->fullid));
+			AddRenderEvent(ev);
 		}
 	}
 }
@@ -898,7 +914,7 @@ int LOLayer::checkEvent(LOEventHook *e, LOEventQue *aswerQue) {
 						setBtnShow(true);
 						//产生btnstr事件
 						if (data->cur.btnStr) {
-							LOShareEventHook ev(LOEventHook::CreateBtnStr(GetFullID(layerType, id), data->cur.btnStr.get()));
+							LOShareEventHook ev(LOEventHook::CreateSpStrEvent(GetFullID(layerType, id), data->cur.btnStr.get()));
 							aswerQue->push_N_back(ev);
 						}
 					}

@@ -3,13 +3,11 @@
 *define
 setintvar "linelog",1
 
-mov $1,"这是一个测试"
-$1\
+;avi "op00.mpg",1
+;btnwait %0
 
-mov $1,"mov %1,1+1+1"
-$1
-
-
+;lsp 0,"*v/352,288,mpg;op00.mpg",300,200
+;btnwait %0
 
 globalon
 filelog
@@ -862,6 +860,22 @@ print 17,1500
 bg #0000ff
 lsp 1,":s/30,30,0;#ffffff渐变掩膜",200,300
 print 18,1500,"mask08a.jpg"
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff上下晃动",200,300
+print 1
+quakey 20,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff左右晃动",200,300
+print 1
+quakex 20,1500
+
+bg #0000ff
+lsp 1,":s/30,30,0;#ffffff全屏晃动",200,300
+print 1
+quake 20,1500
+
 
 ;btnwait %0
 return

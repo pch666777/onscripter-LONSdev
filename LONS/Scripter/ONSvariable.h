@@ -148,6 +148,7 @@ public:
 	int  GetOrder() { return order; }
 	int  GetOperator() { return oper; }
 	int  GetNSid() { return nsvID; }
+	void NextNSid() { nsvID++; }
 	ONSVAR_TYPE  GetType() { return (ONSVAR_TYPE)vtype; }
 
 	static int  GetTypeAllow(const char *param, bool &mustRef);

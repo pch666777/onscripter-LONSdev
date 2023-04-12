@@ -6,8 +6,8 @@
 //#include <SDL.h>
 //#include "LOMessage.h"
 
+
 //=========== static ========================== //
-LOStack<LOScripFile> LOScriptReader::filesList;
 std::unordered_map<std::string, int> LOScriptReader::numAliasMap;   //整数别名
 std::unordered_map<std::string, int> LOScriptReader::strAliasMap;   //字符串别名，存的是字符串位置
 std::vector<LOString> LOScriptReader::strAliasList;  //字符串别名
@@ -21,37 +21,6 @@ bool LOScriptReader::st_saveonflag = false;
 int LOScriptReader::gloableMax = 200;
 LOScriptReader::SaveFileInfo LOScriptReader::s_saveinfo;
 int G_lineLog = 1;
-
-LOScripFile* LOScriptReader::AddScript(const char *buf, int length, const char* filename) {
-	LOScripFile *file = new LOScripFile(buf, length, filename);
-	//设置默认编码，可以消除潜在的错误
-	if (filesList.size() == 0 && file) {
-		LOString::SetDefaultEncoder(file->GetBuf()->GetEncoder()->codeID);
-	}
-	filesList.push(file);
-	return file;
-}
-
-LOScripFile* LOScriptReader::AddScript(LOString *s, const char* filename) {
-	LOScripFile *file = new LOScripFile(s, filename);
-	filesList.push(file);
-	return file;
-}
-
-void LOScriptReader::RemoveScript(LOScripFile *f) {
-	for (int ii = 0; ii < filesList.size(); ii++) {
-		if (f == filesList.at(ii)) {
-			filesList.removeAt(ii);
-			break;
-		}
-	}
-}
-
-void LOScriptReader::InitScriptLabels() {
-	for (int ii = 0; ii < filesList.size(); ii++) {
-		filesList.at(ii)->InitLables();
-	}
-}
 
  void LOScriptReader::AddWorkDir(LOString dir) {
 	 workDirs.push_back(dir);
@@ -233,12 +202,12 @@ void LOScriptReader::ReadyToRun(LOScriptPoint *label, int callby) {
 	call.callType = callby;
 	subStack.push_back(call);
 	currentLable = &subStack.at(subStack.size() - 1);
-	scriptbuf = currentLable->file->GetBuf();
+	scriptbuf = currentLable->GetScriptStr();
 }
 
 bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
 	if (!lname || lname->length() == 0) return false;
-	LOScriptPoint *p = GetScriptPoint(*lname);
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(*lname);
 	if (!p) {
 		FatalError("not lable name:[%s]", lname->c_str());
 		return false;
@@ -248,21 +217,15 @@ bool LOScriptReader::ReadyToRun(LOString *lname, int callby) {
 }
 
 
-bool LOScriptReader::ReadyToRunEval(LOString &eval) {
+bool LOScriptReader::ReadyToRunEval(LOString *eval) {
 	subStack.emplace_back();
 	LOScriptPointCall *p = &subStack.at(subStack.size() - 1);
-	LOString *s = new LOString(eval);
-	p->file = (LOScripFile*)s;
-	p->s_line = p->c_line = 0;
-	p->s_buf = p->c_buf = s->c_str();
 	p->callType = LOScriptPointCall::CALL_BY_EVAL;
-	//获取一个eval的ID
-	for (p->e_id = 0; p->e_id < evalStack.size() && evalStack[p->e_id] != 0; p->e_id++);
-	if (evalStack.size() == p->e_id) evalStack.push_back(0);
-	evalStack[p->e_id] = 1;
-	//转到运行
+	p->i_index = LOScripFile::AddEval(eval);
+	p->s_line = p->c_line = 0;
+	scriptbuf = p->GetScriptStr();
+	p->s_buf = p->c_buf = scriptbuf->c_str();
 	currentLable = p;
-	scriptbuf = s;
 	return true;
 }
 
@@ -281,12 +244,7 @@ int LOScriptReader::ReadyToBack() {
 	subStack.pop_back();
 	if (!isEndSub()) {
 		currentLable = &subStack.at(subStack.size() - 1);
-		scriptbuf = currentLable->file->GetBuf();
-		//删除eval
-		if (lastCall.callType == LOScriptPoint::CALL_BY_EVAL) {
-			RemoveScript(lastCall.file);
-			delete lastCall.file;
-		}
+		scriptbuf = currentLable->GetScriptStr();
 	}
 	else currentLable = nullptr;
 
@@ -297,7 +255,7 @@ int LOScriptReader::ReadyToBack() {
 
 bool LOScriptReader::ReadyToBackEval() {
 	if (!currentLable->isEval()) return false;
-	evalStack[currentLable->e_id] = 0;
+	currentLable->freeEval();
 	subStack.pop_back();
 	currentLable = &subStack.at(subStack.size() - 1);
 	scriptbuf = currentLable->GetScriptStr();
@@ -306,16 +264,16 @@ bool LOScriptReader::ReadyToBackEval() {
 
 
 
-LOScriptPoint* LOScriptReader::GetScriptPoint(LOString lname) {
-	lname = lname.toLower();
-	LOScriptPoint *p = NULL;
-	for (int ii = 0; ii < filesList.size(); ii++) {
-		p = filesList.at(ii)->FindLable(lname);
-		if (p) return p;
-	}
-	LOLog_i("no lable:%s", lname.c_str());
-	return p;
-}
+//LOScriptPoint* LOScriptReader::GetScriptPoint(LOString lname) {
+//	lname = lname.toLower();
+//	LOScriptPoint *p = NULL;
+//	for (int ii = 0; ii < filesList.size(); ii++) {
+//		p = filesList.at(ii)->FindLable(lname);
+//		if (p) return p;
+//	}
+//	LOLog_i("no lable:%s", lname.c_str());
+//	return p;
+//}
 
 int LOScriptReader::GetCurrentLableIndex() {
 	int index = 0;
@@ -329,7 +287,7 @@ int LOScriptReader::GetCurrentLableIndex() {
 LOScriptPoint  *LOScriptReader::GetParamLable(int index) {
 	LOString s = GetParamStr(index);
 	if (s.length() == 0) return NULL;
-	return GetScriptPoint(s);
+	return LOScriptPointCall::GetScriptPoint(s);
 }
 
 
@@ -338,7 +296,7 @@ bool LOScriptReader::ChangePointer(int esp) {
 	int index = subStack.size() - 1 - esp;
 	if (index < 0 || index > subStack.size() - 1) return false;
 	currentLable = &subStack.at(index);
-	scriptbuf = currentLable->file->GetBuf();
+	scriptbuf = currentLable->GetScriptStr();
 	return true;
 }
 
@@ -506,8 +464,10 @@ int LOScriptReader::ContinueRun() {
 		return ret;
 	case LINE_ZERO:
 		//到达脚本的尾部，通常是eval中的，尝试从eval中退出，如果失败，则脚本无法继续进行下去了
-
-		break;
+		if (!ReadyToBackEval()) {
+			FatalError("faild ReadyToBackEval() at LOScriptReader::ContinueRun()");
+		}
+		return ret;
 	}
 
 	//正式有效的命令前，先执行阻塞事件
@@ -582,15 +542,7 @@ int LOScriptReader::ContinueEvent() {
 		//这里有个小技巧，如果hook是 finish状态，表示需要由脚本线程处理余下的过程
 		//如果是Invalid()表示已经处理完成了，不需要再次额外处理
 		if (ev->isFinish()) {
-			if (ev->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(ev.get());
-			else if (ev->catchFlag & LOEventHook::ANSWER_PRINGJMP) {
-				//响应此事件的有文字和print
-				if (ev->param2 == LOEventHook::FUN_TEXT_ACTION) {
-					//printf("***********text funish***********\n");
-					RunFuncSayFinish(ev.get());
-				}
-				else;
-			}
+			RunEventAfterFinish(ev.get());
 			isfinish = true;
 		}
 		else if (ev->isInvalid()) isfinish = true;
@@ -614,7 +566,7 @@ int LOScriptReader::ContinueEvent() {
 
 void LOScriptReader::NewThreadGosub(LOString *pname, LOString threadName) {
 	if (threadName.length() == 0) threadName = LOString::RandomStr(8);
-	LOScriptPoint *p = GetScriptPoint(*pname);
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(*pname);
 	if (p) {
 		LOScriptReader *scripter = LOScriptReader::EnterScriptReader(threadName);
 		scripter->gosubCore(p, false);
@@ -691,11 +643,13 @@ int LOScriptReader::RunCommand(const char *&buf) {
 
 		return RET_ERROR;
 	}
+	FatalError("empty command!");
+	return RET_ERROR;
 }
 
 LOString LOScriptReader::GetCurrentFile() {
-	if (currentLable && currentLable->file) {
-		return currentLable->file->Name;
+	if (currentLable && currentLable->file()) {
+		return currentLable->file()->Name;
 	}
 	return LOString();
 }
@@ -862,7 +816,9 @@ LOString LOScriptReader::ParseStrVariable() {
 		FatalError("LOScriptReader::ParseIntVariable() get int faild!");
 		return LOString();
 	}
-	return LOString( *(v->GetStr()));
+	LOString *tmp = v->GetStr();
+	if(tmp) return LOString( *(v->GetStr()));
+	else return LOString();
 }
 
 //返回的字符串不包含'*'
@@ -1478,7 +1434,7 @@ int LOScriptReader::DefaultStep() {
 		}
 
 		if (bin) {
-			AddScript(bin->bin, bin->Length(), fn.c_str());
+			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
 			LOLog_i("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
 			isok = true;
@@ -1496,7 +1452,7 @@ int LOScriptReader::DefaultStep() {
 			for (int ii = 0; ii < bin->Length() - 1; ii++) {
 				buf[ii] ^= 0x84;
 			}
-			AddScript(bin->bin, bin->Length(), fn.c_str());
+			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
 			LOLog_i("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
 			isok = true;
@@ -1505,17 +1461,17 @@ int LOScriptReader::DefaultStep() {
 
 	//加入内置系统脚本
 	char *tmp = (char*)(intptr_t)(__buil_in_script__);
-	AddScript(tmp, strlen(__buil_in_script__), "Buil_in_script.h");
+	LOScripFile::AddScript(tmp, strlen(__buil_in_script__), "Buil_in_script.h");
 	return isok;
 }
 
 void LOScriptReader::GetGameInit(int &w, int &h) {
 	w = 640; h = 480;
-	if (filesList.size() == 0) return;
+	//if (filesList.size() == 0) return;
 
 	gloableMax = 200;
 
-	LOScriptPoint *p = GetScriptPoint("__init__");
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint("__init__");
 	ReadyToRun(p);
 	const char *buf = currentLable->c_buf;
 	const char *obuf = buf;
@@ -1607,7 +1563,7 @@ bool LOScriptReader::InserCommand() {
 void LOScriptReader::InserCommand(LOString *incmd) {
 	if (!incmd || incmd->length() == 0) return;
 	//进入eval后不能使用goto gosub saveon saveoff savepoint命令
-	ReadyToRunEval(*incmd);
+	ReadyToRunEval(incmd);
 }
 
 
@@ -1620,7 +1576,6 @@ void LOScriptReader::ResetBaseConfig() {
 	st_globalon = false;
 	st_errorsave = false;
 	st_labellog = false;
-	evalStack.clear();
 }
 
 //重置脚本模块，注意只应该从主脚本调用这个函数
@@ -1676,7 +1631,7 @@ LOString LOScriptReader::GetReport() {
 	LOString report = "scripter thread: " + Name + "\n";
 	if (currentLable) {
 		report.append("file: ");
-		report.append(currentLable->file->Name.c_str());
+		report.append(currentLable->file()->Name.c_str());
 		report.append("\n");
 		report += "line: " + std::to_string(currentLable->c_line) + "\n--> ";
 		//获取一行
@@ -1738,6 +1693,26 @@ void FatalError(const char *fmt, ...) {
 //一些事件的处理
 int LOScriptReader::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	return LOEventHook::RUNFUNC_CONTINUE;
+}
+
+
+//有不少事件是需要在渲染线程响应后，再到脚本线程继续处理（为了线程安全）
+int LOScriptReader::RunEventAfterFinish(LOEventHook *e) {
+	if (e->catchFlag & LOEventHook::ANSWER_BTNCLICK) RunFuncBtnSetVal(e);
+	else if (e->catchFlag & LOEventHook::ANSWER_PRINGJMP) {
+		//响应此事件的有文字和print
+		if (e->param2 == LOEventHook::FUN_TEXT_ACTION) {
+			//printf("***********text funish***********\n");
+			RunFuncSayFinish(e);
+		}
+		else;
+	}
+	//视频播放或者调过的清理过程,由脚本线程调用渲染模块（因为线程安全）
+	else if (e->catchFlag & LOEventHook::ANSWER_VIDEOFINISH) {
+		e->param2 = LOEventHook::FUN_Video_Finish_After;
+		imgeModule->RunFunc(e, nullptr);
+	}
+	return 0;
 }
 
 
@@ -1880,14 +1855,14 @@ bool LOScriptReader::ScCallDeSerialize(BinArray *bin, int *pos) {
 	bin->GetLOString(pos);
 	//
 	LOString labelName = bin->GetLOString(pos);
-	LOScriptPoint *p = GetScriptPoint(labelName);
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(labelName);
 	if (!p) return false;
 
 	subStack.emplace_back(p);
 	LOScriptPointCall *point = &subStack.at(subStack.size() - 1);
 
 	point->c_line = point->s_line + bin->GetIntAuto(pos);
-	auto data = p->file->GetLineInfo(nullptr, point->c_line, true);
+	auto data = point->file()->GetLineInfo(nullptr, point->c_line, true);
 	if (!data.buf) {
 		LOLog_e("can't find scripter point line:%d", point->c_line);
 		return false;
@@ -1912,7 +1887,7 @@ bool LOScriptReader::LogicCallDeSerialize(BinArray *bin, int *pos) {
 	loopStack.push(logic);
 
 	LOString labelName = bin->GetLOString(pos);
-	LOScriptPoint *p = GetScriptPoint(labelName);
+	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(labelName);
 	if (!p) return false;
 
 	if (!logic->LoadSetPoint(p, bin->GetIntAuto(pos), bin->GetIntAuto(pos))) {

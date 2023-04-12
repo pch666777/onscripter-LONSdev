@@ -69,6 +69,7 @@ public:
 
 	void SetAction(LOAction *ac);
 	void SetAction(LOShareAction &ac);
+	void SetEvent(LOShareEventHook &ev);
 	void SetVisable(int v);
 	void SetShowRect(int x, int y, int w, int h);
 	void SetShowType(int show);
@@ -110,9 +111,10 @@ public:
 		UP_BTNSTR = 0x8000,
 		//跟新文件必定挂钩的 keystr buildstr texture  textype
 		//UP_NEWFILE = 0x10000,
-		//UP_ACTIONS = 0x20000,
+		UP_ACTIONS = 0x20000,
 		UP_SHOWTYPE = 0x40000,
 		UP_VISIABLE = 0x80000,
+		UP_EVENTS = 0x100000,    //更新了事件
 		UP_NEWFILE = -1,
 
 		//更新了哪一个action，使用LOAction的类型标识
@@ -155,10 +157,14 @@ public:
 		SHOW_SCALE = 4,
 		SHOW_ROTATE = 8
 	};
+	//事件存储索引
+	enum {
+		INDEX_EVE_LEFTCLICK = 1,
+	};
 
 	int flags;
 	int upflags;    //更新了那些值
-	int upaction;
+	//int upaction;
 	int btnval;    //btn的值
 	float offsetX;    //显示目标左上角位置
 	float offsetY;    //显示目标左上角位置
@@ -176,6 +182,7 @@ public:
 	//data是哪一种类型的
 	uint8_t texType;
 	//uint8_t visiable;   //是否可见
+	uint8_t showType;
 
 	double scaleX;   //X方向的缩放
 	double scaleY;	//y方向的缩放
@@ -191,8 +198,8 @@ public:
 	LOShareTexture texture;
 	//每一个动作我们都不确定什么时候删除，所以需要一个引用计数
 	std::unique_ptr<std::vector<LOShareAction>> actions;
-
-	uint8_t showType;
+	//事件组
+	std::unique_ptr <std::vector<LOShareEventHook>> events;
 };
 
 

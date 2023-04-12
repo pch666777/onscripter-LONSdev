@@ -181,15 +181,18 @@ public:
 	void ClearDialogText(char flag);
 	void RunExbtnStr(LOString *s);
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
-	int RunFuncSpstr(LOEventHook *hook, LOEventHook *e);
+	int RunFuncSpstr(LOEventHook *e);
 	int RunFuncText(LOEventHook *hook, LOEventHook *e);
-	int RunFuncScriptCall(LOEventHook *hook, LOEventHook *e);
-	int RunFuncBtnClear(LOEventHook *hook, LOEventHook *e);
+	int RunRenderDo(LOEventHook *hook, LOEventHook *e);
+	int RunFuncBtnClear(LOEventHook *e);
 	int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
+	int RunFuncVideoFinish(LOEventHook *hook, LOEventHook *e);
+	int RunFuncVideoFinishAfter(LOEventHook *hook);
 
 	LOEffect* GetEffect(int id);
 	void PrepareEffect(LOEffect *ef, const char *printName);
 	bool ContinueEffect(LOEffect *ef, const char *printName, double postime);
+	int DoMustEvent(int val);
 
 	intptr_t GetSDLRender() { return (intptr_t)render; }
 	void PrintError(LOString *err);
@@ -261,6 +264,8 @@ public:
 	int filelogCommand(FunctionInterface *reader);
 	int movieCommand(FunctionInterface *reader);
 	int aviCommand(FunctionInterface *reader);
+	int speventCommand(FunctionInterface *reader);
+	int quakeCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;
@@ -326,16 +331,17 @@ private:
 	void TextureFromColor(LOLayerDataBase *bak, LOString *s);
 	void TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s);
 	void TextureFromActionStr(LOLayerDataBase *bak, LOString *s);
+	void TextureFromVideo(LOLayerDataBase *bak, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
 
-	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM = false);
+	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM = false, bool isEmptyContine = false);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
-	void HandlingEvents();
+	void HandlingEvents(bool justMustDo);
 	int SendEventToHooks(LOEventHook *e, int flags);
 	int SendEventToLayer(LOEventHook *e);
 	//int SendEventToHooks(LOEventHook *e);

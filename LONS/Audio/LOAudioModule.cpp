@@ -74,7 +74,10 @@ void LOAudioModule::LoadFinish() {
 		//if (ii == INDEX_MUSIC) {
 		//	int bbk = 1;
 		//}
-		if (audioPtr[ii]) audioPtr[ii]->Play(0);
+		if (audioPtr[ii]) {
+			SetChannelVol(ii);
+			audioPtr[ii]->Play(0);
+		}
 	}
 }
 
@@ -137,7 +140,10 @@ void LOAudioModule::BGMCore(LOString &s, int looptimes) {
 		//SDL2的渐入是阻塞式的，而ONS是非阻塞式的，因此必须自己实现
 		if (bgmFadeInTime > 0) {
 			double per = (double)channelVol[INDEX_MUSIC] / bgmFadeInTime;
-			fade->fadeInEvent.reset(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, 0.0));
+			//shareptr的reset并不是线程安全的
+			if (fade->fadeOutEvent) fade->fadeOutEvent->InvalidMe();
+			//直接构建一个新的对象来规避线程问题
+			fade->fadeOutEvent = LOShareEventHook(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, 0.0));
 			//由静音开始
 			channelVol[INDEX_MUSIC] = 0;
 			SetChannelVol(INDEX_MUSIC);
@@ -158,12 +164,12 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 
 	inputChannelSafe(channel, aue);
 	if (aue->isAvailable()) {
-		channelActiveFlag |= (1 << channel);
+		channelActiveFlag |= (1 << (int64_t)channel);
 		aue->Play(0);
 	}
 	else if (isSePalyBgmDown()) {
 		//播放失败应该尝试恢复bgm音量
-		channelActiveFlag &= (~(1 << channel));
+		channelActiveFlag &= (~(1 << (int64_t)channel));
 	}
 
 	//需要的话降低/恢复bgm的音量
@@ -520,24 +526,30 @@ LOAudioModule::FadeData *LOAudioModule::GetFadeData(int channel) {
 
 
 int LOAudioModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
-	if (e->param1 == LOEventHook::SCRIPT_CALL_AUDIOFADE) RunFuncAudioFade(hook, e);
+	switch (e->param2){
+	case LOEventHook::FUN_AudioFade:
+		RunFuncAudioFade(hook, e);
+		break;
+	default:
+		break;
+	}
 	return LOEventHook::RUNFUNC_FINISH;
 }
 
 
 int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 	Uint32 curTick = SDL_GetTicks();
-	double per = e->GetParam(0)->GetDoule();
+	double per = e->GetParam(1)->GetDoule();
 	per *= (curTick - e->timeStamp);
 	//while (abs(per) < 1.0) per *= 1.2;
 	if ( abs(per) < 1.0) return LOEventHook::RUNFUNC_FINISH;
 
 	//更新时间戳
 	e->timeStamp = curTick;
-	int channel = e->param2;
-	double curVol = e->GetParam(1)->GetDoule();
+	int channel = e->GetParam(0)->GetInt();
+	double curVol = e->GetParam(2)->GetDoule();
 	curVol += per;
-	e->GetParam(1)->SetDoule(curVol);
+	e->GetParam(2)->SetDoule(curVol);
 
 	if (curVol >= channelVol[channel]) {
 		e->InvalidMe();
@@ -547,8 +559,8 @@ int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 		e->InvalidMe();
 		curVol = 0.0;
 	}
-
-	
+	//在设置前，判断事件是否还有效，可以已经开始播放新的bgm了
+	if(e->isStateAfterFinish()) return LOEventHook::RUNFUNC_FINISH;
 
 	//设置音量
 	SetChannelVol(channel, (int)curVol);
