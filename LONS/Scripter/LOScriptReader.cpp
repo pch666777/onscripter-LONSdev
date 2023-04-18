@@ -18,7 +18,8 @@ bool LOScriptReader::st_globalon; //是否使用全局变量
 bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
-int LOScriptReader::gloableMax = 200;
+bool st_skipflag = false;   //快进标记
+int LOScriptReader::gloableBorder = 200;
 LOScriptReader::SaveFileInfo LOScriptReader::s_saveinfo;
 int G_lineLog = 1;
 
@@ -524,6 +525,14 @@ int LOScriptReader::ContinueEvent() {
 		if (!ev) break;
 
 		hasEvent = true;
+		//快进模式下，textbtnwai会立即完成（点击空白区域）
+		if (st_skipflag) {
+			if (ev->isTextBtnWait() && !ev->isStateAfterFinish()) {
+				ev->InvalidMe();
+				LOUniqEventHook qev(LOEventHook::CreateBtnClickEvent( -1, 0, 0));
+				imgeModule->RunFunc(ev.get(), qev.get());
+			}
+		}
 
 		//如果ev带有timer则验证是否超时
 		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
@@ -1469,7 +1478,7 @@ void LOScriptReader::GetGameInit(int &w, int &h) {
 	w = 640; h = 480;
 	//if (filesList.size() == 0) return;
 
-	gloableMax = 200;
+	gloableBorder = 200;
 
 	LOScriptPoint *p = LOScriptPointCall::GetScriptPoint("__init__");
 	ReadyToRun(p);
@@ -1501,7 +1510,7 @@ void LOScriptReader::GetGameInit(int &w, int &h) {
 				}
 				else if (s == "value" || s == "g" || s == "G") {
 					buf = scriptbuf->SkipSpace(buf);
-					gloableMax = scriptbuf->GetInt(buf);
+					gloableBorder = scriptbuf->GetInt(buf);
 				}
 				else if (s == "v" || s == "V") {
 					//LONS总是允许最大的变量数，忽略这个
@@ -1623,6 +1632,9 @@ void LOScriptReader::LoadReset() {
 	nextReader = nullptr;
 	//清除所有事件
 	waitEventQue.invalidClear();
+	//重置变量的值
+
+
 	//不清除各种 define设置
 }
 

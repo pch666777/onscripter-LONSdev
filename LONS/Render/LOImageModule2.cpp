@@ -4,6 +4,7 @@
 #include "../etc/LOEvent1.h"
 #include "LOImageModule.h"
 
+extern bool st_skipflag;
 
 //全局的添加处理事件，注意这个函数不是线程安全的，只应该从渲染线程调用
 void AddPreEvent(LOShareEventHook &e) {
@@ -58,6 +59,8 @@ void LOImageModule::DoPreEvent(double postime) {
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM, bool isEmptyContine) {
 	//考虑到需要存档
 	iswait = true;
+	//快进模式
+	if (st_skipflag) ef = nullptr;
 
 	//检查是不是有需要刷新的
 	auto *map = GetPrintNameMap(print_name)->map;
@@ -180,7 +183,21 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			}
 		}
 		break;
+	case SDL_KEYDOWN:
+		//按下ctrl键，快进
+		if (event->key.keysym.sym == SDL_KeyCode::SDLK_LCTRL || event->key.keysym.sym == SDL_KeyCode::SDLK_RCTRL) {
+			st_skipflag = true;
+			//所有print特性都改为print 1
+			//textbtnwait立即完成，文字滚动特效改为立即完成，延迟类命令无效
+		}
+		break;
+	case SDL_KEYUP:
+		//结束快进
+		if (event->key.keysym.sym == SDL_KeyCode::SDLK_LCTRL || event->key.keysym.sym == SDL_KeyCode::SDLK_RCTRL) {
+			st_skipflag = false;
+		}
 	}
+
 }
 
 

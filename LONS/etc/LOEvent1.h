@@ -108,6 +108,7 @@ public:
 	enum {
 		FLAGS_NO_SAVE = 1,  //只有含有此标记的事件/钩子不会存档
 		FLAGS_FINISH_NOTABKE = 2,  //含有此标记的事件，在完成之前不会从事件列表中移除
+		FLAGS_TEXTBTNWAIT = 4,
 	};
 
 	LOEventHook();
@@ -120,6 +121,7 @@ public:
 	bool FinishMe();
 	bool isInvalid();
 	bool isFinishTakeOut() { return flags & FLAGS_FINISH_NOTABKE; }
+	bool isTextBtnWait() { return flags & FLAGS_TEXTBTNWAIT; }
 
 	//是否处于可编辑状态
 	bool isActive();

@@ -12,6 +12,7 @@
 bool LOImageModule::isShowFps = false;
 bool LOImageModule::st_filelog;  //是否使用文件记录
 extern void FatalError(const char *fmt, ...);
+extern bool st_skipflag;
 
 LOImageModule::LOImageModule(){
 	FunctionInterface::imgeModule = this;
@@ -1267,6 +1268,7 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 
 	LOActionText *ac = (LOActionText*)info->bak.GetAction(LOAction::ANIM_TEXT);
 	ac->initPos = lastPos;
+	if (st_skipflag) ac->initPos = 0x7fff;
 	//这个速度是每ms应该前进的像素，一个字的像素/时间
 	ac->perPix = (double)sayStyle.xsize / G_textspeed;
 	ac->setFlags(LOAction::FLAGS_INIT);

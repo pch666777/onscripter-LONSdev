@@ -304,7 +304,7 @@ private:
 	static bool st_labellog; //是否使用标签变量
 	static bool st_errorsave; //是否使用错误自动保存
 	static bool st_saveonflag; //是否处于saveon模式
-	static int gloableMax;
+	static int gloableBorder;
 	static SaveFileInfo s_saveinfo;
 
 	//bool isAddLine;

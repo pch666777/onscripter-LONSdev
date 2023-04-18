@@ -369,6 +369,10 @@ int LOAudioModule::dwaveCommand(FunctionInterface *reader) {
 	int channel = reader->GetParamInt(0);
 	LOString s = reader->GetParamStr(1);
 
+	//if (reader->GetCurrentLine() == 185094) {
+	//	int bbk = 1;
+	//}
+
 	if (!CheckChannel(channel, "[dwave] channel out of range:%d")) return RET_CONTINUE;
 	
 	int loopcount = 0;

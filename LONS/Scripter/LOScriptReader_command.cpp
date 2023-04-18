@@ -15,6 +15,7 @@
 extern int G_lineLog;
 //extern void RegisterBaseHook();
 extern void FatalError(const char *fmt, ...);
+extern bool st_skipflag;
 
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -181,7 +182,7 @@ int LOScriptReader::gameCommand(FunctionInterface *reader) {
 
 int LOScriptReader::delayCommand(FunctionInterface *reader) {
 	int val = reader->GetParamInt(0);
-	if (val > 0) {
+	if (val > 0 && !st_skipflag) {
 		//创建一个时间阻塞事件
 		//除waittimer外，delay和wait均可以左键跳过
 		LOShareEventHook ev(LOEventHook::CreateTimerHook(val, !reader->isName("waittimer")));
@@ -238,9 +239,9 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
-	if (reader->GetCurrentLine() == 247) {
-		int bbk = 0;
-	}
+	//if (reader->GetCurrentLine() == 185093) {
+	//	int bbk = 0;
+	//}
 
 	bool ret = ParseLogicExp();
 	if (isName("notif")) ret = !ret;
@@ -500,6 +501,10 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::midCommand(FunctionInterface *reader) {
+	//if (reader->GetCurrentLine() == 185094) {
+	//	int bbk = 1;
+	//}
+
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	LOString tag = reader->GetParamStr(1);
 	int startpos = reader->GetParamInt(2);
@@ -881,7 +886,7 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 	//更新变量
 	if (st_globalon) {
 		UpdataGlobleVariable();
-		ONSVariableBase::SaveOnsVar(GloSaveFS, gloableMax, MAXVARIABLE_COUNT - gloableMax);
+		ONSVariableBase::SaveOnsVar(GloSaveFS, 0, gloableBorder);
 	}
 	else ONSVariableBase::SaveOnsVar(GloSaveFS, 0, MAXVARIABLE_COUNT);
 	//存储hook钩子列表
@@ -903,7 +908,8 @@ int LOScriptReader::savepointCommand(FunctionInterface *reader) {
 void LOScriptReader::UpdataGlobleVariable() {
 	//初始化格式
 	GloVariableFS->InitLpksHeader();
-	ONSVariableBase::SaveOnsVar(GloVariableFS, 0, gloableMax);
+	//从gloableBorder起，到变量最大值为全局变量
+	ONSVariableBase::SaveOnsVar(GloVariableFS, gloableBorder, MAXVARIABLE_COUNT - gloableBorder);
 }
 
 
@@ -1058,6 +1064,9 @@ int LOScriptReader::loadgameCommand(FunctionInterface *reader) {
 
 
 bool LOScriptReader::LoadCore(int id) {
+
+	//ONSVariableBase *nsv = ONSVariableBase::GetVariable(170);
+	//nsv = ONSVariableBase::GetVariable(171);
 
 	std::unique_ptr<BinArray> bin(ReadSaveFile(id, -1));
 	int pos = 0;

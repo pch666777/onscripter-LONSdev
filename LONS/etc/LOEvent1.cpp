@@ -234,6 +234,7 @@ LOEventHook* LOEventHook::CreateBtnwaitHook(int waittime, int refid, const char 
 	if (waittime > 0) e->catchFlag |= ANSWER_TIMER;
 	e->param1 = MOD_RENDER;
 	e->param2 = FUN_BTNFINISH;
+	if (strcmp(cmd, "textbtnwait") == 0) e->flags |= FLAGS_TEXTBTNWAIT;
 	//最大的等待时间
 	e->paramList.push_back(new LOVariant(waittime));
 	e->paramList.push_back(new LOVariant(refid));
