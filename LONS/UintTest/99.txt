@@ -1,13 +1,26 @@
 ;$V1000G500S1024,576
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
-setintvar "linelog",1
+setintvar "linelog",0
 
 ;avi "op00.mpg",1
 ;btnwait %0
 
 ;lsp 0,"*v/352,288,mpg;op00.mpg",300,200
 ;btnwait %0
+delay 500
+resettimer
+mov $555,"66666"
+for %1 = 0 to 100
+	itoa $555,%1
+	lsp 0,":s/20,20,1;#ffffff$555",10,10
+	print 1
+next
+gettimer %1
+debuglog %1
+itoa $555,%1
+lsp 0,":s/20,20,1;#ffffff$555",10,10
+btnwait %0
 
 globalon
 filelog

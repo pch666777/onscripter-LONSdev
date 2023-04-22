@@ -291,7 +291,7 @@ private:
 	//int exbtn_count;
 	int btnOverTime;
 	bool btnUseSeOver;
-	bool reflashNow;
+	//std::atomic_bool reflashNow;
 	//bool exbtn_d_hasrun;
 
 	int dialogDisplayMode;

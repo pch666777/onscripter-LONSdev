@@ -59,8 +59,11 @@ void LOImageModule::DoPreEvent(double postime) {
 int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM, bool isEmptyContine) {
 	//考虑到需要存档
 	iswait = true;
-	//快进模式
-	if (st_skipflag) ef = nullptr;
+	//快进模式，要尽可能的提升帧的刷新速度
+	if (st_skipflag) {
+		ef = nullptr;
+		isIM = true;
+	}
 
 	//检查是不是有需要刷新的
 	auto *map = GetPrintNameMap(print_name)->map;
@@ -81,7 +84,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
 	//是否要求帧立即响应
-	reflashNow = isIM;
+	//reflashNow.store(true);
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -119,7 +122,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 		ep->ResetMe();
 		//printf("script thread:%d\n", SDL_GetTicks());
 	}
-	reflashNow = false;
 
 	SDL_UnlockMutex(layerQueMutex);
 	if (ep) {

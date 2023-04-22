@@ -254,8 +254,8 @@ void LOImageModule::CaleWindowSize(int scX, int scY, int srcW, int srcH, int dst
 int LOImageModule::MainLoop() {
 	Uint64 hightTimeNow;
 	bool loopflag = true;
-	reflashNow = false;
-
+	bool reflashNow1 = false;
+	//G_fpsnum = 120;
 	if (G_fpsnum < 2) G_fpsnum = 2;
 	if (G_fpsnum > 120) G_fpsnum = 120;
 	double fpstime = 1000.01 / G_fpsnum;
@@ -274,8 +274,16 @@ int LOImageModule::MainLoop() {
 		hightTimeNow = LOTimer::GetHighTimer();
 		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
-		//部分操作要求立即刷新帧
-		if (!minisize && (posTime + 0.1 > fpstime || reflashNow)) {
+		//部分操作要求立即刷新帧，特别是快进模式下
+		if(st_skipflag) reflashNow1 = printHook->enterEdit();
+		else reflashNow1 = false;
+
+		if (!minisize && (posTime + 0.1 > fpstime || reflashNow1)) {
+			//if (posTime < fpstime - 0.1 && reflashNow1) printf("yes\n");
+			if (reflashNow1) {
+				//printf("yes\n");
+				printHook->closeEdit();
+			}
 			if (RefreshFrame(posTime) == 0) {
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
@@ -284,6 +292,7 @@ int LOImageModule::MainLoop() {
 			else {
 				LOLog_i("RefreshFrame faild!");
 			}
+			//if (reflashNow1) reflashNow.store(false);
 		}
 
 		//检查模块状态变化
