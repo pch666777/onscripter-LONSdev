@@ -117,7 +117,7 @@ int LOImageModule::printStack(FunctionInterface *reader, int fix) {
 
 
 int LOImageModule::bgCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 502) {
+	//if (reader->GetCurrentLine() == 400197) {
 	//	int debugbreak = 0;
 	//}
 	
@@ -552,12 +552,12 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 int LOImageModule::effectCommand(FunctionInterface *reader) {
 	//if (NotAtDefineError("effect"))return RET_ERROR;
 	int no = reader->GetParamInt(0);
-	if (reader->isName("effect")) {
-		if (no >= 1 && no <= 18) {
-			FatalError("[effect] command id can't use 1~18,that's ONScripter system used!");
-			return RET_ERROR;
-		}
-	}
+	//if (reader->isName("effect")) {
+	//	if (no >= 1 && no <= 18) {
+	//		FatalError("[effect] command id can't use 1~18,that's ONScripter system used!");
+	//		return RET_ERROR;
+	//	}
+	//}
 	LOEffect *ef = new LOEffect;
 	ef->id = no;
 	ef->nseffID = reader->GetParamInt(1);

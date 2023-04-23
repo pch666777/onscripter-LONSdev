@@ -239,7 +239,7 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 185093) {
+	//if (reader->GetCurrentLine() == 182) {
 	//	int bbk = 0;
 	//}
 

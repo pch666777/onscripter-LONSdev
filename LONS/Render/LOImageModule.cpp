@@ -1128,22 +1128,36 @@ LOEffect* LOImageModule::GetEffect(int id) {
 	if (id < 2) return NULL;
 	LOEffect *ef = new LOEffect;
 	ef->id = id;
-	if (ef->id <= 18) {
-		ef->nseffID = ef->id;
-		ef->time = 20; //给予一个最小的时间
+	//寻找可以匹配的特性
+	auto iter = effectMap.find(ef->id);
+	if (iter != effectMap.end()) {
+		ef->nseffID = iter->second->nseffID;
+		ef->time = iter->second->time;
+		ef->mask.assign(iter->second->mask);
 	}
 	else {
-		auto iter = effectMap.find(ef->id);
-		if (iter == effectMap.end()) {
-			delete ef;
-			ef = NULL;
-		}
-		else {
-			ef->nseffID = iter->second->nseffID;
-			ef->time = iter->second->time;
-			ef->mask.assign(iter->second->mask);
-		}
+		ef->nseffID = id;
+		ef->time = 20; //给予一个最小的时间
 	}
+	//
+	if (ef->nseffID < 0 || ef->nseffID > 18) return nullptr;  //无效的特效
+
+	//if (ef->id <= 18) {
+	//	ef->nseffID = ef->id;
+	//	ef->time = 20; //给予一个最小的时间
+	//}
+	//else {
+	//	auto iter = effectMap.find(ef->id);
+	//	if (iter == effectMap.end()) {
+	//		delete ef;
+	//		ef = NULL;
+	//	}
+	//	else {
+	//		ef->nseffID = iter->second->nseffID;
+	//		ef->time = iter->second->time;
+	//		ef->mask.assign(iter->second->mask);
+	//	}
+	//}
 	return ef;
 }
 

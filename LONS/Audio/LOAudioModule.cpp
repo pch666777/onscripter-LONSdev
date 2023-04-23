@@ -414,7 +414,9 @@ int LOAudioModule::dwaveplayCommand(FunctionInterface *reader) {
 }
 
 int LOAudioModule::dwavestopCommand(FunctionInterface *reader) {
-	StopCore(currentChannel);
+	int channel = currentChannel;
+	if (reader->GetParamCount() > 0) channel = reader->GetParamInt(0);
+	StopCore(channel);
 	return RET_CONTINUE;
 }
 

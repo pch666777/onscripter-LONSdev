@@ -245,7 +245,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "dwaveload",     "i,s",       "Y,Y",         &FunctionInterface::dwaveloadCommand },
 	{ "dwaveloop",     "i,s",       "Y,Y",         &FunctionInterface::dwaveCommand },
 	{ "dwaveplay",     "i",         "Y",           &FunctionInterface::dwaveplayCommand },
-	{ "dwavestop",     "\0",        "Y",           &FunctionInterface::dwavestopCommand },
+	{ "dwavestop",     "i",         "N",           &FunctionInterface::dwavestopCommand },
 	{ "getbgmvol",     "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "getmp3vol",     "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "getsevol",      "I",         "Y",           &FunctionInterface::getvoicevolCommand },

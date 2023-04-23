@@ -325,7 +325,7 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
-	//if (GetCurrentLine() == 281) {
+	//if (GetCurrentLine() == 182) {
 	//	int debugint = 0;
 	//}
 
@@ -703,6 +703,8 @@ bool LOScriptReader::NextComma(bool isTry) {
 	else if (!isTry) {
 		//有一些麻烦的空格即为分隔的写法，真不想支持
 		if (spaceisComma) return true;
+		//有些游戏不喜欢写','所以...
+		if (*currentLable->c_buf == '"') return true;
 		LOLog_i("NextComma not at a comma!");
 		return false;
 	}
@@ -1461,6 +1463,7 @@ int LOScriptReader::DefaultStep() {
 			for (int ii = 0; ii < bin->Length() - 1; ii++) {
 				buf[ii] ^= 0x84;
 			}
+			//bin->WriteToFile("d:\\00.txt");
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
 			LOLog_i("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
