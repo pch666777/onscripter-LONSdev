@@ -213,7 +213,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "quake",         "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
 	{ "quakex",        "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
 	{ "quakey",        "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
-
+	{ "ld",            "N,s,i,i,s", "Y,Y,N,N,N",   &FunctionInterface::ldCommand },
+	{ "cl",            "N,i,i,s",   "Y,N,N,N",     &FunctionInterface::clCommand },
 
 	//audio
 	{ "bgm",           "s",         "Y",           &FunctionInterface::bgmCommand },

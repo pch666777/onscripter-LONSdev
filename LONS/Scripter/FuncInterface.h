@@ -357,6 +357,8 @@ public:
 	virtual int filelogCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int speventCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int quakeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int ldCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int clCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int bgmonceCommand(FunctionInterface *reader) { return RET_VIRTUAL; }

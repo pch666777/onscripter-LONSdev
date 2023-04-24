@@ -1128,3 +1128,58 @@ int LOImageModule::quakeCommand(FunctionInterface *reader) {
 
 	return RET_CONTINUE;
 }
+
+
+int LOImageModule::ldCommand(FunctionInterface *reader) {
+	LOString spos = reader->GetParamStr(0).toLower();
+	LOString tag = reader->GetParamStr(1);
+	int xx, id;
+	if (spos == "c") {
+		xx = G_gameWidth / 2; id = 12;
+	}
+	else if (spos == "l") {
+		xx = G_gameWidth / 4; id = 13;
+	}
+	else if (spos == "r") {
+		xx = G_gameWidth * 3 / 4; id = 11;
+	}
+	else {
+		FatalError("[ld] command first parameter error!");
+		return RET_ERROR;
+	}
+
+	reader->ExpandStr(tag);
+	LeveTextDisplayMode();
+
+	LOLayerData* info = CreateNewLayerData(GetFullID(LOLayer::LAYER_STAND, id, 255, 255), reader->GetPrintName());
+	loadSpCore(info, tag, xx, 0, -1, true);
+	//修正x,y的位置
+	if (info->bak.texture) {
+		info->bak.SetPosition(xx - info->bak.texture->baseW() / 2, G_gameHeight - info->bak.texture->baseH());
+	}
+	//是否需要直接print
+	if (reader->GetParamCount() > 2) printStack(reader, 2);
+	return RET_CONTINUE;
+}
+
+
+int LOImageModule::clCommand(FunctionInterface *reader) {
+	LOString spos = reader->GetParamStr(0).toLower();
+	int ids[] = { 0,0,0 };
+	if (spos == "c") ids[0] = 12;
+	else if (spos == "l") ids[0] = 13;
+	else if (spos == "r") ids[0] = 11;
+	else if (spos == "a") {
+		ids[0] = 11; ids[1] = 12; ids[2] = 13;
+	}
+	else {
+		FatalError("[cl] command first parameter error!");
+		return RET_ERROR;
+	}
+	//
+	for (int ii = 0; ii < 3; ii++) {
+		CspCore(LOLayer::LAYER_STAND, ids[ii], ids[ii], reader->GetPrintName());
+	}
+	if (reader->GetParamCount() > 1) printStack(reader, 1);
+	return RET_CONTINUE;
+}

@@ -266,6 +266,8 @@ public:
 	int aviCommand(FunctionInterface *reader);
 	int speventCommand(FunctionInterface *reader);
 	int quakeCommand(FunctionInterface *reader);
+	int ldCommand(FunctionInterface *reader);
+	int clCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

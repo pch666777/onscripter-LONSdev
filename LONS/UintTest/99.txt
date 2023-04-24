@@ -1,13 +1,18 @@
 ;$V1000G500S1024,576
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
-setintvar "linelog",0
+setintvar "linelog",1
 
-;avi "op00.mpg",1
-;btnwait %0
+;ld c,":c;>50,50,#ff00ff",10,300   ;在最中间 
+;ld l,":c;>50,100,#ffffff",10,300   ;在最下面，1/4处
+;ld r,":c;>100,50,#00ffff",10,300   ;在最上面，3/4处，底部对齐
 
-;lsp 0,"*v/352,288,mpg;op00.mpg",300,200
-;btnwait %0
+;ld c,":c;>50,50,#ff00ff"   ;在最中间 
+;ld l,":c;>50,100,#ffffff"   ;在最下面，1/4处
+;ld r,":c;>100,50,#00ffff"   ;在最上面，3/4处，底部对齐
+gosub *ld_test
+btnwait %0
+
 delay 500
 resettimer
 mov $555,"66666"
@@ -543,6 +548,43 @@ getpixcolor $4,305,5
 if $1 != "00ff00" || $2 != "009600" || $3 != "005000" || $4 != "000a00" debuglog "texture cache faild!",$1,$2,$3,$4
 
 csp -1
+
+return
+
+
+;测试ld系列命令
+*ld_test
+csp -1
+bg #000000
+
+ld c,":c;>50,50,#ff00ff",10,300   ;在最中间 
+ld l,":c;>50,100,#ffff00",10,300   ;在最下面，1/4处
+;delay 1
+getpixcolor $1,512,551
+if $1 != "ff00ff" debuglog "ld命令测试不通过",$1
+getpixcolor $1,256,551
+if $1 != "ffff00" debuglog "ld命令测试不通过",$1
+
+ld r,":c;>100,50,#00ffff"   ;在最上面，3/4处，底部对齐
+print 1
+getpixcolor $1,768,551
+if $1 != "00ffff" debuglog "ld命令测试不通过",$1
+
+;btnwait %0
+
+bg #ff0000
+cl c,10,300
+cl l,10,300
+;delay 1
+getpixcolor $1,512,551
+if $1 != "ff0000" debuglog "ld命令测试不通过",$1
+getpixcolor $1,256,551
+if $1 != "ff0000" debuglog "ld命令测试不通过",$1
+
+cl r
+print 1
+getpixcolor $1,768,551
+if $1 != "ff0000" debuglog "ld命令测试不通过",$1
 
 return
 
