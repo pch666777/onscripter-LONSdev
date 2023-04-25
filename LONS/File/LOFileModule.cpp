@@ -47,7 +47,7 @@ BinArray *LOFileModule::ReadFileFromFileSys(LOString *fn) {
 }
 
 BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
-	LOString fnl = fn->toLower();
+	LOString fnl = fn->toLowerAndRePathSymble('\\');
 	LOPackFile::PackIndex index ;
 	LOPackFile *file = NULL;
 	for (int ii = 0; ii < packFiles.size() && index.length == 0; ii++) {

@@ -220,6 +220,21 @@ LOString LOString::toLower() {
 	return s;
 }
 
+LOString LOString::toLowerAndRePathSymble(char pathSymble) {
+	LOString s = *this;
+	const char *buf = c_str();
+	for (int ii = 0; ii < length(); ) {
+		int ulen = _encoder->GetCharLen(buf + ii);
+		if (ulen == 1) {
+			if(buf[ii] >= 'A' && buf[ii] <= 'Z') s[ii] = buf[ii] + 0x20;
+			else if (buf[ii] == '\\' || buf[ii] == '/') s[ii] = pathSymble;
+		}
+
+		ii += ulen;
+	}
+	return s;
+}
+
 
 bool LOString::IsOperator(int current) {
 	if (!checkCurrent(current)) return false;

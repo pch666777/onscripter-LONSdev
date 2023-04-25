@@ -1135,13 +1135,13 @@ int LOImageModule::ldCommand(FunctionInterface *reader) {
 	LOString tag = reader->GetParamStr(1);
 	int xx, id;
 	if (spos == "c") {
-		xx = G_gameWidth / 2; id = 12;
+		xx = G_gameWidth / 2; id = LOLayer::IDEX_LD_CENTER;
 	}
 	else if (spos == "l") {
-		xx = G_gameWidth / 4; id = 13;
+		xx = G_gameWidth / 4; id = LOLayer::IDEX_LD_LEFT;
 	}
 	else if (spos == "r") {
-		xx = G_gameWidth * 3 / 4; id = 11;
+		xx = G_gameWidth * 3 / 4; id = LOLayer::IDEX_LD_RIGHT;
 	}
 	else {
 		FatalError("[ld] command first parameter error!");
@@ -1166,11 +1166,11 @@ int LOImageModule::ldCommand(FunctionInterface *reader) {
 int LOImageModule::clCommand(FunctionInterface *reader) {
 	LOString spos = reader->GetParamStr(0).toLower();
 	int ids[] = { 0,0,0 };
-	if (spos == "c") ids[0] = 12;
-	else if (spos == "l") ids[0] = 13;
-	else if (spos == "r") ids[0] = 11;
+	if (spos == "c") ids[0] = LOLayer::IDEX_LD_CENTER;
+	else if (spos == "l") ids[0] = LOLayer::IDEX_LD_LEFT;
+	else if (spos == "r") ids[0] = LOLayer::IDEX_LD_RIGHT;
 	else if (spos == "a") {
-		ids[0] = 11; ids[1] = 12; ids[2] = 13;
+		ids[0] = LOLayer::IDEX_LD_RIGHT; ids[1] = LOLayer::IDEX_LD_CENTER; ids[2] = LOLayer::IDEX_LD_LEFT;
 	}
 	else {
 		FatalError("[cl] command first parameter error!");

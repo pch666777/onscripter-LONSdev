@@ -51,6 +51,10 @@ public:
 
 		IDEX_NSSYS_RMENU = 20,
 		IDEX_BG_BTNEND = 1022,
+
+		IDEX_LD_LEFT = 13,
+		IDEX_LD_CENTER = 12,
+		IDEX_LD_RIGHT = 11,
 	};
 
 	enum {

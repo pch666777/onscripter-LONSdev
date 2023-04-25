@@ -607,7 +607,7 @@ int LOScriptReader::IdentifyLine(const char *&buf) {
 }
 
 int LOScriptReader::RunCommand(const char *&buf) {
-	//if (currentLable->current_line == 67) {
+	//if (currentLable->c_line == 39447) {
 	//	int deebgu = 0;
 	//}
 
@@ -634,7 +634,10 @@ int LOScriptReader::RunCommand(const char *&buf) {
 			lastCmd = curCmd;
 			curCmd = tmpcmd;
 			curCmdbuf = curCmd.c_str();
+			//空格隔断，或者‘,’号
 			buf = scriptbuf->SkipSpace(buf);
+			if (buf[0] == ',') buf++;
+
 			if(G_lineLog) LOLog_i("[%d]:[%s]\n", currentLable->c_line, tmpcmd.c_str());
 			//if (currentLable->current_line == 54) {
 			//	int debugbreak = 1;
