@@ -124,8 +124,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"loadgosub",    "L",     "Y",         &FunctionInterface::usergosubCommand},
 
 	//image module
-	{"lsp",      "i,s,i,i,i",     "Y,Y,Y,Y,N",     &FunctionInterface::lspCommand},
-	{"lsph",     "i,s,i,i,i",     "Y,Y,Y,Y,N",     &FunctionInterface::lspCommand},
+	{"lsp",      "i,s,i,i,i",     "Y,Y,N,N,N",     &FunctionInterface::lspCommand},
+	{"lsph",     "i,s,i,i,i",     "Y,Y,N,N,N",     &FunctionInterface::lspCommand},
 	{"lspc",     "i,i,s,i,i,i",   "Y,Y,Y,Y,Y,N",   &FunctionInterface::lspCommand},
 	{"lsp2",     "i,s,i,i,i,i,i,i", "Y,Y,Y,Y,Y,Y,Y,N",  &FunctionInterface::lsp2Command},
 	{"lsp2add",  "i,s,i,i,i,i,i,i", "Y,Y,Y,Y,Y,Y,Y,N",  &FunctionInterface::lsp2Command},

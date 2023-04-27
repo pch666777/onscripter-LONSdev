@@ -675,8 +675,15 @@ bool LOImageModule::ParseTag(LOLayerDataBase *bak, LOString *tag) {
 				bak->SetTextureType(LOtexture::TEX_VIDEO);
 				bak->SetAlphaMode(LOLayerData::TRANS_COPY);
 			}
-			buf += 2;
-			bak->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+			else if (buf[0] >= '0' && buf[0] <= '9') {//layer模式
+				bak->SetTextureType(LOtexture::TEX_LAYERMODE);
+				bak->btnval = tag->GetInt(buf);
+			}
+			//非layer模式继续
+			if (!bak->isTexType(LOtexture::TEX_LAYERMODE)) {
+				buf += 2;
+				bak->keyStr.reset(new LOString(buf, tag->GetEncoder()));
+			}
 		}
 		else {
 			bak->SetTextureType(LOtexture::TEX_IMG);
@@ -853,6 +860,9 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 			break;
 		case LOtexture::TEX_VIDEO:
 			TextureFromVideo(bak, tstr.get());
+			break;
+		case LOtexture::TEX_LAYERMODE:
+			//还没有完成 work here
 			break;
 		default:
 			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", bak->texType);

@@ -63,6 +63,7 @@ public:
 	bool isUpDataEx() { return flags & FLAGS_UPDATAEX; }
 	bool isBtndef() { return flags & FLAGS_BTNDEF; }
 	bool isActive() { return flags & FLAGS_ACTIVE; }
+	bool isTexType(int t) { return texType == t; }
 	bool isForce() { return flags & FLAGS_ISFORCE; }
 	bool isFloatMode() { return flags & FLAGS_FLOATMODE; }
 	bool isNothing() { return flags == 0 && upflags == 0; }

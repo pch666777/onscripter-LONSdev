@@ -454,7 +454,8 @@ int LOScriptReader::straliasCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::numaliasCommand(FunctionInterface *reader) {
-	LOString s = reader->GetParamStr(0);
+	//ons里是不分大小写的
+	LOString s = reader->GetParamStr(0).toLower();
 	int val = reader->GetParamInt(1);
 	numAliasMap[s] = val;
 	return RET_CONTINUE;
@@ -541,6 +542,10 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
+	//if (reader->GetCurrentLine() == 46) {
+	//	int bbk = 1;
+	//}
+
 	ONSVariableRef *v1 = ParseVariableBase(false);
 	if (!v1->isRef()) {
 		FatalError("[%s] command not start variable!");

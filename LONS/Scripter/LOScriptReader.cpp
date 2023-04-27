@@ -867,15 +867,16 @@ ONSVariableRef *LOScriptReader::ParseLabel2() {
 
 //获取别名是有文字和整数之分的
 int LOScriptReader::GetAliasRef(LOString &s, bool isstr, int &out) {
+	LOString ls = s.toLower();
 	//整数别名只查找整数，文字别名先查找文字，再查找整数
 	if (isstr) {
-		auto iter = strAliasMap.find(s);
+		auto iter = strAliasMap.find(ls);
 		if (iter != strAliasMap.end()) {
 			out = iter->second;
 			return ALIAS_STR;
 		}
 	}
-	auto iter = numAliasMap.find(s);
+	auto iter = numAliasMap.find(ls);
 	if (iter != numAliasMap.end()) {
 		out = iter->second;
 		return ALIAS_INT;

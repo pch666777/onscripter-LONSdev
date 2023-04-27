@@ -12,6 +12,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	//	int debugbreak = 1;
 	//}
 	bool visiable = !reader->isName("lsph");
+	//
 	int ids[] = { reader->GetParamInt(0),255,255 };
 	int fixpos = 0;
 	int fullid = GetFullID(LOLayer::LAYER_SPRINT, ids);
@@ -23,10 +24,13 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	}
 
 	LOString tag = reader->GetParamStr(1 + fixpos);
-	int xx = reader->GetParamInt(2 + fixpos);
-	int yy = reader->GetParamInt(3 + fixpos);
+	int pcount = reader->GetParamCount();
+	int xx = 0;
+	if (pcount > fixpos + 2) xx = reader->GetParamInt(2 + fixpos);
+	int yy = 0;
+	if (pcount > 3 + fixpos) yy = reader->GetParamInt(3 + fixpos);
 	int alpha = -1;
-	if (reader->GetParamCount() > 4 + fixpos) alpha = reader->GetParamInt(4 + fixpos);
+	if (pcount > 4 + fixpos) alpha = reader->GetParamInt(4 + fixpos);
 	
 	reader->ExpandStr(tag);
 	LeveTextDisplayMode();
