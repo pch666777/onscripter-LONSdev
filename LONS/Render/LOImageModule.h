@@ -268,6 +268,7 @@ public:
 	int quakeCommand(FunctionInterface *reader);
 	int ldCommand(FunctionInterface *reader);
 	int clCommand(FunctionInterface *reader);
+	int captionCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

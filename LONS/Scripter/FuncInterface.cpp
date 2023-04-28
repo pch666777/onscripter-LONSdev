@@ -82,6 +82,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{"game",      "\0",       "\0",        &FunctionInterface::gameCommand},
 	{"end",       "\0",       "\0",        &FunctionInterface::endCommand},
 	{"defsub",    "N",        "Y",         &FunctionInterface::defsubCommand},
+	{"linepage",  "\0",       "\0",        &FunctionInterface::linepageCommand},
 	//getparam有一些特殊的参数，由函数获取参数
 	{"getparam",   "\0",      "\0",        &FunctionInterface::getparamCommand},
 	{"labelexist", "I,L",     "Y,Y",       &FunctionInterface::labelexistCommand},
@@ -215,6 +216,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "quakey",        "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
 	{ "ld",            "N,s,i,i,s", "Y,Y,N,N,N",   &FunctionInterface::ldCommand },
 	{ "cl",            "N,i,i,s",   "Y,N,N,N",     &FunctionInterface::clCommand },
+	{ "caption",       "s",         "Y",           &FunctionInterface::captionCommand },
 
 	//audio
 	{ "bgm",           "s",         "Y",           &FunctionInterface::bgmCommand },

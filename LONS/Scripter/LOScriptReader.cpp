@@ -22,6 +22,7 @@ bool st_skipflag = false;   //快进标记
 int LOScriptReader::gloableBorder = 200;
 LOScriptReader::SaveFileInfo LOScriptReader::s_saveinfo;
 int G_lineLog = 1;
+bool st_linePageFlag = false;
 
  void LOScriptReader::AddWorkDir(LOString dir) {
 	 workDirs.push_back(dir);

@@ -291,6 +291,7 @@ public:
 	int saveonCommand(FunctionInterface *reader);
 	int savetimeCommand(FunctionInterface *reader);
 	int getsavestrCommand(FunctionInterface *reader);
+	int linepageCommand(FunctionInterface *reader);
 
 private:
 	static std::unordered_map<std::string, int> numAliasMap;   //整数别名

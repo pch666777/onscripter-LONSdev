@@ -78,7 +78,7 @@ int LOCodePage::GetCharLen(const char* ch) {
 	return 1;
 }
 
-std::string* LOCodePage::GetUtf8String(std::string *s) {
+std::string LOCodePage::GetUtf8String(std::string *s) {
 	std::vector<unsigned short>* vlist = GetUtf16Array(s);
 	int slen = 64;
 	int clen = 0;
@@ -91,7 +91,7 @@ std::string* LOCodePage::GetUtf8String(std::string *s) {
 			res = (unsigned char*)realloc(res, slen);
 		}
 	}
-	std::string *sok = new std::string((char*)res, clen);
+	std::string sok = std::string((char*)res, clen);
 	free(res);
 	delete vlist;
 	return sok;

@@ -16,6 +16,7 @@ extern int G_lineLog;
 //extern void RegisterBaseHook();
 extern void FatalError(const char *fmt, ...);
 extern bool st_skipflag;
+extern bool st_linePageFlag;
 
 int LOScriptReader::dateCommand(FunctionInterface *reader) {
 	auto tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -670,6 +671,11 @@ int LOScriptReader::dimCommand(FunctionInterface *reader) {
 	return RET_CONTINUE;
 }
 
+int LOScriptReader::linepageCommand(FunctionInterface *reader) {
+	st_linePageFlag = true;  //将行末没有\的显示文本的换行视为换页
+	return RET_CONTINUE;
+}
+
 //返回的是增加的行数
 void LOScriptReader::TextPushParams() {
 	int currentEndFlag = '/';
@@ -700,11 +706,17 @@ void LOScriptReader::TextPushParams() {
 		else if (buf[0] == '\n') {
 			buf++;
 			currentLable->c_line++;
-			//check next line start english?
-			buf = scriptbuf->SkipSpace(buf);
-			if (scriptbuf->ThisCharLen(buf) == 1) {
-				currentEndFlag = '/';
+			if (st_linePageFlag) { //换行视为句子结束
+				currentEndFlag = '\\';
 				break;
+			}
+			else {
+				//check next line start english?
+				buf = scriptbuf->SkipSpace(buf);
+				if (scriptbuf->ThisCharLen(buf) == 1) {
+					currentEndFlag = '/';
+					break;
+				}
 			}
 		}
 		else if (buf[0] == '\0') {//end of text

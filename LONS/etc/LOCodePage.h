@@ -66,7 +66,7 @@ public:
 	int GetUtf8Word(unsigned char* dst, unsigned short src);
 
 	//子类无需实现
-	std::string* GetUtf8String(std::string *s);
+	std::string GetUtf8String(std::string *s);
 
 	static LOCodePage* CheckCodeAndGet(char *buf, int len);
 	static LOCodePage* GetEncoder(int encoder);

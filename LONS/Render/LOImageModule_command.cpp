@@ -1018,8 +1018,8 @@ int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 
 int LOImageModule::ispageCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	//if (pageEndFlag == '\\') v->SetValue(1.0);
-	//else v->SetValue(0.0);
+	if (sayState.pageEnd == '\\') v->SetValue(1.0);
+	else v->SetValue(0.0);
 	return RET_CONTINUE;
 }
 
@@ -1185,5 +1185,13 @@ int LOImageModule::clCommand(FunctionInterface *reader) {
 		CspCore(LOLayer::LAYER_STAND, ids[ii], ids[ii], reader->GetPrintName());
 	}
 	if (reader->GetParamCount() > 1) printStack(reader, 1);
+	return RET_CONTINUE;
+}
+
+int LOImageModule::captionCommand(FunctionInterface *reader) {
+	LOString s = reader->GetParamStr(0);
+	std::string utf8s = s.GetEncoder()->GetUtf8String(&s);
+	titleStr = utf8s + "  [ONScripter-LONS " + LOString(ONS_VERSION) + "]";
+	SDL_SetWindowTitle(window, titleStr.c_str());
 	return RET_CONTINUE;
 }

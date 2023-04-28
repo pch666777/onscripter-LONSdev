@@ -302,6 +302,7 @@ public:
 	virtual int saveonCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int savetimeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int getsavestrCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int linepageCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int movieCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int aviCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
@@ -359,6 +360,7 @@ public:
 	virtual int quakeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int ldCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int clCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int captionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int bgmonceCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
