@@ -8,7 +8,7 @@
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 9) {
+	//if (reader->GetCurrentLine() == 39447) {
 	//	int debugbreak = 1;
 	//}
 	bool visiable = !reader->isName("lsph");
@@ -89,7 +89,7 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 
 
 int LOImageModule::printCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 700) {
+	//if (reader->GetCurrentLine() == 39444) {
 	//	int debugbreak = 11;
 	//}
 	return printStack(reader, 0);
@@ -178,7 +178,7 @@ void LOImageModule::CspCore(int layerType, int fromid, int endid, const char *pr
 }
 
 int LOImageModule::mspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 581) {
+	//if (reader->GetCurrentLine() == 39442) {
 	//	int debugbreak = 1;
 	//}
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
@@ -203,6 +203,10 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 			by += info->GetOffsetY();
 			ba += info->GetAlpha();
 		}
+
+		//ba不能超限，不然会造成错误
+		if (ba < 0) ba = 0;
+		else if (ba > 255) ba = 255;
 
 		info->bak.SetPosition(bx, by);
 		if (reader->GetParamCount() > 3) info->bak.SetAlpha(ba);
