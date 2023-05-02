@@ -1,4 +1,5 @@
 #include "LOCodePage.h"
+#include <string.h>
 
 unsigned short CodePageFullMark_utf8[] = { 65292,12290,65311,65281,65306,65307,
 12289,65374,65286,65312,65283,8230,8220,8221,8216,8217,12317,12318,65287,12304,

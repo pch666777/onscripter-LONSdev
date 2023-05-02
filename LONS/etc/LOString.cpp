@@ -2,6 +2,7 @@
 //带编码信息的字符串，c++是否总是陷入造轮子的怪圈？
 */
 #include "LOString.h"
+#include <string.h>
 
 //已经经过InitCharact生成
 unsigned char LOString::charactTable[256] = {
