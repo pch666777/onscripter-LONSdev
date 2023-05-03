@@ -231,6 +231,10 @@ int LOImageModule::mspCommand(FunctionInterface *reader) {
 			ba += info->GetAlpha();
 		}
 
+        //ba不能超限，不然会造成错误
+        if (ba < 0) ba = 0;
+        else if (ba > 255) ba = 255;
+
 		info->bak.SetPosition2(info->GetCenterX(), info->GetCenterY(), sx, sy);
 		info->bak.SetPosition(ox, oy);
 		info->bak.SetRotate(ra);
@@ -337,8 +341,8 @@ int LOImageModule::spfontCommand(FunctionInterface *reader) {
 		spStyle.ysize = reader->GetParamInt(2);
 		spStyle.xspace = reader->GetParamInt(3);
 		spStyle.yspace = reader->GetParamInt(4);
-		if (reader->GetParamInt(5)) spStyle.flags |= LOTextStyle::STYLE_BOLD;
-		else spStyle.flags &= (~LOTextStyle::STYLE_BOLD);
+        if (reader->GetParamInt(5)) spStyle.SetFlags(LOTextStyle::STYLE_BOLD);
+        else spStyle.UnSetFlags(LOTextStyle::STYLE_BOLD);
 		if (reader->GetParamInt(6)) {
 			spStyle.xshadow = -1;
 			spStyle.yshadow = -1;
@@ -743,7 +747,7 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 	//winFont.isbold = reader->GetParamInt(9);
 	//阴影
 	if (reader->GetParamInt(10)) {
-		sayStyle.flags |= LOTextStyle::STYLE_SHADOW;
+        sayStyle.SetFlags(LOTextStyle::STYLE_SHADOW);
 		sayStyle.xshadow = sayStyle.xsize / 30 + 1;
 		sayStyle.yshadow = sayStyle.ysize / 30 + 1;
 		//lsp的阴影效果跟对话框的一样
@@ -968,23 +972,17 @@ int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::rubyCommand(FunctionInterface *reader) {
-	/*
-	if (reader->isName("rubyon")) {
-		if (reader->GetParamCount() >= 1) fontManager.rubySize[0] = reader->GetParamInt(0);
-		if (reader->GetParamCount() >= 2) fontManager.rubySize[1] = reader->GetParamInt(1);
-		if (reader->GetParamCount() >= 3) fontManager.rubyFontName = reader->GetParamStr(2);
-		fontManager.rubySize[2] = LOFontManager::RUBY_ON;
-	}
-	else if (reader->isName("rubyoff")) {
-		fontManager.rubySize[2] = LOFontManager::RUBY_OFF;
-	}
-	else if (reader->isName("rubyon2")) {
-		fontManager.rubySize[0] = reader->GetParamInt(0);
-		fontManager.rubySize[1] = reader->GetParamInt(1);
-		if (reader->GetParamCount() >= 3) fontManager.rubyFontName = reader->GetParamStr(2);
-		fontManager.rubySize[2] = LOFontManager::RUBY_LINE;
-	}
-	*/
+    if(reader->isName("rubyoff")){
+        sayStyle.UnSetFlags(LOTextStyle::STYLE_RUBYON);
+    }
+    else{
+        sayStyle.xruby = sayStyle.xsize / 2;
+        sayStyle.yruby = sayStyle.ysize / 2 ;
+        if (reader->GetParamCount() >= 1) sayStyle.xruby = reader->GetParamInt(0);
+        if (reader->GetParamCount() >= 2) sayStyle.yruby = reader->GetParamInt(1);
+        if (reader->isName("rubyon")) sayStyle.SetFlags(LOTextStyle::STYLE_RUBYON);
+        else if (reader->isName("rubyon2")) sayStyle.SetFlags(LOTextStyle::STYLE_RUBYLINE);
+    }
 	return RET_CONTINUE;
 }
 

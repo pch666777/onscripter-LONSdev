@@ -74,6 +74,10 @@ public:
 		LOGSET_LABELLOG
 	};
 
+        enum{
+            SIMPLE_CLOSE_RUBYLINE = 1,
+        };
+
 	//用比特位表示各个模块的状态
 	enum MODULE_STATE {
 		//低4表示运行状态，0为没有在使用，1正在运行，4已经挂起
@@ -216,6 +220,8 @@ public:
 	virtual intptr_t GetSDLRender() { return 0; }
 	virtual void ResetMe() { return; };
 	virtual void LoadFinish() { return; };
+        //简单的事件，比如想要在脚本线程更改渲染线程模块的变量，避免头文件相互依赖
+        virtual void SimpleEvent(int e, void *data){return ;}
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	//virtual int DoMustEvent(int val) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);

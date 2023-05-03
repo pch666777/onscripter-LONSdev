@@ -173,6 +173,7 @@ public:
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
 	void ClearBtndef();
+        void SimpleEvent(int e, void *data);
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();

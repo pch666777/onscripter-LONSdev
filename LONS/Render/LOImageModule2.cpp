@@ -633,3 +633,12 @@ bool LOImageModule::WaitStateEvent() {
 	ChangeModuleFlags(0);
 	return true;
 }
+
+
+void LOImageModule::SimpleEvent(int e, void *data){
+    switch (e) {
+    case SIMPLE_CLOSE_RUBYLINE:
+        sayStyle.UnSetFlags(LOTextStyle::STYLE_RUBYLINE);
+        break ;
+    }
+}

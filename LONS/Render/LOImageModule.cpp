@@ -922,8 +922,8 @@ void LOImageModule::TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s) {
 	while (buf[0] == ',' || buf[0] == ' ') buf++;
 	style.ysize = s->GetInt(buf);
 	while (buf[0] == ',' || buf[0] == ' ') buf++;
-	if (s->GetInt(buf)) style.flags |= LOTextStyle::STYLE_SHADOW;
-	else style.flags &= (~LOTextStyle::STYLE_SHADOW);
+    if (s->GetInt(buf)) style.SetFlags(LOTextStyle::STYLE_SHADOW);
+    else style.UnSetFlags(LOTextStyle::STYLE_SHADOW);
 
 	if (buf[0] == ',') { //what?
 		buf++;
@@ -1297,7 +1297,9 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
 	LOString tag = "*s;" + (*s);
 	tag.SetEncoder(s->GetEncoder());
 
-	loadSpCore(info, tag, sayWindow.textX, sayWindow.textY + sayStyle.yruby, 255, true);
+    int destY = sayWindow.textY ;
+    if(sayStyle.isRubyOn() || sayStyle.isRubyLine() ) destY += sayStyle.yruby;  //ruby模式下文字的位置要增加
+    loadSpCore(info, tag, sayWindow.textX, destY, 255, true);
 	if (!info->bak.texture) return nullptr ;
 
 	info->bak.texture->isEdit = true;

@@ -42,9 +42,11 @@ class LOTextStyle
 {
 public:
 	enum {
-		STYLE_BOLD = 1,
-		STYLE_SHADOW = 2,
-		STYLE_ITALICS = 4,
+            STYLE_BOLD = 1,
+            STYLE_SHADOW = 2,
+            STYLE_ITALICS = 4,
+            STYLE_RUBYON = 8,
+            STYLE_RUBYLINE = 16
 	};
 
 	LOTextStyle();
@@ -52,6 +54,10 @@ public:
 
 	void reset();
 	void Serialize(BinArray *bin);
+        void SetFlags(int f){ flags |= f ;}
+        void UnSetFlags(int f){ flags &= (~f) ;}
+        bool isRubyOn(){ return flags & STYLE_RUBYON ;}
+        bool isRubyLine(){ return flags & STYLE_RUBYLINE;}
 
 	int16_t xcount; //横向文字数
 	int16_t ycount; //纵向文字数
@@ -65,10 +71,10 @@ public:
 	int16_t xruby;
 	int16_t yruby;
 
-	//标记，粗体、阴影、斜体等
-	int flags;
 	SDL_Color fontColor;
 private:
+        //标记，粗体、阴影、斜体等
+        int flags;
 };
 
 //======================区域文字描述=================

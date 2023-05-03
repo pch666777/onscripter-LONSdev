@@ -1766,6 +1766,8 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 	ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
 	hook->InvalidMe();
+    //关闭rubyline模式
+    imgeModule->SimpleEvent(SIMPLE_CLOSE_RUBYLINE, nullptr) ;
 	//如果是saveon模式，则添加存档点
 	if(st_saveonflag) savepointCommand(this);
 	return 0;
