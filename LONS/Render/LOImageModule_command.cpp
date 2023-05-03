@@ -593,11 +593,11 @@ int LOImageModule::windoweffectCommand(FunctionInterface *reader) {
 //btntime btntime2小心的用在多线程
 int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	Uint32 pos, timesnap = SDL_GetTicks();
-	const char *prin_name = "_lons";
-	//btnwait和btnwait2会触发print 1，textbtnwait则不会
+    const char *prin_name = reader->GetPrintName();
+    //btnwait和btnwait2会触发离开文字显示模式
 	if (reader->isName("btnwait") || reader->isName("btnwait2")) {
 		LeveTextDisplayMode();
-		prin_name = reader->GetPrintName();
+        //prin_name = reader->GetPrintName();
 	}
 
 	if (textbtnFlag && reader->isName("textbtnwait")) { //注册文字按钮
@@ -648,6 +648,8 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 			data->bak.SetBtndef( &s, reader->GetParamInt(1), true, false);
 		}
 		else data->bak.SetBtndef(nullptr, reader->GetParamInt(1), true, false);
+        //设置后按钮会变为显示
+        data->bak.SetVisable(1) ;
 	}
 	return RET_CONTINUE;
 }
@@ -989,33 +991,18 @@ int LOImageModule::rubyCommand(FunctionInterface *reader) {
 int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 	int xx, yy, hh;
 	xx = yy = hh = 0;
-	int ids[] = { LOLayer::IDEX_DIALOG_TEXT,255,255 };
-	/*
-	LOLayer *lyr = FindLayerInBase(LOLayer::LAYER_DIALOG, ids);
-	if (lyr) {
-		lyr->GetTextEndPosition(&xx, &yy, &hh);  //Relative position of text
-		xx += winoff.x;
-		yy += winoff.y;
-		if (reader->isName("getcursorpos2")) {
-			xx -= winFont.xsize;
-		}
-		else {
-			//check it's end of line
-			int maxx = (winFont.xsize + winFont.xspace) * winFont.xcount;
-			if (maxx - xx <= winFont.xsize / 2) {
-				//next line
-				xx = winoff.x;
-				yy += (hh + winFont.yspace);
-			}
-		}
-	}
-
-	ONSVariableRef *v1 = reader->GetParamRef(0);
-	ONSVariableRef *v2 = reader->GetParamRef(1);
-
-	v1->SetValue((double)xx);
-	v2->SetValue((double)yy);
-	*/
+    LOLayer *lyr = LOLayer::GetLayer(GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT,255,255));
+    if(lyr && lyr->data && lyr->data->cur.texture){
+        lyr->data->cur.texture->GetTextShowEnd(&xx, &yy, &hh) ;
+        yy -= hh ;
+        if(reader->isName("getcursorpos2")) xx -= sayStyle.xsize ;
+        xx += sayWindow.textX ;
+        yy += sayWindow.textY;
+    }
+    ONSVariableRef *v1 = reader->GetParamRef(0);
+    ONSVariableRef *v2 = reader->GetParamRef(1);
+    v1->SetValue((double)xx);
+    v2->SetValue((double)yy);
 	return RET_CONTINUE;
 }
 

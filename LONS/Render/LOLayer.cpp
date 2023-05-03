@@ -806,31 +806,6 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 //}
 
 
-bool LOLayer::GetTextEndPosition(int *xx, int *yy, int *lineH) {
-	/*
-	LOAnimation *aib = curInfo->GetAnimation(LOAnimation::ANIM_TEXT);
-	if (aib) {
-		LineComposition *line = ((LOAnimationText*)aib)->lineInfo->top();
-		if (line) {
-			//Consider the effect of font scaling
-			double sx, sy;
-			sx = 1.0;
-			sy = 1.0;
-			if (curInfo->isShowScale()) {
-				sx = curInfo->scaleX;
-				sy = curInfo->scaleY;
-			}
-			if (xx) *xx = sx * line->sumx;
-			if (yy) *yy = sy * line->y;
-			if (lineH) *lineH = sy * line->height;
-			return true;
-		}
-	}
-	*/
-	return false;
-}
-
-
 void LOLayer::GetLayerPosition(int *xx, int *yy, int *aph) {
 	LOLayerDataBase *curInfo = &data->cur;
 	if (xx) *xx = curInfo->offsetX;

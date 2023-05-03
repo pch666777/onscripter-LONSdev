@@ -1,16 +1,17 @@
 /*
-//ÎÆÀí
+//çº¹ç†
 */
+//
 
 #include "LOTexture.h"
 
-//ÔÚ±ğ´¦ÒÑ¾­¶¨ÒåÁË
+//åœ¨åˆ«å¤„å·²ç»å®šä¹‰äº†
 extern char G_Bit[4];
 extern Uint32 G_Texture_format;
 
 uint16_t LOtextureBase::maxTextureW = 4096;
 uint16_t LOtextureBase::maxTextureH = 4096;
-SDL_Renderer *LOtextureBase::render = nullptr;  //Ò»°ãÀ´ËµÖ»»áÓĞÒ»¸öäÖÈ¾Æ÷
+SDL_Renderer *LOtextureBase::render = nullptr;  //ä¸€èˆ¬æ¥è¯´åªä¼šæœ‰ä¸€ä¸ªæ¸²æŸ“å™¨
 std::unordered_map<std::string, LOShareBaseTexture> LOtexture::baseMap;
 
 
@@ -33,7 +34,7 @@ void GetFormatBit(Uint32 format, char *bit) {
 
 
 bool EqualRect(SDL_Rect *r1, SDL_Rect *r2) {
-	//¶¼ÊÇ¿Õ£¬ÆäÖĞÒ»¸öÎª¿Õ
+	//éƒ½æ˜¯ç©ºï¼Œå…¶ä¸­ä¸€ä¸ªä¸ºç©º
 	if (!r1 && !r2) return true;
 	else if (!r1 || !r2) return false;
 	else if (r1->x == r2->x && r1->y == r2->y && r1->w == r2->w && r1->h == r2->h) return true;
@@ -81,9 +82,9 @@ void LOtextureBase::baseNew() {
 }
 
 LOtextureBase::~LOtextureBase() {
-	//ÇĞ¸îÏÂÀ´µÄÎÆÀí¿éÓ¦¸Ã×Ô¶¯ÊÍ·Å
+	//åˆ‡å‰²ä¸‹æ¥çš„çº¹ç†å—åº”è¯¥è‡ªåŠ¨é‡Šæ”¾
 	if (baseSurface) FreeSurface(baseSurface);
-	//×¢Òâ£¬Ö»ÄÜ´ÓäÖÈ¾Ïß³Ìµ÷ÓÃ£¬ÒâÎ¶×ÅbaseTextureÖ»ÄÜ´ÓäÖÈ¾Ïß³ÌÊÍ·Å
+	//æ³¨æ„ï¼Œåªèƒ½ä»æ¸²æŸ“çº¿ç¨‹è°ƒç”¨ï¼Œæ„å‘³ç€baseTextureåªèƒ½ä»æ¸²æŸ“çº¿ç¨‹é‡Šæ”¾
 	if (baseTexture) DestroyTexture(baseTexture);
 	baseSurface = nullptr;
 	baseTexture = nullptr;
@@ -170,16 +171,16 @@ SDL_Surface* LOtextureBase::ConverNSalpha(SDL_Surface *surface, int cellCount) {
 	int cellwidth = surface->w / (cellCount * 2);
 	int cellHight = surface->h;
 
-	if (cellwidth == 0 || cellHight == 0) return nullptr;  //ÎŞĞ§µÄ
+	if (cellwidth == 0 || cellHight == 0) return nullptr;  //æ— æ•ˆçš„
 	SDL_Surface *su = CreateRGBSurfaceWithFormat(0, cellwidth * cellCount, cellHight, 32, SDL_PIXELFORMAT_RGBA32);
-	//²»Í¬µÄcpu¹¹¼ÜÏñËØµÄ×Ö½ÚÎ»ÖÃ²¢²»ÊÇÒ»¶¨µÄ£¬ËùÒÔĞèÒªÏÈÈ·¶¨ºÃÍ¸Ã÷ÏñËØµÄÎ»ÖÃ
+	//ä¸åŒçš„cpuæ„æ¶åƒç´ çš„å­—èŠ‚ä½ç½®å¹¶ä¸æ˜¯ä¸€å®šçš„ï¼Œæ‰€ä»¥éœ€è¦å…ˆç¡®å®šå¥½é€æ˜åƒç´ çš„ä½ç½®
 	char dstbit[4];
 	GetFormatBit(su->format, dstbit);
 
 	SDL_LockSurface(surface);
 	SDL_LockSurface(su);
 	int bpp = surface->format->BytesPerPixel;
-	//Ñ­»·cellcount´Î
+	//å¾ªç¯cellcountæ¬¡
 	for (int ii = 0; ii < cellCount; ii++) {
 		for (int line = 0; line < cellHight; line++) {
 			int srcX = ii * cellwidth * 2;
@@ -225,11 +226,11 @@ void LOtexture::addTextureBaseToMap(LOString &fname, LOShareBaseTexture &base) {
 LOShareBaseTexture& LOtexture::addTextureBaseToMap(LOString &fname, LOtextureBase *base) {
 	LOShareBaseTexture bt(base);
 	addTextureBaseToMap(fname, bt);
-	//±äÁ¿ÒÑ¾­Ìí¼Óµ½mapÀïÁË£¬·µ»ØÒıÓÃÊÇ°²È«µÄ
+	//å˜é‡å·²ç»æ·»åŠ åˆ°mapé‡Œäº†ï¼Œè¿”å›å¼•ç”¨æ˜¯å®‰å…¨çš„
 	return bt;
 }
 
-//Ö»ÄÜÔËĞĞÔÚÖ÷Ïß³Ì
+//åªèƒ½è¿è¡Œåœ¨ä¸»çº¿ç¨‹
 LOShareBaseTexture& LOtexture::addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access) {
 	LOString s = fname.toLower();
 	SDL_Texture *tx = CreateTexture(LOtextureBase::render, format, access, w, h);
@@ -237,17 +238,17 @@ LOShareBaseTexture& LOtexture::addNewEditTexture(LOString &fname, int w, int h, 
 }
 
 
-//Õâ¸öº¯ÊıÓĞÒ»¸öÒşº¬µÄÌõ¼ş£º´¥·¢º¯ÊıËµÃ÷½Å±¾Ïß³ÌÕıÔÚlsp»òÕßcspÖĞ
-//¶øäÖÈ¾Ïß³ÌÖ»ÓĞÔÚprint²Å»áµ÷ÕûÍ¼²ã£¬´¥·¢´Ëº¯Êı£¬Òò´ËËüÊÇÏß³Ì°²È«µÄ
+//è¿™ä¸ªå‡½æ•°æœ‰ä¸€ä¸ªéšå«çš„æ¡ä»¶ï¼šè§¦å‘å‡½æ•°è¯´æ˜è„šæœ¬çº¿ç¨‹æ­£åœ¨lspæˆ–è€…cspä¸­
+//è€Œæ¸²æŸ“çº¿ç¨‹åªæœ‰åœ¨printæ‰ä¼šè°ƒæ•´å›¾å±‚ï¼Œè§¦å‘æ­¤å‡½æ•°ï¼Œå› æ­¤å®ƒæ˜¯çº¿ç¨‹å®‰å…¨çš„
 void LOtexture::notUseTextureBase(LOShareBaseTexture &base) {
 	bool isdel = false;
-	//µ±Ç°µÄbase 1·İ£¬mapÖĞµÄbase1·İ£¬ËùÒÔ2·İ¾ÍÊÇÇåÀíµÄÊ±»ú
+	//å½“å‰çš„base 1ä»½ï¼Œmapä¸­çš„base1ä»½ï¼Œæ‰€ä»¥2ä»½å°±æ˜¯æ¸…ç†çš„æ—¶æœº
 	if (base.use_count() == 2) isdel = true;
 	if (isdel) {
 		auto iter = baseMap.find(base->GetName());
 		if (iter != baseMap.end() && iter->second.get() == base.get()) baseMap.erase(iter);
 	}
-	//¼ÆÊı-1£¬Èç¹ûÒªÉ¾³ıµÄ£¬ÕâÀïÓ¦¸ÃÒÑ¾­±»ÊÍ·ÅÁË
+	//è®¡æ•°-1ï¼Œå¦‚æœè¦åˆ é™¤çš„ï¼Œè¿™é‡Œåº”è¯¥å·²ç»è¢«é‡Šæ”¾äº†
 	base.reset();
 }
 
@@ -263,8 +264,8 @@ LOtexture::LOtexture(LOShareBaseTexture &base) {
 }
 
 void LOtexture::SetBaseTexture(LOShareBaseTexture &base) {
-	//ÖØĞÂÉèÖÃ»ù´¡ÎÆÀí£¬ÔòÔ­À´°ó¶¨µÄĞÅÏ¢ÒªÊ§Ğ§
-	//ÒıÓÃĞÍµÄ²»ÓÃ´¦Àí£¬»ù´¡ÎÆÀí»á×Ô¶¯´¦Àí£¬ÕâÀïÒª´¦Àí·ÇÒıÓÃĞÍµÄ
+	//é‡æ–°è®¾ç½®åŸºç¡€çº¹ç†ï¼Œåˆ™åŸæ¥ç»‘å®šçš„ä¿¡æ¯è¦å¤±æ•ˆ
+	//å¼•ç”¨å‹çš„ä¸ç”¨å¤„ç†ï¼ŒåŸºç¡€çº¹ç†ä¼šè‡ªåŠ¨å¤„ç†ï¼Œè¿™é‡Œè¦å¤„ç†éå¼•ç”¨å‹çš„
 	if (!isRef) {
 		resetSurface();
 		resetTexture();
@@ -289,7 +290,7 @@ void LOtexture::NewTexture() {
 void LOtexture::resetSurface() {
 	if (isRef) surfacePtr = nullptr;
 	else {
-		//ÓĞbaseµÄsurfaceÒ²¿ÉÄÜÊÇÇĞ¸îÏÂÀ´µÄ
+		//æœ‰baseçš„surfaceä¹Ÿå¯èƒ½æ˜¯åˆ‡å‰²ä¸‹æ¥çš„
 		if (surfacePtr) FreeSurface(surfacePtr);
 		surfacePtr = nullptr;
 	}
@@ -298,7 +299,7 @@ void LOtexture::resetSurface() {
 void LOtexture::resetTexture() {
 	if (isRef) texturePtr = nullptr;
 	else {
-		//ÓĞbaseµÄsurfaceÒ²¿ÉÄÜÊÇÇĞ¸îÏÂÀ´µÄ
+		//æœ‰baseçš„surfaceä¹Ÿå¯èƒ½æ˜¯åˆ‡å‰²ä¸‹æ¥çš„
 		if (texturePtr) DestroyTexture(texturePtr);
 		texturePtr = nullptr;
 	}
@@ -312,33 +313,33 @@ LOtexture::~LOtexture() {
 }
 
 
-//ÓĞ¿ÉÓÃµÄbasetextureÇÒbasetextÊÇ¿ÉÒÔÓÃµÄ
+//æœ‰å¯ç”¨çš„basetextureä¸”basetextæ˜¯å¯ä»¥ç”¨çš„
 bool LOtexture::isAvailable() {
 	if (surfacePtr || texturePtr || baseTexture || bw > 0) return true;
 	else return false;
 }
 
 
-//¸ù¾İ¸ø¶¨µÄ·¶Î§¿ò½ØÈ¡¶ÔÏó£¬µ±Ç°toGPUtex×ÜÊÇÕæ
+//æ ¹æ®ç»™å®šçš„èŒƒå›´æ¡†æˆªå–å¯¹è±¡ï¼Œå½“å‰toGPUtexæ€»æ˜¯çœŸ
 bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
-	//ÒÑ¾­ÓĞÎÆÀíµÄÇé¿öÏÂ£¬ÅĞ¶ÏÏÔÊ¾·¶Î§ºÍµ±Ç°ÊÇ·ñÒ»ÖÂ
+	//å·²ç»æœ‰çº¹ç†çš„æƒ…å†µä¸‹ï¼Œåˆ¤æ–­æ˜¾ç¤ºèŒƒå›´å’Œå½“å‰æ˜¯å¦ä¸€è‡´
 	if (texturePtr && EqualRect(src, &expectRect)) return true;
 
 	expectRect = *src;
 	actualRect = expectRect;
-	//¸´ÓÃĞÔÎÆÀíºÍ·Ç¸´ÓÃĞÔÎÆÀí
+	//å¤ç”¨æ€§çº¹ç†å’Œéå¤ç”¨æ€§çº¹ç†
 	if (!baseTexture) {
-		//·Ç¸´ÓÃÊ½ÎÆÀí²»¿ÉÄÜÔÙ´Î³õÊ¼»¯
+		//éå¤ç”¨å¼çº¹ç†ä¸å¯èƒ½å†æ¬¡åˆå§‹åŒ–
 		if (texturePtr) return true;
 		if (!surfacePtr) return false;
 
 		if (isEdit) {
 			texturePtr = CreateTexture(LOtextureBase::render, surfacePtr->format->format, SDL_TEXTUREACCESS_STREAMING, surfacePtr->w, surfacePtr->h);
-			//¸´ÖÆÎÆÀí£¬surfaceÓëtextureÊÇÍ¬Ò»ÖÖ¸ñÊ½
+			//å¤åˆ¶çº¹ç†ï¼Œsurfaceä¸textureæ˜¯åŒä¸€ç§æ ¼å¼
 			void *dst;
 			int pitch;
 			SDL_LockTexture(texturePtr, nullptr, &dst, &pitch);
-			//ÎÄ×ÖÄ£Ê½ÊÇÔÚ¶¯×÷¹ı³ÌÖĞ¸´ÖÆµÄ
+			//æ–‡å­—æ¨¡å¼æ˜¯åœ¨åŠ¨ä½œè¿‡ç¨‹ä¸­å¤åˆ¶çš„
 			if (!isTextAction()) {
 				for (int line = 0; line < surfacePtr->h; line++) {
 					char *src = (char*)surfacePtr->pixels + line * surfacePtr->pitch;
@@ -348,25 +349,25 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 			SDL_UnlockTexture(texturePtr);
 		}
 		else texturePtr = CreateTextureFromSurface(LOtextureBase::render, surfacePtr);
-		//¶ÁÈ¡texturePtrµÄĞÅÏ¢ÉÔÎ¢Âé·³µã£¬Òò´Ë²ÉÓÃÒ»¸ö¼ÇÂ¼
+		//è¯»å–texturePtrçš„ä¿¡æ¯ç¨å¾®éº»çƒ¦ç‚¹ï¼Œå› æ­¤é‡‡ç”¨ä¸€ä¸ªè®°å½•
 		bw = surfacePtr->w;
 		bh = surfacePtr->h;
 		if(!isTextAction()) resetSurface();
 	}
 	else {
-		//¸´ÓÃÊ½ÎÆÀí
+		//å¤ç”¨å¼çº¹ç†
 		if (!baseTexture || !baseTexture->isValid()) return false;
 		resetSurface();
 		resetTexture();
 
-		//³¬´óÎÆÀíÊÇ·ÇrefµÄ£¬ÆäËûµÄ¶¼ÊÇrefµÄ
+		//è¶…å¤§çº¹ç†æ˜¯érefçš„ï¼Œå…¶ä»–çš„éƒ½æ˜¯refçš„
 		isRef = !baseTexture->isBig();
 		if (isRef) {
 			texturePtr = baseTexture->GetFullTexture();
 			return texturePtr != nullptr;
 		}
 		else {
-			//´ó³ß´çºÏÀíÈ·¶¨²ÃÇĞµÄ·¶Î§
+			//å¤§å°ºå¯¸åˆç†ç¡®å®šè£åˆ‡çš„èŒƒå›´
 			LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, &actualRect);
 			surfacePtr = LOtextureBase::ClipSurface(baseTexture->GetSurface(), actualRect);
 			if (!surfacePtr) return false;
@@ -513,7 +514,7 @@ bool LOtexture::CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fo
 	textData->fontName = *fontName;
 
 	CreateLineDescribe( s, font, textData->style.xsize);
-	//¼ÆËãÎ»ÖÃ¾ÀÕı
+	//è®¡ç®—ä½ç½®çº æ­£
 	Xfix = Yfix = 0;
 	for (auto iter = textData->lineList.begin(); iter != textData->lineList.end(); iter++) {
 		LOLineDescribe *line = (*iter);
@@ -547,7 +548,7 @@ LOTextDescribe *LOtexture::CreateNewTextDes(int ascent, int dscent, int colorID)
 
 
 void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
-	//°´ÎÄ×Ö¸öÊıËã£¬ºº×ÖËã2¸ö£¬Ó¢ÎÄËã1¸ö
+	//æŒ‰æ–‡å­—ä¸ªæ•°ç®—ï¼Œæ±‰å­—ç®—2ä¸ªï¼Œè‹±æ–‡ç®—1ä¸ª
 	int colorID = 0;
 	double maxCount = textData->style.xcount * 2;
 	double curCount = 0.0;
@@ -564,14 +565,14 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 	int Ypos = 0;
 
 	LOTextDescribe *des = nullptr;
-	//ĞÂĞĞÊ±È·¶¨ÁËxÎ»ÖÃ
+	//æ–°è¡Œæ—¶ç¡®å®šäº†xä½ç½®
 	LOLineDescribe *line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 	int currentX = line->xx;
 	line->yy = Ypos;
 
-	//¿ÉÒÔÔÚÕâÀïÔö¼Ó·ç¸ñ±ä»»¹¦ÄÜ
+	//å¯ä»¥åœ¨è¿™é‡Œå¢åŠ é£æ ¼å˜æ¢åŠŸèƒ½
 	while (buf[0] != 0) {
-		//ºöÂÔµÄ·ûºÅ
+		//å¿½ç•¥çš„ç¬¦å·
 		if (buf[0] == '\r') {
 			buf++;
 			continue;
@@ -587,22 +588,22 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 		buf += ulen;
 		el->isEng = (ulen == 1);
 
-		//·ç¸ñ±ä»»¿ªÊ¼
+		//é£æ ¼å˜æ¢å¼€å§‹
 		if (el->unicode == '<') {
 
 		}
 		else if (el->unicode == '>') {
-			//·ç¸ñ±ä»»½áÊø
+			//é£æ ¼å˜æ¢ç»“æŸ
 		}
 		else if (el->unicode == '\n') {
 			delete el;
 			el = nullptr;
-			//´¦ÀíºÃÉÏÒ»ĞĞ
+			//å¤„ç†å¥½ä¸Šä¸€è¡Œ
 			line->endIndex = textData->textList.size();
 			line->CreateLocation(&textData->textList, &textData->wordList, &textData->style);
 			Ypos += line->height();
 			Ypos += textData->style.yspace;
-			//¶¨Î»ÏÂÒ»ĞĞ
+			//å®šä½ä¸‹ä¸€è¡Œ
 			line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 			currentX = line->xx;
 			//curCount = currentX / firstSize;
@@ -611,29 +612,29 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 		}
 		else {
 			if (LOString::GetCharacter(buf - ulen) != LOString::CHARACTER_SPACE && wordFont->font) {
-				//×Ö·û¶¼ÊÇ»ùÏß¶ÔÆëµÄ£¬»ùÏß¼´FontAscent£¬µ«ÕâÊÇÒ»¸öÊÀ½çµÄXY×ø±êÏµ£¬²»ÀûÓÚÀí½â£¬ĞèÒª×ª»»³ÉÆÁÄ»×ø±êÏµ
-				//¼Ù¶¨Ò»ÌõÔÚÊÀ½ç×ø±êÏµ(FontAscent,0)µÄÆÁÄ»×ø±êÏµ»ùÏß£¬ÄÇÃ´ÓĞ£º
-				//µ±maxy´óÓÚFontAscentÊ±£¬surfaceµÄYÎ»ÖÃÎª FontAscent - maxy£¬µ±maxyĞ¡ÓÚµÈÓÚFontAscentÊ±£¬YÎ»ÖÃÎª0
-				//X·½ÏòÉÏ£¬minx¼´ÎªXµÄÎ»ÖÃ£¬surfaceµÄ¿í¶È = advance - minx£¬¼´ÏÂÒ»¸ö·ûºÅµÄÎ»ÖÃ
+				//å­—ç¬¦éƒ½æ˜¯åŸºçº¿å¯¹é½çš„ï¼ŒåŸºçº¿å³FontAscentï¼Œä½†è¿™æ˜¯ä¸€ä¸ªä¸–ç•Œçš„XYåæ ‡ç³»ï¼Œä¸åˆ©äºç†è§£ï¼Œéœ€è¦è½¬æ¢æˆå±å¹•åæ ‡ç³»
+				//å‡å®šä¸€æ¡åœ¨ä¸–ç•Œåæ ‡ç³»(FontAscent,0)çš„å±å¹•åæ ‡ç³»åŸºçº¿ï¼Œé‚£ä¹ˆæœ‰ï¼š
+				//å½“maxyå¤§äºFontAscentæ—¶ï¼Œsurfaceçš„Yä½ç½®ä¸º FontAscent - maxyï¼Œå½“maxyå°äºç­‰äºFontAscentæ—¶ï¼ŒYä½ç½®ä¸º0
+				//Xæ–¹å‘ä¸Šï¼Œminxå³ä¸ºXçš„ä½ç½®ï¼Œsurfaceçš„å®½åº¦ = advance - minxï¼Œå³ä¸‹ä¸€ä¸ªç¬¦å·çš„ä½ç½®
 				TTF_GlyphMetrics(wordFont->font, el->unicode, &el->minx, &el->maxx, &el->miny, &el->maxy, &el->advance);
-				//ËäÈ»advanceÓ¦¸ÃÊÇÔö¼ÓµÄ¿í¶È£¬µ«ÊÇÕâ¸öÓĞÊ±ºò²»Ì«×¼È·£¬SDLµÄÎÊÌâ£¿
+				//è™½ç„¶advanceåº”è¯¥æ˜¯å¢åŠ çš„å®½åº¦ï¼Œä½†æ˜¯è¿™ä¸ªæœ‰æ—¶å€™ä¸å¤ªå‡†ç¡®ï¼ŒSDLçš„é—®é¢˜ï¼Ÿ
 				if (el->maxx == 0) el->maxx = el->advance;
 				else if (el->maxx <= firstSize && el->advance > firstSize) el->advance = firstSize;
 				
 				el->surface = LTTF_RenderGlyph_Shaded(wordFont->font, el->unicode, fsColor, bgColor);
-				//¼ì²éÊÇ·ñĞèÒªĞÂĞĞÁË
+				//æ£€æŸ¥æ˜¯å¦éœ€è¦æ–°è¡Œäº†
 				if (curCount >= maxCount) {
 					//SDL_SaveBMP(el->surface, "test.bmp");
-					//´¦ÀíºÃÉÏÒ»ĞĞ
+					//å¤„ç†å¥½ä¸Šä¸€è¡Œ
 					line->endIndex = textData->textList.size();
 					line->CreateLocation(&textData->textList, &textData->wordList, &textData->style);
 					Ypos += line->height();
 					Ypos += textData->style.yspace;
-					//¶¨Î»ÏÂÒ»ĞĞ
+					//å®šä½ä¸‹ä¸€è¡Œ
 					line = CreateNewLine(des, wordFont->font, &textData->style, colorID);
 					currentX = line->xx;
 					//printf("next line:%d\n", currentX);
-					//»»Ëã³ÉÏà¶ÔÓĞ¶àÉÙ¸ö×Ö
+					//æ¢ç®—æˆç›¸å¯¹æœ‰å¤šå°‘ä¸ªå­—
 					//curCount = currentX / firstSize;
 					curCount = 0;
 					line->yy = Ypos;
@@ -649,7 +650,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				else curCount += 2.0;
 			}
 			else {
-				//¿Õ¸ñ·ûºÅ
+				//ç©ºæ ¼ç¬¦å·
 				el->setSpace(firstSize);
 				currentX += (el->maxx - el->minx);
 				curCount += 1.0;
@@ -657,7 +658,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 				des->endIndex++;
 			}
 
-			//¼ä¸ô
+			//é—´éš”
 			currentX += textData->style.xspace;
 		}
 	}
@@ -707,7 +708,7 @@ void LOtexture::RenderTextSimple(int x, int y, SDL_Color color) {
 			int dy = ly + des->yy;
 			for (int wordII = des->startIndex; wordII < des->endIndex && wordII < textData->wordList.size(); wordII++) {
 				LOWordElement *el = textData->wordList.at(wordII);
-				//¿Õ¸ñÌø¹ı
+				//ç©ºæ ¼è·³è¿‡
 				if (!el->surface) continue;
 
 				dstR.x = dx + el->left;
@@ -715,7 +716,7 @@ void LOtexture::RenderTextSimple(int x, int y, SDL_Color color) {
 				srcR.x = 0; srcR.y = 0;
 				srcR.w = el->surface->w;
 				srcR.h = el->surface->h;
-				//ÒõÓ°
+				//é˜´å½±
 				if (textData->style.xshadow != 0 || textData->style.yshadow != 0) {
 					BlitShadow(surfacePtr, el->surface, dstR, srcR, shadowColor, des->Ascent - des->Dscent);
 				}
@@ -730,8 +731,8 @@ void LOtexture::RenderTextSimple(int x, int y, SDL_Color color) {
 
 bool LOtexture::CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SDL_Rect *srcR) {
 	if (!dst || !src || !dstR || !srcR) return false;
-	//×óÉÏ½Ç¼ì²é
-	//¼ì²éÀ´Ô´
+	//å·¦ä¸Šè§’æ£€æŸ¥
+	//æ£€æŸ¥æ¥æº
 	if (srcR->x < 0) {
 		dstR->x += abs(srcR->x); srcR->w -= abs(srcR->x);
 		srcR->x = 0;
@@ -740,7 +741,7 @@ bool LOtexture::CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SD
 		dstR->y += abs(srcR->y); srcR->h -= abs(srcR->y);
 		srcR->y = 0;
 	}
-	//¼ì²éÄ¿±ê
+	//æ£€æŸ¥ç›®æ ‡
 	if (dstR->x < 0) {
 		srcR->x += abs(dstR->x); srcR->w -= abs(dstR->x);
 		dstR->x = 0;
@@ -750,11 +751,11 @@ bool LOtexture::CheckRect(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, SD
 		dstR->y = 0;
 	}
 	if (srcR->w < 0 || srcR->h < 0) return false;
-	//¼ì²éÓÒÏÂ½Ç
-	//¼ì²éÀ´Ô´
+	//æ£€æŸ¥å³ä¸‹è§’
+	//æ£€æŸ¥æ¥æº
 	if (srcR->x + srcR->w > src->w) srcR->w = src->w - srcR->x;
 	if (srcR->y + srcR->h > src->h) srcR->h = src->h - srcR->y;
-	//¼ì²éÄ¿±ê
+	//æ£€æŸ¥ç›®æ ‡
 	if (dstR->x + srcR->w > dst->w) srcR->w = dst->w - dstR->x;
 	if (dstR->y + srcR->h > dst->h) srcR->h = dst->h - dstR->y;
 	if (srcR->w < 0 || srcR->h < 0) return false;
@@ -767,22 +768,22 @@ void LOtexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, S
 
 	SDL_Color *ccIndex = src->format->palette->colors;
 	Uint32 reA, reB, AP;
-	//Ä¬ÈÏ²ÄÖÊËùÖ»ÓÃµÄRGBAÄ£Ê½Î»ÖÃ R  G  B  A
+	//é»˜è®¤æè´¨æ‰€åªç”¨çš„RGBAæ¨¡å¼ä½ç½® R  G  B  A
 	int rpos = G_Bit[0];
 	int gpos = G_Bit[1];
 	int bpos = G_Bit[2];
 	int apos = G_Bit[3];
 
 	for (int line = 0; line < srcR->h; line++) {
-		//Ô´Í¼ÊÇ8bitµÄ
+		//æºå›¾æ˜¯8bitçš„
 		unsigned char *sbuf = (unsigned char*)src->pixels + (srcR->y + line) * src->pitch + srcR->x;
-		//Ä¿±êÍ¼Æ¬ÊÇ32Î»µÄ
+		//ç›®æ ‡å›¾ç‰‡æ˜¯32ä½çš„
 		unsigned char *dbuf = (unsigned char*)dst->pixels + (dstR->y + line) * dst->pitch + dstR->x * 4;
 		for (int px = 0; px < srcR->w; px++) {
-			//±³¾°É«²»¿½±´
+			//èƒŒæ™¯è‰²ä¸æ‹·è´
 			if (sbuf != 0) {
-				//Ä¬ÈÏ²ÄÖÊËùÖ»ÓÃµÄRGBAÄ£Ê½Î»ÖÃ R  G  B  A
-				//Ä¿±êÉ«Ã»ÓĞÄÚÈİ
+				//é»˜è®¤æè´¨æ‰€åªç”¨çš„RGBAæ¨¡å¼ä½ç½® R  G  B  A
+				//ç›®æ ‡è‰²æ²¡æœ‰å†…å®¹
 				if (dbuf[apos] == 0) {
 					dbuf[rpos] = color.r;
 					dbuf[gpos] = color.g;
@@ -790,7 +791,7 @@ void LOtexture::BlitToRGBA(SDL_Surface *dst, SDL_Surface *src, SDL_Rect *dstR, S
 					dbuf[apos] = sbuf[0];
 				}
 				else {
-					//»ìºÏÄÚÈİ£¬ÓĞÓÅ»¯¿Õ¼ä£¬ÔİÊ±ÏÈÕâÑù
+					//æ··åˆå†…å®¹ï¼Œæœ‰ä¼˜åŒ–ç©ºé—´ï¼Œæš‚æ—¶å…ˆè¿™æ ·
 					AP = sbuf[0];
 					reA = (sbuf[0] ^ 255);  // 1 - srcAlpha
 					reB = (dbuf[apos] * reA / 255);
@@ -842,33 +843,33 @@ void LOtexture::CreateSimpleColor(int w, int h, SDL_Color color) {
 
 
 int LOtexture::RollTextTexture(int start, int end) {
-	//²»ÄÜÔËĞĞµÄ£¬Ö±½ÓÏàµ±ÓÚµ½ÖÕµã
+	//ä¸èƒ½è¿è¡Œçš„ï¼Œç›´æ¥ç›¸å½“äºåˆ°ç»ˆç‚¹
 	if (!texturePtr || !isEdit || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
 	if (end < start || end <= 0) return RET_ROLL_FAILD;
 
 	int startLine, startPos, endLine, endPos;
 	bool isend = false;
 	TranzPosition(&startLine, &startPos, &isend, start);
-	//×öÒ»Ğ©ÏŞÖÆ¼ì²â ¿ªÍ·ÒÑ³¬¹ıÏŞÖÆ£¬Ö±½Ó·µ»Ø
+	//åšä¸€äº›é™åˆ¶æ£€æµ‹ å¼€å¤´å·²è¶…è¿‡é™åˆ¶ï¼Œç›´æ¥è¿”å›
 	if (isend) return RET_ROLL_END;
 	TranzPosition(&endLine, &endPos, &isend, end);
 
-	//È·¶¨ËùÓĞĞèÒªĞŞ¸ÄµÄÇøÓò
+	//ç¡®å®šæ‰€æœ‰éœ€è¦ä¿®æ”¹çš„åŒºåŸŸ
 	SDL_Point p1, p2;
 	for (int ii = startLine; ii <= endLine; ii++) {
 		SDL_Rect re;
 		LOLineDescribe *line = textData->lineList.at(ii);
-		//¼ÆËã³öÁ½¸öµãµÄÎ»ÖÃ
+		//è®¡ç®—å‡ºä¸¤ä¸ªç‚¹çš„ä½ç½®
 		p1.x = line->xx + abs(Xfix);
 		p1.y = line->yy + abs(Yfix);
 		p2.y = p1.y + line->height() + textData->style.yshadow;
-		//È·¶¨ÓÒÏÂ½ÇXÎ»ÖÃ
+		//ç¡®å®šå³ä¸‹è§’Xä½ç½®
 		if (ii == endLine) {
 			if(isend) p2.x = p1.x + line->width() + textData->style.xshadow;
 			else p2.x = p1.x + endPos;
 		}
 		else p2.x = p1.x + line->width() + textData->style.xshadow;
-		//×îºó²ÅĞŞÕı×óÉÏ½ÇµÄÎ»ÖÃ£¬ÒòÎªÇ°ÃæÒªÓÃµ½
+		//æœ€åæ‰ä¿®æ­£å·¦ä¸Šè§’çš„ä½ç½®ï¼Œå› ä¸ºå‰é¢è¦ç”¨åˆ°
 		if (ii == startLine) p1.x += startPos;
 
 		re = { p1.x, p1.y , p2.x - p1.x, p2.y - p1.y };
@@ -894,7 +895,7 @@ void LOtexture::TranzPosition(int *lineID, int *linePos, bool *isend, int positi
 			break;
 		}
 	}
-	//×î´óÖ»ÔÊĞíµ½Î²²¿
+	//æœ€å¤§åªå…è®¸åˆ°å°¾éƒ¨
 	if (*lineID == textData->lineList.size()) {
 		*lineID = textData->lineList.size() - 1;
 		*linePos = textData->lineList[*lineID]->width() + textData->style.xshadow;
@@ -911,6 +912,18 @@ int LOtexture::GetTextTextureEnd() {
 		}
 	}
 	return sumlen;
+}
+
+bool LOtexture::GetTextShowEnd(int *xx, int *yy, int *endLineH){
+    *xx = *yy = *endLineH = 0;
+    if(textData){
+        LOLineDescribe *line = textData->lineList[textData->lineList.size() - 1];
+        *xx = line->xx + line->width();
+        *yy = line->yy + line->height();
+        *endLineH = line->height();
+        return  true ;
+    }
+    return false ;
 }
 
 
@@ -949,7 +962,7 @@ void LOtexture::CreateDstTexture2(int w, int h, Uint32 format, int access) {
 }
 
 
-//Õâ¸öº¯ÊıÖ»ÄÜÔÚÖ÷Ïß³Ìµ÷ÓÃ
+//è¿™ä¸ªå‡½æ•°åªèƒ½åœ¨ä¸»çº¿ç¨‹è°ƒç”¨
 void LOtexture::CopyTextureToSurface(bool freeTex) {
 	resetSurface();
 	if (!texturePtr) return;
@@ -966,7 +979,7 @@ void LOtexture::CopyTextureToSurface(bool freeTex) {
 }
 
 
-//Ö»¿¼ÂÇRGBÄ£Ê½
+//åªè€ƒè™‘RGBæ¨¡å¼
 bool LOtexture::CheckColor(SDL_Color *cc, int diff) {
 	if (!surfacePtr) return false;
 	int per = surfacePtr->format->BytesPerPixel;

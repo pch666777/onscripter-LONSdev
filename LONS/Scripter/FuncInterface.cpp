@@ -200,6 +200,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "rubyon2",       "i,i,s",     "Y,Y,N",       &FunctionInterface::rubyCommand },
 	{ "rubyoff",       "\0",        "\0",          &FunctionInterface::rubyCommand },
 	{ "getcursorpos",  "I,I",       "Y,Y",         &FunctionInterface::getcursorposCommand },
+    { "getcursorpos2", "I,I",       "Y,Y",         &FunctionInterface::getcursorposCommand },
 	{ "ispage",        "I",         "Y",           &FunctionInterface::ispageCommand },
 	{ "exbtn",         "i,i,s",     "Y,Y,Y",       &FunctionInterface::spbtnCommand },
 	{ "exbtn_d",       "s",         "Y",           &FunctionInterface::exbtn_dCommand },

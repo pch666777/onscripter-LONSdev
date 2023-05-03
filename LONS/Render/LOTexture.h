@@ -1,6 +1,6 @@
 /*
-//ÎÆÀí
-//Í³Ò»surfaceºÍtexture¼õÉÙ¸´ÔÓĞÔ
+//çº¹ç†
+//ç»Ÿä¸€surfaceå’Œtextureå‡å°‘å¤æ‚æ€§
 */
 
 #ifndef __LOTEXTURE_H__
@@ -20,10 +20,10 @@
 extern void GetFormatBit(SDL_PixelFormat *format, char *bit);
 extern void GetFormatBit(Uint32 format, char *bit);
 extern bool EqualRect(SDL_Rect *r1, SDL_Rect *r2);
-//ÎÒÏ£Íû¾¡¿ÉÄÜµÄ»º´æÎÆÀí£¬¿ÉÒÔÀûÓÃSDLµÄÎÆÀíÌØĞÔ¶ÔÍ¬Ò»¸öÎÆÀí½øĞĞÍ¸Ã÷¡¢»ìºÏÄ£Ê½¡¢ÑÕÉ«µş¼Ó
-//ÒÔĞ¡Ğ´ÎÄ¼şÃû×÷Îªkey£¬´ËÍâ»¹ĞèÒª¼ÓÈëNSµÄÍ¸Ã÷Ä£Ê½£¬±ÈÈç¶ÔJPGÀ´Ëµ :a ºÍ :cµÄ½á¹ûÊÇ²»Í¬µÄ
-//LOtextureBaseÖ±½Ó¶ÔÓ¦Í¼ÏñÎÄ¼ş£¬LOtextureÔòÊÇLOtextureBaseÒªÏÔÊ¾µÄ·¶Î§£¬»òÕßÊÇ¶ÔLOtextureBase
-//µÄÇĞ¸î
+//æˆ‘å¸Œæœ›å°½å¯èƒ½çš„ç¼“å­˜çº¹ç†ï¼Œå¯ä»¥åˆ©ç”¨SDLçš„çº¹ç†ç‰¹æ€§å¯¹åŒä¸€ä¸ªçº¹ç†è¿›è¡Œé€æ˜ã€æ··åˆæ¨¡å¼ã€é¢œè‰²å åŠ 
+//ä»¥å°å†™æ–‡ä»¶åä½œä¸ºkeyï¼Œæ­¤å¤–è¿˜éœ€è¦åŠ å…¥NSçš„é€æ˜æ¨¡å¼ï¼Œæ¯”å¦‚å¯¹JPGæ¥è¯´ :a å’Œ :cçš„ç»“æœæ˜¯ä¸åŒçš„
+//LOtextureBaseç›´æ¥å¯¹åº”å›¾åƒæ–‡ä»¶ï¼ŒLOtextureåˆ™æ˜¯LOtextureBaseè¦æ˜¾ç¤ºçš„èŒƒå›´ï¼Œæˆ–è€…æ˜¯å¯¹LOtextureBase
+//çš„åˆ‡å‰²  
 
 //==============================================
 
@@ -45,7 +45,7 @@ public:
 	void FreeData();
 	SDL_Surface* GetSurface() { return baseSurface; }
 
-	//Ö»¶ÔsurfaceÓĞĞ§
+	//åªå¯¹surfaceæœ‰æ•ˆ
 	bool hasAlpha();
 	bool isBig();
 
@@ -53,21 +53,21 @@ public:
 	static uint16_t maxTextureH;
 	static SDL_Renderer *render;
 	static void AvailableRect(int maxx, int maxy, SDL_Rect *re);
-	//²Ã¼ôsurface
+	//è£å‰ªsurface
 	static SDL_Surface* ClipSurface(SDL_Surface *surface, SDL_Rect rect);
 
-	//×ª»»nsÌØÓĞµÄÍ¸Ã÷
+	//è½¬æ¢nsç‰¹æœ‰çš„é€æ˜
 	static SDL_Surface* ConverNSalpha(SDL_Surface *surface, int cellCount);
 
 	int ww;
 	int hh;
-	//ÎÆÀíÀàĞÍ£¬·ÖÎªÆÕÍ¨ºÍÎÄ×ÖÎÆÀí
+	//çº¹ç†ç±»å‹ï¼Œåˆ†ä¸ºæ™®é€šå’Œæ–‡å­—çº¹ç†
 	int texType;
-	//Ö»ÓĞ¼ÓÔØÊ±Õâ¸ö²ÎÊı²ÅÓĞĞ§
+	//åªæœ‰åŠ è½½æ—¶è¿™ä¸ªå‚æ•°æ‰æœ‰æ•ˆ
 	bool ispng;
 private:
 	LOString Name;
-	//ÊÇ·ñ³¬´óÎÆÀí
+	//æ˜¯å¦è¶…å¤§çº¹ç†
 	SDL_Surface *baseSurface;
 	SDL_Texture *baseTexture;
 	void baseNew();
@@ -76,7 +76,7 @@ typedef std::shared_ptr<LOtextureBase> LOShareBaseTexture;
 typedef std::unique_ptr<LOtextureBase> LOUniqBaseTexture;
 
 //========================================
-//°ó¶¨Ò»¸öLOtextureBase,¿ÉÒÔÉèÖÃ²»Í¬µÄÍ¸Ã÷¶È£¬ÑÕÉ«µş¼ÓµÈ
+//ç»‘å®šä¸€ä¸ªLOtextureBase,å¯ä»¥è®¾ç½®ä¸åŒçš„é€æ˜åº¦ï¼Œé¢œè‰²å åŠ ç­‰
 class LOtexture
 {
 public:
@@ -145,10 +145,10 @@ public:
 	void SetBaseTexture(LOShareBaseTexture &base);
 	bool isAvailable();
 
-	//¼¤»îÄ³¸öÎÆÀí£¬²¢ÇÒÈç¹ûÊÇsurfaceÔò×ª»»³Étexture£¬ËùÒÔÖ»Ó¦¸ÃÔÚäÖÈ¾Ïß³Ìµ÷ÓÃ
+	//æ¿€æ´»æŸä¸ªçº¹ç†ï¼Œå¹¶ä¸”å¦‚æœæ˜¯surfaceåˆ™è½¬æ¢æˆtextureï¼Œæ‰€ä»¥åªåº”è¯¥åœ¨æ¸²æŸ“çº¿ç¨‹è°ƒç”¨
 	bool activeTexture(SDL_Rect *src, bool toGPUtex);
 
-	//Ä³Ğ©ÔÚäÖÈ¾Ïß³ÌÊ¹ÓÃµÄ¹ı³Ì£¬±ØĞëÖ±½Ó»ñÈ¡Ò»´ÎÎÆÀí
+	//æŸäº›åœ¨æ¸²æŸ“çº¿ç¨‹ä½¿ç”¨çš„è¿‡ç¨‹ï¼Œå¿…é¡»ç›´æ¥è·å–ä¸€æ¬¡çº¹ç†
 	bool activeFirstTexture();
 
 	bool activeFlagControl();
@@ -169,7 +169,7 @@ public:
 	static LOShareBaseTexture& addTextureBaseToMap(LOString &fname, LOtextureBase *base);
 	static void addTextureBaseToMap(LOString &fname, LOShareBaseTexture &base);
 	static void notUseTextureBase(LOShareBaseTexture &base);
-	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //Ö»ÄÜÔËĞĞÔÚÖ÷Ïß³Ì
+	static LOShareBaseTexture& addNewEditTexture(LOString &fname, int w, int h, Uint32 format, SDL_TextureAccess access);  //åªèƒ½è¿è¡Œåœ¨ä¸»çº¿ç¨‹
 
 	int baseW();
 	int baseH();
@@ -177,37 +177,39 @@ public:
 	int H();
 	void setEmpty(int w, int h);
 
-	//´´½¨ÎÄ×ÖÎÄÃèÊö£¬Í¨³£ÊÇ´´½¨ÎÄ×ÖÎÆÀíµÄÇ°×à
+	//åˆ›å»ºæ–‡å­—æ–‡æè¿°ï¼Œé€šå¸¸æ˜¯åˆ›å»ºæ–‡å­—çº¹ç†çš„å‰å¥
 	bool CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fontName);
 	void CreateSurface(int w, int h);
-	//È¡µÃÎÆÀíµÄ³ß´ç
+	//å–å¾—çº¹ç†çš„å°ºå¯¸
 	void GetTextSurfaceSize(int *width, int *height);
 	void RenderTextSimple(int x, int y, SDL_Color color);
-	//°´ĞĞ½¥ÏÔÎÄ×Ö£¬·µ»ØÊÇ·ñÒÑ¾­µ½ÖÕµã
+	//æŒ‰è¡Œæ¸æ˜¾æ–‡å­—ï¼Œè¿”å›æ˜¯å¦å·²ç»åˆ°ç»ˆç‚¹
 	int RollTextTexture(int start, int end);
 	void TranzPosition(int *lineID, int *linePos, bool *isend, int position);
 	int GetTextTextureEnd();
+        //è·å–æœ€åä¸€è¡Œçš„æœ€åä¸€ä¸ªä½ç½®
+        bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
 
-	//´´½¨É«¿é
+	//åˆ›å»ºè‰²å—
 	void CreateSimpleColor(int w, int h, SDL_Color color);
 
-	//´´½¨Ò»¸öÎÆÀí
+	//åˆ›å»ºä¸€ä¸ªçº¹ç†
 	void CreateDstTexture(int w, int h, int access);
 	void CreateDstTexture2(int w, int h, Uint32 format ,int access);
-	//½«ÎÆÀíÖĞµÄÊı¾İ×ªÒÆµ½surface
+	//å°†çº¹ç†ä¸­çš„æ•°æ®è½¬ç§»åˆ°surface
 	void CopyTextureToSurface(bool freeTex);
-	//¼ì²ésurfaceÖĞÊÇ·ñÊÇÍ¬Ò»ÖÖÑÕÉ«
+	//æ£€æŸ¥surfaceä¸­æ˜¯å¦æ˜¯åŒä¸€ç§é¢œè‰²
 	bool CheckColor(SDL_Color *cc, int diff);
 
 	void resetSurface();
 	void resetTexture();
 
 
-	//Î»ÖÃ¾ÀÕı£¬±ÈÈç<pos = -12>ÌåÏÖÎª×óÒÆ12¸öÏñËØ£¬ÕâÁ½¸ö²ÎÊı¶ÔÎÄ±¾ÎÆÀí²ÅÓĞÒâÒå
+	//ä½ç½®çº æ­£ï¼Œæ¯”å¦‚<pos = -12>ä½“ç°ä¸ºå·¦ç§»12ä¸ªåƒç´ ï¼Œè¿™ä¸¤ä¸ªå‚æ•°å¯¹æ–‡æœ¬çº¹ç†æ‰æœ‰æ„ä¹‰
 	int16_t Xfix;
 	int16_t Yfix;
 	bool isEdit;
-	//ÎÄ±¾ÎÆÀíµÄĞÅÏ¢
+	//æ–‡æœ¬çº¹ç†çš„ä¿¡æ¯
 	std::unique_ptr<TextData> textData;
 private:
 	void NewTexture();
@@ -222,26 +224,26 @@ private:
 
 	static std::unordered_map<std::string, LOShareBaseTexture> baseMap;
 
-	//ÊÇ·ñÊÇ¶ÔbaseTextureµÄÒıÓÃ£¬Èç¹û²»ÊÇÉ¾³ıµÄÊ±ºòÓ¦¸ÃÉ¾³ısurfaceºÍtexture
+	//æ˜¯å¦æ˜¯å¯¹baseTextureçš„å¼•ç”¨ï¼Œå¦‚æœä¸æ˜¯åˆ é™¤çš„æ—¶å€™åº”è¯¥åˆ é™¤surfaceå’Œtexture
 	bool isRef;
-	int useflag;      //ÑÕÉ«µş¼Ó£¬»ìºÏÄ£Ê½£¬Í¸Ã÷Ä£Ê½£¬µÍ16Î»±íÃæÊ¹ÓÃÁËÄÇÖÖĞ§¹û£¬¸ß16Î»±íÃ÷¾ßÌåµÄ»ìºÏÄ£Ê½
-	SDL_Color color;  //RGBµÄÖµ±íÊ¾ÑÕÉ«µş¼ÓµÄÖµ£¬AµÄÖµ±íÊ¾Í¸Ã÷¶È
+	int useflag;      //é¢œè‰²å åŠ ï¼Œæ··åˆæ¨¡å¼ï¼Œé€æ˜æ¨¡å¼ï¼Œä½16ä½è¡¨é¢ä½¿ç”¨äº†é‚£ç§æ•ˆæœï¼Œé«˜16ä½è¡¨æ˜å…·ä½“çš„æ··åˆæ¨¡å¼
+	SDL_Color color;  //RGBçš„å€¼è¡¨ç¤ºé¢œè‰²å åŠ çš„å€¼ï¼ŒAçš„å€¼è¡¨ç¤ºé€æ˜åº¦
 	SDL_BlendMode blendmodel;
 
 	SDL_Texture *texturePtr;
 	SDL_Surface *surfacePtr;
 
-	//Ô¤ÆÚµÄÏÔÊ¾Î»ÖÃºÍ´óĞ¡
+	//é¢„æœŸçš„æ˜¾ç¤ºä½ç½®å’Œå¤§å°
 	SDL_Rect expectRect;
 
-	//Êµ¼ÊÎÆÀíµÄÎ»ÖÃºÍ´óĞ¡
+	//å®é™…çº¹ç†çš„ä½ç½®å’Œå¤§å°
 	SDL_Rect actualRect;
 
-	//Ô­Ê¼¿í¶ÈºÍ¸ß¶È
+	//åŸå§‹å®½åº¦å’Œé«˜åº¦
 	int16_t bw;
 	int16_t bh;
 
-	//»ù´¡ÎÆÀí
+	//åŸºç¡€çº¹ç†
 	LOShareBaseTexture baseTexture;
 };
 
