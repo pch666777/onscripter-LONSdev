@@ -326,9 +326,9 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
-	//if (GetCurrentLine() == 182) {
-	//	int debugint = 0;
-	//}
+//    if (GetCurrentLine() == 38256) {
+//        int debugint = 0;
+//    }
 
 	bool hasnormal, haslabel, hasvariable, mustref, isstr;
 	int allow_type, paramcount = 0;
@@ -696,26 +696,26 @@ bool LOScriptReader::NextSomething() {
 
 //非尝试模式时会报错
 bool LOScriptReader::NextComma(bool isTry) {
-	bool spaceisComma = false;
-	if (scriptbuf->GetCharacter(currentLable->c_buf) == LOCodePage::CHARACTER_SPACE)spaceisComma = true;
+    //严格来说，只有','才是符合要求的标记，但是ons有大量的历史非标准写法，所以需要一些特殊支持
 	const char* buf = currentLable->c_buf;
 	buf = scriptbuf->SkipSpace(buf);
 	if (buf[0] == ',') {
 		currentLable->c_buf = buf + 1;
 		return true;
 	}
-	else if (!isTry) {
-		//有一些麻烦的空格即为分隔的写法，真不想支持
-		if (spaceisComma) return true;
-		//有些游戏不喜欢写','所以...
-		if (*currentLable->c_buf == '"') return true;
-		LOLog_i("NextComma not at a comma!");
-		return false;
-	}
-	else {
-		currentLable->c_buf = buf;
-		return false;
-	}
+    //要判断是否是非标准写法，比如空格或者 "与数字紧密相邻，或者数字与"紧密相连，只要不是命令，都可以尝试
+    bool nonStand = false ;
+    int charType = scriptbuf->GetCharacter(buf);
+    if (charType == LOCodePage::CHARACTER_NUMBER) nonStand = true ;
+    else if(buf[0] == '"' || buf[0] == '%' ) nonStand = true ; //$是否应该增加？
+    //命令肯定不可能从 " % 0-9开始，因此，是安全的
+    if(nonStand){
+        currentLable->c_buf = buf;
+        return true;
+    }
+    if (!isTry) LOLog_e("NextComma not at a comma!");
+
+    return false ;
 }
 
 bool LOScriptReader::isName(const char* name) {
@@ -1468,7 +1468,12 @@ int LOScriptReader::DefaultStep() {
 			for (int ii = 0; ii < bin->Length() - 1; ii++) {
 				buf[ii] ^= 0x84;
 			}
-			//bin->WriteToFile("d:\\00.txt");
+//            FILE *f = LOIO::GetSaveHandle("00.txt", "wb") ;
+//            if(f){
+//                fwrite(bin->bin, 1, bin->Length(), f);
+//                fflush(f);
+//                fclose(f);
+//            }
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
 			LOLog_i("scripter[%s] has read.\n", fn.c_str());
 			delete bin;

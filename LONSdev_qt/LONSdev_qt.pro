@@ -17,7 +17,6 @@ SOURCES += \
     ../LONS/Render/LOTextDescribe.cpp \
     ../LONS/Render/LOTexture.cpp \
     ../LONS/Scripter/FuncInterface.cpp \
-    ../LONS/Scripter/LOCodePage.cpp \
     ../LONS/Scripter/LOScriptPoint.cpp \
     ../LONS/Scripter/LOScriptReader.cpp \
     ../LONS/Scripter/LOScriptReader_command.cpp \
@@ -32,12 +31,14 @@ SOURCES += \
     ../LONS/etc/LOVariant.cpp \
     ../LONS/etc/SDL_mem.cpp
 
+QMAKE_CXXFLAGS += -Wunused-parameter
+
 INCLUDEPATH += $$PWD/../../LonsLibs/00_bin/include
 
 INCLUDEPATH += $$PWD/../../LonsLibs/00_bin
 DEPENDPATH += $$PWD/../../LonsLibs/00_bin
 
-unix:!macx: LIBS += -L$$PWD/../../LonsLibs/00_bin/ -lSDL2 -ldl -lSDL2_mixer -lvorbis -lvorbisenc -lvorbisfile -logg -ljpeg -lpng -lz -lSDL2_image
+unix:!macx: LIBS += -L$$PWD/../../LonsLibs/00_bin/ -lSDL2 -ldl -lSDL2_mixer -lvorbis -lvorbisenc -lvorbisfile -logg -lz -lSDL2_image -lSDL2_ttf -lfreetype -lsmpeg2 -lSDL2main
 
 unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2.a
 unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_mixer.a
@@ -46,3 +47,6 @@ unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libvorbisenc.a
 unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libvorbisfile.a
 unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libogg.a
 unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_image.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_ttf.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libsmpeg2.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2main.a

@@ -91,33 +91,37 @@ int LOImageModule::InitImageModule() {
 
 	//windows下默认使用游戏尺寸，其他系统由外部设置
 	int winflag;
-
-#ifdef WIN32
-	if (G_fullScreen) {
-		winflag = SDL_WINDOW_FULLSCREEN;
-		SDL_GetDisplayBounds(0, &deviceSize);
-		G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
-		G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
-	}
-	else {
-		winflag = SDL_WINDOW_SHOWN;
-		if (G_destWidth > 100) deviceSize.w = G_destWidth;
-		else deviceSize.w = G_gameWidth;
-		if (G_destHeight > 100) deviceSize.h = G_destHeight;
-		else deviceSize.h = G_gameHeight;
-		G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
-		G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
-	}
-#endif // WIN32
+    //屏幕的类型，0表示PC类，这种平台上默认将以窗口模式运行。1表示移动设备/平板类，这种将以全屏模式运行
+    int screenType = 0 ;
 #ifdef ANDROID
-	deviceSize.w = G_gameWidth;
-	deviceSize.h = G_gameHeight;
-	G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
-	G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
-	G_gameRatioW = 1;
-	G_gameRatioH = 1;
-	winflag = SDL_WINDOW_FULLSCREEN;
+    screenType = 1;
 #endif
+    if(screenType == 0){
+        if (G_fullScreen) {
+            winflag = SDL_WINDOW_FULLSCREEN;
+            SDL_GetDisplayBounds(0, &deviceSize);
+            G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
+            G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
+        }
+        else {
+            winflag = SDL_WINDOW_SHOWN;
+            if (G_destWidth > 100) deviceSize.w = G_destWidth;
+            else deviceSize.w = G_gameWidth;
+            if (G_destHeight > 100) deviceSize.h = G_destHeight;
+            else deviceSize.h = G_gameHeight;
+            G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
+            G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
+        }
+    }
+    else if(screenType == 1){
+        deviceSize.w = G_gameWidth;
+        deviceSize.h = G_gameHeight;
+        G_windowRect.x = SDL_WINDOWPOS_UNDEFINED;
+        G_windowRect.y = SDL_WINDOWPOS_UNDEFINED;
+        G_gameRatioW = 1;
+        G_gameRatioH = 1;
+        winflag = SDL_WINDOW_FULLSCREEN;
+    }
 
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);

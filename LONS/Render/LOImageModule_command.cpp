@@ -8,9 +8,9 @@
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 39447) {
-	//	int debugbreak = 1;
-	//}
+//    if (reader->GetCurrentLine() == 38256) {
+//        int debugbreak = 1;
+//    }
 	bool visiable = !reader->isName("lsph");
 	//
 	int ids[] = { reader->GetParamInt(0),255,255 };
