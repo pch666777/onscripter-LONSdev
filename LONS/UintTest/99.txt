@@ -2,6 +2,15 @@
 ;仅测试基本功能是否正常，不是自动测试，注意观察输出内容和提示
 *define
 setintvar "linelog",1
+numalias savetotal,20
+numalias save_num,21
+numalias save_height,22
+numalias sub2,24
+numalias savedatanow,25
+;mov %1,0+(1+2)+(3+4)
+mov %1,((((1))))+1
+mov %sub2, (%25 mod (10+1))
+btnwait %0
 
 ;ld c,":c;>50,50,#ff00ff",10,300   ;在最中间 
 ;ld l,":c;>50,100,#ffffff",10,300   ;在最下面，1/4处

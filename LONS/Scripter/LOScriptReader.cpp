@@ -897,111 +897,6 @@ int LOScriptReader::GetAliasRef(const char *&buf, bool isstr, int &out) {
 }
 
 
-////获取逆波兰式的堆栈
-//const char* LOScriptReader::GetRPNstack(LOStack<ONSVariableRef> *s2, const char *buf, bool isalias) {
-//	//初始化符号栈
-//	LOStack<ONSVariableRef> s1;
-//	ONSVariableRef *v = new ONSVariableRef;
-//	LOString s;
-//	bool first = true;
-//	s1.push(v);
-//	//===================//
-//	int type;
-//	while (true) {
-//		buf = scriptbuf->SkipSpace(buf);
-//		//LOLog_i("char is:%d",buf[0]) ;
-//		type = scriptbuf->GetCharacter(buf);
-//		//LOLog_i("type is:%d",type) ;
-//		if (type == LOCodePage::CHARACTER_NUMBER || (buf[0] == '-' && first)) { //必须处理首个负数
-//			double tdd;
-//			if (buf[0] == '-') {
-//				buf++;
-//				tdd = 0 - scriptbuf->GetReal(buf);
-//			}
-//			else tdd = scriptbuf->GetReal(buf);
-//			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, tdd);
-//			s2->push(v);  //操作数立即入栈
-//			//检查符号栈，如果是% $则全部弹出这两个符号
-//			//while (s1.top()->oper == '%' || s1.top()->oper == '$') s2->push(s1.pop());
-//
-//			//下一个符号不是运算符则停止
-//			buf = scriptbuf->SkipSpace(buf);
-//			if (!scriptbuf->IsOperator(buf)) break;
-//		}
-//		else if (type == LOString::CHARACTER_SYMBOL || scriptbuf->IsMod(buf) ) { //因为有mod这种特殊的，所以不能只使用类型判断
-//			v = new ONSVariableRef;
-//			buf += v->GetOperator(buf);
-//			if (v->isOperator()) {
-//				//数组用的方括号不在这里处理
-//				if (v->oper == '(') {
-//					s1.push(v);
-//				}
-//				else if (v->oper == ')') PopRPNstackUtill(&s1, s2, '(');
-//				else if (v->oper == '[') {
-//					PopRPNstackUtill(&s1, s2, '?');
-//					s1.push(v);
-//				}
-//				else if (v->oper == ']') PopRPNstackUtill(&s1,s2,'[');
-//				else {
-//					//如果是数组，则压入一个特殊符号
-//					if (v->oper == '?') {
-//						s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG));
-//					}
-//					//
-//					auto iter = s1.end() - 1;
-//					if (v->order > (*iter)->order) s1.push(v);
-//					else if (v->order == (*iter)->order && v->order == ONSVariableRef::ORDER_GETVAR) s1.push(v);
-//					else {
-//						while (v->order <= (*iter)->order && (*iter)->oper != '(' &&
-//							(*iter)->oper != '[') {
-//							s2->push(*iter);
-//							s1.erase(iter--);
-//						}
-//						s1.push(v);
-//					}
-//				}
-//
-//			}
-//			else if (buf[0] == '"') { //string
-//				v->vtype = ONSVariableRef::TYPE_STRING_IM;
-//				LOString s = scriptbuf->GetString(buf);
-//				v->SetValue(&s);
-//				s2->push(v);
-//				buf = scriptbuf->SkipSpace(buf);
-//				if (!scriptbuf->IsOperator(buf)) break;
-//			}
-//			else {
-//				delete v;
-//				break;
-//			}
-//
-//		}
-//		else if (isalias && type == LOCodePage::CHARACTER_LETTER) { //允许别名则处理别名
-//			s = scriptbuf->GetWordStill(buf, LOCodePage::CHARACTER_LETTER | LOCodePage::CHARACTER_NUMBER);
-//			//别名作为立即数处理
-//			bool isok;
-//			int numaliaval = GetAliasRef(s, false, isok);
-//			//没有获取到则不正确
-//			v = new ONSVariableRef(ONSVariableRef::TYPE_REAL, numaliaval);
-//			s2->push(v);
-//		}
-//		else {
-//			//正常语句结束
-//			char ch = buf[0];
-//			if (ch == ',' || ch == '\n' || ch == ':') break; 
-//			else LOLog_i("line at [%d] may be have error.\n", currentLable->c_line);
-//			break;
-//		}
-//
-//		first = false;
-//	}
-//	PopRPNstackUtill(&s1, s2, '\0');
-//	if (!s2->top() || !s2->top()->isOperator()) 
-//		FatalError("Expression error");
-//	return buf;
-//}
-
-
 const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstrAlia) {
 	LOStack<ONSVariableRef> s1;
 	std::unique_ptr<ONSVariableRef> v;
@@ -1018,13 +913,15 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		buf = scriptbuf->SkipSpace(buf);
 		//根据之前的类型，获取下一个允许的类型
 		curAllow = ONSVariableRef::GetYFnextAllow(curType);
+        //表达式的起始，总是允许一个'('
+        if(isfirst) curAllow |= ONSVariableRef::YF_Left_PA;
 		//获取当前的语法类型
 		curType = ONSVariableRef::GetYFtype(buf, isfirst);
 
 		//尝试解释别名，别名总是可行的，唯一需要区分的只有文字别名还是整数别名
 		if (curType == ONSVariableRef::YF_Alias) {
 			//别名就相当于值，那么首先允许的类型要是值类型，否则无法继续下去
-			if ((curAllow & ONSVariableRef::YF_Value) == 0) break;
+            if ((curAllow & ONSVariableRef::YF_Value) == 0) break ;
 			//获取别名的值
 			int ret = GetAliasRef(buf, strAlia, tint);
 			if(ret == 0) curType = ONSVariableRef::YF_Error;   //别名获取失败，无法继续了
@@ -1088,6 +985,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		}
 		else if (curType & ONSVariableRef::YF_Right_PA) {  //')'
 			buf++;
+            //auto iiit = TransformStack(&s1);
 			PopRPNstackUtill(&s1, s2, '(');
 		}
 		else if (curType & ONSVariableRef::YF_Left_SQ) { //'['
@@ -1112,7 +1010,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		v.release();
 		isOpAdd = false;
 	}
-	//
+    //行首括号、多层括号会出错
 	PopRPNstackUtill(&s1, s2, '\0');
 	if (!s2->top() || !s2->top()->isOperator())
 		FatalError("Expression error");
@@ -1129,6 +1027,14 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 	//if (currentLable->c_line == 47) {
 	//	int bbq = 1;
 	//}
+//    while(iter != stack->end()){
+//        op = *iter ;
+//        op->isOperator() ? printf("%c ", op->GetOperator()) : printf("%d ",(int)op->GetReal()) ;
+//        iter++ ;
+//    }
+//    iter = stack->begin();
+//    printf("\n");
+//    return ;
 
 	while (iter != stack->end()) {
 		op = (*iter);
@@ -1213,6 +1119,7 @@ bool LOScriptReader::NextStartFrom(char op) {
 	return ( currentLable->c_buf[0] == op);
 }
 
+//op应该是同一种类型，不能出现 +abc 或者abc+这种情况
 bool LOScriptReader::NextStartFrom(const char* op) {
 	const char *buf = currentLable->c_buf;
 	buf = scriptbuf->SkipSpace(buf);
@@ -1221,7 +1128,11 @@ bool LOScriptReader::NextStartFrom(const char* op) {
 		op++;
 		buf++;
 	}
-	if (scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_LETTER) return false; //下一个依然是字母说明是连续的字母
+    int optype = scriptbuf->GetCharacter(op-1);
+    //字母后面不能跟随字母
+    if(optype == LOCodePage::CHARACTER_LETTER && scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_LETTER) return false ;
+    //符号后面不能跟随符号
+    else if(optype == LOCodePage::CHARACTER_SYMBOL && scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_SYMBOL) return false ;
 	currentLable->c_buf = buf;
 	return true;
 }

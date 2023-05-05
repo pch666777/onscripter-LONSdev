@@ -240,9 +240,9 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::ifCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 182) {
-	//	int bbk = 0;
-	//}
+//    if (reader->GetCurrentLine() == 40284) {
+//        int bbk = 0;
+//    }
 
 	bool ret = ParseLogicExp();
 	if (isName("notif")) ret = !ret;
@@ -546,9 +546,9 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 46) {
-	//	int bbk = 1;
-	//}
+    if (reader->GetCurrentLine() == 40137) {
+        int bbk = 1;
+    }
 
 	ONSVariableRef *v1 = ParseVariableBase(false);
 	if (!v1->isRef()) {

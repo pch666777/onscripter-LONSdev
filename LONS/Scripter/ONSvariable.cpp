@@ -850,12 +850,12 @@ int  ONSVariableRef::GetYFnextAllow(int cur) {
 		return YF_Value | YF_Left_PA;
 	case YF_Left_SQ: // [%num], [?num]
 		return YF_Int | YF_IntRef | YF_Array;
-	case YF_Right_SQ: //] -> ][, ]+
-		return YF_Left_SQ | YF_Oper;
+    case YF_Right_SQ: //] -> ][, ]+ )
+        return YF_Left_SQ | YF_Oper | YF_Right_PA;
 	case YF_Left_PA: //( -> (first  //左括号相当于重新开始
 		return YF_Value | YF_Negative;
 	case YF_Right_PA: //) --> )+
-		return YF_Oper;
+        return YF_Oper | YF_Right_PA;
 	default:
 		break;
 	}
