@@ -800,7 +800,7 @@ int LOImageModule::getmouseposCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
 	v1->SetValue((double)mouseXY[0]);
-	v1->SetValue((double)mouseXY[1]);
+    v2->SetValue((double)mouseXY[1]);
 	return RET_CONTINUE;
 }
 
@@ -1014,8 +1014,8 @@ int LOImageModule::ispageCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::btnCommand(FunctionInterface *reader) {
-	
-	if (btndefStr.length() == 0) return RET_CONTINUE;
+    //没有btndef字符串，则创建一个空纹理的按钮，没有显示，但是可以响应事件
+    //if (btndefStr.length() == 0) return RET_CONTINUE;
 	
 	LOLayerData *info = CreateBtnData(reader->GetPrintName());
 	if(!info) return RET_CONTINUE;
@@ -1032,7 +1032,11 @@ int LOImageModule::btnCommand(FunctionInterface *reader) {
 	int yy = reader->GetParamInt(2);
 
 	//btn的按钮默认是不可见的
-	loadSpCore(info, btndefStr, xx, yy, -1, false);
+    if(btndefStr.length() != 0) loadSpCore(info, btndefStr, xx, yy, -1, false);
+    else{ //使用空纹理
+        LOString tmp("**;_?_empty_?_");
+        loadSpCore(info, tmp, xx, yy, -1, false);
+    }
 	info->bak.SetBtndef(nullptr, val, true, false);
 	info->bak.SetShowRect(reader->GetParamInt(5), reader->GetParamInt(6), reader->GetParamInt(3), reader->GetParamInt(4));
 	return RET_CONTINUE;
