@@ -546,9 +546,9 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
-    if (reader->GetCurrentLine() == 40137) {
-        int bbk = 1;
-    }
+//    if (reader->GetCurrentLine() == 62) {
+//        int bbk = 1;
+//    }
 
 	ONSVariableRef *v1 = ParseVariableBase(false);
 	if (!v1->isRef()) {

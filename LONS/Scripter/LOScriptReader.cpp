@@ -726,7 +726,7 @@ bool LOScriptReader::isName(const char* name) {
 ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrAlias) {
 	LOStack<ONSVariableRef> s2;
 	buf = GetRPNstack2(&s2, buf, isstrAlias);
-	//auto ss = TransformStack(&s2);
+    //auto ss = TransformStack(&s2);
 	CalculatRPNstack(&s2);
 	return *(s2.begin());
 }
@@ -1034,7 +1034,7 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 //    }
 //    iter = stack->begin();
 //    printf("\n");
-//    return ;
+    //return ;
 
 	while (iter != stack->end()) {
 		op = (*iter);
@@ -1132,7 +1132,13 @@ bool LOScriptReader::NextStartFrom(const char* op) {
     //字母后面不能跟随字母
     if(optype == LOCodePage::CHARACTER_LETTER && scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_LETTER) return false ;
     //符号后面不能跟随符号
-    else if(optype == LOCodePage::CHARACTER_SYMBOL && scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_SYMBOL) return false ;
+    else if(optype == LOCodePage::CHARACTER_SYMBOL && scriptbuf->GetCharacter(buf) == LOCodePage::CHARACTER_SYMBOL){
+        //'= < >'后面可以跟 ? % $ - "
+        if(*(op-1) == '=' || *(op-1) == '<' || *(op-1) == '>'){
+            if(!(buf[0] == '?' || buf[0] == '%' || buf[0] == '$' || buf[0] == '"' || buf[0] == '-')) return false ;
+        }
+        else return false ;
+    }
 	currentLable->c_buf = buf;
 	return true;
 }
