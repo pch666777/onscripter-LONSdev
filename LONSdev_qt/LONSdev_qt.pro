@@ -33,20 +33,20 @@ SOURCES += \
 
 QMAKE_CXXFLAGS += -Wunused-parameter
 
-INCLUDEPATH += $$PWD/../../LonsLibs/00_bin/include
+INCLUDEPATH += $$PWD/../../LonsLibs/LoongArch/00_bin/include
 
-INCLUDEPATH += $$PWD/../../LonsLibs/00_bin
-DEPENDPATH += $$PWD/../../LonsLibs/00_bin
+INCLUDEPATH += $$PWD/../../LonsLibs/LoongArch/00_bin
+DEPENDPATH += $$PWD/../../LonsLibs/LoongArch/00_bin
 
-unix:!macx: LIBS += -L$$PWD/../../LonsLibs/00_bin/ -lSDL2 -ldl -lSDL2_mixer -lvorbis -lvorbisenc -lvorbisfile -logg -lz -lSDL2_image -lSDL2_ttf -lfreetype -lsmpeg2 -lSDL2main
+unix:!macx: LIBS += -L$$PWD/../../LonsLibs/LoongArch/00_bin/ -lSDL2 -ldl -lSDL2_mixer -lvorbis -lvorbisenc -lvorbisfile -logg -lz -lSDL2_image -lSDL2_ttf -lfreetype -lsmpeg2 -lSDL2main
 
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_mixer.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libvorbis.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libvorbisenc.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libvorbisfile.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libogg.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_image.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2_ttf.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libsmpeg2.a
-unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/00_bin/libSDL2main.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libSDL2.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libSDL2_mixer.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libvorbis.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libvorbisenc.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libvorbisfile.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libogg.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libSDL2_image.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libSDL2_ttf.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libsmpeg2.a
+unix:!macx: PRE_TARGETDEPS += $$PWD/../../LonsLibs/LoongArch/00_bin/libSDL2main.a

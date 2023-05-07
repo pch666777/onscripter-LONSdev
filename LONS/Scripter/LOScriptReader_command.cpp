@@ -984,8 +984,14 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 	s_saveinfo.id = reader->GetParamInt(0);
 	if (reader->GetParamCount() > 1) s_saveinfo.tag = reader->GetParamStr(1);
 
-	//存储全局变量
-	SaveGlobleVariable();
+    //全局变量模式时，要更新全局变量，更新前要挂起其他线程
+    if(st_globalon){
+        //音频、渲染模块进入save模式，不要调整这几个的顺序
+        audioModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+        imgeModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+        scriptModule->ChangeModuleFlags(MODULE_FLAGE_SAVE | MODULE_FLAGE_CHANNGE);
+    }
+    //先写出其他内容
 	LOString fn = "save" + std::to_string(s_saveinfo.id) + ".datl";
 	FILE *f = LOIO::GetSaveHandle(fn, "wb");
 	if (f) {
@@ -1012,6 +1018,19 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		fclose(f);
 	}
 	else LOLog_e("can't write save data [save%d.datl]!", s_saveinfo.id);
+    //检查其他线程是否已经挂起
+    if(st_globalon){
+        //等待img进入挂起状态
+        while (!imgeModule->isModuleSuspend()) {
+            //延迟0.5ms
+            LOTimer::CpuDelay(0.5);
+        }
+        UpdataGlobleVariable();
+        SaveGlobleVariable();
+        //恢复
+        scriptModule->ChangeModuleState(MODULE_STATE_RUNNING);
+        scriptModule->ChangeModuleFlags(0);
+    }
 	return RET_CONTINUE;
 }
 

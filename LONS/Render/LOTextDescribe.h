@@ -54,6 +54,7 @@ public:
 
 	void reset();
 	void Serialize(BinArray *bin);
+        bool DeSerialize(BinArray *bin, int *pos);
         void SetFlags(int f){ flags |= f ;}
         void UnSetFlags(int f){ flags &= (~f) ;}
         bool isRubyOn(){ return flags & STYLE_RUBYON ;}

@@ -859,6 +859,9 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 		case LOtexture::TEX_ACTION_STR:
 			TextureFromActionStr(bak, tstr.get());
 			break;
+        case LOtexture::TEX_MULITY_STR:
+            TextureFromStrspLine(bak, tstr.get());
+            break ;
 		case LOtexture::TEX_COLOR_AREA:
 			TextureFromColor(bak, tstr.get());
 			break;
@@ -873,27 +876,6 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 			FatalError(errs.c_str());
 			break;
 		}
-		/*
-		if (info->texType == LOtexture::TEX_ACTION_STR) {
-			//tx = RenderText2(info, &ww, data, 0);
-			//LOString::SetStr(info->textStr, data, false);
-		}
-		else if (info->texType == LOtexture::TEX_SIMPLE_STR) {
-			TextureFromSimpleStr(info, tstr.get());
-		}
-		else if (info->texType == LOtexture::TEX_MULITY_STR) {
-			//tx = TextureFromSimpleStr(info, data);
-		}
-		else if (info->texType == LOtexture::TEX_NSSIMPLE_BTN) {
-			//tx = TextureFromNSbtn(info, data);
-		}
-		else {
-			LOString errs = StringFormat(128, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", info->texType);
-			//LOLog_e("%s",errs.c_str());
-			SimpleError(errs.c_str());
-		}
-		//LOtexture::addTextureBaseToMap(*info->fileName, tx);
-		*/
 	}
 	else {
 		//只有图像才使用纹理缓存
@@ -986,11 +968,12 @@ void LOImageModule::TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s) {
 }
 
 
+//用于对话的
 void LOImageModule::TextureFromActionStr(LOLayerDataBase *bak, LOString *s) {
 	LOShareTexture texture(new LOtexture());
 	//先创建文字描述
 	int w, h;
-	if (!texture->CreateTextDescribe(s, &sayStyle, &sayFontName)) return;
+    if (!texture->CreateTextDescribe(s, &sayStyle, &sayFontName)) return;
 	texture->GetTextSurfaceSize(&w, &h);
 	if (w <= 0 || h <= 0) return;
 	texture->CreateSurface(w, h);
@@ -1009,6 +992,43 @@ void LOImageModule::TextureFromActionStr(LOLayerDataBase *bak, LOString *s) {
 	LOActionText *ac = new LOActionText();
 	ac->setFlags(LOAction::FLAGS_INIT);
 	bak->SetAction(ac);
+}
+
+//用于strsp的
+void LOImageModule::TextureFromStrspLine(LOLayerDataBase *bak, LOString *s){
+    LOShareTexture texture(new LOtexture());
+    int w, h;
+    if (!texture->CreateTextDescribe(s, &strspStyle, &spFontName)) return;
+    texture->GetTextSurfaceSize(&w, &h);
+    if (w <= 0 || h <= 0) return;
+    //获取目标颜色值
+    SDL_Color color[3];
+    int count = 0 ;
+    const char *buf = bak->btnStr->c_str();
+    while(buf[0] != 0 && count < 3){
+        if(buf[0] == '#') buf++ ;
+        int val = bak->btnStr->GetHexInt(buf, 6);
+        color[count].r = (val >> 16) & 0xff;
+        color[count].g = (val >> 8) & 0xff;
+        color[count].b = val & 0xff;
+        color[count].a = 255 ;
+        count++ ;
+    }
+    //默认值
+    if(count == 0){
+        count = count + 1;
+        color[0] = {255,255,255,255};
+    }
+    texture->CreateSurface(w * count, h);
+    for(int ii = 0 ; ii < count; ii++){
+        texture->RenderTextSimple(w * ii, 0, color[ii]);
+    }
+    //单字和文字区域已经不需要了
+    texture->textData->ClearTexts();
+    texture->textData->ClearWords();
+    bak->btnStr.reset();
+
+    bak->SetNewFile(texture);
 }
 
 //从标记中生成色块
@@ -1387,12 +1407,36 @@ LOImageModule::PrintNameMap* LOImageModule::GetPrintNameMap(const char *printNam
 //	img->SerializeState(bin);
 //}
 void LOImageModule::Serialize(BinArray *bin) {
+    //存储状态，状态先存储的，因为读取的时候有些图层是依赖状态的
+    SerializeState(bin);
 	//存储图层
 	SaveLayers(bin);
 	//存储队列
 	SerializePrintQue(bin);
-	//存储状态
-	SerializeState(bin);
+}
+
+bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
+    //一些模块状态，大部分都不需要覆盖
+    if (!DeSerializeState(bin, pos)) {
+        LOLog_e("Image module state DeSerialize faild!");
+        return false;
+    }
+    //读取图层
+    if (!LoadLayers(bin, pos, evmap)) {
+        FatalError("LoadLayers faild!");
+        return false;
+    }
+    //读取printQue
+    int count = bin->GetIntAuto(pos);
+    for (int ii = 0; ii < count; ii++) {
+        std::string s = bin->GetString(pos);
+        PrintNameMap *pmap = GetPrintNameMap(s.c_str());
+        if (!pmap || !pmap->DeSerialize(bin, pos)) {
+            FatalError("PrintMap DeSerialize faild!");
+            return false;
+        }
+    }
+    return true;
 }
 
 void LOImageModule::PrintNameMap::Serialize(BinArray *bin) {
@@ -1417,6 +1461,7 @@ bool LOImageModule::PrintNameMap::DeSerialize(BinArray *bin, int *pos) {
 		if (lyr) (*map)[fid] = lyr;
 	}
 	*pos = next;
+    return true;
 }
 
 
@@ -1467,6 +1512,7 @@ bool LOImageModule::LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap) {
 		if (!lyr->DeSerializeBak(bin, pos)) return false;
 	}
 	*pos = next;
+    return true;
 }
 
 
@@ -1488,6 +1534,8 @@ void LOImageModule::SerializeState(BinArray *bin) {
 	//对话框
 	sayWindow.Serialize(bin);
 	sayState.Serialize(bin);
+    //文字速度
+    bin->WriteInt(G_textspeed);
 	//其他
 	bin->WriteLOString(&btndefStr);
 	bin->WriteInt(btnOverTime);
@@ -1510,14 +1558,16 @@ void LOImageModule::SerializeState(BinArray *bin) {
 bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
 	int next = -1;
 	if (!bin->CheckEntity("imgo", &next, nullptr, pos)) return false;
-	if (!bin->JumpEntity("styl", pos)) return false;
-	bin->GetLOString(pos);
-	if (!bin->JumpEntity("styl", pos)) return false;
-	bin->GetLOString(pos);
+    if(!spStyle.DeSerialize(bin, pos)) return false ;
+    spFontName = bin->GetLOString(pos);
+    if(!sayStyle.DeSerialize(bin,pos))return false ;
+    sayFontName = bin->GetLOString(pos);
 
 	//对话框
-	if (!bin->JumpEntity("winn", pos)) return false;
+    if(!sayWindow.DeSerialize(bin,pos)) return false ;
 	if (!sayState.DeSerialize(bin, pos)) return false;
+    //文字速度
+    G_textspeed = bin->GetIntAuto(pos);
 	//其他
 	btndefStr = bin->GetLOString(pos);
 	btnOverTime = bin->GetIntAuto(pos);
@@ -1551,6 +1601,20 @@ void LOImageModule::LOSayWindow::Serialize(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 }
 
+bool LOImageModule::LOSayWindow::DeSerialize(BinArray *bin, int *pos) {
+    int next = -1;
+    if (!bin->CheckEntity("winn", &next, nullptr, pos)) return false;
+    x = bin->GetIntAuto(pos);
+    y = bin->GetIntAuto(pos);
+    w = bin->GetIntAuto(pos);
+    h = bin->GetIntAuto(pos);
+    textX = bin->GetIntAuto(pos);
+    textY = bin->GetIntAuto(pos);
+    winstr = bin->GetLOString(pos);
+    *pos = next;
+    return true;
+}
+
 void LOImageModule::LOSayState::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("wins", 0, 1);
 	bin->WriteLOString(&say);
@@ -1571,28 +1635,3 @@ bool LOImageModule::LOSayState::DeSerialize(BinArray *bin, int *pos) {
 	return true;
 }
 
-
-
-bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
-	if (!LoadLayers(bin, pos, evmap)) {
-		FatalError("LoadLayers faild!");
-		return false;
-	}
-	//读取printQue
-	int count = bin->GetIntAuto(pos);
-	for (int ii = 0; ii < count; ii++) {
-		std::string s = bin->GetString(pos);
-		PrintNameMap *pmap = GetPrintNameMap(s.c_str());
-		if (!pmap || !pmap->DeSerialize(bin, pos)) {
-			LOLog_e("PrintMap DeSerialize faild!");
-			return false;
-		}
-	}
-
-	//一些模块状态，大部分都不需要覆盖
-	if (!DeSerializeState(bin, pos)) {
-		LOLog_e("Image module state DeSerialize faild!");
-		return false;
-	}
-	return true;
-}

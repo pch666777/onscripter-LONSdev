@@ -82,6 +82,7 @@ public:
 		}
 
 		void Serialize(BinArray *bin);
+                bool DeSerialize(BinArray *bin, int *pos);
 
 	};
 
@@ -277,6 +278,8 @@ private:
 
 	//lsp时使用的样式
 	LOTextStyle spStyle;
+        //strsp时，使用一个变量传递值
+        LOTextStyle strspStyle;
 	//lsp使用的字体名称
 	LOString    spFontName;
 	//对话使用的样式
@@ -336,6 +339,7 @@ private:
 	void TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s);
 	void TextureFromActionStr(LOLayerDataBase *bak, LOString *s);
 	void TextureFromVideo(LOLayerDataBase *bak, LOString *s);
+        void TextureFromStrspLine(LOLayerDataBase *bak, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);

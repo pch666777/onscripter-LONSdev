@@ -41,6 +41,24 @@ void LOTextStyle::Serialize(BinArray *bin) {
 	bin->WriteInt(bin->Length() - len, &len);
 }
 
+bool LOTextStyle::DeSerialize(BinArray *bin, int *pos){
+    int next = -1;
+    if (!bin->CheckEntity("styl", &next, nullptr, pos)) return false;
+    xcount = bin->GetInt16Auto(pos);
+    ycount = bin->GetInt16Auto(pos);
+    xsize = bin->GetInt16Auto(pos);
+    ysize = bin->GetInt16Auto(pos);
+    xspace = bin->GetInt16Auto(pos);
+    yspace = bin->GetInt16Auto(pos);
+    textIndent = bin->GetInt16Auto(pos);
+    xshadow = bin->GetInt16Auto(pos);
+    yshadow = bin->GetInt16Auto(pos);
+    xruby = bin->GetInt16Auto(pos);
+    yruby = bin->GetInt16Auto(pos);
+    *pos = next;
+    return true ;
+}
+
 //================================================
 
 //LOTextDescribe::LOTextDescribe() {

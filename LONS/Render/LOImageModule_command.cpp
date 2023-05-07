@@ -266,51 +266,39 @@ int LOImageModule::humanzCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::strspCommand(FunctionInterface *reader) {
-	/*
+
 	int ids[] = { reader->GetParamInt(0), 255, 255 };
-	LOString tag = "*S;" + reader->GetParamStr(1);
-	LOFontWindow ww = winFont;
-	ww.topx = reader->GetParamInt(2);
-	ww.topy = reader->GetParamInt(3);
-	ww.xcount = reader->GetParamInt(4);
-	ww.ycount = reader->GetParamInt(5);
-	ww.xsize = reader->GetParamInt(6);
-	ww.ysize = reader->GetParamInt(7);
-	ww.xspace = reader->GetParamInt(8);
-	ww.yspace = reader->GetParamInt(9);
-	ww.isbold = reader->GetParamInt(10);
-	ww.isshaded = reader->GetParamInt(11);
+    LOString tag = "*S;" +  reader->GetParamStr(1);
+    reader->ExpandStr(tag) ;
+
+    strspStyle = spStyle ;
+    //2-xx,3-yy
+    strspStyle.xcount = reader->GetParamInt(4);
+    strspStyle.ycount = reader->GetParamInt(5);
+    strspStyle.xsize = reader->GetParamInt(6);
+    strspStyle.ysize = reader->GetParamInt(7) ;
+    strspStyle.xspace = reader->GetParamInt(8);
+    strspStyle.yspace = reader->GetParamInt(9);
+    if(reader->GetParamInt(10)) strspStyle.SetFlags(LOTextStyle::STYLE_BOLD) ;
+    else strspStyle.UnSetFlags(LOTextStyle::STYLE_BOLD);
+    if(reader->GetParamInt(11)) strspStyle.SetFlags(LOTextStyle::STYLE_SHADOW);
+    else strspStyle.UnSetFlags(LOTextStyle::STYLE_SHADOW);
 
 	int colorCount = reader->GetParamCount() - 12;
-
 	LeveTextDisplayMode();
 
-	LOLayerInfo *info = GetInfoNewAndFreeOld(GetFullID(LOLayer::LAYER_SPRINT, ids), reader->GetPrintName());
-	SDL_Color *cc = new SDL_Color[3];
-	info->maskName = (LOString*)(&ww);
-	info->btnStr = (LOString*)cc;
-	info->btnValue = colorCount;
+    LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_SPRINT, ids), reader->GetPrintName());
+    //有颜色获取颜色，否则默认为白色
+    if(colorCount > 0){
+        info->bak.btnStr.reset(new LOString()) ;
+        for (int ii = 0; ii < colorCount; ii++) info->bak.btnStr->append(reader->GetParamStr(12 + ii)) ;
+    }
+    else{
+        info->bak.btnStr.reset(new LOString("#ffffff")) ;
+    }
 
-	if (colorCount > 0) {
-		for (int ii = 0; ii < colorCount; ii++) {
-			int colorint = reader->GetParamColor(12 + ii);
-			cc[ii].r = (colorint >> 16) & 0xff;
-			cc[ii].g = (colorint >> 8) & 0xff;
-			cc[ii].b = colorint & 0xff;
-		}
-	}
-	else {
-		cc[0] = spFont.fontColor;
-		info->btnValue = 1;
-	}
+    loadSpCore(info, tag, reader->GetParamInt(2), reader->GetParamInt(3), -1, reader->isName("strsp"));
 
-	loadSpCore(info, tag, ww.topx, ww.topy, -1);
-	if (reader->isName("strsph")) {
-		info->SetVisable(0);
-	}
-
-	if (cc) delete[] cc;
-	*/
 	return RET_CONTINUE;
 }
 
@@ -874,7 +862,7 @@ int LOImageModule::getpixcolorCommand(FunctionInterface *reader) {
 
 int LOImageModule::gettextCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	//v->SetValue(&dialogText);
+    v->SetValue(&sayState.say);
 	return RET_CONTINUE;
 }
 
