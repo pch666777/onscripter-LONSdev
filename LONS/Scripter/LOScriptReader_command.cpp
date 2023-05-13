@@ -1018,6 +1018,9 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		fclose(f);
 	}
 	else LOLog_e("can't write save data [save%d.datl]!", s_saveinfo.id);
+    //写入环境，主要是音量
+    //LonsSaveEnvData();
+
     //检查其他线程是否已经挂起
     if(st_globalon){
         //等待img进入挂起状态

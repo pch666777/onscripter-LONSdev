@@ -3,6 +3,7 @@
 */
 #include "../etc/LOEvent1.h"
 #include "LOAudioModule.h"
+#include "../etc/LOIO.h"
 #include <mutex>
 
 extern void musicFinished();
@@ -70,6 +71,8 @@ void LOAudioModule::LoadFinish() {
 	ChangeModuleState(MODULE_STATE_RUNNING);
 	Mix_HookMusicFinished(musicFinished);
 	Mix_ChannelFinished(channelFinish);
+    //音量的值并不会保存
+    //LonsReadEnvData();
 	for (int ii = 0; ii < INDEX_MUSIC + 1; ii++) {
 		//if (ii == INDEX_MUSIC) {
 		//	int bbk = 1;
@@ -333,6 +336,7 @@ int LOAudioModule::bgmdownmodeCommand(FunctionInterface *reader) {
 
 
 int LOAudioModule::voicevolCommand(FunctionInterface *reader) {
+    //int line = reader->GetCurrentLine();
 	int vol = reader->GetParamInt(0);
 	if (vol < 0 || vol > 100) vol = 100;
 
@@ -459,9 +463,8 @@ void LOAudioModule::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("audo", 0, 1);
 	bin->WriteInt(currentChannel);
 	bin->WriteInt(flags);
-	//音量
+    //音量，音量由外部环境统一确定
 	//bin->Append((char*)audioVol, sizeof(int) * (INDEX_MUSIC + 1));
-	//循环的音乐才存储，先写入一个循环的音乐数量
 	int loopCountPos = bin->Length();
 	int loopCount = 0;
 	bin->WriteInt(loopCount);
@@ -478,6 +481,24 @@ void LOAudioModule::Serialize(BinArray *bin) {
 
 	bin->WriteLOString(&afterBgmName);
 	bin->WriteInt(bin->Length() - len, &len);
+}
+
+
+void LOAudioModule::SerializeVolume(BinArray *bin){
+    int len = bin->WriteLpksEntity("volm", 0, 1);
+    int8_t vvv = channelVol[INDEX_MUSIC] ;
+    bin->Append((char*)channelVol, INDEX_MUSIC + 1);
+    bin->WriteChar(bgmVolBk) ;
+    bin->WriteInt(bin->Length() - len, &len);
+}
+
+bool LOAudioModule::DeSerializeVolume(BinArray *bin, int *pos){
+    int next = -1;
+    if (!bin->CheckEntity("audo", &next, nullptr, pos)) return false;
+    bin->GetArrayAuto(channelVol, INDEX_MUSIC + 1, 1, pos) ;
+    bgmVolBk = bin->GetChar(pos);
+    *pos = next;
+    return true;
 }
 
 
@@ -581,4 +602,50 @@ int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 	}
 
 	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+//LONS的envdata跟ONS是完全不同的，envdata需要提供那些先于存档确认的属性
+//比如说默认存档位置，默认的自体名称，其他并不需要
+void LonsSaveEnvData() {
+    std::unique_ptr<BinArray> unibin(new BinArray(1024, true));
+    BinArray *bin = unibin.get();
+    bin->InitLpksHeader();
+    //envdata的版本
+    bin->WriteInt(1);
+    //savedir，这个必须先写出，因为一些存储的文件会放在这个文件夹里
+    bin->WriteLOString(&LOIO::ioSaveDir);
+    LOAudioModule* audio = (LOAudioModule*)FunctionInterface::audioModule ;
+    if(audio){
+        bin->WriteChar(1);
+        audio->SerializeVolume(bin);
+    }
+    else bin->WriteChar(0);
+    //
+    LOString s("envdataL");
+    FILE *f = LOIO::GetWriteHandle(s, "wb");
+    if (f) {
+        fwrite(bin->bin, 1, bin->Length(), f);
+        fflush(f);
+        fclose(f);
+    }
+}
+
+
+void LonsReadEnvData() {
+    LOString s("envdataL");
+    FILE *f = LOIO::GetWriteHandle(s, "rb");
+    if (f) {
+        int pos = 0;
+        std::unique_ptr<BinArray> bin(BinArray::ReadFile(f, 0, 0x7ffffff));
+        fclose(f);
+        if (!bin || !bin->CheckLpksHeader(&pos)) return;
+        bin->GetIntAuto(&pos); //版本
+        LOIO::ioSaveDir = bin->GetLOString(&pos);
+        //音量
+        if(bin->GetChar(&pos) != 0){
+            LOAudioModule* audio = (LOAudioModule*)FunctionInterface::audioModule ;
+            audio->DeSerializeVolume(bin.get(), &pos) ;
+        }
+    }
 }

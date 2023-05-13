@@ -104,8 +104,6 @@ void ReadConfig() {
 void GlobalInit() {
 	//初始化根图层
 	LOLayer::InitBaseLayer();
-	//读取基本环境
-	LonsReadEnvData();
 }
 
 
@@ -206,6 +204,8 @@ int main(int argc, char **argv) {
 			audiomodule = new LOAudioModule;
 			if (audiomodule->InitAudioModule()) {
 				LOLog_i("audiomodule module init ok.");
+                //读取基本环境
+                LonsReadEnvData();
 				//启动脚本线程
 				SDL_CreateThread(ScripterThreadEntry, "script", (void*)reader);
 				audiomodule->moduleState = FunctionInterface::MODULE_STATE_RUNNING;

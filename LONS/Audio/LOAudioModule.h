@@ -65,7 +65,9 @@ public:
 	void ResetMe();
 	void LoadFinish();
 	void Serialize(BinArray *bin);
+        void SerializeVolume(BinArray *bin);
 	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
+        bool DeSerializeVolume(BinArray *bin, int *pos);
 
 	void PlayAfter();
 	void channelFinish_t(int channel);
