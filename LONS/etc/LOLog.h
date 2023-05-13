@@ -8,7 +8,9 @@
 #define ONS_VERSION "ver0.70-20230504"
 #endif // !ONS_VERSION
 
+//#define LOLog_i SDL_Log()
+//#define LOLog_e SDL_LogError()
 
-extern void LOLog_i(const char *fmt, ...);
-extern void LOLog_e(const char *fmt, ...);
+//extern void LOLog_i(const char *fmt, ...);
+//extern void LOLog_e(const char *fmt, ...);
 extern void FatalError(const char *fmt, ...);

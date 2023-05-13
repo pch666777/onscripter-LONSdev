@@ -418,7 +418,7 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 			//替换的
 			if (acb) {
 				//work it
-				LOLog_e("no code at LOLayerDataBase::DeSerialize()");
+                SDL_LogError(0, "no code at LOLayerDataBase::DeSerialize()");
 			}
 		}
 	}

@@ -511,7 +511,7 @@ bool LOAudioModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	for (int ii = 0; ii < loopCount; ii++) {
 		LOAudioElement *aue = LOAudioElement::DeSerialize(bin, pos);
 		if (!aue) {
-			LOLog_e("LOAudioElement::DeSerialize() faild!");
+            FatalError("LOAudioElement::DeSerialize() faild!");
 			return false;
 		}
 		//读取文件数据

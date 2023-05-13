@@ -82,7 +82,7 @@ int LOImageModule::lsp2Command(FunctionInterface *reader) {
 		//SDL_BlendMode bmodel = SDL_ComposeCustomBlendMode(SDL_BLENDFACTOR_SRC_COLOR, SDL_BLENDFACTOR_ONE_MINUS_DST_COLOR,
 		//SDL_BLENDOPERATION_ADD, SDL_BLENDFACTOR_ONE, SDL_BLENDFACTOR_ONE, SDL_BLENDOPERATION_ADD);
 		//info->texture->setBlendModel(bmodel);
-		LOLog_i("LONS not support [lsp2sub], because some renderers do not support!");
+        SDL_Log("LONS not support [lsp2sub], because some renderers do not support!");
 	}
 	return RET_CONTINUE;
 }
@@ -105,7 +105,7 @@ int LOImageModule::printStack(FunctionInterface *reader, int fix) {
 
 	LOEffect *ef = GetEffect(no);
 	if (!ef && no > 1) {
-		LOLog_i("effect %d not find!", no);
+        SDL_Log("effect %d not find!", no);
 		ef = new LOEffect;
 		ef->nseffID = 10;
 		ef->time = 100;
@@ -256,7 +256,7 @@ int LOImageModule::cellCommand(FunctionInterface *reader) {
 int LOImageModule::humanzCommand(FunctionInterface *reader) {
 	int no = reader->GetParamInt(0);
 	if (no < 1 || no > 999) {
-		LOLog_i("[humanz] command is just for 1~999, buf it's %d!", no);
+        SDL_Log("[humanz] command is just for 1~999, buf it's %d!", no);
 		return RET_WARNING;
 	}
 	else {

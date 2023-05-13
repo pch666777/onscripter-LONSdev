@@ -49,10 +49,10 @@ LOLayer::LOLayer(int fullid) {
 LOLayer::~LOLayer() {
 	//析构前应解除所有的连接关系了
 	if (parent) 
-		LOLog_e("LOLayer::~LOLayer() has parent now!");
+        SDL_LogError(0, "LOLayer::~LOLayer() has parent now!");
 	if (childs) {
 		if(childs->size() > 0) 
-			LOLog_e("LOLayer::~LOLayer() has childs now!");
+            SDL_LogError(0,"LOLayer::~LOLayer() has childs now!");
 		delete childs;
 		childs = nullptr;
 	}
@@ -1005,11 +1005,11 @@ LOLayer* LOLayer::LinkLayerLeve(LOLayer *lyr) {
 	int index = 0;
 	LOLayer *father = DescentFather(lyr->rootLyr, &index, lyr->id);
 	if (!father) {
-		LOLog_e("LOLayer::LinkLayerLeve() faild! no father!");
+        SDL_LogError(0, "LOLayer::LinkLayerLeve() faild! no father!");
 		return nullptr;
 	}
 	if (!father->InserChild(lyr->id[index], lyr)) {
-		LOLog_e("LOLayer::InserChild() faild! There is already another object:%d", lyr->id[index]);
+        SDL_LogError(0, "LOLayer::InserChild() faild! There is already another object:%d", lyr->id[index]);
 		return nullptr;
 	}
 	return father;

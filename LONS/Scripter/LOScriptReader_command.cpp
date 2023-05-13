@@ -218,7 +218,7 @@ int LOScriptReader::elseCommand(FunctionInterface *reader) {
 	if (NextStartFrom('\n')) { //标准ns else 会接命令
 		LogicPointer *p = loopStack.top();
 		if (!p || !p->isIFthen()) {
-			LOLog_e("if...then...else ....endif Mismatch!");
+            SDL_LogError(0, "if...then...else ....endif Mismatch!");
 			return RET_ERROR;
 		}
 		//else 要执行假的部分，所以返回继续执行
@@ -283,7 +283,7 @@ int LOScriptReader::breakCommand(FunctionInterface *reader) {
 int LOScriptReader::nextCommand(FunctionInterface *reader) {
 	LogicPointer *p = loopStack.top();
 	if (!p || !p->isFor()) {
-		LOLog_e("[next] and [for] command not match!");
+        SDL_LogError(0, "[next] and [for] command not match!");
 		return RET_ERROR;
 	}
 	//递增变量
@@ -500,7 +500,7 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 		}
 	}
 	errs.append("\n");
-	LOLog_i(errs.c_str());
+    SDL_Log(errs.c_str());
 	//SDL_Log(errs.c_str());
 	return RET_CONTINUE;
 }
@@ -810,7 +810,7 @@ int LOScriptReader::chkValueCommand(FunctionInterface *reader) {
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	ONSVariableRef *v2 = reader->GetParamRef(1);
 	if (!v1->Compare(v2, ONSVariableRef::LOGIC_EQUAL,false)) {
-		LOLog_i("[%s]:[%d]:[%s]\n", currentLable->file()->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
+        SDL_Log("[%s]:[%d]:[%s]\n", currentLable->file()->Name.c_str(), currentLable->c_line,reader->GetParamStr(2).c_str());
 	}
 	return RET_CONTINUE;
 }
@@ -848,7 +848,7 @@ int LOScriptReader::getcselstrCommand(FunctionInterface *reader) {
 			LOScriptPoint *p = LOScriptPointCall::GetScriptPoint(cselList.at(index * 2 + 1));
 			gosubCore(p, true);
 		}
-		else LOLog_e("[cselgoto] value is out range!");
+        else SDL_LogError(0,"[cselgoto] value is out range!");
 	}
 	return RET_CONTINUE;
 }
@@ -945,7 +945,7 @@ void LOScriptReader::ReadGlobleVarFile() {
 	if (bin) {
 		int pos = 0;
 		if (!bin->CheckLpksHeader(&pos)) {
-			LOLog_i("[gloval.savl] not 'LPKS' flag!");
+            SDL_Log("[gloval.savl] not 'LPKS' flag!");
 			return;
 		}
 		ReadGlobleVariable(bin.get(), &pos);
@@ -955,14 +955,14 @@ void LOScriptReader::ReadGlobleVarFile() {
 void LOScriptReader::ReadGlobleVariable(BinArray *bin, int *pos) {
 	int next = 0;
 	if (!bin->CheckEntity("GVAR", &next, nullptr, pos) ){
-		LOLog_i("Deserialization not 'GVAR' flag!");
+        SDL_Log("Deserialization not 'GVAR' flag!");
 		return;
 	}
 	int from = bin->GetIntAuto(pos);
 	int count = bin->GetIntAuto(pos);
 	for (int ii = from; ii < count; ii++) {
 		if (!GNSvariable[ii].LoadDeserialize(bin, pos)) {
-			LOLog_i("GNSvariable[ii].Deserialization() faild!");
+            SDL_Log("GNSvariable[ii].Deserialization() faild!");
 			break;
 		}
 	}
@@ -1017,7 +1017,7 @@ int LOScriptReader::savegameCommand(FunctionInterface *reader) {
 		fflush(f);
 		fclose(f);
 	}
-	else LOLog_e("can't write save data [save%d.datl]!", s_saveinfo.id);
+    else SDL_LogError(0, "can't write save data [save%d.datl]!", s_saveinfo.id);
     //写入环境，主要是音量
     //LonsSaveEnvData();
 
@@ -1082,7 +1082,7 @@ int LOScriptReader::testcmdsCommand(FunctionInterface *reader) {
 		ONSVariableBase::ResetAll();
 		int pos = 0;
 		if (GloVariableFS->CheckLpksHeader(&pos)) ReadGlobleVariable(GloVariableFS, &pos);
-		else LOLog_i("[gloval.savl] not 'LPKS' flag!");
+        else SDL_Log("[gloval.savl] not 'LPKS' flag!");
 		
 	}
 	else if (cmd == "savepoint") {
@@ -1162,7 +1162,7 @@ bool LOScriptReader::LoadCore(int id) {
 		if (p) {
 			gosubCore(p, false);
 		}
-		else LOLog_e("[loadgosub] error! no label name:%s", userGoSubName[USERGOSUB_LOAD].c_str());
+        else SDL_LogError(0, "[loadgosub] error! no label name:%s", userGoSubName[USERGOSUB_LOAD].c_str());
 	}
 
 
@@ -1248,7 +1248,7 @@ void LOScriptReader::ReadSaveInfo(int id) {
 			bin->GetArrayAuto(s_saveinfo.timer, 6, 2, &pos);
 			s_saveinfo.tag = bin->GetString(&pos);
 		}
-		else LOLog_i("save file error [save%d.datl]", id);
+        else SDL_Log("save file error [save%d.datl]", id);
 	}
-	else LOLog_i("can't read save file [save%d.datl]", id);
+    else SDL_Log("can't read save file [save%d.datl]", id);
 }

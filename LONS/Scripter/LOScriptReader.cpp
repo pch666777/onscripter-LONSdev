@@ -53,7 +53,7 @@ bool st_linePageFlag = false;
  LOScriptReader* LOScriptReader::EnterScriptReader(LOString name) {
 	 LOScriptReader *reader = GetScriptReader(name);
 	 if (reader->moduleState != MODULE_STATE::MODULE_STATE_NOUSE) {
-		 LOLog_e(nullptr, "ScriptReader[ %s ]: this name already use!", name.c_str());
+         SDL_LogError(0, "ScriptReader[ %s ]: this name already use!", name.c_str());
 		 return nullptr;
 	 }
 	 return reader;
@@ -66,7 +66,7 @@ bool st_linePageFlag = false;
 		 while (baseReader) {
 			 if (baseReader->nextReader == reader) {
 				 baseReader->nextReader = reader->nextReader;
-				 LOLog_i("script thread has exit:%s", reader->Name.c_str());
+                 SDL_Log("script thread has exit:%s", reader->Name.c_str());
 				 delete reader;
 				 return baseReader->nextReader;
 			 }
@@ -74,7 +74,7 @@ bool st_linePageFlag = false;
 		 }
 	 }
 	 else if(reader->sctype == SCRIPT_TYPE::SCRIPT_TYPE_TIMER) {
-		 LOLog_i("script thread has nouse:%s", reader->Name.c_str());
+         SDL_Log("script thread has nouse:%s", reader->Name.c_str());
 		 reader->moduleState = MODULE_STATE::MODULE_STATE_NOUSE;
 		 return reader->nextReader;
 	 }
@@ -581,7 +581,7 @@ void LOScriptReader::NewThreadGosub(LOString *pname, LOString threadName) {
 		LOScriptReader *scripter = LOScriptReader::EnterScriptReader(threadName);
 		scripter->gosubCore(p, false);
 		scripter->moduleState = MODULE_STATE_RUNNING;
-		LOLog_i("create scripter thread:%s", threadName.c_str());
+        SDL_Log("create scripter thread:%s", threadName.c_str());
 	}
 }
 
@@ -639,7 +639,7 @@ int LOScriptReader::RunCommand(const char *&buf) {
 			buf = scriptbuf->SkipSpace(buf);
 			if (buf[0] == ',') buf++;
 
-			if(G_lineLog) LOLog_i("[%d]:[%s]\n", currentLable->c_line, tmpcmd.c_str());
+            if(G_lineLog) SDL_Log("[%d]:[%s]\n", currentLable->c_line, tmpcmd.c_str());
 			//if (currentLable->current_line == 54) {
 			//	int debugbreak = 1;
 			//}
@@ -649,7 +649,7 @@ int LOScriptReader::RunCommand(const char *&buf) {
 			return ret;
 		}
 		else {
-			LOLog_i("[%s]:[%d]:[%s] is not supported yet!!\n",
+            SDL_Log("[%s]:[%d]:[%s] is not supported yet!!\n",
 				GetCurrentFile().c_str(), currentLable->c_line, tmpcmd.c_str());
 			return RET_WARNING;
 		}
@@ -713,7 +713,7 @@ bool LOScriptReader::NextComma(bool isTry) {
         currentLable->c_buf = buf;
         return true;
     }
-    if (!isTry) LOLog_e("NextComma not at a comma!");
+    if (!isTry) SDL_LogError(0,"NextComma not at a comma!");
 
     return false ;
 }
@@ -1368,7 +1368,7 @@ int LOScriptReader::DefaultStep() {
 
 		if (bin) {
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
-			LOLog_i("scripter[%s] has read.\n", fn.c_str());
+            SDL_Log("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
 			isok = true;
 		}
@@ -1392,7 +1392,7 @@ int LOScriptReader::DefaultStep() {
 //                fclose(f);
 //            }
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
-			LOLog_i("scripter[%s] has read.\n", fn.c_str());
+            SDL_Log("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
 			isok = true;
 		}
@@ -1545,7 +1545,7 @@ void LOScriptReader::ResetMe() {
 //这个函数只能从主脚本调用
 void LOScriptReader::LoadReset() {
 	if (this != scriptModule) {
-		LOLog_e("LOScriptReader::LoadReset() must call by main script reader!");
+        SDL_LogError(0, "LOScriptReader::LoadReset() must call by main script reader!");
 		return;
 	}
 
@@ -1741,7 +1741,7 @@ void LOScriptReader::Serialize(BinArray *bin) {
 bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	int next = -1;
 	if (!bin->CheckEntity("scri", &next, nullptr, pos)) {
-		LOLog_e("LOScriptReader::DeSerialize() faild! it's not scripter stream!");
+        SDL_LogError(0, "LOScriptReader::DeSerialize() faild! it's not scripter stream!");
 		return false;
 	}
 	lastCmdCheckFlag = bin->GetIntAuto(pos);
@@ -1763,7 +1763,7 @@ bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	int count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {
 		if (!ScCallDeSerialize(bin, pos)) {
-			LOLog_e("LOScriptPointCall DeSerialize faild!");
+            SDL_LogError(0, "LOScriptPointCall DeSerialize faild!");
 			return false;
 		}
 	}
@@ -1772,7 +1772,7 @@ bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 	count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {
 		if (!LogicCallDeSerialize(bin, pos)) {
-			LOLog_e("LogicPointCall DeSerialize faild!");
+            SDL_LogError(0, "LogicPointCall DeSerialize faild!");
 			return false;
 		}
 	}
@@ -1808,14 +1808,14 @@ bool LOScriptReader::ScCallDeSerialize(BinArray *bin, int *pos) {
 	point->c_line = point->s_line + bin->GetIntAuto(pos);
 	auto data = point->file()->GetLineInfo(nullptr, point->c_line, true);
 	if (!data.buf) {
-		LOLog_e("can't find scripter point line:%d", point->c_line);
+        SDL_LogError(0, "can't find scripter point line:%d", point->c_line);
 		return false;
 	}
 	point->c_buf = data.buf + bin->GetIntAuto(pos);
 	point->callType = bin->GetIntAuto(pos);
 	//校验一下
 	int ihash = bin->GetIntAuto(pos);
-	if (ihash != *(int*)point->c_buf) LOLog_i("scripter point [%s] mamy be error!", labelName.c_str());
+    if (ihash != *(int*)point->c_buf) SDL_Log("scripter point [%s] mamy be error!", labelName.c_str());
 
 	*pos = next;
 	return true;
@@ -1835,7 +1835,7 @@ bool LOScriptReader::LogicCallDeSerialize(BinArray *bin, int *pos) {
 	if (!p) return false;
 
 	if (!logic->LoadSetPoint(p, bin->GetIntAuto(pos), bin->GetIntAuto(pos))) {
-		LOLog_e("logic scripter point error");
+        SDL_LogError(0, "logic scripter point error");
 		return false;
 	}
 

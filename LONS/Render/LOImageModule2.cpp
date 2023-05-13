@@ -563,7 +563,7 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 			}
 		}
 		else {
-			LOLog_e("RunExbtnStr() unknow key word:%x!", buf[0]);
+            SDL_LogError(0, "RunExbtnStr() unknow key word:%x!", buf[0]);
 			return;
 		}
 	}

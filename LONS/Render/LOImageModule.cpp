@@ -162,7 +162,7 @@ int LOImageModule::InitImageModule() {
 		}
 	}
 	if (!checkOK) {
-		LOLog_e(0, "Your device does not support the specified texture format and cannot continue!");
+        SDL_LogError(0, "Your device does not support the specified texture format and cannot continue!");
 		return 0;
 	}
 	//确定默认材质格式的RGBA位置
@@ -209,10 +209,10 @@ void LOImageModule::ResetViewPort() {
 
 	//now,we check the result
 	SDL_RenderGetViewport(render, &winView);
-	if(winView.w != G_gameWidth || winView.h != G_gameHeight) LOLog_i("viewport set error!") ;
+    if(winView.w != G_gameWidth || winView.h != G_gameHeight) SDL_Log("viewport set error!") ;
 	if(  abs( G_gameScaleX * winView.x- G_viewRect.x) > 1 ||
 	     abs( G_gameScaleY * winView.y - G_viewRect.y) > 1){
-		LOLog_i("viewport not in the expected position, the parameters will be adjusted automatically.") ;
+        SDL_Log("viewport not in the expected position, the parameters will be adjusted automatically.") ;
 		G_viewRect.x = (int)(G_gameScaleX * winView.x);
 		G_viewRect.y = (int)(G_gameScaleY * winView.y); //? is right?
 	}
@@ -294,7 +294,7 @@ int LOImageModule::MainLoop() {
 				lastTime = hightTimeNow;
 			}
 			else {
-				LOLog_i("RefreshFrame faild!");
+                SDL_Log("RefreshFrame faild!");
 			}
 			//if (reflashNow1) reflashNow.store(false);
 		}
@@ -367,7 +367,7 @@ int LOImageModule::MainLoop() {
 	//if (scriptModule->isModuleNoUse()) LOLog_i("no use script");
 	//if (audioModule->isModuleNoUse()) LOLog_i("not use audio");
 
-	LOLog_i("LONS::MainLoop exit.");
+    SDL_Log("LONS::MainLoop exit.");
 	return -1;
 }
 
@@ -394,7 +394,7 @@ int LOImageModule::RefreshFrame(double postime) {
 			//}
 			//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
 
-			if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) LOLog_e("SDL_SetRenderTarget(effectTexture) faild!");
+            if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) SDL_LogError(0, "SDL_SetRenderTarget(effectTexture) faild!");
 			SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
 			SDL_RenderClear(render);
 			UpDisplay(postime);
@@ -434,7 +434,7 @@ int LOImageModule::RefreshFrame(double postime) {
 		return 0;
 	}
 	else if (lockfalg == -1) {
-		LOLog_i("fps lock layer faild:%s", SDL_GetError());
+        SDL_Log("fps lock layer faild:%s", SDL_GetError());
 	}
 	return -1;
 }
@@ -885,7 +885,7 @@ void LOImageModule::GetUseTextrue(LOLayerDataBase *bak, void *data, bool addcoun
 				TextureFromFile(bak);
 			}
 			else {
-				LOLog_e(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", bak->texType);
+                SDL_LogError(0, "ONScripterImage::GetUseTextrue() unkown Textrue type:%d", bak->texType);
 			}
 		}
 	}
@@ -1101,7 +1101,7 @@ void LOImageModule::TextureFromFile(LOLayerDataBase *bak) {
 	if (bak->alphaMode != LOLayerData::TRANS_COPY && !base->hasAlpha()) {
 		if (bak->alphaMode == LOLayerData::TRANS_ALPHA && !base->ispng) {
 			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), bak->GetCellCount()));
-			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", bak->keyStr->c_str());
+            if(!base->isValid()) SDL_Log("Conver image ns alhpa faild: %s", bak->keyStr->c_str());
 		}
         else if(bak->alphaMode == LOLayerData::TRANS_TOPLEFT){
             SDL_Surface *su = LOtexture::CreateTransAlpha(base->GetSurface(), 1) ;
@@ -1385,7 +1385,7 @@ LOLayerData* LOImageModule::CreateBtnData(const char *printName) {
 			return lyr->data.get();
 		}
 	}
-	LOLog_e("LOImageModule::CreateBtnData() no empty btn slot!");
+    SDL_LogError(0, "LOImageModule::CreateBtnData() no empty btn slot!");
 	return nullptr;
 }
 
@@ -1415,7 +1415,7 @@ void LOImageModule::Serialize(BinArray *bin) {
 bool LOImageModule::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
     //一些模块状态，大部分都不需要覆盖
     if (!DeSerializeState(bin, pos)) {
-        LOLog_e("Image module state DeSerialize faild!");
+        SDL_LogError(0, "Image module state DeSerialize faild!");
         return false;
     }
     //读取图层
@@ -1494,7 +1494,7 @@ bool LOImageModule::LoadLayers(BinArray *bin, int *pos, LOEventMap *evmap) {
 			if(!G_baseLayer[ii]->DeSerializeForce(bin, pos)) return false ;
 		}
 		else {
-			LOLog_i("save dat layer count is %d, but this app max is %d", count, LOLayer::LAYER_BASE_COUNT);
+            SDL_Log("save dat layer count is %d, but this app max is %d", count, LOLayer::LAYER_BASE_COUNT);
 			bin->JumpEntity("fdat", pos);
 		}
 	}

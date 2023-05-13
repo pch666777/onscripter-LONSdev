@@ -556,7 +556,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 	auto encoder = s->GetEncoder();
 	auto wordFont = font->GetFont(firstSize);
 	if (!wordFont) {
-		LOLog_e("LOtexture::CreateLineDescribe() faild:%s", TTF_GetError());
+        SDL_LogError(0,"LOtexture::CreateLineDescribe() faild:%s", TTF_GetError());
 		return;
 	}
 
@@ -581,7 +581,7 @@ void LOtexture::CreateLineDescribe(LOString *s, LOFont *font, int firstSize) {
 		int ulen = 0;
 		el->unicode = encoder->GetUtf16(buf, &ulen);
 		if (ulen == 0) {
-			LOLog_e("LOString encoder error:%s", buf);
+            SDL_LogError(0, "LOString encoder error:%s", buf);
 			return;
 		}
 

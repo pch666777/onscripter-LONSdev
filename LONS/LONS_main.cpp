@@ -131,7 +131,7 @@ int ScripterThreadEntry(void *ptr) {
 	LOScripFile::InitScriptLabels();
 	LOScriptReader *reader = (LOScriptReader*)ptr;
 	reader->MainTreadRunning();
-	LOLog_i("main scripter thread has exit.");
+    SDL_Log("%s", "main scripter thread has exit.");
 	reader->ChangeModuleFlags(0);
 	reader->ChangeModuleState(FunctionInterface::MODULE_STATE_NOUSE);
  	return 0;
@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
 	//if (G_useLogFile) UseLogFile();
 
 	//SDL_Log("LONS version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION / 100, NSC_VERSION % 100);
-	LOLog_i("***==========LONS,New generation of high performance ONScripter engine==========*** \n");
+    SDL_Log("***==========LONS,New generation of high performance ONScripter engine==========*** \n");
 	// ================ test ================== //
 	//G_EventQue.AddEvent(nullptr);
 	// ================ start ================== //
@@ -192,17 +192,17 @@ int main(int argc, char **argv) {
 
 	//加载脚本
 	if (reader->DefaultStep()) {
-		LOLog_i("script module init ok.");
+        SDL_Log("script module init ok.");
 		//初始化渲染模块
 		if (imagemodule->InitImageModule()) {
-			LOLog_i("image module init ok.");
+            SDL_Log("image module init ok.");
 			//事件支持
 			//RegisterBaseHook();
 
 			//初始化音频模块
 			audiomodule = new LOAudioModule;
 			if (audiomodule->InitAudioModule()) {
-				LOLog_i("audiomodule module init ok.");
+                SDL_Log("audiomodule module init ok.");
                 //读取基本环境
                 LonsReadEnvData();
 				//启动脚本线程
@@ -213,11 +213,11 @@ int main(int argc, char **argv) {
 				imagemodule->MainLoop();
 				exitflag = 0;
 			}
-			else LOLog_e("init audio module faild!");
+            else SDL_LogError(0, "init audio module faild!");
 		}
-		else LOLog_e("init render module faild!");
+        else SDL_LogError(0, "init render module faild!");
 	}
-	else LOLog_e("No valid script!");
+    else SDL_LogError(0, "No valid script!");
 
 	GlobalFree();
 

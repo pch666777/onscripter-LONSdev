@@ -1,4 +1,5 @@
 #include "LOScriptPoint.h"
+#include <SDL.h>
 
 //每隔LINEINTERVAL做一个记录，方便任意buf查询位于哪一行
 #define LINEINTERVAL 80
@@ -18,7 +19,7 @@ void LOScriptPointCall::CheckCurrentLine() {
 	LOScripFile *file = fileList[i_index];
 	LOScripFile::LineData data = file->GetLineInfo(c_buf, 0, false);
 	if (data.lineID >= 0) c_line = data.lineID;
-	else LOLog_e("LOScriptPointCall::CheckCurrentLine() can't find right line ID!");
+    else SDL_LogError(0, "LOScriptPointCall::CheckCurrentLine() can't find right line ID!");
 }
 
 LOString *LOScriptPointCall::GetScriptStr() {
@@ -35,7 +36,7 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 	//获取相对行和行首
 	auto data = file->GetLineInfo(c_buf, 0, false);
 	if (data.lineID < 0) {
-		LOLog_e("LOScriptPointCall::Serialize() get line info error!");
+        SDL_LogError(0,"LOScriptPointCall::Serialize() get line info error!");
 		return;
 	}
 	//相对行
@@ -136,7 +137,7 @@ void LogicPointer::SetPoint(LOScriptPointCall *p) {
 		relativeByte = p->c_buf - lineStart;
 		label = p;
 	}
-	else LOLog_e("LogicPointer::SetPoint() check lineID error,system is %d,actually is %d.", p->c_line, data.lineID);
+    else SDL_LogError(0,"LogicPointer::SetPoint() check lineID error,system is %d,actually is %d.", p->c_line, data.lineID);
 }
 
 void LogicPointer::BackToPoint(LOScriptPointCall *p) {
