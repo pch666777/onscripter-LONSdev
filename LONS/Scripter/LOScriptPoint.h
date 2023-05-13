@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 class LOScripFile;
-//½Å±¾ÔËĞĞµã£¬Ö»ÄÜÓÉLOScripFileÇåÀí
+//è„šæœ¬è¿è¡Œç‚¹ï¼Œåªèƒ½ç”±LOScripFileæ¸…ç†
 class LOScriptPoint {
 public:
 	enum {
@@ -29,24 +29,24 @@ public:
 
 	LOScriptPoint();
 
-	//±êÇ©Ãû³Æ
+	//æ ‡ç­¾åç§°
 	LOString name;
-	//ÔËĞĞµãÊµ¼Ê¿ªÊ¼µÄÎ»ÖÃ
+	//è¿è¡Œç‚¹å®é™…å¼€å§‹çš„ä½ç½®
 	const char* s_buf;
-	//ÔËĞĞµã¿ªÊ¼µÄĞĞ
+	//è¿è¡Œç‚¹å¼€å§‹çš„è¡Œ
 	int s_line;
-	//LOFile»òÕßLOStringµÄË÷Òı
+	//LOFileæˆ–è€…LOStringçš„ç´¢å¼•
 	int i_index;
 };
 
 
-//callÀàĞÍ£¬Í¬Ò»¸öLOScriptPoint¿ÉÄÜÓĞ²»Í¬µÄcallÀàĞÍ
+//callç±»å‹ï¼ŒåŒä¸€ä¸ªLOScriptPointå¯èƒ½æœ‰ä¸åŒçš„callç±»å‹
 class LOScriptPointCall :public LOScriptPoint {
 public:
 	LOScriptPointCall();
 	LOScriptPointCall(LOScriptPoint *p);
 
-	//¾ÀÕıµ±Ç°ĞĞID
+	//çº æ­£å½“å‰è¡ŒID
 	void CheckCurrentLine();
 	LOString *GetScriptStr();
 	void Serialize(BinArray *bin);
@@ -56,14 +56,14 @@ public:
 	static LOScriptPoint* GetScriptPoint(LOString lname);
 
 	int callType;
-	//µ±Ç°Ö´ĞĞµ½µÄĞĞ
+	//å½“å‰æ‰§è¡Œåˆ°çš„è¡Œ
 	int c_line;
-	//µ±Ç°Ö´ĞĞµ½µÄÎ»ÖÃ
+	//å½“å‰æ‰§è¡Œåˆ°çš„ä½ç½®
 	const char* c_buf;
 };
 
 
-//Âß¼­ÔËĞĞµã
+//é€»è¾‘è¿è¡Œç‚¹
 class LogicPointer
 {
 public:
@@ -75,7 +75,7 @@ public:
 		TYPE_IFTHEN = 4,
 		TYPE_ELSE = 8,
 		TYPE_WHILE = 16,
-		//ifµÄÅĞ¶Ï½á¹û£¬ÓĞÕâ¸ö·ûºÅÎªÕæ£¬Ã»ÓĞÕâ¸ö·ûºÅÎª¼Ù
+		//ifçš„åˆ¤æ–­ç»“æœï¼Œæœ‰è¿™ä¸ªç¬¦å·ä¸ºçœŸï¼Œæ²¡æœ‰è¿™ä¸ªç¬¦å·ä¸ºå‡
 		TYPE_RESULT_TRUE = 32
 	};
 
@@ -89,28 +89,28 @@ public:
 	bool isRetTrue() { return flags & TYPE_RESULT_TRUE; }
 	void reset();
 	void SetRet(bool it);
-	////ÉèÖÃ¼ÇÂ¼µã£¬»á¶ÔĞĞÊı¾İ×öÒ»¸öĞ£Ñé
+	////è®¾ç½®è®°å½•ç‚¹ï¼Œä¼šå¯¹è¡Œæ•°æ®åšä¸€ä¸ªæ ¡éªŒ
 	void SetPoint(LOScriptPointCall *p);
-	////·µ»Ø¼ÇÂ¼µã
+	////è¿”å›è®°å½•ç‚¹
 	void BackToPoint(LOScriptPointCall *p);
 	void Serialize(BinArray *bin);
 	bool LoadSetPoint(LOScriptPoint *p, int r_line, int r_buf);
 
-	//forÑ­»·stepµİÔöµÄÊıÁ¿
+	//forå¾ªç¯stepé€’å¢çš„æ•°é‡
 	int step;
-	//for %1 = 1 to %2 step nÖĞµÄ%1
+	//for %1 = 1 to %2 step nä¸­çš„%1
 	ONSVariableRef *forVar;
-	//for ÖĞµÄ %2£¬¿ÉÒÔ±»¶¯Ì¬¸Ä±ä
+	//for ä¸­çš„ %2ï¼Œå¯ä»¥è¢«åŠ¨æ€æ”¹å˜
 	ONSVariableRef *dstVar;
 private:
 	int flags;
-	//Ïà¶ÔÓÚ±êÇ©s_lineµÄĞĞÊı
+	//ç›¸å¯¹äºæ ‡ç­¾s_lineçš„è¡Œæ•°
 	int relativeLine;
-	//Ïà¶ÔÓÚĞĞÊ×µÄÇ°½øÁ¿
+	//ç›¸å¯¹äºè¡Œé¦–çš„å‰è¿›é‡
 	int relativeByte;
-	//ĞĞÊ×buf
+	//è¡Œé¦–buf
 	const char *lineStart;
-	//Ñ­»·ÔÚÄÄ¸ö±êÇ©ÖĞ
+	//å¾ªç¯åœ¨å“ªä¸ªæ ‡ç­¾ä¸­
 	LOScriptPoint *label;
 };
 
@@ -118,7 +118,7 @@ private:
 
 class LOScripFile {
 public:
-	//ĞĞ¸úbufµÄ¹ØÏµ
+	//è¡Œè·Ÿbufçš„å…³ç³»
 	struct LineData{
 		LineData(int id, const char* bin) {
 			lineID = id;
@@ -138,8 +138,8 @@ public:
 	LOScriptPoint *FindLable(const char *lname);
 	LOString *GetBuf() { return &scriptbuf; }
 	void InitLables(bool lableRe = false);
-	//»ñÈ¡Ö¸¶¨ĞĞµÄĞÅÏ¢£¬ĞèÒªÌá¹©ĞĞºÅ»òÕßbuf
-	//AMD zen1 1400  100´Î²éÕÒreleaseºÄÊ±0.5ms -->ĞĞ¼ÇÂ¼Éè¶¨Îª80ĞĞ
+	//è·å–æŒ‡å®šè¡Œçš„ä¿¡æ¯ï¼Œéœ€è¦æä¾›è¡Œå·æˆ–è€…buf
+	//AMD zen1 1400  100æ¬¡æŸ¥æ‰¾releaseè€—æ—¶0.5ms -->è¡Œè®°å½•è®¾å®šä¸º80è¡Œ
 	LineData GetLineInfo(const char *buf, int lineID, bool isLine);
 
 	static LOScripFile* AddScript(const char *buf, int length, const char* filename);
@@ -148,7 +148,7 @@ public:
 	static void InitScriptLabels();
 private:
 	LOString scriptbuf;
-	//Ã¿100ĞĞ´òÒ»¸ö¼ÇÂ¼µã
+	//æ¯100è¡Œæ‰“ä¸€ä¸ªè®°å½•ç‚¹
 	std::vector<LineData> lineInfo;
 	std::unordered_map<std::string, LOScriptPoint*> labels;
 	int i_index;
@@ -156,9 +156,9 @@ private:
 	void ClearLables();
 	void CreateRootLabel();
 
-	//¶ş·Ö·¨¶¨Î»»ùĞĞ£¬·µ»ØµÄÊÇlineInfoµÄË÷Òı
+	//äºŒåˆ†æ³•å®šä½åŸºè¡Œï¼Œè¿”å›çš„æ˜¯lineInfoçš„ç´¢å¼•
 	LineData* MidFindBaseIndex(const char *buf, int dstLine, bool isLine);
-	//´ÓÖ¸¶¨µÄÆğÊ¼Î»ÖÃ²éÕÒµ½Ä¿±ê£¬startBufºÍstartLine»á±»ĞŞ¸ÄÎªÕÒµ½µÄÄ¿±ê£¬Ó¦¸ÃÔÚMidFindBaseIndex×öÁËÓĞĞ§ĞÔ¼ì²é
+	//ä»æŒ‡å®šçš„èµ·å§‹ä½ç½®æŸ¥æ‰¾åˆ°ç›®æ ‡ï¼ŒstartBufå’ŒstartLineä¼šè¢«ä¿®æ”¹ä¸ºæ‰¾åˆ°çš„ç›®æ ‡ï¼Œåº”è¯¥åœ¨MidFindBaseIndexåšäº†æœ‰æ•ˆæ€§æ£€æŸ¥
 	void NextFindDest(const char *dst, int dstLine, const char *&startBuf, int &startLine, bool isLine);
 };
 

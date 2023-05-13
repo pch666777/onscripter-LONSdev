@@ -26,6 +26,7 @@ SOURCES += \
     ../LONS/etc/LOEvent1.cpp \
     ../LONS/etc/LOIO.cpp \
     ../LONS/etc/LOLog.cpp \
+    ../LONS/etc/LOMessage_ch_utf8.cpp \
     ../LONS/etc/LOString.cpp \
     ../LONS/etc/LOTimer.cpp \
     ../LONS/etc/LOVariant.cpp \

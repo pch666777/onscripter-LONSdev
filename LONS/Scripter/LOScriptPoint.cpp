@@ -1,10 +1,10 @@
 #include "LOScriptPoint.h"
 #include <SDL.h>
 
-//Ã¿¸ôLINEINTERVAL×öÒ»¸ö¼ÇÂ¼£¬·½±ãÈÎÒâbuf²éÑ¯Î»ÓÚÄÄÒ»ĞĞ
+//æ¯éš”LINEINTERVALåšä¸€ä¸ªè®°å½•ï¼Œæ–¹ä¾¿ä»»æ„bufæŸ¥è¯¢ä½äºå“ªä¸€è¡Œ
 #define LINEINTERVAL 80
-//½Å±¾ÓĞÁ½ÖÖ£¬Ò»ÖÖÊÇÍêÕûµÄ½Å±¾£¬×ÜÊÇĞèÒª´æ´¢
-//Ò»ÖÖÊÇeval£¬Ö»ÊÇÁÙÊ±µÄ´æ´¢
+//è„šæœ¬æœ‰ä¸¤ç§ï¼Œä¸€ç§æ˜¯å®Œæ•´çš„è„šæœ¬ï¼Œæ€»æ˜¯éœ€è¦å­˜å‚¨
+//ä¸€ç§æ˜¯evalï¼Œåªæ˜¯ä¸´æ—¶çš„å­˜å‚¨
 std::vector<LOScripFile*> fileList;
 std::vector<LOString*> evalList;
 
@@ -33,20 +33,20 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 	LOScripFile *file = fileList[i_index];
 	bin->WriteLOString(&file->Name);
 	bin->WriteLOString(&name);
-	//»ñÈ¡Ïà¶ÔĞĞºÍĞĞÊ×
+	//è·å–ç›¸å¯¹è¡Œå’Œè¡Œé¦–
 	auto data = file->GetLineInfo(c_buf, 0, false);
 	if (data.lineID < 0) {
         SDL_LogError(0,"LOScriptPointCall::Serialize() get line info error!");
 		return;
 	}
-	//Ïà¶ÔĞĞ
+	//ç›¸å¯¹è¡Œ
 	bin->WriteInt(data.lineID - s_line);
-	//Ïà¶ÔÓÚĞĞÊ×ÓĞ¶àÉÙ³¤¶È
+	//ç›¸å¯¹äºè¡Œé¦–æœ‰å¤šå°‘é•¿åº¦
 	bin->WriteInt(c_buf - data.buf);
-	//callÀàĞÍ
+	//callç±»å‹
 	bin->WriteInt(callType);
 
-	//¼ÇÂ¼ºó4¸ö×Ö½ÚºËÑé£¬ÎÒÏë²»»áÓĞÈËÔÚ½Å±¾Î²²¿Ğ´¸ösavepoint°É
+	//è®°å½•å4ä¸ªå­—èŠ‚æ ¸éªŒï¼Œæˆ‘æƒ³ä¸ä¼šæœ‰äººåœ¨è„šæœ¬å°¾éƒ¨å†™ä¸ªsavepointå§
 	bin->WriteInt(*(int*)c_buf);
 
 	bin->WriteInt(bin->Length() - len, &len);
@@ -54,8 +54,8 @@ void LOScriptPointCall::Serialize(BinArray *bin) {
 }
 
 
-//ÕâÑùºÜ²»ºÃ£¬²»¹ı¿¼ÂÇµ½callµÄÎ»ÖÃÓÉstd::vector¹ÜÀí£¬ÄÚ²¿ÓĞ´óÁ¿µÄ¿½±´ºÍÎö¹¹£¬Òò´Ë²»ÄÜÔÚÎö¹¹º¯ÊıÖĞÊÍ·Å±äÁ¿
-//±ØĞëÊÖ¶¯¹ÜÀí
+//è¿™æ ·å¾ˆä¸å¥½ï¼Œä¸è¿‡è€ƒè™‘åˆ°callçš„ä½ç½®ç”±std::vectorç®¡ç†ï¼Œå†…éƒ¨æœ‰å¤§é‡çš„æ‹·è´å’Œææ„ï¼Œå› æ­¤ä¸èƒ½åœ¨ææ„å‡½æ•°ä¸­é‡Šæ”¾å˜é‡
+//å¿…é¡»æ‰‹åŠ¨ç®¡ç†
 void LOScriptPointCall::freeEval() {
 	if (callType == CALL_BY_EVAL) {
 		delete evalList[i_index];
@@ -83,9 +83,9 @@ LOScriptPoint* LOScriptPointCall::GetScriptPoint(LOString lname) {
 
 LOScriptPointCall::LOScriptPointCall() {
 	callType = CALL_BY_NORMAL;
-	//µ±Ç°Ö´ĞĞµ½µÄĞĞ
+	//å½“å‰æ‰§è¡Œåˆ°çš„è¡Œ
 	c_line = 0;
-	//µ±Ç°Ö´ĞĞµ½µÄÎ»ÖÃ
+	//å½“å‰æ‰§è¡Œåˆ°çš„ä½ç½®
 	c_buf = nullptr;
 }
 
@@ -147,14 +147,14 @@ void LogicPointer::BackToPoint(LOScriptPointCall *p) {
 
 void LogicPointer::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("lpos", 0, 1);
-	//flagÓÅÏÈ
+	//flagä¼˜å…ˆ
 	bin->WriteInt(flags);
 
-	//ÊôÓÚÄÄ¸ölabelµÄ
+	//å±äºå“ªä¸ªlabelçš„
 	bin->WriteLOString(&label->name);
-	//Ïà¶ÔÓÚlabelµÄÎ»ÖÃ
+	//ç›¸å¯¹äºlabelçš„ä½ç½®
 	bin->WriteInt(relativeLine);
-	//Ïà¶ÔÓÚĞĞÊ×µÄÎ»ÖÃ
+	//ç›¸å¯¹äºè¡Œé¦–çš„ä½ç½®
 	bin->WriteInt(relativeByte);
 
 	bin->WriteInt(step);
@@ -181,20 +181,20 @@ LOScripFile::LOScripFile() {
 	i_index = -1;
 }
 
-//×îºóÒ»¸ö²ÎÊı±íÊ¾Èç¹ûÓĞÖØ¸´µÄ±êÇ©ÊÇ·ñÓÃÖØ¸´±êÇ©Ìæ´ú£¬Ä¬ÈÏÎªµÚÒ»¸ö±êÇ©ÉúĞ§
+//æœ€åä¸€ä¸ªå‚æ•°è¡¨ç¤ºå¦‚æœæœ‰é‡å¤çš„æ ‡ç­¾æ˜¯å¦ç”¨é‡å¤æ ‡ç­¾æ›¿ä»£ï¼Œé»˜è®¤ä¸ºç¬¬ä¸€ä¸ªæ ‡ç­¾ç”Ÿæ•ˆ
 //LOScripFile::LOScripFile(const char *cbuf, int len, const char *filename) {
 //	scriptbuf.assign(cbuf, len);
 //	Name.assign(filename);
 //
-//	//¸ù¾İ½Å±¾µÄ×Ö·û±àÂë»ñµÃ¶ÔÓ¦µÄ±àÂëÆ÷£¬×î´óËÑË÷128kb
+//	//æ ¹æ®è„šæœ¬çš„å­—ç¬¦ç¼–ç è·å¾—å¯¹åº”çš„ç¼–ç å™¨ï¼Œæœ€å¤§æœç´¢128kb
 //	if (len > 1048576) len = 1048576;
 //	
-//	scriptbuf.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_GBK)); //ÏÈÀ´¸öÄ¬ÈÏµÄ¶¥×Å
+//	scriptbuf.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_GBK)); //å…ˆæ¥ä¸ªé»˜è®¤çš„é¡¶ç€
 //	CreateRootLabel();
 //}
 
 void LOScripFile::CreateRootLabel() {
-	//Ìí¼ÓÒ»¸ö¸ù±êÇ©
+	//æ·»åŠ ä¸€ä¸ªæ ¹æ ‡ç­¾
 	LOScriptPoint *root = new LOScriptPoint();
 	root->name = "__init__";
 	root->s_buf = scriptbuf.c_str();
@@ -203,7 +203,7 @@ void LOScripFile::CreateRootLabel() {
 	labels[root->name] = root;
 }
 
-////´´½¨Ò»¸öÎÄ¼ş
+////åˆ›å»ºä¸€ä¸ªæ–‡ä»¶
 //LOScripFile::LOScripFile(LOString *s, const char *filename) {
 //	scriptbuf.assign(*s);
 //	scriptbuf.SetEncoder(s->GetEncoder());
@@ -226,16 +226,16 @@ void LOScripFile::InitLables(bool lableRe) {
 	ClearLables();
 	lineInfo.clear();
 
-	//ËÑË÷³öËùÓĞµÄ±êÇ©
+	//æœç´¢å‡ºæ‰€æœ‰çš„æ ‡ç­¾
 	int linecount = 1;
 	const char *buf = scriptbuf.c_str();
 	const char *ebuf = buf + scriptbuf.length();
 	LOCodePage *encoder = scriptbuf.GetEncoder();
 
-	//Õâ¸ö¹ı³ÌÊÇĞèÒª»¨·ÑÒ»¶¨Ê±¼äµÄ£¬7MÎÄ±¾ÔÚµçÄÔÉÏ´óÔ¼ÊÇ 500- 600ºÁÃë
+	//è¿™ä¸ªè¿‡ç¨‹æ˜¯éœ€è¦èŠ±è´¹ä¸€å®šæ—¶é—´çš„ï¼Œ7Mæ–‡æœ¬åœ¨ç”µè„‘ä¸Šå¤§çº¦æ˜¯ 500- 600æ¯«ç§’
 	while (buf < ebuf - 1) {
 		buf = scriptbuf.SkipSpace(buf);
-		//¼ÇÂ¼µã
+		//è®°å½•ç‚¹
 		if ((linecount - 1) % LINEINTERVAL == 0) lineInfo.emplace_back(linecount, buf);
 
 		if (buf[0] == '*') {
@@ -250,7 +250,7 @@ void LOScripFile::InitLables(bool lableRe) {
 			label->s_line = linecount;
 			label->i_index = i_index;
 
-			//±êÇ©¼ÓÈë
+			//æ ‡ç­¾åŠ å…¥
 			if (!lableRe) {
 				auto iter = labels.find(label->name);
 				if (iter == labels.end()) labels[label->name] = label;
@@ -264,7 +264,7 @@ void LOScripFile::InitLables(bool lableRe) {
 		}
 	}
 
-	//Ôö¼Ó×îºóÒ»ĞĞ£¬·½±ãËÑË÷
+	//å¢åŠ æœ€åä¸€è¡Œï¼Œæ–¹ä¾¿æœç´¢
 	lineInfo.emplace_back(linecount + 1, buf + 1);
 }
 
@@ -280,7 +280,7 @@ LOScriptPoint *LOScripFile::FindLable(const char *lname) {
 }
 
 LOScripFile::LineData* LOScripFile::MidFindBaseIndex(const char *buf, int dstLine, bool isLine) {
-	//¼ì²éÓĞĞ§ĞÔ
+	//æ£€æŸ¥æœ‰æ•ˆæ€§
 	if (isLine && (dstLine < 1 || dstLine > lineInfo.back().lineID)) return nullptr;
 	if (!isLine && (buf < lineInfo.front().buf || buf > lineInfo.back().buf)) return nullptr;
 	if (lineInfo.size() == 1) return &lineInfo.front();
@@ -289,15 +289,15 @@ LOScripFile::LineData* LOScripFile::MidFindBaseIndex(const char *buf, int dstLin
 	int right = lineInfo.size() - 1;
 	int mid = right / 2;
 	while (true) {
-		//ÂäÔÚÓÒ±ß
+		//è½åœ¨å³è¾¹
 		if ((isLine && dstLine >= lineInfo.at(mid).lineID) ||
 			(!isLine && buf >= lineInfo.at(mid).buf)) {
-			// (mid + mid + 1 ) / 2 »¹ÊÇµÈÓÚmid£¬ËùÒÔÒÑ¾­ËÑË÷µ½Î²²¿ÁË
+			// (mid + mid + 1 ) / 2 è¿˜æ˜¯ç­‰äºmidï¼Œæ‰€ä»¥å·²ç»æœç´¢åˆ°å°¾éƒ¨äº†
 			if (right - mid <= 1) return &lineInfo.at(mid);
 			left = mid;
 		}
 		else {
-			//ÂäÔÚ×ó±ß
+			//è½åœ¨å·¦è¾¹
 			right = mid;
 		}
 
@@ -334,12 +334,12 @@ LOScripFile* LOScripFile::AddScript(const char *buf, int length, const char* fil
 	file->scriptbuf.assign(buf, length);
 	file->Name.assign(filename);
 
-	//¸ù¾İ½Å±¾µÄ×Ö·û±àÂë»ñµÃ¶ÔÓ¦µÄ±àÂëÆ÷£¬×î´óËÑË÷128kb
+	//æ ¹æ®è„šæœ¬çš„å­—ç¬¦ç¼–ç è·å¾—å¯¹åº”çš„ç¼–ç å™¨ï¼Œæœ€å¤§æœç´¢128kb
 	if (length > 1048576) length = 1048576;
 
-	file->scriptbuf.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_GBK)); //ÏÈÀ´¸öÄ¬ÈÏµÄ¶¥×Å
+	file->scriptbuf.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_GBK)); //å…ˆæ¥ä¸ªé»˜è®¤çš„é¡¶ç€
 
-	//ÉèÖÃLOStringµÄÄ¬ÈÏ±àÂë£¬ÕâÊÇÊ®·Ö±ØÒªµÄ
+	//è®¾ç½®LOStringçš„é»˜è®¤ç¼–ç ï¼Œè¿™æ˜¯ååˆ†å¿…è¦çš„
 	if (file->i_index == 0) LOString::SetDefaultEncoder(file->scriptbuf.GetEncoder()->codeID);
 
 	file->CreateRootLabel();

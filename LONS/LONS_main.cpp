@@ -11,6 +11,7 @@
 #include "etc/LOEvent1.h"
 #include "etc/LOLog.h"
 #include "etc/LOIO.h"
+#include "etc/LOMessage.h"
 
 #include "etc/LOVariant.h"
 
@@ -149,23 +150,22 @@ int ScripterThreadEntry(void *ptr) {
 
 int main(int argc, char **argv) {
 
-	SDL_Log("LONS engine has been run from the main() function!\n");
-    SDL_Log("work dir:%s", LOIO::ioReadDir.c_str()) ;
+    SDL_Log("%s", msg_has_run);
+    SDL_Log("%s%s", msg_work_dir_is, LOIO::ioReadDir.c_str()) ;
 	//check base type byte len
-	if (sizeof(int) != 4) SDL_Log("The basic data type [int] length does not meet the requirements!!!\n");
-	if (sizeof(double) != 8) SDL_Log("The basic data type [double] length does not meet the requirements!!!\n");
+    if (sizeof(int) != 4) SDL_Log("%s", msg_base_int_no);
+    if (sizeof(double) != 8) SDL_Log("%s", msg_base_double_no);
 
 	//某些平台可能需要一些初始化的操作
 #ifdef WIN32
 	LoadLibs();
 #endif // WIN32
 
-
 	ReadConfig();
 	//if (G_useLogFile) UseLogFile();
 
-	//SDL_Log("LONS version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION / 100, NSC_VERSION % 100);
-    SDL_Log("***==========LONS,New generation of high performance ONScripter engine==========*** \n");
+    SDL_Log("LONS %s", ONS_VERSION);
+    SDL_Log("%s", msg_lons_wecomle);
 	// ================ test ================== //
 	//G_EventQue.AddEvent(nullptr);
 	// ================ start ================== //
@@ -196,28 +196,23 @@ int main(int argc, char **argv) {
 		//初始化渲染模块
 		if (imagemodule->InitImageModule()) {
             SDL_Log("image module init ok.");
-			//事件支持
-			//RegisterBaseHook();
-
-			//初始化音频模块
+            //初始化音频模块，初始化失败不影响运行，只是没有声音
 			audiomodule = new LOAudioModule;
-			if (audiomodule->InitAudioModule()) {
-                SDL_Log("audiomodule module init ok.");
-                //读取基本环境
-                LonsReadEnvData();
-				//启动脚本线程
-				SDL_CreateThread(ScripterThreadEntry, "script", (void*)reader);
-				audiomodule->moduleState = FunctionInterface::MODULE_STATE_RUNNING;
+            if(!audiomodule->InitAudioModule())SimpleWarning("%s", msg_init_audio_faild);
+            else SDL_Log("audiomodule module init ok.");
+            //读取基本环境
+            LonsReadEnvData();
+            //启动脚本线程
+            SDL_CreateThread(ScripterThreadEntry, "script", (void*)reader);
+            audiomodule->moduleState = FunctionInterface::MODULE_STATE_RUNNING;
 
-				//渲染及事件开始在主线程循环
-				imagemodule->MainLoop();
-				exitflag = 0;
-			}
-            else SDL_LogError(0, "init audio module faild!");
+            //渲染及事件开始在主线程循环
+            imagemodule->MainLoop();
+            exitflag = 0;
 		}
-        else SDL_LogError(0, "init render module faild!");
+        else FatalError("%s", msg_init_render_faild);
 	}
-    else SDL_LogError(0, "No valid script!");
+    else FatalError("%s", msg_init_noscript);
 
 	GlobalFree();
 

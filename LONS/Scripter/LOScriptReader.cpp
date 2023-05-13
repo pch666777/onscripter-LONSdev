@@ -1,6 +1,7 @@
 #include "LOScriptReader.h"
 #include "../etc/LOIO.h"
 #include "../etc/LOTimer.h"
+#include "../etc/LOMessage.h"
 #include "Buil_in_script.h"
 #include <stdarg.h>
 //#include <SDL.h>
@@ -98,6 +99,7 @@ LOScriptReader::LOScriptReader()
 :normalLogic(LogicPointer::TYPE_IF)
 {
 	sctype = SCRIPT_TYPE::SCRIPT_TYPE_NORMAL;
+    currentLable = nullptr ;
 	ResetBaseConfig();
 }
 
@@ -1570,9 +1572,9 @@ void LOScriptReader::LoadReset() {
 
 //获取自身报告
 LOString LOScriptReader::GetReport() {
-	LOString report = "scripter thread: " + Name + "\n";
+    LOString report = msg_script_thread + Name + "\n";
 	if (currentLable) {
-		report.append("file: ");
+        report.append(msg_script_file);
 		report.append(currentLable->file()->Name.c_str());
 		report.append("\n");
 		report += "line: " + std::to_string(currentLable->c_line) + "\n--> ";
@@ -1613,13 +1615,14 @@ void FatalError(const char *fmt, ...) {
 		if (!ebuf) ebuf = temp.e_buf();
 		bin->Append(temp.c_str(), ebuf - temp.c_str());
 		bin->Append("\n......\n", 8);
-		bin->Append("view more error information[error.txt]", 38);
+        bin->Append(msg_more_errorinfo, strlen(msg_more_errorinfo));
 
 		if (f) fprintf(f, "script:\n%s\n", temp.c_str());
 	}
 
 	//显示错误信息
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fatal error", bin->bin, nullptr);
+    SDL_LogError(0, "%s", bin->bin) ;
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, msg_error_title, bin->bin, nullptr);
 	//生成错误报告
 	if (f) {
 		fprintf(f, "LONS version:%s\n",ONS_VERSION);
@@ -1628,6 +1631,23 @@ void FatalError(const char *fmt, ...) {
 	//设置错误标记，以便程序退出
 	FunctionInterface::errorFlag = true;
 	if (FunctionInterface::audioModule) FunctionInterface::audioModule->ResetMe();
+}
+
+
+//一些关键性的警告信息
+void SimpleWarning(const char *fmt, ...) {
+    int pos = 0;
+    std::unique_ptr<BinArray> bin(new BinArray(1048));
+
+    va_list argptr;
+    va_start(argptr, fmt);
+    pos = vsnprintf(bin->bin + pos, 1048, fmt, argptr);
+    va_end(argptr);
+    bin->SetLength(pos);
+    bin->Append("\n", 1);
+
+    SDL_Log("%s", bin->bin);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, msg_warning_title, bin->bin, nullptr);
 }
 
 
