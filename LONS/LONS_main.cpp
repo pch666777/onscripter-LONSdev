@@ -30,6 +30,7 @@ extern void LoadLibs();
 
 
 extern void LonsReadEnvData();
+extern int G_lineLog;
 
 void GetIntSet(int *a, int *b, char *buf) {
 	//int c = *a >> 16;
@@ -62,41 +63,39 @@ void ReadConfig() {
 
 	while (buf < ebuf) {
 		buf = s.SkipSpace(buf);
-		key = s.GetWord(buf);
+        if(buf[0] == ';'){ //跳过注释
+            buf = s.NextLine(buf);
+            continue ;
+        }
 
+        key = s.GetWord(buf);
 		buf = s.SkipSpace(buf);
 		if (buf >= ebuf - 1 || buf[0] != '=') return;
 		buf++;
 
 		buf = s.SkipSpace(buf);
 
-		if (key == "window") {
+        if (key == "window") { //window=1440*900，设置窗口大小
 			G_destWidth = s.GetInt(buf);
 			buf = s.SkipSpace(buf) + 1; //skip ','
 			G_destHeight = s.GetInt(buf);
 		}
+        //不需要设置控制台项，只需要在终端/控制台允许LONS，即可有标准输出
+        else if(key == "debug"){ //设置debug等级，目前只有0和非0两个区分
+            if(s.GetInt(buf) != 0) G_lineLog = 1 ;
+            else G_lineLog = 0 ;
+        }
+        else if(key == "ratio"){ //画面比例 ratio=4:3，目前工作不正常
+            G_gameRatioW = s.GetInt(buf);
+            buf = s.SkipSpace(buf) + 1;
+            G_gameRatioH = s.GetInt(buf);
+        }
+        else if(key == "fullscreen"){//全屏
+            G_fullScreen = s.GetInt(buf) ;
+        }
 
 		buf = s.NextLine(buf);
 	}
-	//FILE *f = tryOpenFile("lons.cfg", "r");
-	//if (!f)return;
-	//char *line = new char[256];
-	//std::string keywork;
-
-	//while (fgets(line, 255, f)) {
-	//	char *buf = SkipSpace(line);
-	//	buf = GetWord(&keywork, buf);
-	//	if (keywork == "fullscreen") GetIntSet(&G_cfgIsFull,nullptr, buf);
-	//	else if (keywork == "window") GetIntSet(&G_cfgwindowW,&G_cfgwindowH,buf);
-	//	else if (keywork == "outline")GetIntSet(&G_cfgoutlinePix, nullptr, buf);
-	//	else if (keywork == "shadow") GetIntSet(&G_cfgfontshadow, nullptr, buf);
-	//	else if (keywork == "fps") GetIntSet(&G_cfgfps, nullptr, buf);
-	//	else if (keywork == "ratio") GetIntSet(&G_gameRatioW, &G_gameRatioH, buf);
-	//	else if (keywork == "position") GetIntSet(&G_cfgposition, nullptr, buf);
-	//	else if (keywork == "logfile") GetIntSet(&G_useLogFile, nullptr, buf);
-	//}
-	//fclose(f);
-	//delete[] line;
 }
 
 
