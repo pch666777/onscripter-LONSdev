@@ -1093,7 +1093,7 @@ void LOImageModule::TextureFromControl(LOLayerDataBase *bak, LOString *s) {
 }
 
 void LOImageModule::TextureFromFile(LOLayerDataBase *bak) {
-	bool useAlpha;
+    //bool useAlpha;
 	LOShareBaseTexture base(SurfaceFromFile(bak->keyStr.get()));
 	if (!base) return ;
 
@@ -1103,17 +1103,14 @@ void LOImageModule::TextureFromFile(LOLayerDataBase *bak) {
 			base->SetSurface(LOtextureBase::ConverNSalpha(base->GetSurface(), bak->GetCellCount()));
 			if(!base->isValid()) LOLog_i("Conver image ns alhpa faild: %s", bak->keyStr->c_str());
 		}
-		//else if (info->alphaMode == LOLayerData::TRANS_TOPLEFT) {
-		//	SDL_Color color = tmp->getPositionColor(0, 0);
-		//	tmp->setAlphaColor(color);
-		//}
-		//else if (info->alphaMode == LOLayerInfo::TRANS_TOPRIGHT) {
-		//	SDL_Color color = tmp->getPositionColor(tmp->W() - 1, 0);
-		//	tmp->setAlphaColor(color);
-		//}
-		//else if (info->alphaMode == LOLayerInfo::TRANS_DIRECT) {
-		//	LOLog_e("LOLayerInfo::TRANS_DIRECT is enmpty code!");
-		//}
+        else if(bak->alphaMode == LOLayerData::TRANS_TOPLEFT){
+            SDL_Surface *su = LOtexture::CreateTransAlpha(base->GetSurface(), 1) ;
+            if(su) base->SetSurface(su) ;
+        }
+        else if(bak->alphaMode == LOLayerData::TRANS_TOPRIGHT){
+            SDL_Surface *su = LOtexture::CreateTransAlpha(base->GetSurface(), 2) ;
+            if(su) base->SetSurface(su) ;
+        }
 	}
 
 	LOString s = bak->keyStr->toLower() + "?" + std::to_string(bak->alphaMode) + ";";

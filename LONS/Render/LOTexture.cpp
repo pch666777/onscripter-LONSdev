@@ -1004,3 +1004,47 @@ bool LOtexture::CheckColor(SDL_Color *cc, int diff) {
 	}
 	return true;
 }
+
+SDL_Surface* LOtexture::CreateTransAlpha(SDL_Surface *src, int position) {
+    if(!src) return nullptr;
+    SDL_Surface *su = src ;
+    //图像如果是索引色，直接将指定点的索引色改为透明
+    if(src->format->palette){
+        if(su->format->BytesPerPixel != 1){
+            FatalError("CreateTransAlpha() use palette must is 8bit image!");
+            return nullptr ;
+        }
+        uint8_t index = 0;
+        if(position == 1) index = *(uint8_t*)su->pixels ;
+        if(position == 2) index = *((uint8_t*)su->pixels + su->w - 1 );
+        src->format->palette->colors[index].a = 0 ;
+    }
+    else{ //非调色板的，24bit要转换成32bit
+        if(su->format->BytesPerPixel < 4) su = SDL_ConvertSurfaceFormat(src, G_Texture_format, 0) ;
+
+        //所有图像均为RGBA
+        char bit[4];
+        GetFormatBit(su->format, bit) ;
+        uint32_t diff = 0;
+        if(position == 1) diff =*(uint32_t*)su->pixels ;//left top
+        else if(position == 2){
+            diff = *(uint32_t*)((char*)su->pixels + su->pitch - 4) ;//right top
+        }
+        else{
+            FatalError("not support position at %d", position) ;
+            return nullptr;
+        }
+        //处理每一行
+        for(int line = 0 ; line < su->h ; line++){
+            uint8_t *buf = (uint8_t *)su->pixels + line * su->pitch ;
+            //处理当前行的每个像素
+            for(int xx = 0 ; xx < su->w ; xx++){
+                if(*(uint32_t*)buf == diff) buf[bit[3]] = 0 ;  //a通道设置为0
+                buf += 4 ;
+            }
+        }
+    }
+    //如果没有产生新的surface则应该使用旧的
+    if(su != src) return su ;
+    return nullptr ;
+}

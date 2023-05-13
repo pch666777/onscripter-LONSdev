@@ -3,6 +3,9 @@
 *define
 setintvar "linelog",1
 
+lsp 10,":r;111.png",0,0
+
+
 delay 500
 ;resettimer
 ;mov $555,"66666"

@@ -200,6 +200,8 @@ public:
 	void CopyTextureToSurface(bool freeTex);
 	//检查surface中是否是同一种颜色
 	bool CheckColor(SDL_Color *cc, int diff);
+        //根据制定颜色，或者位置设置透明
+        static SDL_Surface* CreateTransAlpha(SDL_Surface *src, int position) ;
 
 	void resetSurface();
 	void resetTexture();
