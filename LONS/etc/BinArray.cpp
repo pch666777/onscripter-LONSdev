@@ -1,17 +1,17 @@
-#include "BinArray.h"
+ï»¿#include "BinArray.h"
 
 int16_t BinArray::cpuOrder = 0x1122;
 
-//´ó¶ËË³Î»£¬Ğ¡¶ËÄæÎ»
+//å¤§ç«¯é¡ºä½ï¼Œå°ç«¯é€†ä½   
 #define IsBigOrder *(char*)(&cpuOrder)==0x11
 #define IsCpuOrder *(int16_t*)dataPtr==cpuOrder
-//Ê¹ÓÃ0x1122×÷Îª×Ö½ÚË³ĞòÅĞ¶Ï£¬´ó¶ËÎª11 22   Ğ¡¶ËÎª 22 11
+//ä½¿ç”¨0x1122ä½œä¸ºå­—èŠ‚é¡ºåºåˆ¤æ–­ï¼Œå¤§ç«¯ä¸º11 22   å°ç«¯ä¸º 22 11
 #define notCpuOrder *(int16_t*)dataPtr!=cpuOrder
 #define RealLen *(uint32_t*)(dataPtr + 4)
 #define PreLen *(uint32_t*)(dataPtr + 8)
 #define Flags *(int16_t*)(dataPtr + 2)
 
-//¿ìËÙ½»»»
+//å¿«é€Ÿäº¤æ¢
 #define XCHANGE2(X) ((X<<8)&0xff00)|((X>>8)&0xff)
 #define XCHANGE4(X) ((X<<24)&0xff000000)|((X<<8)&0xff0000)|((X>>8)&0xff00)|((X>>24)&0xff)
 
@@ -43,8 +43,8 @@ void BinArray::NewSelf(int prepsize, bool isstream) {
 	PreLen = prepsize;
 	if (isstream) Flags |= FLAGS_STREAM;
 
-	//CPUÊÇĞ¡¶ËÄ£Ê½µÄ»°£¬ÄÚ´æÎª 22 11£¬´ó¶ËÄ£Ê½Îª 11 22
-	//ÕâÀï²ÉÓÃµÄCPUµÄÄ¬ÈÏorder
+	//CPUæ˜¯å°ç«¯æ¨¡å¼çš„è¯ï¼Œå†…å­˜ä¸º 22 11ï¼Œå¤§ç«¯æ¨¡å¼ä¸º 11 22
+	//è¿™é‡Œé‡‡ç”¨çš„CPUçš„é»˜è®¤order
 	*(int16_t*)dataPtr = 0x1122;
 	errerinfo = nullptr;
 }
@@ -74,7 +74,7 @@ void BinArray::SetLength(uint32_t len) {
 	if (dataPtr) RealLen = len;
 }
 
-//µßµ¹×Ö½Ú
+//é¢ å€’å­—èŠ‚
 void BinArray::XChangeN(char *buf, int n) {
 	for (int ii = 0; ii <= n / 2; ii++) {
 		char c = buf[ii];
@@ -159,11 +159,11 @@ bool BinArray::GetArrayAuto(void *dst, int elmentCount, int elmentSize, int *pos
 	int len = elmentCount * elmentSize;
 	if (!CheckPosition(pos[0] + len)) return false;
 	memcpy(dst, bin + pos[0], len);
-	//½»»»Ã¿Ò»¸öÔªËØµÄ×Ö½ÚË³Ğò
+	//äº¤æ¢æ¯ä¸€ä¸ªå…ƒç´ çš„å­—èŠ‚é¡ºåº
 	if (notCpuOrder) {
 		char *dst_t = (char*)dst;
 		for (int ii = 0; ii < elmentCount; ii++) {
-			//2½»»»1´Î£¬3½»»»1´Î£¬4½»»»2´Î
+			//2äº¤æ¢1æ¬¡ï¼Œ3äº¤æ¢1æ¬¡ï¼Œ4äº¤æ¢2æ¬¡
 			for (int kk = 0; kk <= elmentSize /2 ; kk++) {
 				char c = dst_t[kk];
 				dst_t[kk] = dst_t[elmentSize - 1 - kk];
@@ -197,7 +197,7 @@ bool BinArray::GetBool(int *pos) {
 std::string BinArray::GetString(int *pos) {
 	std::string val;
 	if (!CheckPosition(pos[0] + 1)) return val;
-	//Òª¶Ô×Ö½Ú¼¯µÄ±ß½ç×öÒ»¸ö¼ì²é
+	//è¦å¯¹å­—èŠ‚é›†çš„è¾¹ç•Œåšä¸€ä¸ªæ£€æŸ¥
 	int len = strlen(bin + pos[0]);
 	if (pos[0] + len >= RealLen) val.assign(bin + pos[0], RealLen - pos[0]);
 	else val.assign(bin + pos[0]);
@@ -249,13 +249,13 @@ LOVariant* BinArray::GetLOVariant(int *pos) {
 
 
 void BinArray::AddMemory(int len) {
-	//ÀË·ÑÒ»µãµã¿Õ¼ä£¬±ÜÃâÆµ·±ÖØĞÂ·ÖÅäÄÚ´æ
+	//æµªè´¹ä¸€ç‚¹ç‚¹ç©ºé—´ï¼Œé¿å…é¢‘ç¹é‡æ–°åˆ†é…å†…å­˜
 	len += BIN_DEFAULT_LEN;
-	//Ôö¼ÓµÄ´óĞ¡
+	//å¢åŠ çš„å¤§å°
 	int addLen;
-	//¶Ô×Ö½ÚÁ÷ÓĞÒ»¸öÓÅ»¯
+	//å¯¹å­—èŠ‚æµæœ‰ä¸€ä¸ªä¼˜åŒ–
 	if ((Flags)& FLAGS_STREAM) {
-		//10MBÒÔÏÂÖ±½Ó·­±¶,10MBÒÔÉÏ×î¶àÖ»¼Ó10MB
+		//10MBä»¥ä¸‹ç›´æ¥ç¿»å€,10MBä»¥ä¸Šæœ€å¤šåªåŠ 10MB
 		addLen = PreLen;
 		if (addLen > 10000000) addLen = 10000000;
 		while (addLen < len) {
@@ -265,10 +265,10 @@ void BinArray::AddMemory(int len) {
 	}
 	else addLen = len;
 
-	//BIN_DATA + preLen²ÅÊÇÉÏ´Î·ÖÅäµÄ´óĞ¡
+	//BIN_DATA + preLenæ‰æ˜¯ä¸Šæ¬¡åˆ†é…çš„å¤§å°
 	//printf("BinArray resize:%d ++-> %d\n", PreLen + BIN_DATA, addLen);
 	dataPtr = (char*)realloc(dataPtr, PreLen + BIN_DATA + addLen);
-	//¶à³öÀ´µÄÄÚ´æÖÃ0
+	//å¤šå‡ºæ¥çš„å†…å­˜ç½®0
 	memset(dataPtr + BIN_DATA + PreLen, 0, addLen); 
 
 	bin = dataPtr + BIN_DATA;
@@ -418,17 +418,17 @@ int BinArray::WriteLOVariant(LOVariant *v, int *pos) {
 
 
 BinArray* BinArray::ReadFile(FILE *f, int pos, int len) {
-	//³¤¶È²»Òò´óÓÚÎÄ¼şµÄ³¤¶È
+	//é•¿åº¦ä¸å› å¤§äºæ–‡ä»¶çš„é•¿åº¦
 	fseek(f, 0, SEEK_END);
 	if (len > ftell(f) || len < 0) len = ftell(f);
 
 	BinArray *sbin = new BinArray(len, false);
-	//ÎÄ¼şÎ»ÖÃ
+	//æ–‡ä»¶ä½ç½®
 	fseek(f, pos, SEEK_SET);
 	int sumlen = 0;
 	while (sumlen < len) {
 		int rlen = fread(sbin->bin + sumlen, 1, len - sumlen, f);
-		if (rlen <= 0) break;  //¿ÉÄÜ¶Áµ½ÎÄ¼şÎ²ÁË
+		if (rlen <= 0) break;  //å¯èƒ½è¯»åˆ°æ–‡ä»¶å°¾äº†
 		sumlen += rlen;
 	}
 	sbin->SetLength(len);
@@ -446,7 +446,7 @@ bool BinArray::WriteToFile(const char *name) {
 }
 
 
-//markÖ»Ğ´Èë4×Ö½Ú£¬·µ»ØµÄÊÇlen±»Ğ´ÈëµÄÎ»ÖÃ
+//markåªå†™å…¥4å­—èŠ‚ï¼Œè¿”å›çš„æ˜¯lenè¢«å†™å…¥çš„ä½ç½®
 int BinArray::WriteLpksEntity(const char *mark, int len, int version) {
 	int markv = *(int*)mark;
 	//if (!(ISBIG)) markv = XCHANGE4(markv);
@@ -458,9 +458,9 @@ int BinArray::WriteLpksEntity(const char *mark, int len, int version) {
 void BinArray::InitLpksHeader() {
 	Clear(false);
 	SetCpuOrder();
-	//LPKS£¬×Ö½ÚË³ĞòºÍ±ê¼Ç£¬°æ±¾
+	//LPKSï¼Œå­—èŠ‚é¡ºåºå’Œæ ‡è®°ï¼Œç‰ˆæœ¬
 	WriteLpksEntity("LPKS", *(int*)dataPtr, 1);
-	//Ô¤Áô
+	//é¢„ç•™
 	WriteInt(0);
 }
 
@@ -488,7 +488,7 @@ bool BinArray::CheckEntity(const char *mark, int *next, int *version, int *pos) 
 }
 
 
-//Ìø¹ıÊµÌå
+//è·³è¿‡å®ä½“
 bool BinArray::JumpEntity(const char *mark, int *pos) {
 	int next = -1;
 	if (!CheckEntity(mark, &next, nullptr, pos)) return false;

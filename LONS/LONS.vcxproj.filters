@@ -132,5 +132,8 @@
     <ClCompile Include="SysCore\windows.cpp">
       <Filter>源文件\SysCore</Filter>
     </ClCompile>
+    <ClCompile Include="etc\LOMessage_ch_utf8.cpp">
+      <Filter>源文件\etc</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -149,7 +149,7 @@ int ScripterThreadEntry(void *ptr) {
 
 
 int main(int argc, char **argv) {
-
+	printf("%s\n",msg_has_run);
     SDL_Log("%s", msg_has_run);
     SDL_Log("%s%s", msg_work_dir_is, LOIO::ioReadDir.c_str()) ;
 	//check base type byte len
@@ -158,7 +158,8 @@ int main(int argc, char **argv) {
 
 	//某些平台可能需要一些初始化的操作
 #ifdef WIN32
-	LoadLibs();
+	//setlocale(LC_ALL, "gbk");
+	//LoadLibs();
 #endif // WIN32
 
 	ReadConfig();

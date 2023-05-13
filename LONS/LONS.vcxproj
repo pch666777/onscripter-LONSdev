@@ -108,12 +108,13 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\vsProject\LONS_win\libs202212\smpeg2-20230205;D:\vsProject\LONS_win\libs202212\zlib-1.2.11;D:\vsProject\LONS_win\libs202212\SDL2_mixer-2.0.4;D:\vsProject\LONS_win\libs202212\SDL2_image-2.0.5;D:\vsProject\LONS_win\libs202212\SDL2_ttf-2.0.15;D:\vsProject\LONS_win\libs202212\SDL-release-2.26.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs202212\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2main.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;smpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2main.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;smpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,7 +151,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\vsProject\LONS_win\libs202212\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2main.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;smpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;setupapi.lib;winmm.lib;imm32.lib;version.lib;SDL2_image.lib;libjpeg.lib;libpng16.lib;zlib.lib;SDL2_ttf.lib;freetype.lib;SDL2_mixer.lib;native_midi.lib;timidity.lib;smpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@
     <ClCompile Include="etc\LOEvent1.cpp" />
     <ClCompile Include="etc\LOIO.cpp" />
     <ClCompile Include="etc\LOLog.cpp" />
+    <ClCompile Include="etc\LOMessage_ch_utf8.cpp" />
     <ClCompile Include="etc\LOString.cpp" />
     <ClCompile Include="etc\LOTimer.cpp" />
     <ClCompile Include="etc\LOVariant.cpp" />
