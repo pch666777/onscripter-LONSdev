@@ -1136,6 +1136,10 @@ void LOImageModule::TextureFromCache(LOLayerDataBase *bak) {
 
 
 LOtextureBase* LOImageModule::SurfaceFromFile(LOString *filename) {
+//	if(filename->length() == 0){
+//		int bbk = 1 ;
+//	}
+
 	std::unique_ptr<BinArray> bin(FunctionInterface::fileModule->ReadFile(filename));
 	if (!bin) return nullptr;
 	LOtextureBase *base = new LOtextureBase(bin->bin, bin->Length());

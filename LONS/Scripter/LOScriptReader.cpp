@@ -740,9 +740,9 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 	LOString ts;
 	double tval;
 
-	//if (currentLable->c_line == 220) {
-	//	int bbq = 1;
-	//}
+//	if (currentLable->c_line == 38463) {
+//		int bbq = 1;
+//	}
 
 	sbuf = buf = scriptbuf->SkipSpace(currentLable->c_buf);
 	//遇到立即数或者立即文字跳出循环，别名也是立即数。优先尝试%XX $XX立即数，速度最快
@@ -1583,10 +1583,15 @@ LOString LOScriptReader::GetReport() {
 		const char *current = currentLable->c_buf;
 		BackLineStart();
 		while (currentLable->c_buf[len] != 0 && currentLable->c_buf[len] != '\n') len++;
-		report.append(currentLable->c_buf, len);
+		//注意，提供给SDL的必须都是utf8编码，不然在某些平台上可能会导致crash，比如安卓
+		LOString tstr(currentLable->c_buf, len);
+        tstr.SetEncoder(scriptbuf->GetEncoder()) ;
+		tstr.SelfToUtf8();
+		report.append(tstr.c_str(), tstr.length());
 		currentLable->c_buf = current;
 		report.append("\n");
 	}
+    //这里是错误的，应该是utf8编码
 	if(scriptbuf) report.SetEncoder(scriptbuf->GetEncoder());
 	return report;
 }

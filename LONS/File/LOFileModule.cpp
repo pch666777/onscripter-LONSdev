@@ -32,6 +32,7 @@ LOFileModule::~LOFileModule() {
 //}
 
 BinArray *LOFileModule::ReadFile(LOString *fileName, bool err) {
+	if(!fileName || fileName->length() == 0) return nullptr ;
 	BinArray *temp = ReadFileFromRecord(fileName);
 	if (!temp)temp = ReadFileFromFileSys(fileName);
 	if (!temp && err) SDL_Log("*** LONS not find file:%s   ***\n", fileName->c_str());

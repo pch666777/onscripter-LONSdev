@@ -625,3 +625,10 @@ const char* LOString::GetLineBuf(int line) {
 	}
 	return nullptr;
 }
+
+void LOString::SelfToUtf8(){
+	if(length() > 1 && GetEncoder()->codeID != LOCodePage::ENCODER_UTF8){
+		std::string s = GetEncoder()->GetUtf8String(this) ;
+		this->assign(s.c_str()) ;
+	}
+}

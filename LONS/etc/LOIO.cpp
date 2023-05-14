@@ -59,9 +59,14 @@ BinArray* LOIO::ReadAllBytes(LOString &fn) {
 	fseek(f, 0, SEEK_SET);
 
 	BinArray *bin = new BinArray(len);
-	fread(bin->bin, 1, len, f);
+	int rlen = fread(bin->bin, 1, len, f);
 	bin->SetLength(len);
 	fclose(f);
+	//安卓上似乎有一个问题，fn即使为空路径也能执行到这里
+	if(rlen <= 0){
+		delete bin ;
+		bin = nullptr ;
+	}
 	return bin;
 }
 

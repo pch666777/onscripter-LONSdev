@@ -91,6 +91,7 @@ public:
 	LOString Itoa2(int number);
 	LOString PathTypeTo(PATH_TYPE ptype);
 	int HashStr();
+	void SelfToUtf8();
 
 	const char* e_buf() { return c_str() + length(); }
 	const char* GetLineBuf(int line);
