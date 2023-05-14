@@ -149,7 +149,6 @@ int ScripterThreadEntry(void *ptr) {
 
 
 int main(int argc, char **argv) {
-	printf("%s\n",msg_has_run);
     SDL_Log("%s", msg_has_run);
     SDL_Log("%s%s", msg_work_dir_is, LOIO::ioReadDir.c_str()) ;
 	//check base type byte len

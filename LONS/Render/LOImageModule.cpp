@@ -22,6 +22,7 @@ LOImageModule::LOImageModule(){
 	render = NULL;
 	fpstex = NULL;
 	isShowFps = true;
+	isFingerEvent = false ;
 	//screenshotSu = NULL;
 
     ResetConfig();

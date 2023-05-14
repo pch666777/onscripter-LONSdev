@@ -310,6 +310,8 @@ private:
 	//char pageEndFlag[2];  //'\' or '@' or '/' 0位置反映真实的换页符号，1位置反映根据处理后的换页符号
 	int shaderList[20];
 	int mouseXY[2];
+	bool isFingerEvent ;
+	SDL_TouchFingerEvent fingerEvent ;
 	LOShareTexture screenTex;    //屏幕截图
 	//int debugEventCount;  //检查事件队列中的事件数量，以免忘记移除事件
 	

@@ -152,9 +152,41 @@ int LOImageModule::SendEventToLayer(LOEventHook *e) {
 //捕获SDL事件，封装成指定的事件
 void LOImageModule::CaptureEvents(SDL_Event *event) {
 	LOShareEventHook ev(new LOEventHook());
+    const char *errstr ;
 
 	//包装事件
 	switch (event->type){
+		//下面是触控事件，触控事件中有touchId来标识是哪一个触控，fingerId来标识是哪一根手指
+		case SDL_FINGERDOWN:  //按下触屏，要判断是否双指事件，取值只取触点1的
+			if( SDL_GetNumTouchFingers(event->tfinger.touchId) == 2 && event->tfinger.fingerId == 1){
+				//防止反复进入
+				if(!isFingerEvent){
+					fingerEvent = event->tfinger ;
+					isFingerEvent = true ;
+					//SDL_Log("down tid is %d, fid is %d", event->tfinger.touchId, event->tfinger.fingerId) ;
+					//SDL_Log("down at %f, %f", fingerEvent.x, fingerEvent.y) ;
+				}
+			}
+			SDL_Log("point at %f,%f", event->tfinger.x, event->tfinger.y) ;
+			break;
+		case SDL_FINGERUP: //离开触屏
+			if(isFingerEvent && fingerEvent.touchId == event->tfinger.touchId && fingerEvent.fingerId == event->tfinger.fingerId){
+				//触点左上角是[0,0]  右下角是[1,1]
+				//SDL_Log("up at %f,%f", event->tfinger.x, event->tfinger.y) ;
+				if(event->tfinger.y - fingerEvent.y > 0.28){ //双指下滑
+					ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
+					SendEventToLayer(ev.get());
+					SDL_Log("right click!");
+				}
+				else if(event->tfinger.x - fingerEvent.x > 0.25){ //快进
+
+				}
+				isFingerEvent = false ;
+			}
+			break;
+		case SDL_FINGERMOTION: //在触屏上移动
+			break;
+		//=========================================
 	case SDL_MOUSEMOTION:
 		//更新鼠标位置
 		if (!TranzMousePos(event->motion.x, event->motion.y)) break;
@@ -164,8 +196,9 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		SendEventToLayer(ev.get());
 		break;
 	case SDL_MOUSEBUTTONUP:
-		//鼠标进行了点击
-		if (!TranzMousePos(event->button.x, event->button.y))break;
+		//鼠标进行了点击，因为SDL上，手指事件同时也会触发鼠标事件，因此当进入双指捕获时，不应该再接受鼠标事件
+		if (!TranzMousePos(event->button.x, event->button.y) || isFingerEvent)break;
+		SDL_Log("mouse at %d, %d", event->button.x, event->button.y) ;
 		//这里需要将左、右键事件先发一次hook队列，因为有些hook需要优先处理，比如print wait等点击可跳过的事件
 		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOEventHook::ANSWER_LEFTCLICK;
 		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOEventHook::ANSWER_RIGHTCLICK;
@@ -198,6 +231,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		if (event->key.keysym.sym == SDL_KeyCode::SDLK_LCTRL || event->key.keysym.sym == SDL_KeyCode::SDLK_RCTRL) {
 			st_skipflag = false;
 		}
+		break;
 	}
 
 }

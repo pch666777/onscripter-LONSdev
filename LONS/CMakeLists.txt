@@ -20,6 +20,7 @@ add_definitions(
 
 #include_directories(../androidlua/lua)
 #include_directories(../bz2/include)
+include_directories(../../smpeg2-20230205)
 include_directories(../../SDL2_image-2.0.5)
 include_directories(../../SDL2_ttf-2.0.15)
 include_directories(../../SDL2_mixer-2.0.4)
@@ -50,6 +51,7 @@ set(SRCFILES1
         ./etc/LOEvent1.cpp
         ./etc/LOIO.cpp
         ./etc/LOLog.cpp
+        ./etc/LOMessage_ch_utf8.cpp
         ./etc/LOString.cpp
         ./etc/LOTimer.cpp
         ./etc/LOVariant.cpp
@@ -104,6 +106,7 @@ find_library( # Sets the name of the path variable.
         XSDL2_mixer
         XSDL2_ttf
         XSDL2
+        smpeg2
         # Specifies the name of the NDK library that
         # you want CMake to locate.
         log)
@@ -111,6 +114,7 @@ find_library( # Sets the name of the path variable.
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
+message(${log-lib})
 
 target_link_libraries( # Specifies the target library.
         ${MY_LIBS_NAME}
@@ -120,6 +124,7 @@ target_link_libraries( # Specifies the target library.
         XSDL2_mixer
         XSDL2_ttf
         XSDL2
+        smpeg2
         ###
         #GLESv1_CM
         GLESv2

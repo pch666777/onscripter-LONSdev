@@ -500,7 +500,7 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 		}
 	}
 	errs.append("\n");
-    SDL_Log(errs.c_str());
+    SDL_Log("%s",errs.c_str());
 	//SDL_Log(errs.c_str());
 	return RET_CONTINUE;
 }
