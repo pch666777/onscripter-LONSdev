@@ -20,6 +20,7 @@ bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
 bool st_skipflag = false;   //快进标记
+//bool st_fastPrint = true;  //快速print模式，会导致print时帧数暴涨
 int LOScriptReader::gloableBorder = 200;
 LOScriptReader::SaveFileInfo LOScriptReader::s_saveinfo;
 int G_lineLog = 1;

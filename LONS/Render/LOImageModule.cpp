@@ -28,10 +28,9 @@ LOImageModule::LOImageModule(){
     ResetConfig();
 
 	layerQueMutex = SDL_CreateMutex();
-	//btnQueMutex = SDL_CreateMutex();
-	//presentMutex = SDL_CreateMutex();
 	layerDataMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
+	PrintTextureA = PrintTextureB = PrintTextureEdit = nullptr;
 
 	memset(shaderList, 0, sizeof(int) * 20);
 }
