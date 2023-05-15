@@ -1,4 +1,4 @@
-/*
+﻿/*
 */
 #pragma once
 #ifndef _LOLAYER_H_
@@ -44,10 +44,11 @@ public:
 		IDEX_DIALOG_WINDOW = 50, //在LAYER_DIALOG层
 		IDEX_DIALOG_TEXT_CHILD = 100,  //多句标准对话时，挂在在text的子层
 		//在LAYER_NSSYS层
-		IDEX_NSSYS_MOVIE = 4,  //avi,mpegplay在此层
-		IDEX_NSSYS_EFFECT = 5, //effect 2-18使用的层，在LAYER_NSSYS层
-		IDEX_NSSYS_BTN = 6,    //btn定义的按钮，在LAYER_NSSYS层
-		IDEX_NSSYS_CUR = 7,    //Cursor在的层，在LAYER_NSSYS层
+		IDEX_NSSYS_EFFECT = 4, //effect 2-18使用的层，在LAYER_NSSYS层
+		//5也被IDEX_NSSYS_EFFECT使用
+		IDEX_NSSYS_MOVIE = 6,  //avi,mpegplay在此层
+		IDEX_NSSYS_BTN = 10,    //btn定义的按钮，在LAYER_NSSYS层
+		IDEX_NSSYS_CUR = 11,    //Cursor在的层，在LAYER_NSSYS层
 
 		IDEX_NSSYS_RMENU = 20,
 		IDEX_BG_BTNEND = 1022,

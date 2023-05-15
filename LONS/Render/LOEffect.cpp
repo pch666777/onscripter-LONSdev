@@ -1,4 +1,4 @@
-#include "LOEffect.h"
+﻿#include "LOEffect.h"
 #include "LOTexture.h"
 #include "../etc/LOTimer.h"
 
@@ -73,134 +73,108 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 	return tmp;
 }
 
-//true为已经到达时间界限，图层被隐藏，false表示需要继续进行
-bool LOEffect::RunEffect(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &efstex, LOShareTexture &efmtex, double pos) {
-	//debug use
-	//pos = 10;
-	//time = 576*10;
-	//图像特效的核心在于我们不能直接操作 target 的textrue，需要构造一个 stream 的textrue
-	//然后使用 SDL_BLENDMODE_MOD 让 target 的textrue叠加到 stream 的textrue上，改变每个像素的显示效果
-	//SDL_BLENDMODE_MOD(dstRGB = srcRGB * dstRGB     dstA = dstA)
-	SDL_Texture *effectTex = nullptr;
-	SDL_Texture *maskTex = nullptr;
-	if (efstex) effectTex = efstex->GetTexture();
-	if (efmtex) maskTex = efmtex->GetTexture();
-
-	//重置状态
-	SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_NONE);
-
-	postime += pos;
-	if (postime > time || postime < 0) {
-		info->cur.SetVisable(0);  //not
+//LOLayerData只提供PrintTextureEdit的图层
+bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &EditTexture, double pos) {
+	//无效的
+	if (!info || !info->cur.texture || !EditTexture) return true;
+	//判断是否运行结束
+	if (postime >= time || postime < 0) {
 		//释放15和18特效的遮片，如果有的话
 		masksu.reset();
 		return true;
 	}
-	else {
-		info->cur.alpha = 255;
-		switch (nseffID)
-		{
-		case 2:
-			BlindsEffect(ren, info, maskTex, pos, DIRECTION_LEFT);
-			break;
-		case 3:
-			BlindsEffect(ren, info, maskTex, pos, DIRECTION_RIGHT);
-			break;
-		case 4:
-			BlindsEffect(ren, info, maskTex, pos, DIRECTION_TOP);
-			break;
-		case 5:
-			BlindsEffect(ren, info, maskTex, pos, DIRECTION_BOTTOM);
-			break;
-		case 6:
-			CurtainEffect(ren, info, maskTex, pos, DIRECTION_LEFT);
-			break;
-		case 7:
-			CurtainEffect(ren, info, maskTex, pos, DIRECTION_RIGHT);
-			break;
-		case 8:
-			CurtainEffect(ren, info, maskTex, pos, DIRECTION_TOP);
-			break;
-		case 9:
-			CurtainEffect(ren, info, maskTex, pos, DIRECTION_BOTTOM);
-			break;
-		case 10:
-			FadeOut(ren, info, pos);
-			break;
-		case 11:
-			RollEffect(ren, info, maskTex, pos, DIRECTION_LEFT);
-			break;
-		case 12:
-			RollEffect(ren, info, maskTex, pos, DIRECTION_RIGHT);
-			break;
-		case 13:
-			RollEffect(ren, info, maskTex, pos, DIRECTION_TOP);
-			break;
-		case 14:
-			RollEffect(ren, info, maskTex, pos, DIRECTION_BOTTOM);
-			break;
-		case 15:
-			MaskEffectCore(ren, info, maskTex, pos, false);
-			break;
-		case 16:
-			if (!masksu) CreateSmallPic(ren, info, effectTex);
-			MosaicEffect(ren, info, maskTex, pos, true);
-			break;
-		case 18:
-			MaskEffectCore(ren, info, maskTex, pos, true);
-			break;
-		case EFFECT_ID_QUAKE:
-			SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
-			QuakeEffect(ren, efstex, maskTex, postime);
-			break;
-		default:
-			break;
-		}
+
+
+	SDL_Texture *edit = EditTexture->GetTexture(); //可编辑纹理
+	SDL_Texture *cutImage = info->cur.texture->GetTexture(); //特效前截图的纹理
+	//重置状态
+	SDL_SetTextureBlendMode(cutImage, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(edit, SDL_BLENDMODE_MOD);
+	//debug
+	pos = 10;
+	postime += pos;
+	if (postime > time) postime = time;
+
+	info->cur.alpha = 255;
+	switch (nseffID)
+	{
+	case 2:
+		BlindsEffect(edit, pos, DIRECTION_LEFT);
+		break;
+	case 3:
+		BlindsEffect(edit, pos, DIRECTION_RIGHT);
+		break;
+	case 4:
+		BlindsEffect(edit, pos, DIRECTION_TOP);
+		break;
+	case 5:
+		BlindsEffect(edit, pos, DIRECTION_BOTTOM);
+		break;
+	case 6:
+		CurtainEffect(edit, pos, DIRECTION_LEFT);
+		break;
+	case 7:
+		CurtainEffect(edit, pos, DIRECTION_RIGHT);
+		break;
+	case 8:
+		CurtainEffect(edit, pos, DIRECTION_TOP);
+		break;
+	case 9:
+		CurtainEffect(edit, pos, DIRECTION_BOTTOM);
+		break;
+	case 10:
+		//淡入淡出模式只需要设置cut的透明度
+		FadeOut(info, pos);
+		break;
+	case 11:
+		RollEffect(edit, pos, DIRECTION_LEFT);
+		break;
+	case 12:
+		RollEffect(edit, pos, DIRECTION_RIGHT);
+		break;
+	case 13:
+		RollEffect(edit, pos, DIRECTION_TOP);
+		break;
+	case 14:
+		RollEffect(edit, pos, DIRECTION_BOTTOM);
+		break;
+	case 15:
+		MaskEffectCore(edit, pos, false);
+		break;
+	case 16:
+		//if (!masksu) CreateSmallPic(ren, info, effectTex);
+		//MosaicEffect(ren, info, maskTex, pos, true);
+		break;
+	case 17:
+
+		break;
+	case 18:
+		MaskEffectCore(edit, pos, true);
+		break;
+	case EFFECT_ID_QUAKE:
+
+		//晃动edit为黑色背景，cut表现为移动
+		//SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
+		//QuakeEffect(ren, efstex, maskTex, postime);
+		break;
+	default:
+		break;
 	}
 
-	if (nseffID == 16 || nseffID == 17) {
-		//no thing to do.
-	}
-	else if (nseffID == EFFECT_ID_QUAKE) {
-		//晃动特效的显示已经在特性中处理了，这里不需要处理
-		//no thing should be done
-	}
-	else {
-		//auto itt = info->texture->GetTexture();
-		Uint8 r, g, b, a;
-		SDL_GetRenderDrawColor(ren, &r, &g, &b, &a);
-
-		SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
-		//it must be alpha mode,must clear render
-		SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
-		SDL_RenderClear(ren);
-
-		if (nseffID == 10) {
-			SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_BLEND);
-			SDL_RenderCopy(ren, effectTex, NULL, NULL);
-		}
-		else {
-			SDL_SetTextureBlendMode(effectTex, SDL_BLENDMODE_MOD);
-			SDL_RenderCopy(ren, maskTex, NULL, NULL);
-			SDL_RenderCopy(ren, effectTex, NULL, NULL);
-		}
-		
-
-		//finish it,reset it
-		SDL_SetRenderDrawColor(ren, r, g, b, a);
-	}
-
-	SDL_SetRenderTarget(ren, NULL);
 	return false;
 }
 
-void LOEffect::FadeOut(SDL_Renderer*ren, LOLayerData *info, double pos) {
+//淡入淡出
+void LOEffect::FadeOut(LOLayerData *info, double pos) {
 	int per = (time - postime) / time * 255;
 	if (per > 255) per = 255;
+	//注意透明度界限
+	if (per < 0) per = 0;
 	info->cur.alpha = per;
 }
 
-void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isalpha) {
+//遮片
+void LOEffect::MaskEffectCore(SDL_Texture *edit, double pos, bool isalpha) {
 		//计算出每一个灰度色阶在当前时刻的实际透明度
 		unsigned char *gray = new unsigned char[256];
 		for (int ii = 0; ii < 256; ii++) {
@@ -215,8 +189,8 @@ void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 		//开始生成mask
 		int w, h,pitch;
 		void *pixbuf;
-		SDL_QueryTexture(maskTex, NULL, NULL, &w, &h);
-		SDL_LockTexture(maskTex, NULL, &pixbuf, &pitch);
+		SDL_QueryTexture(edit, NULL, NULL, &w, &h);
+		SDL_LockTexture(edit, NULL, &pixbuf, &pitch);
 
 		//重置遮片为全白，表示图片全部显示
 		for (int yy = 0; yy < h; yy++) {
@@ -242,13 +216,14 @@ void LOEffect::MaskEffectCore(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *
 			}
 		}
 		delete []gray;
-		SDL_UnlockTexture(maskTex);
-		SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
+		SDL_UnlockTexture(edit);
+		//SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
 }
 
 
 
-void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
+//百叶窗
+void LOEffect::BlindsEffect(SDL_Texture *edit, double pos, int direction) {
 	int hideCount = time / 16;
 	if (hideCount == 0) hideCount++;    //The minimum time is 1ms.
 	hideCount = (int)(postime / hideCount); //how much line be hide.
@@ -261,8 +236,8 @@ void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *ma
 	
 	int w, h, pitch;
 	void *pixbuf;
-	SDL_QueryTexture(maskTex, NULL, NULL, &w, &h);
-	SDL_LockTexture(maskTex, NULL, &pixbuf, &pitch);
+	SDL_QueryTexture(edit, NULL, NULL, &w, &h);
+	SDL_LockTexture(edit, NULL, &pixbuf, &pitch);
 
 	if (direction == DIRECTION_TOP || direction == DIRECTION_BOTTOM) {
 		for (int ii = 0; ii < h; ii++) {
@@ -284,16 +259,17 @@ void LOEffect::BlindsEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *ma
 		}
 	}
 
-	SDL_UnlockTexture(maskTex);
-	SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
+	SDL_UnlockTexture(edit);
+	//SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
 }
 
 
-void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
+//卷帘
+void LOEffect::CurtainEffect(SDL_Texture *edit, double pos, int direction) {
 	int blockSize = 24;
 	int w, h, pitch, max;
 	void *pixbuf;
-	SDL_QueryTexture(maskTex, NULL, NULL, &w, &h);
+	SDL_QueryTexture(edit, NULL, NULL, &w, &h);
 	if (direction == DIRECTION_TOP || direction == DIRECTION_BOTTOM) max = h;
 	else max = w;
 
@@ -306,7 +282,7 @@ void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *m
 	double workPerTime = (double)time / 2 / blockSize;    //one pix finish time
 
 
-	SDL_LockTexture(maskTex, NULL, &pixbuf, &pitch);
+	SDL_LockTexture(edit, NULL, &pixbuf, &pitch);
 
 	for (int yy = 0; yy < max; yy += blockSize) {
 		//首先根据当前的块确定有多少个像素需要被隐藏
@@ -339,20 +315,21 @@ void LOEffect::CurtainEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *m
 		}
 	}
 
-	SDL_UnlockTexture(maskTex);
-	SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
+	SDL_UnlockTexture(edit);
+	//SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
 }
 
 
-void LOEffect::RollEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, int direction) {
+//滚动
+void LOEffect::RollEffect(SDL_Texture *edit, double pos, int direction) {
 	int w, h, pitch, hideCount, max;
 	void *pixbuf;
-	SDL_QueryTexture(maskTex, NULL, NULL, &w, &h);
+	SDL_QueryTexture(edit, NULL, NULL, &w, &h);
 	if (direction == DIRECTION_TOP || direction == DIRECTION_BOTTOM) max = h;
 	else max = w;
 	hideCount = postime * max / time;
 
-	SDL_LockTexture(maskTex, NULL, &pixbuf, &pitch);
+	SDL_LockTexture(edit, NULL, &pixbuf, &pitch);
 	for (int ii = 0; ii < max; ii++) {
 		int index = ii;
 		int copylen = pitch;
@@ -367,8 +344,8 @@ void LOEffect::RollEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *mask
 		}
 	}
 
-	SDL_UnlockTexture(maskTex);
-	SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
+	SDL_UnlockTexture(edit);
+	//SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
 }
 
 

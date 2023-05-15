@@ -1,4 +1,4 @@
-/*
+﻿/*
 图像队列的处理
 */
 #include "../etc/LOEvent1.h"
@@ -28,18 +28,18 @@ void LOImageModule::DoPreEvent(double postime) {
 		LOShareEventHook e = preEventList[ii];
 
 		if (e->param2 == LOEventHook::FUN_PRE_EFFECT) {  //print准备完成
-			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
-			const char *printName = e->GetParam(1)->GetChars(nullptr);
-			PrepareEffect(ef, printName);
-			e->FinishMe();
+			//废弃的
+			//LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+			//const char *printName = e->GetParam(1)->GetChars(nullptr);
+			//PrepareEffect(ef, printName);
+			//e->FinishMe();
 		}
 		else if (e->param2 == LOEventHook::FUN_CONTINUE_EFF) { //继续运行
 			//printf("%d\n", e->catchFlag);
 			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
 			const char *printName = e->GetParam(1)->GetChars(nullptr);
-			if (ContinueEffect(ef, printName , postime)) e->FinishMe();
+			if (ContinueEffect(ef, printName, postime)) e->FinishMe();
 			else e->closeEdit();
-			//printf("state is:%d\n", e->GetState());
 		}
 		else if (e->param2 == LOEventHook::LOEventHook::FUN_SCREENSHOT) {
 			ScreenShotCountinue(e.get());
@@ -71,20 +71,14 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
-	//非print1则要求抓取当前显示的图像，下一帧在继续执行
-	if (ef) {
-		LOEventHook::CreatePrintPreHook(printPreHook.get(), ef, print_name);
-		printPreHook->ResetMe();
-		//提交到等待位置
-		printPreHook->waitEvent(1, -1);
-		printPreHook->InvalidMe();
-		//遇到程序退出
-		if (isModuleExit()) return 0;
-	}
-	//we will add layer or delete layer and btn ,so we lock it,main thread will not render.
 	SDL_LockMutex(layerQueMutex);
-	//是否要求帧立即响应
-	//reflashNow.store(true);
+	//非print1必须交换缓冲帧，以便将将当前的图像移入缓冲区
+	//print2-8必须立即将PrintTextureB（就是当前的图像）载入到图层的最上方，形成遮挡
+	LOShareTexture tmp = PrintTextureA;
+	PrintTextureA = PrintTextureB;
+	PrintTextureB = tmp;
+
+	if (ef) PrepareEffect(ef, print_name);
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {

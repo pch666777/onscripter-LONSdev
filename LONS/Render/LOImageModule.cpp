@@ -1,4 +1,4 @@
-/*
+﻿/*
 //图像渲染模块
 */
 
@@ -30,7 +30,9 @@ LOImageModule::LOImageModule(){
 	layerQueMutex = SDL_CreateMutex();
 	layerDataMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
-	PrintTextureA = PrintTextureB = PrintTextureEdit = nullptr;
+	PrintTextureA.reset(new LOtexture());
+	PrintTextureB.reset(new LOtexture());
+	PrintTextureEdit.reset(new LOtexture());
 
 	memset(shaderList, 0, sizeof(int) * 20);
 }
@@ -69,6 +71,9 @@ LOImageModule::~LOImageModule(){
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
+	//if (PrintTextureA) SDL_DestroyTexture(PrintTextureA);
+	//if (PrintTextureB) SDL_DestroyTexture(PrintTextureB);
+	//if (PrintTextureEdit) SDL_DestroyTexture(PrintTextureEdit);
 }
 
 
@@ -176,6 +181,12 @@ int LOImageModule::InitImageModule() {
 	}
 
 	ResetViewPort();
+
+	//创建帧缓冲纹理
+	PrintTextureA->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_TARGET);
+	PrintTextureB->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_TARGET);
+	PrintTextureEdit->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_STREAMING);
+
 	titleStr = "ONScripter-LONS " + LOString(ONS_VERSION);
 	SDL_SetWindowTitle(window, titleStr.c_str());
 
@@ -376,53 +387,49 @@ int LOImageModule::RefreshFrame(double postime) {
 
 	int lockfalg = 0;
 	SDL_LockMutex(layerQueMutex);
-	//layerTestMute.lock();
-	//printf("main refresh:%d\n", SDL_GetTicks());
 	if (lockfalg == 0) {
 		//必须小心处理渲染逻辑，不然很容导致程序崩溃，关键是正确处理 print 1 以外的多线程同步问题
-		//print 1: UpDisplay
-		//print other(first frame): get signed -> RenderTarget -> UpDisplay -> RenderCopy(effectTex) -> call thread
-		//thread: get prepare finish -> uplayer -> wait effect finish
-		//(second frame):enter effecting ->(if cut) -> send finish signed.
+		//帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
+		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
+		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
+		SDL_SetRenderTarget(render, PrintTextureA->GetTexture());
+		SDL_RenderClear(render);
+		UpDisplay(postime);
+
+		SDL_SetRenderTarget(render, nullptr);
+		SDL_RenderClear(render);
+		SDL_RenderCopy(render, PrintTextureA->GetTexture(), nullptr, nullptr);
+
 
 		//收到请求后，本帧会刷新到effct层上
-		if (printPreHook->enterEdit()) {
-			//if (premsg->loadParamInt(0) == PARAM_BGCOPY) {
-			//	SDL_Texture *bgtex = SDL_CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
-			//	premsg->savePtr_t(true, bgtex, 0, LOEvent::VALUE_SDLTEXTURE_PTR);
-			//	SDL_SetRenderTarget(render, bgtex);
-			//}
-			//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
+		//if (printPreHook->enterEdit()) {
+		//	//if (premsg->loadParamInt(0) == PARAM_BGCOPY) {
+		//	//	SDL_Texture *bgtex = SDL_CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
+		//	//	premsg->savePtr_t(true, bgtex, 0, LOEvent::VALUE_SDLTEXTURE_PTR);
+		//	//	SDL_SetRenderTarget(render, bgtex);
+		//	//}
+		//	//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
 
-            if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) SDL_LogError(0, "SDL_SetRenderTarget(effectTexture) faild!");
-			SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
-			SDL_RenderClear(render);
-			UpDisplay(postime);
-			SDL_SetRenderTarget(render, NULL);
-			SDL_RenderCopy(render, effectTex->GetTexture(), NULL, NULL);
-			//LOLog_i("prepare ok!") ;
-			//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
-			preEventList.push_back(printPreHook);
-			//LOEventHook *ev = new LOEventHook;
-			//ev->catchFlag = PRE_EVENT_PREPRINTOK;
-			//preEventList.push_back(ev);
-			//LOLog_i("prepare event change!") ;
-		}
-		else {
-			//printf("main refresh1-1:%d\n", SDL_GetTicks());
-			SDL_RenderClear(render);
-			UpDisplay(postime);
-			//printf("main refresh1-2:%d\n", SDL_GetTicks());
-		}
+  //          if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) SDL_LogError(0, "SDL_SetRenderTarget(effectTexture) faild!");
+		//	SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
+		//	SDL_RenderClear(render);
+		//	UpDisplay(postime);
+		//	SDL_SetRenderTarget(render, NULL);
+		//	SDL_RenderCopy(render, effectTex->GetTexture(), NULL, NULL);
+		//	//LOLog_i("prepare ok!") ;
+		//	//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
+		//	preEventList.push_back(printPreHook);
+		//}
+		//else {
+		//	SDL_RenderClear(render);
+		//	UpDisplay(postime);
+		//}
+
 		//注意计时的时候，第一帧会需要初始化，需要几十毫秒
 		if(isShowFps) ShowFPS(postime);
-		//printf("main refresh1-3:%d\n", SDL_GetTicks());
 		SDL_RenderPresent(render);
 
-		//printf("main refresh2:%d\n", SDL_GetTicks());
 		SDL_UnlockMutex(layerQueMutex);
-		//printf("main refresh3:%d\n", SDL_GetTicks());
-		//layerTestMute.unlock();
 
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
@@ -511,21 +518,22 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//还需要一个可编辑的遮片 maskTex
 
 	LOString ntemp("**;_?_effect_?_");
-	//除效果10外，其他效果均需要进行遮片操作
-	if (ef->nseffID != 10) {
-		effmakTex.reset(new LOtexture());
-		effmakTex->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_STREAMING);
-	}
 	//将材质覆盖到最前面进行遮盖
 	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
+	//加载纹理的函数是：TextureFromControl
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	loadSpCore(info, ntemp, 0, 0, -1, true);
-	//需要马上使用
-	info->cur.texture = info->bak.texture;
-	//缩放模式  
-	if (IsGameScale()) {
-		info->bak.SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
+	//遮片也是一个sp，位于effect下方
+	if (ef->nseffID != 0) { //非渐变需要一个可编辑的遮片
+		ntemp.assign("**;_?_effect_mask_?_");
+		info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT + 1, 255, 255), printName);
+		loadSpCore(info, ntemp, 0, 0, -1, true);
 	}
+
+	//缩放模式  
+	//if (IsGameScale()) {
+	//	info->bak.SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
+	//}
 
 	//加载遮片
 	if (ef->nseffID == 15 || ef->nseffID == 18) {
@@ -541,7 +549,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 
 	ef->ReadyToRun();
 	//准备好第一帧的运行
-	ef->RunEffect(render, info, effectTex, effmakTex, 0);
+	//ef->RunEffect(render, info, effectTex, effmakTex, 0);
 }
 
 //完成了返回true, 否则返回false
@@ -551,16 +559,16 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
 		//maybe has some error!
 		if (!lyr) return true;
-		if (ef->RunEffect(render, lyr->data.get(), effectTex, effmakTex, postime)) {
+		if (ef->RunEffect2(render, lyr->data.get(), PrintTextureEdit, postime)) {
 			//断开图层连接
 			if (lyr->parent) lyr->parent->RemodeChild(lyr->GetSelfChildID());
 			//重置数据
 			lyr->data->bak.SetDelete();
 			lyr->data->cur.SetDelete();
-			effmakTex.reset();
 			return true;
 		}
 		else return false;
+		return true;
 	}
 
 	return true; //print 1
@@ -1086,10 +1094,14 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 }
 
 void LOImageModule::TextureFromControl(LOLayerDataBase *bak, LOString *s) {
-	LOShareTexture texture(new LOtexture());
+	LOShareTexture texture;
+	if (*s == "_?_empty_?_") {
+		texture.reset(new LOtexture());
+		texture->setEmpty(G_gameWidth, G_gameHeight);
+	}
+	else if (*s == "_?_effect_?_") texture = PrintTextureB;
+	else if (*s == "_?_effect_mask_?_") texture = PrintTextureEdit;
 	bak->SetNewFile(texture);
-	if (*s == "_?_empty_?_") texture->setEmpty(G_gameWidth, G_gameHeight);
-	else if (*s == "_?_effect_?_") texture->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_TARGET);
 }
 
 void LOImageModule::TextureFromFile(LOLayerDataBase *bak) {
