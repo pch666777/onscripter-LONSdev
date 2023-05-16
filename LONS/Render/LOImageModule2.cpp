@@ -74,11 +74,11 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	SDL_LockMutex(layerQueMutex);
 	//非print1必须交换缓冲帧，以便将将当前的图像移入缓冲区
 	//print2-8必须立即将PrintTextureB（就是当前的图像）载入到图层的最上方，形成遮挡
-	LOShareTexture tmp = PrintTextureA;
+	SDL_Texture *tmp = PrintTextureA;
 	PrintTextureA = PrintTextureB;
 	PrintTextureB = tmp;
 
-	if (ef) PrepareEffect(ef, print_name);
+	if (ef) ef->ReadyToRun();
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {

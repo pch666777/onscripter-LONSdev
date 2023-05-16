@@ -318,9 +318,9 @@ private:
 	SDL_Window *window;
 	SDL_Renderer *render;
 
-	LOShareTexture PrintTextureA;   //活动纹理，每一帧总是先刷新到此纹理，再刷新到渲染器
-	LOShareTexture PrintTextureB;   //活动准备纹理，print时将与PrintTextureA交换指针，成为活跃纹理，是特效操作的重要对象
-	LOShareTexture PrintTextureEdit; //可编辑的纹理，特性时与PrintTextureB叠加，形成动态效果
+	SDL_Texture *PrintTextureA;    //活动纹理，每一帧总是先刷新到此纹理，再刷新到渲染器
+	SDL_Texture *PrintTextureB;    //活动准备纹理，print时将与PrintTextureA交换指针，成为活跃纹理，是特效操作的重要对象
+	SDL_Texture *PrintTextureEdit;  //可编辑的纹理，特性时与PrintTextureB叠加，形成动态效果
 	//SDL_Texture *PrintTextureA; 
 	//SDL_Texture *PrintTextureB;  
 	//SDL_Texture *PrintTextureEdit; 

@@ -30,9 +30,7 @@ LOImageModule::LOImageModule(){
 	layerQueMutex = SDL_CreateMutex();
 	layerDataMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
-	PrintTextureA.reset(new LOtexture());
-	PrintTextureB.reset(new LOtexture());
-	PrintTextureEdit.reset(new LOtexture());
+	PrintTextureA = PrintTextureB = PrintTextureEdit = nullptr;
 
 	memset(shaderList, 0, sizeof(int) * 20);
 }
@@ -71,9 +69,9 @@ LOImageModule::~LOImageModule(){
 	FreeFps();
 	if (allSpList) delete allSpList;
 	if (allSpList2)delete allSpList2;
-	//if (PrintTextureA) SDL_DestroyTexture(PrintTextureA);
-	//if (PrintTextureB) SDL_DestroyTexture(PrintTextureB);
-	//if (PrintTextureEdit) SDL_DestroyTexture(PrintTextureEdit);
+	if (PrintTextureA) SDL_DestroyTexture(PrintTextureA);
+	if (PrintTextureB) SDL_DestroyTexture(PrintTextureB);
+	if (PrintTextureEdit) SDL_DestroyTexture(PrintTextureEdit);
 }
 
 
@@ -183,9 +181,9 @@ int LOImageModule::InitImageModule() {
 	ResetViewPort();
 
 	//创建帧缓冲纹理
-	PrintTextureA->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_TARGET);
-	PrintTextureB->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_TARGET);
-	PrintTextureEdit->CreateDstTexture(G_gameWidth, G_gameHeight, SDL_TEXTUREACCESS_STREAMING);
+	PrintTextureA = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_gameWidth, G_gameHeight);
+	PrintTextureB = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_gameWidth, G_gameHeight);
+	PrintTextureEdit = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_STREAMING, G_gameWidth, G_gameHeight);
 
 	titleStr = "ONScripter-LONS " + LOString(ONS_VERSION);
 	SDL_SetWindowTitle(window, titleStr.c_str());
@@ -388,21 +386,65 @@ int LOImageModule::RefreshFrame(double postime) {
 	int lockfalg = 0;
 	SDL_LockMutex(layerQueMutex);
 	if (lockfalg == 0) {
+
 		//必须小心处理渲染逻辑，不然很容导致程序崩溃，关键是正确处理 print 1 以外的多线程同步问题
-		//帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
-		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
-		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
-		SDL_Texture *target = PrintTextureA->GetTexture();
-		//必须重置叠加模式，因为在效果的过程中进行了修改
-		SDL_SetTextureBlendMode(target, SDL_BLENDMODE_NONE);
-		SDL_SetRenderTarget(render, target);
-		SDL_RenderClear(render);
-		UpDisplay(postime);
+		//要判断是否是print x的执行过程，print的第一帧和最后一帧是非常重要的
+		LOEffect *ef = nullptr;
+		bool isPrinting = !printHook->isStateAfterFinish();
+		if(isPrinting) ef = (LOEffect*)printHook->GetParam(0)->GetPtr();
 
-		SDL_SetRenderTarget(render, nullptr);
-		SDL_RenderClear(render);
-		SDL_RenderCopy(render, PrintTextureA->GetTexture(), nullptr, nullptr);
+		if (!ef || ef->nseffID == 10 || ef->postime < 0) { //淡入淡出无需特别的处理
+			//“ef->postime<0” 说明特效已经运行完成了，但是我们还需要再运行一帧，让图像刷新到纹理A上，这样下一次print才不会出问题
 
+			//printHook处于无效状态，说明是普通的刷新，帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
+			//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
+			//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
+			SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_NONE);
+			SDL_SetRenderTarget(render, PrintTextureA);
+			SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+			SDL_RenderClear(render);
+			UpDisplay(postime);
+
+			//如果有淡入淡出效果，再将texB刷新到A上
+			if (ef && ef->nseffID == 10 && ef->postime >= 0) {
+				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_BLEND);
+				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
+			}
+
+			//刷新到渲染器上
+			SDL_SetRenderTarget(render, nullptr);
+			SDL_RenderClear(render);
+			SDL_RenderCopy(render, PrintTextureA, nullptr, nullptr);
+		}
+		else {
+			//print特效执行时，帧直接刷新到画布上
+			SDL_SetRenderTarget(render, nullptr);
+			SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+			SDL_RenderClear(render);
+			UpDisplay(postime);
+
+			//第一帧直接覆盖在上方即可
+			if (ef->postime == 0) {
+				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_NONE);
+				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
+			}
+			else {
+				//2.然后texB + edit -> texA, texA的背景设为 0，0，0，0  生成被动态蒙蔽的纹理texA
+				SDL_SetTextureBlendMode(PrintTextureEdit, SDL_BLENDMODE_BLEND);
+				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_MOD);
+
+				SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+				SDL_SetRenderTarget(render, PrintTextureA);
+				SDL_RenderClear(render);
+				SDL_RenderCopy(render, PrintTextureEdit, nullptr, nullptr);
+				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
+
+				//3.texA再以透明混合的方式刷新到画布上
+				SDL_SetRenderTarget(render, nullptr);
+				SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_BLEND);
+				SDL_RenderCopy(render, PrintTextureA, nullptr, nullptr);
+			}
+		}
 		//注意计时的时候，第一帧会需要初始化，需要几十毫秒
 		if(isShowFps) ShowFPS(postime);
 		SDL_RenderPresent(render);
@@ -412,9 +454,16 @@ int LOImageModule::RefreshFrame(double postime) {
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
-		if (printHook->enterEdit()) {
-			//printf("main thread:%d\n", SDL_GetTicks());
-			preEventList.push_back(printHook);
+		if (isPrinting) {
+			int alpha = 255;
+			if (!ef || ef->postime < 0) printHook->FinishMe();  //print 1直接完成
+			else if (ef->RunEffect2(PrintTextureEdit, &alpha, postime)) {
+				ef->postime = -2; //print 2-8执行完成了，但是还需要运行一帧
+			}
+			else printHook->closeEdit();
+
+			SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_BLEND);
+			SDL_SetTextureAlphaMod(PrintTextureB, (Uint8)(alpha & 0xff));
 		}
 		return 0;
 	}
@@ -493,18 +542,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//SDL_BLENDMODE_MOD  dstRGB = srcRGB * dstRGB dstA = dstA
 	//简单来说就是创建一个动态遮片。对于渐变来说，PrintTextureB设置透明度即可，
 
-	LOString ntemp("**;_?_effect_?_");
-	//将材质覆盖到最前面进行遮盖
-	//效果层处于哪一个排列队列必须跟 ExportQuequ中的一致，不然无法立即展开队列
-	//加载纹理的函数是：TextureFromControl
-	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
-	loadSpCore(info, ntemp, 0, 0, -1, true);
-	//遮片也是一个sp，位于effect下方
-	if (ef->nseffID != 10) { //非渐变需要一个可编辑的遮片
-		ntemp.assign("**;_?_effect_mask_?_");
-		info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT + 1, 255, 255), printName);
-		loadSpCore(info, ntemp, 0, 0, -1, true);
-	}
+
 
 	//缩放模式  
 	//if (IsGameScale()) {
@@ -522,10 +560,6 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 			delete su;
 		}
 	}
-
-	ef->ReadyToRun();
-	//准备好第一帧的运行
-	//ef->RunEffect(render, info, effectTex, effmakTex, 0);
 }
 
 //完成了返回true, 否则返回false
@@ -535,15 +569,15 @@ bool LOImageModule::ContinueEffect(LOEffect *ef, const char *printName, double p
 		LOLayer *lyr = LOLayer::FindLayerInCenter(fullid);
 		//maybe has some error!
 		if (!lyr) return true;
-		if (ef->RunEffect2(render, lyr->data.get(), PrintTextureEdit, postime)) {
-			//断开图层连接
-			if (lyr->parent) lyr->parent->RemodeChild(lyr->GetSelfChildID());
-			//重置数据
-			lyr->data->bak.SetDelete();
-			lyr->data->cur.SetDelete();
-			return true;
-		}
-		else return false;
+		//if (ef->RunEffect2(render, lyr->data.get(), PrintTextureEdit, postime)) {
+		//	//断开图层连接
+		//	if (lyr->parent) lyr->parent->RemodeChild(lyr->GetSelfChildID());
+		//	//重置数据
+		//	lyr->data->bak.SetDelete();
+		//	lyr->data->cur.SetDelete();
+		//	return true;
+		//}
+		//else return false;
 		return true;
 	}
 
@@ -1075,8 +1109,8 @@ void LOImageModule::TextureFromControl(LOLayerDataBase *bak, LOString *s) {
 		texture.reset(new LOtexture());
 		texture->setEmpty(G_gameWidth, G_gameHeight);
 	}
-	else if (*s == "_?_effect_?_") texture = PrintTextureB;
-	else if (*s == "_?_effect_mask_?_") texture = PrintTextureEdit;
+	//else if (*s == "_?_effect_?_") texture = PrintTextureB;
+	//else if (*s == "_?_effect_mask_?_") texture = PrintTextureEdit;
 	bak->SetNewFile(texture);
 }
 

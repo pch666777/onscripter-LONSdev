@@ -74,27 +74,19 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 }
 
 //LOLayerData只提供PrintTextureEdit的图层
-bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &EditTexture, double pos) {
-	//无效的
-	if (!info || !info->cur.texture || !EditTexture) return true;
-	//判断是否运行结束
-	if (postime >= time || postime < 0) {
+bool LOEffect::RunEffect2(SDL_Texture *edit, int *alpha, double pos) {
+	//判断是否运行结束，稍微提前一点
+	if (postime >= time - 8 || postime < 0) {
 		//释放15和18特效的遮片，如果有的话
 		masksu.reset();
 		return true;
 	}
 
-
-	SDL_Texture *edit = EditTexture->GetTexture(); //可编辑纹理
-	//重置状态
-	info->cur.texture->setBlendModel(SDL_BLENDMODE_MOD);
-	//EditTexture->setBlendModel(SDL_BLENDMODE_NONE);
-	//debug
-	pos = 10;
+	//pos = 10;
 	postime += pos;
 	if (postime > time) postime = time;
 
-	info->cur.alpha = 255;
+	*alpha = 255;
 	switch (nseffID)
 	{
 	case 2:
@@ -123,12 +115,12 @@ bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &E
 		break;
 	case 10:
 		//淡入淡出模式只需要设置cut的透明度
-		info->cur.texture->setBlendModel(SDL_BLENDMODE_BLEND);
-		FadeOut(info, pos);
+		//info->cur.texture->setBlendModel(SDL_BLENDMODE_BLEND);
+		FadeOut(alpha, pos);
 		break;
 	case 11:
-		//RollEffect(edit, pos, DIRECTION_LEFT);
-		TestEffect(edit, pos, DIRECTION_LEFT);
+		RollEffect(edit, pos, DIRECTION_LEFT);
+		//TestEffect(edit, pos, DIRECTION_LEFT);
 		break;
 	case 12:
 		RollEffect(edit, pos, DIRECTION_RIGHT);
@@ -166,12 +158,12 @@ bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &E
 }
 
 //淡入淡出
-void LOEffect::FadeOut(LOLayerData *info, double pos) {
+void LOEffect::FadeOut(int *alpha, double pos) {
 	int per = (time - postime) / time * 255;
 	if (per > 255) per = 255;
 	//注意透明度界限
 	if (per < 0) per = 0;
-	info->cur.alpha = per;
+	*alpha = per;
 }
 
 //遮片

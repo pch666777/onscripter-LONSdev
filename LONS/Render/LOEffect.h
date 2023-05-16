@@ -34,14 +34,14 @@ public:
 
 	void CopyFrom(LOEffect *ef);
 	//bool RunEffect(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &efstex , LOShareTexture &efmtex, double pos);
-	bool RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &EditTexture, double pos);
+	bool RunEffect2(SDL_Texture *edit, int *alpha, double pos);
 	void ReadyToRun() { postime = 0; }
 	SDL_Surface* Create8bitMask(SDL_Surface *su,bool isscale);
 	static SDL_Surface* ConverToGraySurface(SDL_Surface *su);
 	static void CreateGrayColor(SDL_Palette *pale);
 
 private:
-	void FadeOut(LOLayerData *info,double pos);
+	void FadeOut(int *alpha, double pos);
 	void MaskEffectCore(SDL_Texture *edit, double pos,bool isalpha);
 	void BlindsEffect(SDL_Texture *edit, double pos, int direction);
 	void CurtainEffect(SDL_Texture *edit, double pos, int direction);
