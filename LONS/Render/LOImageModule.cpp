@@ -393,77 +393,55 @@ int LOImageModule::RefreshFrame(double postime) {
 		bool isPrinting = !printHook->isStateAfterFinish();
 		if(isPrinting) ef = (LOEffect*)printHook->GetParam(0)->GetPtr();
 
-		if (!ef || ef->nseffID == 10 || ef->postime < 0) { //淡入淡出无需特别的处理
-			//“ef->postime<0” 说明特效已经运行完成了，但是我们还需要再运行一帧，让图像刷新到纹理A上，这样下一次print才不会出问题
+		//printHook处于无效状态，说明是普通的刷新，帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
+		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
+		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
+		SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_NONE);
+		SDL_SetRenderTarget(render, PrintTextureA);
+		SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+		SDL_RenderClear(render);
+		UpDisplay(postime);
 
-			//printHook处于无效状态，说明是普通的刷新，帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
-			//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
-			//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
-			SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_NONE);
-			SDL_SetRenderTarget(render, PrintTextureA);
-			SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
-			SDL_RenderClear(render);
-			UpDisplay(postime);
-
-			//如果有淡入淡出效果，再将texB刷新到A上
-			if (ef && ef->nseffID == 10 && ef->postime >= 0) {
-				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_BLEND);
-				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
-			}
-
-			//刷新到渲染器上
-			SDL_SetRenderTarget(render, nullptr);
-			SDL_RenderClear(render);
-			SDL_RenderCopy(render, PrintTextureA, nullptr, nullptr);
+		//debug
+		if (ef && ef->postime < 0) {
+			int bbk = 0;
 		}
-		else {
-			//print特效执行时，帧直接刷新到画布上
-			SDL_SetRenderTarget(render, nullptr);
-			SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
-			SDL_RenderClear(render);
-			UpDisplay(postime);
 
-			//第一帧直接覆盖在上方即可
-			if (ef->postime == 0) {
-				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_NONE);
-				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
-			}
-			else {
-				//2.然后texB + edit -> texA, texA的背景设为 0，0，0，0  生成被动态蒙蔽的纹理texA
-				SDL_SetTextureBlendMode(PrintTextureEdit, SDL_BLENDMODE_BLEND);
-				SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_MOD);
-
-				SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
-				SDL_SetRenderTarget(render, PrintTextureA);
-				SDL_RenderClear(render);
-				SDL_RenderCopy(render, PrintTextureEdit, nullptr, nullptr);
-				SDL_RenderCopy(render, PrintTextureB, nullptr, nullptr);
-
-				//3.texA再以透明混合的方式刷新到画布上
-				SDL_SetRenderTarget(render, nullptr);
-				SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_BLEND);
-				SDL_RenderCopy(render, PrintTextureA, nullptr, nullptr);
-			}
+		//有ef需要处理的话，需要检测RenderCopy的位置偏移
+		SDL_Rect rect = { 0,0,G_gameWidth , G_gameHeight };
+		if (ef && ef->UpdateDstRect(&rect)){
+			//print 11-14 位移类
+			if (ef->nseffID == 11 || ef->nseffID == 12) rect.x = rect.x - G_gameWidth;
+			if (ef->nseffID == 13 || ef->nseffID == 14) rect.y = rect.y - G_gameHeight;
 		}
+
+		//将当前帧刷新到渲染器
+		SDL_SetRenderTarget(render, nullptr);
+		SDL_RenderClear(render);
+		SDL_RenderCopy(render, PrintTextureA, nullptr, &rect);
+
+		//有特效的执行特效
+		if (ef) ef->UpdateEffect(render, PrintTextureA, PrintTextureB, PrintTextureEdit);
+
+		//fps
 		//注意计时的时候，第一帧会需要初始化，需要几十毫秒
-		if(isShowFps) ShowFPS(postime);
+		if (isShowFps) ShowFPS(postime);
+
+		//更新渲染器
 		SDL_RenderPresent(render);
 
 		SDL_UnlockMutex(layerQueMutex);
+
 
 		//每完成一帧的刷新，我们检查是否有 print 事件需要处理，如果是print 1则直接通知完成
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (isPrinting) {
-			int alpha = 255;
 			if (!ef || ef->postime < 0) printHook->FinishMe();  //print 1直接完成
-			else if (ef->RunEffect2(PrintTextureEdit, &alpha, postime)) {
+			else if (ef->RunEffect2(PrintTextureEdit, postime)) {
 				ef->postime = -2; //print 2-8执行完成了，但是还需要运行一帧
 			}
 			else printHook->closeEdit();
-
-			SDL_SetTextureBlendMode(PrintTextureB, SDL_BLENDMODE_BLEND);
-			SDL_SetTextureAlphaMod(PrintTextureB, (Uint8)(alpha & 0xff));
 		}
 		return 0;
 	}

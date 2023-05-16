@@ -20,6 +20,12 @@ public:
 		EFFECT_ID_QUAKE = 0x7FFFFF01
 	};
 
+	enum {
+		RET_NONE,
+		RET_FINISH,
+		RET_CONTINUE
+	};
+
 	LOEffect();
 	~LOEffect();
 
@@ -34,7 +40,11 @@ public:
 
 	void CopyFrom(LOEffect *ef);
 	//bool RunEffect(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &efstex , LOShareTexture &efmtex, double pos);
-	bool RunEffect2(SDL_Texture *edit, int *alpha, double pos);
+	bool RunEffect2(SDL_Texture *edit, double pos);
+	//刷新特效帧
+	int UpdateEffect(SDL_Renderer *ren, SDL_Texture *texA, SDL_Texture *texB, SDL_Texture *edit);
+	//获取当前图像因该偏移的位置，仅对print 11-14有效
+	bool UpdateDstRect(SDL_Rect *rect);
 	void ReadyToRun() { postime = 0; }
 	SDL_Surface* Create8bitMask(SDL_Surface *su,bool isscale);
 	static SDL_Surface* ConverToGraySurface(SDL_Surface *su);

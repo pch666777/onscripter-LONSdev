@@ -74,19 +74,21 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 }
 
 //LOLayerData只提供PrintTextureEdit的图层
-bool LOEffect::RunEffect2(SDL_Texture *edit, int *alpha, double pos) {
-	//判断是否运行结束，稍微提前一点
-	if (postime >= time - 8 || postime < 0) {
+bool LOEffect::RunEffect2(SDL_Texture *edit, double pos) {
+	//最后一帧不用执行，比如透明类，最后一帧实际上图像是不可见的
+	if (postime + pos >= time|| postime < 0) {
+		postime = this->time + 1.0;
 		//释放15和18特效的遮片，如果有的话
 		masksu.reset();
 		return true;
 	}
 
-	//pos = 10;
+	pos = 10;
 	postime += pos;
+	//增加一点速度，因为实际执行的过程中会有一点延迟
+	postime += 1.0;
 	if (postime > time) postime = time;
 
-	*alpha = 255;
 	switch (nseffID)
 	{
 	case 2:
@@ -114,9 +116,9 @@ bool LOEffect::RunEffect2(SDL_Texture *edit, int *alpha, double pos) {
 		CurtainEffect(edit, pos, DIRECTION_BOTTOM);
 		break;
 	case 10:
-		//淡入淡出模式只需要设置cut的透明度
+		//透明度的计算不需要在这里
 		//info->cur.texture->setBlendModel(SDL_BLENDMODE_BLEND);
-		FadeOut(alpha, pos);
+		//FadeOut(alpha, pos);
 		break;
 	case 11:
 		RollEffect(edit, pos, DIRECTION_LEFT);
@@ -153,7 +155,6 @@ bool LOEffect::RunEffect2(SDL_Texture *edit, int *alpha, double pos) {
 	default:
 		break;
 	}
-
 	return false;
 }
 
@@ -491,4 +492,67 @@ void LOEffect::CreateGrayColor(SDL_Palette *pale) {
 		color[ii].g = ii;
 		color[ii].b = ii;
 	}
+}
+
+
+bool LOEffect::UpdateDstRect(SDL_Rect *rect) {
+	//返回的是特效层的位置，因此对于实际显示图像，位置要刚好反过来
+	if (postime >= 0 && postime < this->time) {  //时间范围外的无效
+		if (nseffID == 11) rect->x = postime / this->time * G_gameWidth;  //图像向右运动
+		else if (nseffID == 12) rect->x = 0 - (postime / this->time * G_gameWidth);  //向左运动
+		else if (nseffID == 13) rect->y = postime / this->time * G_gameHeight;   //向下运动
+		else if (nseffID == 14) rect->y = 0 - (postime / this->time * G_gameHeight);  //向上运动
+		else return false;
+		return true;
+	}
+	return false;
+}
+
+
+
+int LOEffect::UpdateEffect(SDL_Renderer *ren, SDL_Texture *texA, SDL_Texture *texB, SDL_Texture *edit) {
+	//更新的前提是当前的图像帧已经刷新到默认画布上了
+	//postimme的增加不在此函数
+	if (postime < 0 || postime > this->time) return RET_NONE;
+
+	//第一帧，直接覆盖即可
+	if (postime == 0) {
+		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_NONE);
+		SDL_RenderCopy(ren, texB, nullptr, nullptr);
+		return RET_CONTINUE;
+	}
+
+
+	if (nseffID == 10) {  //透明度变化类
+		int alpha = (this->time - postime) / this->time * 255;
+		if (alpha < 0) alpha = 0;
+		else if (alpha > 255) alpha = 255;
+		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_BLEND);
+		SDL_SetTextureAlphaMod(texB, (Uint8)alpha);
+		SDL_RenderCopy(ren, texB, nullptr, nullptr);
+	}
+	else if (nseffID >= 11 && nseffID <= 14) { //位移类
+		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_NONE);
+		SDL_Rect rect;
+		UpdateDstRect(&rect);
+		SDL_RenderCopy(ren, texB, nullptr, &rect);
+	}
+	else {//遮片类
+		//先重置纹理A
+		SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
+		SDL_SetRenderTarget(ren, texA);
+		SDL_RenderClear(ren);
+		//将纹理B与动态遮片叠加，生成效果纹理A
+		SDL_SetTextureBlendMode(edit, SDL_BLENDMODE_BLEND);
+		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_MOD);
+		SDL_RenderCopy(ren, edit, nullptr, nullptr);
+		SDL_RenderCopy(ren, texB, nullptr, nullptr);
+
+		//将纹理A渲染到画布上
+		SDL_SetTextureBlendMode(texA, SDL_BLENDMODE_BLEND);
+		SDL_SetRenderTarget(ren, nullptr);
+		SDL_RenderCopy(ren, texA, nullptr, nullptr);
+	}
+
+	return RET_CONTINUE;
 }
