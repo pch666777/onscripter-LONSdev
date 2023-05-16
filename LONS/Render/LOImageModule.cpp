@@ -392,38 +392,16 @@ int LOImageModule::RefreshFrame(double postime) {
 		//帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
 		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
 		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
-		SDL_SetRenderTarget(render, PrintTextureA->GetTexture());
+		SDL_Texture *target = PrintTextureA->GetTexture();
+		//必须重置叠加模式，因为在效果的过程中进行了修改
+		SDL_SetTextureBlendMode(target, SDL_BLENDMODE_NONE);
+		SDL_SetRenderTarget(render, target);
 		SDL_RenderClear(render);
 		UpDisplay(postime);
 
 		SDL_SetRenderTarget(render, nullptr);
 		SDL_RenderClear(render);
 		SDL_RenderCopy(render, PrintTextureA->GetTexture(), nullptr, nullptr);
-
-
-		//收到请求后，本帧会刷新到effct层上
-		//if (printPreHook->enterEdit()) {
-		//	//if (premsg->loadParamInt(0) == PARAM_BGCOPY) {
-		//	//	SDL_Texture *bgtex = SDL_CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_viewRect.w, G_viewRect.h);
-		//	//	premsg->savePtr_t(true, bgtex, 0, LOEvent::VALUE_SDLTEXTURE_PTR);
-		//	//	SDL_SetRenderTarget(render, bgtex);
-		//	//}
-		//	//else if (SDL_SetRenderTarget(render, effectTex) < 0) SimpleError("SDL_SetRenderTarget(effectTexture) faild!");
-
-  //          if (SDL_SetRenderTarget(render, effectTex->GetTexture()) < 0) SDL_LogError(0, "SDL_SetRenderTarget(effectTexture) faild!");
-		//	SDL_RenderSetScale(render, G_gameScaleX, G_gameScaleY);  //跟窗口缩放保持一致
-		//	SDL_RenderClear(render);
-		//	UpDisplay(postime);
-		//	SDL_SetRenderTarget(render, NULL);
-		//	SDL_RenderCopy(render, effectTex->GetTexture(), NULL, NULL);
-		//	//LOLog_i("prepare ok!") ;
-		//	//需要在本帧刷新后通知事件已经完成，因此将一个前置事件推入渲染模块队列
-		//	preEventList.push_back(printPreHook);
-		//}
-		//else {
-		//	SDL_RenderClear(render);
-		//	UpDisplay(postime);
-		//}
 
 		//注意计时的时候，第一帧会需要初始化，需要几十毫秒
 		if(isShowFps) ShowFPS(postime);
@@ -484,9 +462,9 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 		if (lyr->id[0] < dest) break;
 
 		//debug
-		if (lyr->layerType == LOLayer::LAYER_BG) {
-			int bbk = 1;
-		}
+		//if (lyr->layerType == LOLayer::LAYER_NSSYS && lyr->id[0] == LOLayer::IDEX_NSSYS_EFFECT + 1) {
+		//	int bbk = 1;
+		//}
 
 		//在下方的对象先渲染，渲染父对象
 		if (lyr->data->cur.texture) {
@@ -513,9 +491,7 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	//Target的纹理是不能编辑的，但是专门构造一个特殊纹理，让effect纹理与特殊纹理叠加产生特殊效果
 	//SDL_BLENDMODE_MOD  dstRGB = srcRGB * dstRGB dstA = dstA
-	//简单来说就是创建一个动态遮片
-	//首先需要抓取图像，抓取的图像存储在effectTex中，其次需要一张保存最终结果的纹理，_?_effect_?_
-	//还需要一个可编辑的遮片 maskTex
+	//简单来说就是创建一个动态遮片。对于渐变来说，PrintTextureB设置透明度即可，
 
 	LOString ntemp("**;_?_effect_?_");
 	//将材质覆盖到最前面进行遮盖
@@ -524,7 +500,7 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT, 255, 255), printName);
 	loadSpCore(info, ntemp, 0, 0, -1, true);
 	//遮片也是一个sp，位于effect下方
-	if (ef->nseffID != 0) { //非渐变需要一个可编辑的遮片
+	if (ef->nseffID != 10) { //非渐变需要一个可编辑的遮片
 		ntemp.assign("**;_?_effect_mask_?_");
 		info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_EFFECT + 1, 255, 255), printName);
 		loadSpCore(info, ntemp, 0, 0, -1, true);

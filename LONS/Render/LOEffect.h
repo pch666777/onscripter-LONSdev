@@ -45,6 +45,7 @@ private:
 	void MaskEffectCore(SDL_Texture *edit, double pos,bool isalpha);
 	void BlindsEffect(SDL_Texture *edit, double pos, int direction);
 	void CurtainEffect(SDL_Texture *edit, double pos, int direction);
+	void TestEffect(SDL_Texture *edit, double pos, int direction);
 	void RollEffect(SDL_Texture *edit, double pos, int direction);
 	void MosaicEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isout);
 	void QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Texture *maskTex, double postime);

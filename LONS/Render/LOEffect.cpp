@@ -86,10 +86,9 @@ bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &E
 
 
 	SDL_Texture *edit = EditTexture->GetTexture(); //可编辑纹理
-	SDL_Texture *cutImage = info->cur.texture->GetTexture(); //特效前截图的纹理
 	//重置状态
-	SDL_SetTextureBlendMode(cutImage, SDL_BLENDMODE_BLEND);
-	SDL_SetTextureBlendMode(edit, SDL_BLENDMODE_MOD);
+	info->cur.texture->setBlendModel(SDL_BLENDMODE_MOD);
+	//EditTexture->setBlendModel(SDL_BLENDMODE_NONE);
 	//debug
 	pos = 10;
 	postime += pos;
@@ -124,10 +123,12 @@ bool LOEffect::RunEffect2(SDL_Renderer*ren, LOLayerData *info, LOShareTexture &E
 		break;
 	case 10:
 		//淡入淡出模式只需要设置cut的透明度
+		info->cur.texture->setBlendModel(SDL_BLENDMODE_BLEND);
 		FadeOut(info, pos);
 		break;
 	case 11:
-		RollEffect(edit, pos, DIRECTION_LEFT);
+		//RollEffect(edit, pos, DIRECTION_LEFT);
+		TestEffect(edit, pos, DIRECTION_LEFT);
 		break;
 	case 12:
 		RollEffect(edit, pos, DIRECTION_RIGHT);
@@ -346,6 +347,31 @@ void LOEffect::RollEffect(SDL_Texture *edit, double pos, int direction) {
 
 	SDL_UnlockTexture(edit);
 	//SDL_SetTextureBlendMode(maskTex, SDL_BLENDMODE_BLEND);
+}
+
+//测试用的函数
+void LOEffect::TestEffect(SDL_Texture *edit, double pos, int direction) {
+	int w, h, pitch;
+	void *pixbuf;
+	SDL_QueryTexture(edit, NULL, NULL, &w, &h);
+	SDL_LockTexture(edit, NULL, &pixbuf, &pitch);
+
+	//所有像素设置为白色，不透明，不产生颜色系数
+	for (int ii = 0; ii < h; ii++) memset((unsigned char*)pixbuf + ii * pitch, 255, pitch);
+	
+	for (int ii = 0; ii < h / 2; ii++) {
+		unsigned char *buf = (unsigned char*)pixbuf + ii * pitch;
+		for (int xx = 0; xx < w / 2; xx++) {
+			buf[G_Bit[0]] = 0; //r
+			buf[G_Bit[1]] = 0; //r
+			buf[G_Bit[2]] = 0; //b
+			buf[G_Bit[3]] = 0; //b
+
+			buf += 4; //下一个像素
+		}
+	}
+
+	SDL_UnlockTexture(edit);
 }
 
 

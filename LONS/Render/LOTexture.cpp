@@ -396,10 +396,10 @@ bool LOtexture::activeFlagControl() {
 
 	if (useflag & USE_BLEND_MOD) {
 		int iii = SDL_SetTextureBlendMode(texturePtr, blendmodel);
-		auto it = SDL_GetError();
-		iii = 0;
-		auto itt = (SDL_BlendMode)((useflag >> 16));
-		itt = SDL_BLENDMODE_NONE;
+		//auto it = SDL_GetError();
+		//iii = 0;
+		//auto itt = (SDL_BlendMode)((useflag >> 16));
+		//itt = SDL_BLENDMODE_NONE;
 	}
 
 	if (useflag & USE_COLOR_MOD) SDL_SetTextureColorMod(texturePtr, color.r, color.g, color.b);
