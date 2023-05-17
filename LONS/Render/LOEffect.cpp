@@ -75,6 +75,8 @@ SDL_Surface* LOEffect::ConverToGraySurface(SDL_Surface *su) {
 
 //LOLayerData只提供PrintTextureEdit的图层
 bool LOEffect::RunEffect2(SDL_Texture *edit, double pos) {
+	//pos = 10;
+
 	//最后一帧不用执行，比如透明类，最后一帧实际上图像是不可见的
 	if (postime + pos >= time|| postime < 0) {
 		postime = this->time + 1.0;
@@ -83,10 +85,9 @@ bool LOEffect::RunEffect2(SDL_Texture *edit, double pos) {
 		return true;
 	}
 
-	pos = 10;
 	postime += pos;
 	//增加一点速度，因为实际执行的过程中会有一点延迟
-	postime += 1.0;
+	postime += 0.2;
 	if (postime > time) postime = time;
 
 	switch (nseffID)
@@ -517,13 +518,14 @@ int LOEffect::UpdateEffect(SDL_Renderer *ren, SDL_Texture *texA, SDL_Texture *te
 
 	//第一帧，直接覆盖即可
 	if (postime == 0) {
-		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_NONE);
+		LOtexture::ResetTextureMode(texB);   //注意要重置纹理模式
 		SDL_RenderCopy(ren, texB, nullptr, nullptr);
 		return RET_CONTINUE;
 	}
 
 
 	if (nseffID == 10) {  //透明度变化类
+		LOtexture::ResetTextureMode(texB);   //先重置纹理模式，确保只有透明度模式生效
 		int alpha = (this->time - postime) / this->time * 255;
 		if (alpha < 0) alpha = 0;
 		else if (alpha > 255) alpha = 255;
@@ -532,12 +534,15 @@ int LOEffect::UpdateEffect(SDL_Renderer *ren, SDL_Texture *texA, SDL_Texture *te
 		SDL_RenderCopy(ren, texB, nullptr, nullptr);
 	}
 	else if (nseffID >= 11 && nseffID <= 14) { //位移类
-		SDL_SetTextureBlendMode(texB, SDL_BLENDMODE_NONE);
-		SDL_Rect rect;
+		LOtexture::ResetTextureMode(texB);  //重置纹理模式
+		SDL_Rect rect = { 0,0, G_gameWidth, G_gameHeight };
 		UpdateDstRect(&rect);
 		SDL_RenderCopy(ren, texB, nullptr, &rect);
 	}
 	else {//遮片类
+		LOtexture::ResetTextureMode(texA);  //重置纹理模式
+		LOtexture::ResetTextureMode(texB);  //重置纹理模式
+		LOtexture::ResetTextureMode(edit);  //重置纹理模式
 		//先重置纹理A
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 		SDL_SetRenderTarget(ren, texA);

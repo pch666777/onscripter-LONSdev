@@ -1,4 +1,4 @@
-/*
+﻿/*
 //纹理
 */
 //
@@ -1047,4 +1047,15 @@ SDL_Surface* LOtexture::CreateTransAlpha(SDL_Surface *src, int position) {
     //如果没有产生新的surface则应该使用旧的
     if(su != src) return su ;
     return nullptr ;
+}
+
+
+void LOtexture::ResetTextureMode(SDL_Texture *tex) {
+	if (tex) {
+		Uint8 r, g, b, a;
+		r = g = b = a = 255;
+		SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_NONE);
+		SDL_SetTextureColorMod(tex, r, g, b);
+		SDL_SetTextureAlphaMod(tex, a);
+	}
 }

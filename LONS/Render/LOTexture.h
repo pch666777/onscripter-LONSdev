@@ -1,4 +1,4 @@
-/*
+﻿/*
 //纹理
 //统一surface和texture减少复杂性
 */
@@ -187,8 +187,8 @@ public:
 	int RollTextTexture(int start, int end);
 	void TranzPosition(int *lineID, int *linePos, bool *isend, int position);
 	int GetTextTextureEnd();
-        //获取最后一行的最后一个位置
-        bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
+    //获取最后一行的最后一个位置
+    bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
 
 	//创建色块
 	void CreateSimpleColor(int w, int h, SDL_Color color);
@@ -200,8 +200,11 @@ public:
 	void CopyTextureToSurface(bool freeTex);
 	//检查surface中是否是同一种颜色
 	bool CheckColor(SDL_Color *cc, int diff);
-        //根据制定颜色，或者位置设置透明
-        static SDL_Surface* CreateTransAlpha(SDL_Surface *src, int position) ;
+    //根据制定颜色，或者位置设置透明
+    static SDL_Surface* CreateTransAlpha(SDL_Surface *src, int position) ;
+	
+	//重置硬件纹理的混合模式、透明度、颜色混合
+	static void ResetTextureMode(SDL_Texture *tex);
 
 	void resetSurface();
 	void resetTexture();

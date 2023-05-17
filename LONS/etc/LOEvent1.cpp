@@ -1,4 +1,4 @@
-//事件处理
+﻿//事件处理
 
 #include "LOEvent1.h"
 #include <stdint.h>
@@ -210,9 +210,10 @@ LOEventHook* LOEventHook::CreatePrintHook(LOEventHook *e, void *ef, const char *
 }
 
 
-LOEventHook* LOEventHook::CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh) {
-	e->ClearParam();
+LOEventHook* LOEventHook::CreateScreenShot(int x, int y, int w, int h, int dw, int dh) {
+	auto *e = CreateHookBase();
 	e->timeStamp = SDL_GetTicks();
+	e->catchFlag = ANSWER_RENDER_DO;
 	e->param2 = FUN_SCREENSHOT;
 	e->paramList.push_back(new LOVariant(x));
 	e->paramList.push_back(new LOVariant(y));

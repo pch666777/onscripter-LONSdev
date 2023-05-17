@@ -1,4 +1,4 @@
-//事件处理
+﻿//事件处理
 #ifndef __LOEVENT1_H__
 #define __LOEVENT1_H__
 
@@ -161,7 +161,7 @@ public:
 	//创建一个print事件
 	static LOEventHook* CreatePrintHook(LOEventHook *e, void *ef, const char *printName);
 	//创建一个截图事件
-	static LOEventHook* CreateScreenShot(LOEventHook *e, int x, int y, int w, int h, int dw, int dh);
+	static LOEventHook* CreateScreenShot(int x, int y, int w, int h, int dw, int dh);
 	//创建一个btnwait事件
 	static LOEventHook* CreateBtnwaitHook(int waittime, int refid, const char *printName, int channel, const char *cmd);
 	//创建一个按钮被点击事件

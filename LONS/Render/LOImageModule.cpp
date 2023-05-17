@@ -226,9 +226,6 @@ void LOImageModule::ResetViewPort() {
 		G_viewRect.y = (int)(G_gameScaleY * winView.y); //? is right?
 	}
 
-	effectTex.reset(new LOtexture());
-	effectTex->CreateDstTexture(G_viewRect.w, G_viewRect.h, SDL_TEXTUREACCESS_TARGET);
-	effmakTex.reset();
 	FreeFps();
 	InitFps();
 }
@@ -396,23 +393,28 @@ int LOImageModule::RefreshFrame(double postime) {
 		//printHook处于无效状态，说明是普通的刷新，帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
 		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
 		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
-		SDL_SetTextureBlendMode(PrintTextureA, SDL_BLENDMODE_NONE);
+		LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
 		SDL_SetRenderTarget(render, PrintTextureA);
 		SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
 		SDL_RenderClear(render);
 		UpDisplay(postime);
 
 		//debug
-		if (ef && ef->postime < 0) {
-			int bbk = 0;
-		}
+		//if (ef && ef->postime < 0) {
+		//	int bbk = 0;
+		//}
+		//if (isPrinting && !ef) {
+		//	int bbk = 0;
+		//}
 
 		//有ef需要处理的话，需要检测RenderCopy的位置偏移
 		SDL_Rect rect = { 0,0,G_gameWidth , G_gameHeight };
 		if (ef && ef->UpdateDstRect(&rect)){
 			//print 11-14 位移类
-			if (ef->nseffID == 11 || ef->nseffID == 12) rect.x = rect.x - G_gameWidth;
-			if (ef->nseffID == 13 || ef->nseffID == 14) rect.y = rect.y - G_gameHeight;
+			if(ef->nseffID == 11) rect.x = rect.x - G_gameWidth; //往右运动，实际图像在左侧
+			else if (ef->nseffID == 12) rect.x = rect.x + G_gameWidth; //往左运动，实际图像在右侧
+			else if (ef->nseffID == 13) rect.y = rect.y - G_gameHeight; //往下运动，实际图像在上方
+			else if (ef->nseffID == 14) rect.y = rect.y + G_gameHeight; //往上运动，实际图像在下方
 		}
 
 		//将当前帧刷新到渲染器
@@ -515,13 +517,7 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 	}
 }
 
-void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
-	//Target的纹理是不能编辑的，但是专门构造一个特殊纹理，让effect纹理与特殊纹理叠加产生特殊效果
-	//SDL_BLENDMODE_MOD  dstRGB = srcRGB * dstRGB dstA = dstA
-	//简单来说就是创建一个动态遮片。对于渐变来说，PrintTextureB设置透明度即可，
-
-
-
+void LOImageModule::PrepareEffect(LOEffect *ef) {
 	//缩放模式  
 	//if (IsGameScale()) {
 	//	info->bak.SetPosition2(0, 0, 1.0 / G_gameScaleX, 1.0 / G_gameScaleY);
@@ -538,6 +534,9 @@ void LOImageModule::PrepareEffect(LOEffect *ef, const char *printName) {
 			delete su;
 		}
 	}
+
+	//准备好运行
+	ef->ReadyToRun();
 }
 
 //完成了返回true, 否则返回false

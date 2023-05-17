@@ -34,13 +34,13 @@ void LOImageModule::DoPreEvent(double postime) {
 			//PrepareEffect(ef, printName);
 			//e->FinishMe();
 		}
-		else if (e->param2 == LOEventHook::FUN_CONTINUE_EFF) { //继续运行
-			//printf("%d\n", e->catchFlag);
-			LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
-			const char *printName = e->GetParam(1)->GetChars(nullptr);
-			if (ContinueEffect(ef, printName, postime)) e->FinishMe();
-			else e->closeEdit();
-		}
+		//else if (e->param2 == LOEventHook::FUN_CONTINUE_EFF) { //继续运行
+		//	//printf("%d\n", e->catchFlag);
+		//	LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+		//	const char *printName = e->GetParam(1)->GetChars(nullptr);
+		//	if (ContinueEffect(ef, printName, postime)) e->FinishMe();
+		//	else e->closeEdit();
+		//}
 		else if (e->param2 == LOEventHook::LOEventHook::FUN_SCREENSHOT) {
 			ScreenShotCountinue(e.get());
 			e->FinishMe();
@@ -78,7 +78,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	PrintTextureA = PrintTextureB;
 	PrintTextureB = tmp;
 
-	if (ef) ef->ReadyToRun();
+	if (ef) PrepareEffect(ef);
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -192,7 +192,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEBUTTONUP:
 		//鼠标进行了点击，因为SDL上，手指事件同时也会触发鼠标事件，因此当进入双指捕获时，不应该再接受鼠标事件
 		if (!TranzMousePos(event->button.x, event->button.y) || isFingerEvent)break;
-		SDL_Log("mouse at %d, %d", event->button.x, event->button.y) ;
+		//SDL_Log("mouse at %d, %d", event->button.x, event->button.y) ;
 		//这里需要将左、右键事件先发一次hook队列，因为有些hook需要优先处理，比如print wait等点击可跳过的事件
 		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOEventHook::ANSWER_LEFTCLICK;
 		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOEventHook::ANSWER_RIGHTCLICK;
@@ -358,6 +358,10 @@ int LOImageModule::RunRenderDo(LOEventHook *hook, LOEventHook *e) {
 	case LOEventHook::FUN_AudioFade:
 		ret = audioModule->RunFunc(hook, e);
 		break;
+	case LOEventHook::FUN_SCREENSHOT:
+		//截图
+		ret = ScreenShotCountinue(e);
+		break;
 	default:
 		break;
 	}
@@ -475,16 +479,16 @@ int LOImageModule::DoMustEvent(int val) {
 
 
 LOtexture* LOImageModule::ScreenShot(int x, int y, int w, int h, int dw, int dh) {
-	LOEventHook::CreateScreenShot(printPreHook.get(), x, y, w, h, dw, dh);
-	printPreHook->ResetMe();
-	printPreHook->waitEvent(1, -1);
-	LOtexture *tex = (LOtexture*)printPreHook->GetParam(6)->GetPtr();
-	printPreHook->ClearParam();
+	LOShareEventHook ev(LOEventHook::CreateScreenShot(x, y, w, h, dw, dh));
+	imgeModule->waitEventQue.push_N_back(ev);
+	ev->waitEvent(1, -1);
+	LOtexture *tex = (LOtexture*)ev->GetParam(6)->GetPtr();
+	ev->ClearParam();
 	return tex;
 }
 
 
-void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
+int LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 	SDL_Rect src, dst;
 	src.x = e->GetParam(0)->GetInt();
 	src.y = e->GetParam(1)->GetInt();
@@ -495,24 +499,30 @@ void LOImageModule::ScreenShotCountinue(LOEventHook *e) {
 	dst.h = e->GetParam(5)->GetInt();
 
 	//要截取的是渲染器的位置，因此要根据缩放位置计算
-	src.x = G_gameScaleX * src.x; src.y = G_gameScaleY * src.y;
-	src.w = G_gameScaleX * src.w; src.h = G_gameScaleY * src.w;
+	//src.x = G_gameScaleX * src.x; src.y = G_gameScaleY * src.y;
+	//src.w = G_gameScaleX * src.w; src.h = G_gameScaleY * src.w;
 	if (src.w > 0 && src.h > 0 && dst.w > 0 && dst.h > 0) {
 		//创建一个用于接收画面的纹理
+		//FatalError("wort at ScreenShotCountinue()");
 		LOtexture *tex = new LOtexture();
 		tex->CreateDstTexture(dst.w, dst.h, SDL_TEXTUREACCESS_TARGET);
-		//把画面帧缩放转移到缓冲纹理中
+
+		////把画面帧缩放转移到缓冲纹理中
+		LOtexture::ResetTextureMode(PrintTextureA);
+		SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
 		SDL_SetRenderTarget(render, tex->GetTexture());
 		SDL_RenderClear(render);
-		SDL_RenderCopy(render, effectTex->GetTexture(), &src, &dst);
+		SDL_RenderCopy(render, PrintTextureA, &src, &dst);
 		//从GPU拷贝数据到内存，必须在主线程中，因为涉及到纹理锁定
 		tex->CopyTextureToSurface(true);
-
+		//LOString s("6666.bmp");
+		//tex->SaveSurface(&s);
 		e->PushParam(new LOVariant(tex));
 	}
 	else e->PushParam(new LOVariant((void*)0));
 
 	e->FinishMe();
+	return LOEventHook::RUNFUNC_FINISH;
 }
 
 

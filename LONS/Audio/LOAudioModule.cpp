@@ -1,4 +1,4 @@
-/*
+﻿/*
 //音频部分
 */
 #include "../etc/LOEvent1.h"
@@ -167,7 +167,7 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 
 	inputChannelSafe(channel, aue);
 	if (aue->isAvailable()) {
-		channelActiveFlag |= (1 << (int64_t)channel);
+		channelActiveFlag |= ((int64_t)1 << (int64_t)channel);
 		aue->Play(0);
 	}
 	else if (isSePalyBgmDown()) {

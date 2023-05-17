@@ -163,7 +163,7 @@ public:
 	bool loadSpCoreWith(LOLayerDataBase *bak, LOString &tag, int x, int y, int alpha,int eff);
 
 	LOtexture* ScreenShot(int x, int y, int w, int h, int dw, int dh);
-	void ScreenShotCountinue(LOEventHook *e);
+	int ScreenShotCountinue(LOEventHook *e);
 	LOtextureBase* SurfaceFromFile(LOString *filename);
 	int RefreshFrame(double postime);        //刷新帧显示
 
@@ -192,7 +192,7 @@ public:
 	int RunFuncVideoFinishAfter(LOEventHook *hook);
 
 	LOEffect* GetEffect(int id);
-	void PrepareEffect(LOEffect *ef, const char *printName);
+	void PrepareEffect(LOEffect *ef);
 	bool ContinueEffect(LOEffect *ef, const char *printName, double postime);
 	int DoMustEvent(int val);
 
@@ -330,9 +330,9 @@ private:
 	LOString titleStr;
 
 	//抓取图像的遮片
-	LOShareTexture effectTex;
+	//LOShareTexture effectTex;
 	//遮片纹理
-	LOShareTexture effmakTex;
+	//LOShareTexture effmakTex;
 	Uint32 tickTime;
 
 	void ResetViewPort();
