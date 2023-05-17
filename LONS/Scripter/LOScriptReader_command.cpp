@@ -1,4 +1,4 @@
-/*
+﻿/*
 //基本的命令实现
 */
 #include "LOScriptReader.h"
@@ -549,20 +549,19 @@ int LOScriptReader::movCommand(FunctionInterface *reader) {
 //    if (reader->GetCurrentLine() == 62) {
 //        int bbk = 1;
 //    }
-
-	ONSVariableRef *v1 = ParseVariableBase(false);
+	std::unique_ptr<ONSVariableRef> v1(ParseVariableBase(false));
+	std::unique_ptr<ONSVariableRef> v2;
 	if (!v1->isRef()) {
 		FatalError("[%s] command not start variable!");
 		return RET_ERROR;
 	}
 	while (NextComma(true)) {
-		ONSVariableRef *v2 = ParseVariableBase(v1->isStrRef());
+		v2.reset(ParseVariableBase(v1->isStrRef()));
 		if (!v2) {
 			FatalError("[%s] command Expression error!");
 			return RET_ERROR;
 		}
-		v1->SetValue(v2);
-		delete v2;
+		v1->SetValue(v2.get());
 		v1->NextNSid();
 	}
 	return RET_CONTINUE;
