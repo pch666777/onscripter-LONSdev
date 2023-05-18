@@ -1,4 +1,4 @@
-#include "LOScriptReader.h"
+﻿#include "LOScriptReader.h"
 #include "../etc/LOIO.h"
 #include "../etc/LOTimer.h"
 #include "../etc/LOMessage.h"
@@ -1017,6 +1017,8 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 	PopRPNstackUtill(&s1, s2, '\0');
 	if (!s2->top() || !s2->top()->isOperator())
 		FatalError("Expression error");
+	
+	s1.clear(true);
 	return buf;
 }
 
