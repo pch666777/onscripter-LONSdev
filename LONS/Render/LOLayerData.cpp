@@ -1,4 +1,4 @@
-/*
+﻿/*
 //存放图层的基本信息
 */
 
@@ -205,6 +205,10 @@ bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
 		showHeight = texture->baseH();
 		upflags |= (UP_SHOWW | UP_SHOWH | UP_SRCX | UP_SRCY | UP_SHOWTYPE);
 		return true;
+	}
+	else if (texture && texture->isCmdTexture()) {
+		//命令式纹理不会产生错误
+		cellNum = ce;
 	}
 	else {
 		cellNum = 0;

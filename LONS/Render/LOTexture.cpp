@@ -237,7 +237,6 @@ LOShareBaseTexture& LOtexture::addNewEditTexture(LOString &fname, int w, int h, 
 	return addTextureBaseToMap(s, new LOtextureBase(tx));
 }
 
-
 //这个函数有一个隐含的条件：触发函数说明脚本线程正在lsp或者csp中
 //而渲染线程只有在print才会调整图层，触发此函数，因此它是线程安全的
 void LOtexture::notUseTextureBase(LOShareBaseTexture &base) {
@@ -280,7 +279,6 @@ void LOtexture::NewTexture() {
 	bw = bh = 0;
 	expectRect = { 0,0,0,0 };
 	actualRect = { 0,0,0,0 };
-	isEdit = false;
 	isRef = false;
 	texturePtr = nullptr;
 	surfacePtr = nullptr;
@@ -333,12 +331,12 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 		if (texturePtr) return true;
 		if (!surfacePtr) return false;
 
-		if (isEdit) {
+		if (isEdit()) {
 			texturePtr = CreateTexture(LOtextureBase::render, surfacePtr->format->format, SDL_TEXTUREACCESS_STREAMING, surfacePtr->w, surfacePtr->h);
 			//复制纹理，surface与texture是同一种格式
 			void *dst;
 			int pitch;
-			SDL_LockTexture(texturePtr, nullptr, &dst, &pitch);
+			int ret = SDL_LockTexture(texturePtr, nullptr, &dst, &pitch);
 			//文字模式是在动作过程中复制的
 			if (!isTextAction()) {
 				for (int line = 0; line < surfacePtr->h; line++) {
@@ -506,6 +504,7 @@ void LOtexture::TextData::ClearWords() {
 bool LOtexture::CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fontName) {
 	resetSurface();
 	if (!s || !style || !fontName) return false;
+	//创建文字描述总是会重置文字描述扩展数据
 	if (!textData) textData.reset(new TextData());
 	LOFont *font = LOFont::CreateFont(*fontName);
 	if (!font) return false;
@@ -692,7 +691,9 @@ void LOtexture::GetTextSurfaceSize(int *width, int *height) {
 
 
 void LOtexture::RenderTextSimple(int x, int y, SDL_Color color) {
-	if (!surfacePtr || !textData) return;
+	if (!surfacePtr) return;
+	if (!textData) return;
+
 	x += abs(Xfix);
 	y += abs(Yfix);
 	SDL_Rect dstR, srcR;
@@ -832,19 +833,44 @@ void LOtexture::setEmpty(int w, int h) {
 }
 
 
-void LOtexture::CreateSimpleColor(int w, int h, SDL_Color color) {
+void LOtexture::CreateSimpleColor(int w, int h) {
 	resetSurface();
+	useflag = 0;
 	isRef = false;
 	surfacePtr = CreateRGBSurfaceWithFormat(0, w, h, 8, SDL_PIXELFORMAT_INDEX8);
+}
+
+
+bool LOtexture::RenderSimpleColor(SDL_Rect *re, uint8_t index, SDL_Color c) {
+	SDL_Rect dst;
+	if (re) dst = *re;
+	else dst = { 0,0, baseW(), baseH() };
+	if (!surfacePtr || !surfacePtr->format->palette) return false;
+
+	if (dst.x < 0) dst.x = 0;
+	if (dst.y < 0) dst.y = 0;
+	if (dst.x + dst.w > surfacePtr->w) dst.w = surfacePtr->w - dst.x;
+	if (dst.y + dst.h > surfacePtr->h) dst.h = surfacePtr->h - dst.y;
+	if (dst.w <= 0 || dst.h <= 0) return false;
+
 	SDL_Palette *pale = surfacePtr->format->palette;
-	pale->colors[0] = color;
-	pale->colors[255] = color;
+	pale->colors[index] = c;
+
+	SDL_LockSurface(surfacePtr);
+	for (int line = dst.y; line < dst.y + dst.h && line < surfacePtr->h; line++) {
+		char *buf = (char*)surfacePtr->pixels + line * surfacePtr->pitch;
+		buf += dst.x;
+		memset(buf, index, dst.w);
+	}
+	SDL_UnlockSurface(surfacePtr);
+	return true;
 }
 
 
 int LOtexture::RollTextTexture(int start, int end) {
 	//不能运行的，直接相当于到终点
-	if (!texturePtr || !isEdit || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
+	//if (!texturePtr || !isEdit() || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
+	if (!textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
 	if (end < start || end <= 0) return RET_ROLL_FAILD;
 
 	int startLine, startPos, endLine, endPos;
@@ -1058,4 +1084,27 @@ void LOtexture::ResetTextureMode(SDL_Texture *tex) {
 		SDL_SetTextureColorMod(tex, r, g, b);
 		SDL_SetTextureAlphaMod(tex, a);
 	}
+}
+
+
+LOtexture::CmdData::CmdData(){
+	cmd = grounp = 0;
+	lineWidth = 1;
+	A[0] = A[1] = B[0] = B[1] = 0.0f;
+}
+
+
+void LOtexture::CreateCmdTexture(int w, int h) {
+	resetSurface();
+	useflag = 0;
+	setFlags(USE_TEXTURE_CMD);
+	bw = w;
+	bh = h;
+}
+
+
+bool LOtexture::AddDrawCmd(CmdData &cm) {
+	if (!isCmdTexture()) return false;
+	cmdList.push_back(cm);
+	return true;
 }

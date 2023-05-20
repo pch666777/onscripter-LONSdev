@@ -1029,7 +1029,8 @@ void LOImageModule::TextureFromStrspLine(LOLayerDataBase *bak, LOString *s){
     bak->SetNewFile(texture);
 }
 
-//从标记中生成色块
+//从标记中生成色块，考虑到一些旋转、缩放的使用，还是直接使用位图比较好？
+//会比较浪费内存和显存
 void LOImageModule::TextureFromColor(LOLayerDataBase *bak, LOString *s) {
 	const char *buf = s->SkipSpace(s->c_str());
 
@@ -1038,19 +1039,64 @@ void LOImageModule::TextureFromColor(LOLayerDataBase *bak, LOString *s) {
 	int h = s->GetInt(buf);
 
 	while (buf[0] != '#' && buf[0] != '\0') buf++;
-	//无效的
-	if (buf[0] != '#') return;
-	buf++;
-	int color = s->GetHexInt(buf, 6);
-	SDL_Color cc;
-	cc.r = (color >> 16) & 0xff;
-	cc.g = (color >> 8) & 0xff;
-	cc.b = color & 0xff;
-	cc.a = 255;
+
+	//可以做成3色按钮
+	SDL_Color cc[3];
+	int count = 0;
+	while (buf[0] != 0) {
+		if (buf[0] != '#') break;
+		buf++;
+		int color = s->GetHexInt(buf, 6);
+		cc[count].r = (color >> 16) & 0xff;
+		cc[count].g = (color >> 8) & 0xff;
+		cc[count].b = color & 0xff;
+		cc[count].a = 255;
+		count++;
+	}
+
+	//某些情况下，需要产生混合图层，虽然不合理，但是确实有游戏这样使用
+	//类似于支持透明通道的jpg
+	buf = bak->buildStr->c_str();
+	if (count == 2 && buf[0] == ':' && buf[1] == 'a') {
+		count = 1;
+		int alpha = (cc[1].r + cc[1].g + cc[1].b) / 3;
+		if (alpha > 255) alpha = 255;
+		else if (alpha < 0) alpha = 0;
+		cc[0].a = alpha & 0xff;
+		w /= 2;
+	}
 
 	LOShareTexture texture(new LOtexture());
 	bak->SetNewFile(texture);
-	texture->CreateSimpleColor(w, h, cc);
+
+	//填充优化，转变为绘图纹理
+	SDL_Rect re = { 0,0, w, h };
+	texture->CreateCmdTexture(w, h);
+	for (int ii = 0; ii < count; ii++) {
+		LOtexture::CmdData cm;
+		cm.cmd = LOtexture::CMD_DRAW_FILL;
+		//宽度和高度
+		cm.B[0] = w / count;
+		cm.B[1] = h;
+		//x y
+		cm.A[0] = 0;
+		cm.A[1] = 0;
+
+		cm.drawColor = cc[ii];
+		cm.grounp = ii;
+		texture->AddDrawCmd(cm);
+	}
+
+	//填充颜色
+	//SDL_Rect re = { 0,0, w, h };
+	//texture->CreateSimpleColor(w, h);
+	//for (int ii = 0; ii < count; ii++) {
+	//	re.w = w / count;
+	//	re.x = re.w * ii;
+	//	texture->RenderSimpleColor(&re, ii, cc[ii]);
+	//}
+	//LOString ss("666.bmp");
+	//texture->SaveSurface(&ss);
 	return ;
 }
 
@@ -1325,7 +1371,8 @@ LOActionText* LOImageModule::LoadDialogText(LOString *s, int pageEnd, bool isAdd
     loadSpCore(info, tag, sayWindow.textX, destY, 255, true);
 	if (!info->bak.texture) return nullptr ;
 
-	info->bak.texture->isEdit = true;
+	//info->bak.texture->isEdit = true;
+	info->bak.texture->setFlags(LOtexture::USE_TEXTURE_EDIT);
 	info->bak.texture->setFlags(LOtexture::USE_TEXTACTION_MOD);
 
 	LOActionText *ac = (LOActionText*)info->bak.GetAction(LOAction::ANIM_TEXT);

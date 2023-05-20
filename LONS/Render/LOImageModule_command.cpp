@@ -36,9 +36,9 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	reader->ExpandStr(tag);
 	LeveTextDisplayMode();
 
-	if (ids[0] == 501) {
-		int bbk = 0;
-	}
+	//if (ids[0] == 501) {
+	//	int bbk = 0;
+	//}
 
 	//已经在队列里的需要释放
 	//

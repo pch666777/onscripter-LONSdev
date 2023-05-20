@@ -124,6 +124,7 @@ public:
 	void GetLayerUsedState(char *bin, int *ids);
 
 	void ShowMe(SDL_Renderer *render);
+	void ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo);
 	void DoAction(LOLayerData *data, Uint32 curTime);
 	void DoNsAction(LOLayerData *data, LOActionNS *ai,  Uint32 curTime);
 	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);

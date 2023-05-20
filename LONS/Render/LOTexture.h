@@ -85,6 +85,13 @@ public:
 		USE_BLEND_MOD = 2,
 		USE_ALPHA_MOD = 4,
 		USE_TEXTACTION_MOD = 8,
+
+		//文字描述纹理
+		USE_TEXTURE_TEXT = 0x20000000,
+		//绘图命令式纹理
+		USE_TEXTURE_CMD = 0x40000000,
+		//可编辑式纹理
+		USE_TEXTURE_EDIT = 0x80000000,
 	};
 
 	enum {
@@ -114,6 +121,12 @@ public:
 		RET_ROLL_END = 1
 	};
 
+	enum {
+		CMD_DRAW_RECT = 1,
+		CMD_DRAW_FILL = 2,
+	};
+
+
 	struct TextData{
 		std::vector<LOLineDescribe*> lineList;
 		std::vector<LOTextDescribe*> textList;
@@ -124,6 +137,17 @@ public:
 		void ClearLines();
 		void ClearTexts();
 		void ClearWords();
+	};
+
+	//绘图命令
+	struct CmdData{
+		CmdData();
+		uint8_t cmd;  //绘图命令
+		uint8_t grounp; //分组
+		int16_t lineWidth;  //线宽
+		SDL_Color drawColor; //画笔颜色
+		float A[2];  //起点/圆心/左上角
+		float B[2];  //终点/半径/宽、高
 	};
 
 	struct TextRoll{
@@ -159,7 +183,10 @@ public:
 	void setFlags(int f) { useflag |= f; }
 	void unSetFlags(int f) { useflag &= (~f); }
 	bool isTextAction() { return useflag & USE_TEXTACTION_MOD; }
-	bool isTextTexture() { if (textData) return true; else return false; }
+	bool isTextTexture() { return useflag & USE_TEXTURE_TEXT; }
+	bool isCmdTexture() { return useflag & USE_TEXTURE_CMD; }
+	bool isEdit() { return useflag & USE_TEXTURE_EDIT; }
+	
 	void SaveSurface(LOString *fname) ;  //debug use
 
 	SDL_Surface *getSurface();
@@ -191,7 +218,16 @@ public:
     bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
 
 	//创建色块
-	void CreateSimpleColor(int w, int h, SDL_Color color);
+	void CreateSimpleColor(int w, int h);
+	//将色块渲染到目标上
+	bool RenderSimpleColor(SDL_Rect *re, uint8_t index, SDL_Color c);
+
+	//创建一个命令绘图纹理
+	void CreateCmdTexture(int w, int h);
+
+	//添加一个矩形绘图命令
+	bool AddDrawCmd(CmdData &cm);
+
 
 	//创建一个纹理
 	void CreateDstTexture(int w, int h, int access);
@@ -213,9 +249,10 @@ public:
 	//位置纠正，比如<pos = -12>体现为左移12个像素，这两个参数对文本纹理才有意义
 	int16_t Xfix;
 	int16_t Yfix;
-	bool isEdit;
+	//bool isEdit;
 	//文本纹理的信息
 	std::unique_ptr<TextData> textData;
+	std::vector<CmdData> cmdList;
 private:
 	void NewTexture();
 
@@ -231,7 +268,7 @@ private:
 
 	//是否是对baseTexture的引用，如果不是删除的时候应该删除surface和texture
 	bool isRef;
-	int useflag;      //颜色叠加，混合模式，透明模式，低16位表面使用了那种效果，高16位表明具体的混合模式
+	int useflag;      //颜色叠加，混合模式，透明模式，低16位表明使用了哪种效果，高16位表明具体的混合模式
 	SDL_Color color;  //RGB的值表示颜色叠加的值，A的值表示透明度
 	SDL_BlendMode blendmodel;
 
@@ -247,6 +284,11 @@ private:
 	//原始宽度和高度
 	int16_t bw;
 	int16_t bh;
+
+	//纹理的类型
+	//int16_t texType;
+	//纹理的标记
+	//int16_t texFlags;
 
 	//基础纹理
 	LOShareBaseTexture baseTexture;

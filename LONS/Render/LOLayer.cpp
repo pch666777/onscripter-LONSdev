@@ -1,4 +1,4 @@
-#include "LOLayer.h"
+﻿#include "LOLayer.h"
 #include "LOLayerData.h"
 
 
@@ -318,37 +318,6 @@ bool LOLayer::isChildVisible() {
 	return data->cur.isChildVisiable();
 }
 
-//void LOLayer::upDataBase(LOLayerData *data) {
-//	LOLayerDataBase *dst = (LOLayerDataBase*)curInfo.get();
-//	LOLayerDataBase *src = (LOLayerDataBase*)data;
-//	*dst = *src;
-//	if (data->btnStr) curInfo->btnStr.reset(new LOString(*(data->btnStr.get())));
-//}
-//
-//void LOLayer::upDataEx(LOLayerData *data) {
-//	if (data->maskName) curInfo->maskName.reset(new LOString(*data->maskName));
-//	else curInfo->maskName.reset();
-//	if (data->actions) curInfo->actions.reset(new std::vector<LOShareAction>(*data->actions));
-//	else curInfo->actions.reset();
-//}
-
-
-//void LOLayer::upDataNewFile() {
-	//curInfo->SetDelete();
-	//upDataBase(bakInfo.get());
-	//upDataEx(bakInfo.get());
-	////有部分需要手动的
-	//if(bakInfo->keyStr) curInfo->keyStr.reset(new LOString(*bakInfo->keyStr));
-	//if(bakInfo->buildStr) curInfo->buildStr.reset(new LOString(*bakInfo->buildStr));
-	//curInfo->texture = bakInfo->texture;
-
-	////在前台显示了
-	//curInfo->flags |= LOLayerData::FLAGS_ISFORCE;
-	////后台数据要去掉newfile
-	//bakInfo->flags &= (~LOLayerData::FLAGS_NEWFILE);
-//	LOLayer::LinkLayerLeve(this);
-//	isinit = false;
-//}
 
 void LOLayer::UpDataToForce() {
 	bool isnew = data->bak.isNewFile();
@@ -364,11 +333,12 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	/*bool debugbreak = false ;*/
 	//全透明或者不可见，不渲染对象
 	//LONS::printInfo("alpha:%d visiable:%d", ptr[LOLayerInfo::alpha], ptr[LOLayerInfo::visiable]);
-	//if (layerType == LOLayer::LAYER_NSSYS && id[0] == LOLayer::IDEX_NSSYS_EFFECT) {
+
+	if (!isVisible()) return;
+	//if (layerType == LOLayer::LAYER_SPRINT && id[0] == 501) {
 	//	int bbk = 1;
 	//}
 
-	if (!isVisible()) return;
 	LOLayerDataBase *curInfo = &data->cur;
 
 	SDL_Rect src;
@@ -383,10 +353,17 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		isinit = true;
 	}
 	//不可渲染的错误
-	if (!curInfo->texture->GetTexture()) return;
+	if (!curInfo->texture->isCmdTexture() && !curInfo->texture->GetTexture()) return;
 
 	if (data->cur.isShowScale() || data->cur.isShowRotate()) is_ex = true;
 	if (isFaterCopyEx()) is_ex = true;
+
+	//采用绘图命令的
+	if (curInfo->texture->isCmdTexture()) {
+		if (is_ex) FatalError("CmdTexture can't be scale or rotation!");
+		else ShowMeCmd(render, curInfo);   //显示绘图命令
+		return;
+	}
 
 	curInfo->texture->setForceAplha(curInfo->alpha);
 	curInfo->texture->activeFlagControl();
@@ -459,6 +436,42 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	vec[5] = vec[2];
 
 	RenderBaseA(render, curInfo->texture.get(), vec, 6);
+}
+
+
+void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
+	Uint8 r, g, b, a;
+	SDL_FRect dst;
+	int alpha;
+
+	SDL_GetRenderDrawColor(render, &r, &g, &b, &a);
+	for (int ii = 0; ii < curInfo->texture->cmdList.size(); ii++) {
+		LOtexture::CmdData *cmd = &curInfo->texture->cmdList.at(ii);
+		//第几格动画就是第几分组
+		if (cmd->grounp == curInfo->cellNum) {
+			//透明度相当于画笔的透明乘上纹理设定的透明
+			alpha = curInfo->alpha;
+			if (alpha < 0) alpha = 255;
+			alpha = alpha * cmd->drawColor.a / 255;
+			if (alpha > 255) alpha = 255;
+			else if (alpha < 0) alpha = 0;
+
+			SDL_SetRenderDrawColor(render, cmd->drawColor.r, cmd->drawColor.g, cmd->drawColor.b, alpha & 0xff);
+			SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
+
+			switch (cmd->cmd){
+			case LOtexture::CMD_DRAW_FILL:
+				dst.x = cmd->A[0]; dst.y = cmd->A[1];
+				dst.w = cmd->B[0]; dst.h = cmd->B[1];
+				SDL_RenderFillRectF(render, &dst);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	SDL_SetRenderDrawColor(render, r, g, b, a);
 }
 
 
