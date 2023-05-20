@@ -1,4 +1,4 @@
-/*
+﻿/*
 //这是一个接口类
 */
 
@@ -394,6 +394,7 @@ public:
 	static LOShareEventHook printPreHook;    //要求抓取图像
 	static LOShareEventHook printHook;       //要求等待print完成
 	static bool errorFlag;
+	static bool breakFlag;
 
 	static LOString userGoSubName[3];
 	//存储流

@@ -1,4 +1,4 @@
-/*
+﻿/*
 //这是一个接口类，所有命令都继承这个类
 //运行时优先尝试脚本类-->图像类-->音频类
 */
@@ -14,6 +14,7 @@ FunctionInterface *FunctionInterface::fileModule = NULL;    //文件系统
 BinArray *FunctionInterface::GloVariableFS = new BinArray(1024, true);
 BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 bool FunctionInterface::errorFlag = false;
+bool FunctionInterface::breakFlag = false;
 
 LOShareEventHook FunctionInterface::printPreHook(new LOEventHook());
 LOShareEventHook FunctionInterface::printHook(new LOEventHook());

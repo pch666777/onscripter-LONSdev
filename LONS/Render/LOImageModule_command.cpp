@@ -1,4 +1,4 @@
-/*
+﻿/*
 //图像模块命令实现
 */
 #include "../etc/LOString.h"
@@ -24,6 +24,7 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	}
 
 	LOString tag = reader->GetParamStr(1 + fixpos);
+
 	int pcount = reader->GetParamCount();
 	int xx = 0;
 	if (pcount > fixpos + 2) xx = reader->GetParamInt(2 + fixpos);
@@ -34,6 +35,10 @@ int LOImageModule::lspCommand(FunctionInterface *reader) {
 	
 	reader->ExpandStr(tag);
 	LeveTextDisplayMode();
+
+	if (ids[0] == 501) {
+		int bbk = 0;
+	}
 
 	//已经在队列里的需要释放
 	//
@@ -452,14 +457,18 @@ int LOImageModule::getspposexCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::vspCommand(FunctionInterface *reader) {
-	if (reader->GetCurrentLine() == 434) {
-		int bbk = 0;
-	}
+	//if (reader->GetCurrentLine() == 434) {
+	//	int bbk = 0;
+	//}
 
 	LOLayer::SysLayerType sptype = LOLayer::LAYER_SPRINT;
 	if (reader->isName("vsp2")) sptype = LOLayer::LAYER_SPRINTEX;
 
 	LeveTextDisplayMode();
+
+	//if (reader->GetParamInt(0) == 501) {
+	//	int bbk = 1;
+	//}
 
 	VspCore(GetFullID(sptype, reader->GetParamInt(0), 255,255), reader->GetPrintName(), reader->GetParamInt(1));
 	return RET_CONTINUE;
@@ -602,6 +611,11 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	//btnwait对右键和没有点击任何按钮均有反应，因此准备一个空白图层位于底部，以便进行反应
 	//exbtn_d实际上就设置这空白层的btnstr
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
+
+	//if (reader->GetCurrentLine() == 40148) {
+	//	int bbk = 0;
+	//}
+
 
 	LOLayerData *data = CreateNewLayerData(fullid, prin_name);
 	LOString s("**;_?_empty_?_");

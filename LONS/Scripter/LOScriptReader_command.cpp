@@ -426,9 +426,9 @@ int LOScriptReader::gotoCommand(FunctionInterface *reader) {
 		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
 		return RET_ERROR;
 	}
-//    if(reader->GetCurrentLine() == 39827){
-//        int bbk = 1;
-//    }
+    //if(reader->GetCurrentLine() == 40152 || reader->GetCurrentLine() == 40151){
+    //    int bbk = 1;
+    //}
 
 	LOScriptPoint *p = reader->GetParamLable(0);
 	if (p) {
@@ -546,9 +546,9 @@ int LOScriptReader::lenCommand(FunctionInterface *reader) {
 }
 
 int LOScriptReader::movCommand(FunctionInterface *reader) {
-//    if (reader->GetCurrentLine() == 62) {
-//        int bbk = 1;
-//    }
+    //if (reader->GetCurrentLine() == 58) {
+    //    int bbk = 1;
+    //}
 	std::unique_ptr<ONSVariableRef> v1(ParseVariableBase(false));
 	std::unique_ptr<ONSVariableRef> v2;
 	if (!v1->isRef()) {

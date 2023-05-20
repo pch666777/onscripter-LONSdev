@@ -727,11 +727,13 @@ bool LOScriptReader::isName(const char* name) {
 
 
 ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrAlias) {
-	LOStack<ONSVariableRef> s2;
+	std::vector<LOUniqVariableRef> s2;
 	buf = GetRPNstack2(&s2, buf, isstrAlias);
+	//buf = GetRPNstack2(&s2, buf, isstrAlias);
     //auto ss = TransformStack(&s2);
 	CalculatRPNstack(&s2);
-	return *(s2.begin());
+	ONSVariableRef *ref = (*s2.begin()).release();
+	return ref;
 }
 
 
@@ -900,16 +902,16 @@ int LOScriptReader::GetAliasRef(const char *&buf, bool isstr, int &out) {
 }
 
 
-const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstrAlia) {
-	LOStack<ONSVariableRef> s1;
-	std::unique_ptr<ONSVariableRef> v;
+const char* LOScriptReader::GetRPNstack2(std::vector<LOUniqVariableRef> *s2, const char *buf, bool isstrAlia) {
+	std::vector<LOUniqVariableRef> s1;
+	LOUniqVariableRef v;
 	int curAllow, tint, curType, tdouble;
 	LOString ts;
 
 	bool isfirst = true;
 	bool strAlia = isstrAlia;
 	bool isOpAdd = false;
-	s1.push(new ONSVariableRef());   //插入一个空对象
+	s1.emplace_back(new ONSVariableRef());   //插入一个空对象
 	curType = 0;
 
 	while (true) {
@@ -952,7 +954,8 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 				if (curType == ONSVariableRef::YF_Negative) v->SetImVal(scriptbuf->GetRealNe(buf));
 				else v->SetImVal(scriptbuf->GetReal(buf));
 			}
-			s2->push(v.release()); //已经经过别名解释
+			s2->push_back(std::move(v)); //已经经过别名解释
+			//s2->push(v.release()); 
 		}
 		else if (curType & ONSVariableRef::YF_Str) {
 			//文本处理
@@ -960,31 +963,31 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 				ts = scriptbuf->GetString(buf);
 				v->SetImVal(&ts);
 			}
-			s2->push(v.release());
+			s2->push_back(std::move(v));
 		}
 		else if (curType & (ONSVariableRef::YF_IntRef | ONSVariableRef::YF_StrRef | ONSVariableRef::YF_Array | ONSVariableRef::YF_Oper)) {
 			//符号处理
 			buf += v->SetOperator(buf);
 			if (v->GetOperator() == '+') isOpAdd = true;
 			//如果是数组，则压入一个特殊符号
-			if (curType == ONSVariableRef::YF_Array) s2->push(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG, 0));
+			if (curType == ONSVariableRef::YF_Array) s2->emplace_back(new ONSVariableRef(ONSVariableRef::TYPE_ARRAY_FLAG, 0));
 			auto iter = s1.end() - 1;
-			if (v->GetOrder() > (*iter)->GetOrder()) s1.push(v.release());  //当前符号优先级高，则直接入临时，相当于在正式栈优先执行
+			if (v->GetOrder() > (*iter)->GetOrder()) s1.push_back(std::move(v));  //当前符号优先级高，则直接入临时，相当于在正式栈优先执行
 			//%$是平级的，因此需要直接加入
-			else if (v->GetOrder() == (*iter)->GetOrder() && v->GetOrder() == ONSVariableRef::ORDER_GETVAR) s1.push(v.release());
+			else if (v->GetOrder() == (*iter)->GetOrder() && v->GetOrder() == ONSVariableRef::ORDER_GETVAR) s1.push_back(std::move(v));
 			else {
 				//当前优先级低于临时栈的
 				while (v->GetOrder() <= (*iter)->GetOrder() && (*iter)->GetOperator() != '(' &&
 					(*iter)->GetOperator() != '[') {
-					s2->push(*iter);
+					s2->push_back( std::move(*iter));
 					s1.erase(iter--);
 				}
-				s1.push(v.release());
+				s1.push_back(std::move(v));
 			}
 		}
 		else if (curType & ONSVariableRef::YF_Left_PA) { //'('
 			buf += v->SetOperator(buf);
-			s1.push(v.release());
+			s1.push_back(std::move(v));
 		}
 		else if (curType & ONSVariableRef::YF_Right_PA) {  //')'
 			buf++;
@@ -994,7 +997,7 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else if (curType & ONSVariableRef::YF_Left_SQ) { //'['
 			buf += v->SetOperator(buf);
 			PopRPNstackUtill(&s1, s2, '?');
-			s1.push(v.release());
+			s1.push_back(std::move(v));
 		}
 		else if (curType & ONSVariableRef::YF_Right_SQ) {//']'
 			buf++;
@@ -1010,24 +1013,24 @@ const char* LOScriptReader::GetRPNstack2(LOStack<ONSVariableRef> *s2, const char
 		else strAlia = false; //有符号之后就只能是整数别名
 
 		//已经push的v都应该为 nullptr ;
-		v.release();
+		v.reset();
 		isOpAdd = false;
 	}
     //行首括号、多层括号会出错
 	PopRPNstackUtill(&s1, s2, '\0');
-	if (!s2->top() || !s2->top()->isOperator())
+	if (!s2->back() || !s2->back()->isOperator())
 		FatalError("Expression error");
 	
-	s1.clear(true);
 	return buf;
 }
 
 
 //计算逆波兰式
-void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
+void LOScriptReader::CalculatRPNstack(std::vector<LOUniqVariableRef> *stack) {
 	auto iter = stack->begin();
 	int docount;  //操作数的个数
-	ONSVariableRef *op,*v1 = nullptr,*v2 = nullptr;
+	ONSVariableRef *op, *v1, *v2;
+	op = v1 = v2 = nullptr;
 
 	//if (currentLable->c_line == 47) {
 	//	int bbq = 1;
@@ -1042,7 +1045,7 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
     //return ;
 
 	while (iter != stack->end()) {
-		op = (*iter);
+		op = (*iter).get();
 		if (op->isOperator()) {
 			//运算符位于首个符号是不可能的
 			if (iter == stack->begin()) 
@@ -1051,37 +1054,37 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 			docount = op->GetOpCount();
 			//检查操作数的数量是否还符合要求
 			if (stack->size() < docount + 1) {
-				FatalError("[ %c ] Insufficient operands required by operator!", (*iter)->GetOperator());
+				FatalError("[ %c ] Insufficient operands required by operator!", op->GetOperator());
 				return;
 			}
 			else if (docount == 1) {
-				v1 = *(iter - 1);
-				if ((*iter)->GetOperator() == '?') {
+				v1 = (*(iter - 1)).get();
+				if (op->GetOperator() == '?') {
 					//找到数组操作的起始标记
 					while ( (*iter)->isArrayFlag() == false) iter--;
-					stack->erase(iter);   //删除数组标记
-					v1 = (*iter);  //被操作的数组编号
+					iter = stack->erase(iter);   //删除数组标记
+					v1 = (*iter).get();  //被操作的数组编号
 					v1->DownRefToIm(ONSVariableRef::TYPE_REAL_IM);
 					v1->UpImToRef(ONSVariableRef::TYPE_ARRAY_REF);
 					v1->InitArrayIndex();
 					iter++;
 					for (int ii = 0; ii < MAXVARIABLE_ARRAY && !(*iter)->isOperator(); ii++) {
 						v1->SetArrayIndex((int)(*iter)->GetReal(), ii);
-						stack->erase(iter, true);  //删除，同时指向下一个指针
+						iter = stack->erase(iter);  //删除，同时指向下一个指针
 					}
 				}
 				else if((*iter)->GetOperator() == '$') v1->UpImToRef(ONSVariableRef::TYPE_STR_REF);
 				else if ((*iter)->GetOperator() == '%') v1->UpImToRef(ONSVariableRef::TYPE_INT_REF);
 				else FatalError("%s","LOScriptReader::CalculatRPNstack() unknow docount = 1 type!");
-				stack->erase(iter, true);  //单操作数只删除符号
+				iter = stack->erase(iter);  //单操作数只删除符号
 			}
 			else{
-				v1 = *(iter - 2);
-				v2 = *(iter - 1);
-				if(!v1->Calculator(v2, (*iter)->GetOperator() ,false )) break;
+				v1 = (*(iter - 2)).get();
+				v2 = (*(iter - 1)).get();
+				if(!v1->Calculator(v2, op->GetOperator() ,false )) break;
 				iter--;  //指向开始删除的位置
-				stack->erase(iter, true); //删除后一个数
-				stack->erase(iter, true); //删除后一个符号
+				iter = stack->erase(iter); //删除后一个数
+				iter = stack->erase(iter); //删除后一个符号
 			}
 		}
 		else iter++;
@@ -1092,20 +1095,20 @@ void LOScriptReader::CalculatRPNstack(LOStack<ONSVariableRef> *stack) {
 	return ;
 }
 
-void LOScriptReader::PopRPNstackUtill(LOStack<ONSVariableRef> *s1, LOStack<ONSVariableRef> *s2, char op) {
+void LOScriptReader::PopRPNstackUtill(std::vector<LOUniqVariableRef> *s1, std::vector<LOUniqVariableRef> *s2, char op) {
 	auto iter = s1->end()-1;
 	while (s1->size() > 1) {
 		if ((*iter)->GetOperator() == op) {
 			if (op != '?') {
-				s1->erase(iter,true);   //抛弃'('  '['
+				s1->erase(iter);   //抛弃'('  '['
 			}
 			return;
 		}
-		s2->push(*iter);
+		s2->push_back(std::move(*iter));
 		s1->erase(iter--);  //符号转移到s2，不删除
 	}
 	if (op == '\0') {
-		s1->clear(true);
+		s1->clear();
 		return;
 	}
 	FatalError("missing match '%c'", op);

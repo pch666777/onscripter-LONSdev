@@ -97,7 +97,15 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 			////////
 			if (isnow) {
 				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayerForce(lyr);
-				else lyr->UpDataToForce();
+				else {
+					//if (scriptModule->GetCurrentLine() == 40148) {
+					//	if(lyr->data->bak.buildStr) 
+					//		SDL_Log("%d,%s\n", lyr->id[0], lyr->data->bak.buildStr->c_str());
+					//	else SDL_Log("%d,%s\n", lyr->id[0], "empty");
+					//	breakFlag = true;
+					//}
+					lyr->UpDataToForce();
+				}
 				//指向下一个
 				iter = map->erase(iter);
 			}

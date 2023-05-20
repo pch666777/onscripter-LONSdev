@@ -1,4 +1,4 @@
-/*
+﻿/*
 //项目地址：https://gitee.com/only998/onscripter-lons
 //邮件联系：pngchs@qq.com
 //编辑时间：2020——2021
@@ -345,10 +345,10 @@ private:
 	//int RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e);
 
 	//const char* GetRPNstack(LOStack<ONSVariableRef> *s2,const char *buf, bool isalias = false);
-	const char* GetRPNstack2(LOStack<ONSVariableRef> *s2, const char *buf, bool isstrAlia);
-	void CalculatRPNstack(LOStack<ONSVariableRef> *stack);
+	const char* GetRPNstack2(std::vector<LOUniqVariableRef> *s2, const char *buf, bool isstrAlia);
+	void CalculatRPNstack(std::vector<LOUniqVariableRef> *stack);
 	//弹出堆栈s1的值到 s2，直到指定符号，如果到最后一个值则产生错误
-	void PopRPNstackUtill(LOStack<ONSVariableRef> *s1, LOStack<ONSVariableRef> *s2, char op);
+	void PopRPNstackUtill(std::vector<LOUniqVariableRef> *s1, std::vector<LOUniqVariableRef> *s2, char op);
 	const char* TryToNextCommand(const char*buf);
 
 

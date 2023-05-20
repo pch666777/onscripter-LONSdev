@@ -494,6 +494,9 @@ void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int de
 		//if (lyr->layerType == LOLayer::LAYER_NSSYS && lyr->id[0] == LOLayer::IDEX_NSSYS_EFFECT + 1) {
 		//	int bbk = 1;
 		//}
+		//if (breakFlag && lyr->id[0] == 501) {
+		//	int bbk = 1;
+		//}
 
 		//在下方的对象先渲染，渲染父对象
 		if (lyr->data->cur.texture) {
