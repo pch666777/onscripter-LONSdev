@@ -426,7 +426,7 @@ int LOScriptReader::gotoCommand(FunctionInterface *reader) {
 		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
 		return RET_ERROR;
 	}
-    //if(reader->GetCurrentLine() == 40152 || reader->GetCurrentLine() == 40151){
+    //if(reader->GetCurrentLine() == 29){
     //    int bbk = 1;
     //}
 

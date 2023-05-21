@@ -329,9 +329,9 @@ bool LOScriptReader::PushParams(const char *param, const char* used) {
 		return true;
 	}
 
-//    if (GetCurrentLine() == 38256) {
-//        int debugint = 0;
-//    }
+    //if (GetCurrentLine() == 29) {
+    //    int debugint = 0;
+    //}
 
 	bool hasnormal, haslabel, hasvariable, mustref, isstr;
 	int allow_type, paramcount = 0;
@@ -732,6 +732,7 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrA
 	//buf = GetRPNstack2(&s2, buf, isstrAlias);
     //auto ss = TransformStack(&s2);
 	CalculatRPNstack(&s2);
+	if (s2.size() == 0) return nullptr;
 	ONSVariableRef *ref = (*s2.begin()).release();
 	return ref;
 }
@@ -748,6 +749,15 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 //	}
 
 	sbuf = buf = scriptbuf->SkipSpace(currentLable->c_buf);
+	//如果立即遇到',' 那么认为是默认值
+	if (buf[0] == ',') {
+		ONSVariableRef *ref = new ONSVariableRef();
+		if (isstr) ref->SetImVal(nullptr);
+		else ref->SetImVal(0.0);
+		currentLable->c_buf = buf;
+		return ref;
+	}
+
 	//遇到立即数或者立即文字跳出循环，别名也是立即数。优先尝试%XX $XX立即数，速度最快
 	//表达式计算功能强大，但是速度比较慢，而且需要更多的内存
 	char op[] = { 0,0,0,0 };
@@ -845,8 +855,20 @@ LOString LOScriptReader::ParseStrVariable() {
 LOString LOScriptReader::ParseLabel(bool istry) {
 	if (NextStartFrom('*')) {
 		while(CurrentOP() == '*')NextAdress();
-		NextNormalWord(true);
-		return LOString(word);
+		//支持数字_，字母，全角文字混合，可能还有别的？
+		LOString tmp;
+		const char *buf = currentLable->c_buf;
+		while (true) {
+			//符合条件的
+			if ((buf[0] >= '0' && buf[0] <= '9') || (buf[0] >= 'a' && buf[0] <= 'z') ||
+				buf[0] >= 'A' && buf[0] <= 'Z' || buf[0] == '_') {
+				tmp.append(buf, 1);
+				buf++;
+			}
+			else break;
+		}
+		currentLable->c_buf = buf;
+		return tmp;
 	}
 	else if (NextStartFrom('$') || NextStartFrom('"')) {
 		LOString tmp = ParseStrVariable();
@@ -1018,7 +1040,7 @@ const char* LOScriptReader::GetRPNstack2(std::vector<LOUniqVariableRef> *s2, con
 	}
     //行首括号、多层括号会出错
 	PopRPNstackUtill(&s1, s2, '\0');
-	if (!s2->back() || !s2->back()->isOperator())
+	if (s2->size() == 0 || !s2->back() || !s2->back()->isOperator())
 		FatalError("Expression error");
 	
 	return buf;
@@ -1393,12 +1415,12 @@ int LOScriptReader::DefaultStep() {
 			for (int ii = 0; ii < bin->Length() - 1; ii++) {
 				buf[ii] ^= 0x84;
 			}
-//            FILE *f = LOIO::GetSaveHandle("00.txt", "wb") ;
-//            if(f){
-//                fwrite(bin->bin, 1, bin->Length(), f);
-//                fflush(f);
-//                fclose(f);
-//            }
+            FILE *f = LOIO::GetSaveHandle("00.txt", "wb") ;
+            if(f){
+                fwrite(bin->bin, 1, bin->Length(), f);
+                fflush(f);
+                fclose(f);
+            }
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
             SDL_Log("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
