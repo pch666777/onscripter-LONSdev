@@ -169,7 +169,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 					//SDL_Log("down at %f, %f", fingerEvent.x, fingerEvent.y) ;
 				}
 			}
-			SDL_Log("point at %f,%f", event->tfinger.x, event->tfinger.y) ;
+			//SDL_Log("point at %f,%f", event->tfinger.x, event->tfinger.y) ;
 			break;
 		case SDL_FINGERUP: //离开触屏
 			if(isFingerEvent && fingerEvent.touchId == event->tfinger.touchId && fingerEvent.fingerId == event->tfinger.fingerId){
@@ -178,7 +178,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 				if(event->tfinger.y - fingerEvent.y > 0.28){ //双指下滑
 					ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
 					SendEventToLayer(ev.get());
-					SDL_Log("right click!");
+					//SDL_Log("right click!");
 				}
 				else if(event->tfinger.x - fingerEvent.x > 0.25){ //快进
 

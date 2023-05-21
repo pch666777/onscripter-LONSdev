@@ -209,11 +209,13 @@ bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
 	else if (texture && texture->isCmdTexture()) {
 		//命令式纹理不会产生错误
 		cellNum = ce;
+		return true ;
 	}
 	else {
 		cellNum = 0;
 		return false;
 	}
+	return false ;
 }
 
 //只设置数，不检查有效性
@@ -600,6 +602,9 @@ void LOLayerData::UpdataToForce() {
 	//最后更新动画格数，因为涉及一些操作
 	if (bak.upflags & LOLayerDataBase::UP_CELLNUM) {
 		cur.cellNum = bak.cellNum;
+		//if(fullid == 368443391){
+		//	int bbk = 0 ;
+		//}
 		cur.SetCell(nullptr, cur.cellNum);
 	}
 

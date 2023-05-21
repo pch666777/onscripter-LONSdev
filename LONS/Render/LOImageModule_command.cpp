@@ -126,7 +126,7 @@ int LOImageModule::printStack(FunctionInterface *reader, int fix) {
 
 
 int LOImageModule::bgCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 400197) {
+	//if (reader->GetCurrentLine() == 39403) {
 	//	int debugbreak = 0;
 	//}
 	
