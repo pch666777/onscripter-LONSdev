@@ -1,4 +1,4 @@
-/*
+﻿/*
 //文件系统模块
 */
 #include "SiYuanCN.h"
@@ -64,9 +64,12 @@ BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 
 	if (!bin) return bin;
 	else if (index.flag == NO_COMPRESSION) return bin;
-	else if (index.flag == LZSS_COMPRESSION) {
+	else if (index.flag == LZSS_COMPRESSION || index.flag == SPB_COMPRESSION) {
 		LOCompressInfo zout;
-		BinArray *zbin = zout.UncompressLZSS(bin, index.compresslen);
+		BinArray *zbin = nullptr;
+		if(index.flag == LZSS_COMPRESSION) zbin = zout.UncompressLZSS(bin, index.compresslen);
+		else if (index.flag == SPB_COMPRESSION) zbin = zout.UncompressSPB(bin, index.compresslen);
+
 		delete bin;
 		return zbin;
 		//LONS::printFormat("LZSS uncompress fail:%s\n", fn->c_str());
@@ -75,6 +78,7 @@ BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 	else {
 		SDL_Log("Unsupported compression type:%s,%d\n", fnl.c_str(), index.flag);
 	}
+	return bin;
 }
 
 

@@ -518,6 +518,7 @@ void LOLayer::SerializeForce(BinArray *bin) {
 	bin->WriteInt(data->fullid);
 
 	//if (layerType == LOLayer::LAYER_DIALOG && id[0] == LOLayer::IDEX_DIALOG_TEXT) {
+	//	LOActionText *ac =  (LOActionText*)data->cur.GetAction(LOAction::ANIM_TEXT);
 	//	int bbk = 1;
 	//}
 
@@ -744,79 +745,15 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 			if (ret == LOtexture::RET_ROLL_END) {
 				ai->setEnble(false);
 				//添加帧刷新后事件
-				AddPreEvent(ai->hook);
+				if(ai->hook) AddPreEvent(ai->hook);
 				ai->currentPos += posPx;
 			}
 			else if (ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;
+			else ai->setEnble(false);  //发送错误就不能继续了
 			ai->lastTime = curTime;
 		}
 	}
 }
-
-//void LOLayer::DoAnimation(LOLayerInfo* info, Uint32 curTime) {
-	/*
-	if (!curInfo->actions) return;
-	for (auto iter = curInfo->actions->begin(); iter != curInfo->actions->end(); iter++) {
-		LOAnimation *aib = (*iter);
-		if (aib->isEnble) {
-			switch (aib->type)
-			{
-			case LOAnimation::ANIM_NSANIM:
-				DoNsAnima(info, (LOAnimationNS*)(aib), curTime);
-				break;
-			case LOAnimation::ANIM_TEXT:
-				DoTextAnima(info, (LOAnimationText*)(aib), curTime);
-				break;
-			case LOAnimation::ANIM_MOVE:
-				DoMoveAnima(info, (LOAnimationMove*)(aib), curTime);
-				break;
-			case LOAnimation::ANIM_SCALE:
-				DoScaleAnima(info, (LOAnimationScale*)(aib), curTime);
-				break;
-			case LOAnimation::ANIM_ROTATE:
-				DoRotateAnima(info, (LOAnimationRotate*)(aib), curTime);
-				break;
-			case LOAnimation::ANIM_FADE:
-				DoFadeAnima(info, (LOAnimationFade*)(aib), curTime);
-				break;
-			default:
-				break;
-			}
-		}
-	}
-	//执行完成后立即检查哪些需要删除了
-	for (auto iter = curInfo->actions->begin(); iter != curInfo->actions->end();) {
-		LOAnimation *aib = (*iter);
-		if (aib->finish && aib->finishFree) 
-			iter = curInfo->actions->erase(iter, true); //已经自动指向下一个元素了
-		else iter++;
-	}
-	if (curInfo->actions->size() == 0) {
-		delete curInfo->actions;
-		curInfo->actions = nullptr;
-	}
-	*/
-//}
-
-
-////只用于RGBA的复制
-//bool LOLayer::CopySurfaceToTexture(SDL_Surface *su, SDL_Rect *src, SDL_Texture *tex, SDL_Rect *dst) {
-//	void *texdata;
-//	int tpitch;
-//	if(SDL_LockTexture(tex, NULL, &texdata, &tpitch) != 0 )return false;
-//	SDL_LockSurface(su);
-//
-//	char *mdst = (char*)texdata + dst->y * tpitch + dst->x * 4;
-//	char *msrc = (char*)su->pixels + src->y * su->pitch + src->x * 4;
-// 	for (int yy = 0; yy < src->h; yy++) {
-//		memcpy(mdst, msrc, src->w * 4);
-//		mdst += tpitch;
-//		msrc += su->pitch;
-//	}
-//	SDL_UnlockSurface(su);
-//	SDL_UnlockTexture(tex);
-//	return true;
-//}
 
 
 void LOLayer::GetLayerPosition(int *xx, int *yy, int *aph) {

@@ -1,4 +1,4 @@
-/*
+﻿/*
 //解压缩使用
 */
 
@@ -10,9 +10,11 @@ public:
 	~LOCompressInfo();
 
 	void InitLZSS();
+	void InitSPB(int buf_size);
 	void Clear();
 	int GetBit(BinArray *bin, int bitlen);
 	BinArray *UncompressLZSS(BinArray *bin, int uncom_size);
+	BinArray *UncompressSPB(BinArray *bin, int uncom_size);
 	BinArray *ZlibCompress(BinArray *bin);
 	BinArray *UnZlibCompress(BinArray *bin);
 	std::string GetCdata(BinArray *bin);

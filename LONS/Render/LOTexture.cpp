@@ -869,8 +869,7 @@ bool LOtexture::RenderSimpleColor(SDL_Rect *re, uint8_t index, SDL_Color c) {
 
 int LOtexture::RollTextTexture(int start, int end) {
 	//不能运行的，直接相当于到终点
-	//if (!texturePtr || !isEdit() || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
-	if (!textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
+	if (!texturePtr || !isEdit() || !textData || textData->lineList.size() == 0) return RET_ROLL_FAILD;
 	if (end < start || end <= 0) return RET_ROLL_FAILD;
 
 	int startLine, startPos, endLine, endPos;

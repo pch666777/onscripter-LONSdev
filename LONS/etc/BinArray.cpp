@@ -322,6 +322,12 @@ int BinArray::WriteInt(int v, int *pos) {
 	return WriteUnOrder(&v, pos, sizeof(int));
 }
 
+int BinArray::WriteOrderInt(int v, int *pos) {
+	//字节顺序不一致则交换顺序
+	if (notCpuOrder) v = XCHANGE4(v);
+	return WriteUnOrder(&v, pos, sizeof(int));
+}
+
 int BinArray::WriteInt2(int v1, int v2, int *pos) {
 	int list[] = { v1,v2 };
 	return WriteUnOrder(list, pos, sizeof(int) * 2);
@@ -338,6 +344,11 @@ int BinArray::WriteInt4(int v1, int v2, int v3, int v4, int *pos) {
 }
 
 int BinArray::WriteInt16(int16_t v, int *pos) {
+	return WriteUnOrder(&v, pos, sizeof(int16_t));
+}
+
+int BinArray::WriteOrderInt16(int16_t v, int *pos) {
+	if (notCpuOrder) v = XCHANGE2(v);
 	return WriteUnOrder(&v, pos, sizeof(int16_t));
 }
 

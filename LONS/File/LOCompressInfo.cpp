@@ -1,4 +1,4 @@
-/*
+﻿/*
 //解压缩使用
 */
 
@@ -44,6 +44,18 @@ void LOCompressInfo::InitLZSS() {
 	memset(decomp_dic, 0, dicsize);
 	memset(decomp_buf, 0, bufsize - maxrenum);
 	r = bufsize - maxrenum;
+}
+
+void LOCompressInfo::InitSPB(int buf_size) {
+	Clear();
+	bufsize = buf_size;
+	dicsize = 4096;
+	decomp_buf = new char[bufsize];
+	decomp_dic = new char[dicsize];
+	memset(decomp_dic, 0, dicsize);
+	memset(decomp_buf, 0, bufsize);
+	//从第4字节开始，前两字节分别是图像宽度和高度
+	byteCount = 4;
 }
 
 int LOCompressInfo::GetBit(BinArray *bin, int bitlen) {
@@ -105,9 +117,95 @@ BinArray *LOCompressInfo::UncompressLZSS(BinArray *bin, int uncom_size) {
 }
 
 
+BinArray *LOCompressInfo::UncompressSPB(BinArray *bin, int uncom_size) {
+	if (!bin) return nullptr;
+	bin->SetOrder(true);
+	int width = bin->GetInt16Auto(0);
+	int height = bin->GetInt16Auto(2);
+	//这是一个24位的BMP图像
+	int width_pad = (4 - width * 3 % 4) % 4;
+	//每行的像素数量必须对齐4的倍数
+	int total_size = (width * 3 + width_pad) * height + 54;
+
+	BinArray *zbin = new BinArray(total_size);
+	zbin->SetLength(total_size);
+	//bmp文件头
+	int pos = 0;
+	memset(zbin->bin, 0, 54);
+	zbin->SetOrder(false);
+	zbin->WriteChar('B', &pos);
+	zbin->WriteChar('M', &pos);
+	zbin->WriteOrderInt(total_size, &pos);
+	pos += 4;
+	//头的大小
+	zbin->WriteOrderInt(54, &pos);
+	zbin->WriteOrderInt(40, &pos);
+	//宽度、高度
+	zbin->WriteOrderInt(width, &pos); //18-21
+	zbin->WriteOrderInt(height, &pos); //22-25
+	zbin->WriteOrderInt16(1, &pos);  //26-27
+	zbin->WriteOrderInt16(24, &pos); //24位图像
+	pos += 4;
+	//小端
+	zbin->WriteOrderInt(total_size - 54, &pos);
+
+	//==== 开始解压 =========
+	InitSPB(width * height + 4);
+	int c, count, n, m;
+	for (int channel = 0; channel < 3; channel++) {
+		count = 0;
+		decomp_buf[count++] = c = GetBit(bin, 8);
+		while (count < (unsigned int)(width * height)) {
+			n = GetBit(bin, 3);
+			if (n == -1) break;
+			else if (n == 0) {
+				decomp_buf[count++] = c;
+				decomp_buf[count++] = c;
+				decomp_buf[count++] = c;
+				decomp_buf[count++] = c;
+				continue;
+			}
+			else if (n == 7) m = GetBit(bin, 1) + 1;
+			else m = n + 2;
+			//
+			for (int j = 0; j < 4; j++) {
+				if (m == 8) c = GetBit(bin, 8);
+				else {
+					int k = GetBit(bin, m);
+					if (k & 1) c += (k >> 1) + 1;
+					else c -= (k >> 1);
+				}
+				decomp_buf[count++] = c;
+			}
+		}
+
+		unsigned char *pbuf = (unsigned char*)zbin->bin + 54;
+		pbuf += (width * 3 + width_pad)*(height - 1) + channel;
+		unsigned char *psbuf = (unsigned char*)decomp_buf;
+
+		//复制到通道
+		for (int line = 0; line < height; line++) {
+			if (line & 1) {
+				for (int k = 0; k < width; k++, pbuf -= 3) *pbuf = *psbuf++;
+				pbuf -= width * 3 + width_pad - 3;
+			}
+			else {
+				for (int k = 0; k < width; k++, pbuf += 3) *pbuf = *psbuf++;
+				pbuf -= width * 3 + width_pad + 3;
+			}
+		}
+
+	}
+
+	//zbin->WriteToFile("666.bmp");
+	return zbin;
+}
+
+
 uint32_t LOCompressInfo::CopyCharToPtr(char *dst, BinArray *bin, int start, int len) {
 	if (len > bin->Length() - start) len = bin->Length() - start;
-	if (len > 0) memcpy(dst, bin->bin, len);
+	//if (len > 0) memcpy(dst, bin->bin, len);
+	if (len > 0) memcpy(dst, bin->bin + start, len);
 	return len;
 }
 

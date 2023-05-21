@@ -1,4 +1,4 @@
-
+﻿
 #ifndef __BINARRAY_ONLY998_H__
 #define __BINARRAY_ONLY998_H__
 
@@ -60,10 +60,12 @@ public:
 	int WriteChar(char v,int *pos = NULL);
 	int WriteBool(bool v, int *pos = NULL);
 	int WriteInt(int v, int *pos = NULL);
+	int WriteOrderInt(int v, int *pos = NULL);
 	int WriteInt2(int v1, int v2, int *pos = NULL);
 	int WriteInt3(int v1, int v2, int v3, int *pos = NULL);
 	int WriteInt4(int v1, int v2, int v3, int v4, int *pos = NULL);
 	int WriteInt16(int16_t v, int *pos = NULL);
+	int WriteOrderInt16(int16_t v, int *pos = NULL);
 	int WriteInt32(int32_t v, int *pos = NULL);
 	int WriteInt64(int64_t v, int *pos = NULL);
 	int WriteFloat(float v, int *pos = NULL);
