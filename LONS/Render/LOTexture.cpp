@@ -85,7 +85,13 @@ LOtextureBase::~LOtextureBase() {
 	//切割下来的纹理块应该自动释放
 	if (baseSurface) FreeSurface(baseSurface);
 	//注意，只能从渲染线程调用，意味着baseTexture只能从渲染线程释放
-	if (baseTexture) DestroyTexture(baseTexture);
+	if (baseTexture){
+        DestroyTexture(baseTexture);
+        const char* err = SDL_GetError();
+        err = nullptr ;
+    }
+
+
 	baseSurface = nullptr;
 	baseTexture = nullptr;
 }
