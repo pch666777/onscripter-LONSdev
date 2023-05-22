@@ -56,14 +56,11 @@ void LOImageModule::DoPreEvent(double postime) {
 
 
 //print的过程无法支持异步，这会导致非常复杂的问题，特别是需要存档的话
-int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM, bool isEmptyContine) {
+int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isEmptyContine) {
 	//考虑到需要存档
 	iswait = true;
 	//快进模式，要尽可能的提升帧的刷新速度
-	if (st_skipflag) {
-		ef = nullptr;
-		isIM = true;
-	}
+	if (st_skipflag) ef = nullptr;
 
 	//检查是不是有需要刷新的
 	auto *map = GetPrintNameMap(print_name)->map;
@@ -71,14 +68,35 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
-	SDL_LockMutex(layerQueMutex);
-	//非print1必须交换缓冲帧，以便将将当前的图像移入缓冲区
-	//print2-8必须立即将PrintTextureB（就是当前的图像）载入到图层的最上方，形成遮挡
+
+	//有特效运行的情况
+	if (ef) {
+		//LOEventHook::CreatePrintHook(effcetRunHook.get(), ef, print_name);
+		PrepareEffect(ef);
+	}
+	//直接创建展开队列信号，并提交到等等
+	LOEventHook *ep = LOEventHook::CreatePrintHook(printHook.get(), ef, print_name);
+	ep->ResetMe();
+
+	if (iswait) {
+		ep->waitEvent(1, -1);  //等待帧刷新完成
+		ep->InvalidMe();
+	}
+
+	SDL_UnlockMutex(doQueMutex);
+	return 0;
+}
+
+
+//在渲染主线程上继续
+int LOImageModule::ExportQuequContinue(LOEventHook *e) {
+	LOEffect *ef = (LOEffect*)e->GetParam(0)->GetPtr();
+	const char *print_name = (const char *)e->GetParam(1)->GetChars(nullptr);
+	auto *map = GetPrintNameMap(print_name)->map;
+
 	SDL_Texture *tmp = PrintTextureA;
 	PrintTextureA = PrintTextureB;
 	PrintTextureB = tmp;
-
-	if (ef) PrepareEffect(ef);
 
 	//历遍图层，注意需要先处理父对象
 	for (int level = 1; level <= 3; level++) {
@@ -96,7 +114,8 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 			////////
 			if (isnow) {
-				if(lyr->data->bak.isDelete()) LOLayer::NoUseLayerForce(lyr);
+				//注意纹理的释放必须在渲染主线程
+				if (lyr->data->bak.isDelete()) LOLayer::NoUseLayerForce(lyr);
 				else {
 					//if (scriptModule->GetCurrentLine() == 40148) {
 					//	if(lyr->data->bak.buildStr) 
@@ -113,27 +132,6 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 
 		}
 	}
-
-	//======图层已经更新完成=======
-
-	//等待print完成才继续
-	LOEventHook *ep = NULL;
-	if (iswait) {
-		ep = LOEventHook::CreatePrintHook(printHook.get(), ef, print_name);
-		//提交到等待位置
-		ep->ResetMe();
-		//printf("script thread:%d\n", SDL_GetTicks());
-	}
-
-	SDL_UnlockMutex(layerQueMutex);
-	if (ep) {
-		//print2-18会响应点击事件
-		if (ef) G_hookQue.push_H_back(printHook);
-		ep->waitEvent(1, -1);
-		//无效化，这样放入其他队列后才有机会整理
-		ep->InvalidMe();
-	}
-	SDL_UnlockMutex(doQueMutex);
 	return 0;
 }
 

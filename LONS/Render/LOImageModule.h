@@ -356,7 +356,8 @@ private:
 	LOtextureBase* EmptyTexture(LOString *fn);
 	const char* ParseTrans(int *alphaMode, const char *buf);
 
-	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isIM = false, bool isEmptyContine = false);
+	int ExportQuequ(const char *print_name, LOEffect *ef, bool iswait, bool isEmptyContine = false);
+	int ExportQuequContinue(LOEventHook *e);
 	void DoPreEvent(double postime);
 	void CaptureEvents(SDL_Event *event);
 	void HandlingEvents(bool justMustDo);

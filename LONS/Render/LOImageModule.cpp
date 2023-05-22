@@ -278,21 +278,23 @@ int LOImageModule::MainLoop() {
 
 	//第一帧要锁住print信号
 	printHook->FinishMe();
-	printPreHook->FinishMe();
+	effcetRunHook->FinishMe();
 
 	while (loopflag) {
 		hightTimeNow = LOTimer::GetHighTimer();
 		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
-		//部分操作要求立即刷新帧，特别是快进模式下
-		if(st_skipflag) reflashNow1 = printHook->enterEdit();
+		//每隔0.25ms或者快进模式下，都要检测释是否有print请求。
+		//注意在effect执行的过程中，printHook应该处于打开状态，防止再次进入 reflashNow1
+		if(posTime >= 0.25 || st_skipflag) reflashNow1 = printHook->enterEdit();
 		else reflashNow1 = false;
 
 		if (!minisize && (posTime + 0.1 > fpstime || reflashNow1)) {
 			//if (posTime < fpstime - 0.1 && reflashNow1) printf("yes\n");
 			if (reflashNow1) {
-				//printf("yes\n");
-				printHook->closeEdit();
+				//继续执行print
+				ExportQuequContinue(printHook.get());
+				//printHook->closeEdit();
 			}
 			if (RefreshFrame(posTime) == 0) {
 				//now do the delay event.like send finish signed.
@@ -439,11 +441,15 @@ int LOImageModule::RefreshFrame(double postime) {
 		//这里有个隐含的条件，在脚本线程展开队列时，绝对不会进入RefreshFrame刷新，所以如果有MSG_Wait_Print表示已经完成print的第一帧刷新
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (isPrinting) {
-			if (!ef || ef->postime < 0) printHook->FinishMe();  //print 1直接完成
-			else if (ef->RunEffect2(PrintTextureEdit, postime)) {
-				ef->postime = -2; //print 2-8执行完成了，但是还需要运行一帧
+			if (ef) {
+				if(ef->postime < 0) printHook->FinishMe();  //print 2-8已经完成了
+				else if (ef->RunEffect2(PrintTextureEdit, postime)) {
+					ef->postime = -2; //print 2-8执行完成了，但是还需要运行一帧
+				}
+				//不能关闭printHook
+				//else printHook->closeEdit();
 			}
-			else printHook->closeEdit();
+			else printHook->FinishMe();  //print 1已经完成了
 		}
 		return 0;
 	}

@@ -1123,7 +1123,7 @@ int LOImageModule::quakeCommand(FunctionInterface *reader) {
 		ef.id |= val << 16;
 	}
 	//摇晃命令必须等到执行完成才会执行下一个命令
-	ExportQuequ("_lons", &ef, true, true, true);
+	ExportQuequ("_lons", &ef, true, true);
 
 	return RET_CONTINUE;
 }

@@ -391,7 +391,7 @@ public:
 	//static std::vector<LOString> workDirs;        //搜索目录，因为接口类到处都在使用，干脆把io部分挪到这里来
 	//static std::atomic_int flagPrepareEffect;        //print时要求截取当前画面
 	//static std::atomic_int flagRenderNew;            //每次完成画面刷新后，flagRenderNew都会置为1
-	static LOShareEventHook printPreHook;    //要求抓取图像
+	static LOShareEventHook effcetRunHook;    //要求抓取图像
 	static LOShareEventHook printHook;       //要求等待print完成
 	static bool errorFlag;
 	static bool breakFlag;

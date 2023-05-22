@@ -16,7 +16,7 @@ BinArray *FunctionInterface::GloSaveFS = new BinArray(1024, true);
 bool FunctionInterface::errorFlag = false;
 bool FunctionInterface::breakFlag = false;
 
-LOShareEventHook FunctionInterface::printPreHook(new LOEventHook());
+LOShareEventHook FunctionInterface::effcetRunHook(new LOEventHook());
 LOShareEventHook FunctionInterface::printHook(new LOEventHook());
 
 LOString FunctionInterface::userGoSubName[3] = {"lons_pretextgosub__","lons_textgosub__",""};
