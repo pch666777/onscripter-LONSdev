@@ -66,6 +66,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	auto *map = GetPrintNameMap(print_name)->map;
 	if (map->size() == 0 && !isEmptyContine) return 0;
 
+	SDL_Log("print start") ;
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
 
@@ -84,6 +85,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	}
 
 	SDL_UnlockMutex(doQueMutex);
+	SDL_Log("print finish") ;
 	return 0;
 }
 
@@ -198,7 +200,7 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 	case SDL_MOUSEBUTTONUP:
 		//鼠标进行了点击，因为SDL上，手指事件同时也会触发鼠标事件，因此当进入双指捕获时，不应该再接受鼠标事件
 		if (!TranzMousePos(event->button.x, event->button.y) || isFingerEvent)break;
-		//SDL_Log("mouse at %d, %d", event->button.x, event->button.y) ;
+		SDL_Log("mouse at %d, %d", event->button.x, event->button.y) ;
 		//这里需要将左、右键事件先发一次hook队列，因为有些hook需要优先处理，比如print wait等点击可跳过的事件
 		if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOEventHook::ANSWER_LEFTCLICK;
 		else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOEventHook::ANSWER_RIGHTCLICK;

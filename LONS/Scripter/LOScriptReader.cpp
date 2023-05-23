@@ -1415,12 +1415,12 @@ int LOScriptReader::DefaultStep() {
 			for (int ii = 0; ii < bin->Length() - 1; ii++) {
 				buf[ii] ^= 0x84;
 			}
-            FILE *f = LOIO::GetSaveHandle("00.txt", "wb") ;
-            if(f){
-                fwrite(bin->bin, 1, bin->Length(), f);
-                fflush(f);
-                fclose(f);
-            }
+            //FILE *f = LOIO::GetSaveHandle("00.txt", "wb") ;
+            //if(f){
+            //    fwrite(bin->bin, 1, bin->Length(), f);
+            //    fflush(f);
+            //    fclose(f);
+            //}
 			LOScripFile::AddScript(bin->bin, bin->Length(), fn.c_str());
             SDL_Log("scripter[%s] has read.\n", fn.c_str());
 			delete bin;
