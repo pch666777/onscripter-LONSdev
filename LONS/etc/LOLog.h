@@ -1,11 +1,11 @@
-/*
+﻿/*
 //简单的日志系统
 //pngchs@qq.com
 //2021-2021
 */
 
 #ifndef ONS_VERSION
-#define ONS_VERSION "ver0.70-20230504"
+#define ONS_VERSION "ver0.7.2-20230525"
 #endif // !ONS_VERSION
 
 //#define LOLog_i SDL_Log()

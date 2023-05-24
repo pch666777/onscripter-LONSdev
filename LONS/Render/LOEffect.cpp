@@ -148,9 +148,6 @@ bool LOEffect::RunEffect2(SDL_Texture *edit, double pos) {
 		MaskEffectCore(edit, pos, true);
 		break;
 	case EFFECT_ID_QUAKE:
-
-		//晃动edit为黑色背景，cut表现为移动
-		//SDL_SetRenderTarget(ren, info->cur.texture->GetTexture());
 		//QuakeEffect(ren, efstex, maskTex, postime);
 		break;
 	default:
@@ -406,26 +403,25 @@ void LOEffect::MosaicEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *ma
 
 
 //画面摇晃特效
-void LOEffect::QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Texture *maskTex, double postime) {
+void LOEffect::QuakeEffect(SDL_Renderer *ren, SDL_Texture *texB, double postime) {
 	int dx = id & 0xffff;
 	int dy = (id >> 16) & 0xffff;
 	double v1, v2;
-	SDL_Texture *effectTex = efstex->GetTexture();
-	SDL_Rect dst = { 0,0, efstex->baseW(), efstex->baseH() };
+	SDL_Rect dst = { 0,0, G_gameWidth, G_gameHeight };
 
 	if (dx == 0) { //quakey
 		v1 = sin(M_PI * 2.0 * dy * postime / this->time);
 		//v2 = (double)12 * G_gameRatioW / G_gameRatioH * dy * (this->time - postime);
 		v2 = (double)12 * dy * (this->time - postime);
 		dst.y = (int)(v1 * v2 / this->time);
-		SDL_RenderCopy(ren, effectTex, NULL, &dst);
+		SDL_RenderCopy(ren, texB, NULL, &dst);
 		//移动的反向用黑色填充
 		if (dst.y > 0) {
 			dst.h = dst.y; dst.y = 0;
 		}
 		else {
 			dst.h = 0 - dst.y;
-			dst.y = efstex->baseH() + dst.y;
+			dst.y =G_gameHeight + dst.y;
 		}
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 		SDL_RenderFillRect(ren, &dst);
@@ -435,14 +431,14 @@ void LOEffect::QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Textur
 		//v2 = (double)12 * G_gameRatioW / G_gameRatioH * dx * (this->time - postime);
 		v2 = (double)12 * dx * (this->time - postime);
 		dst.x = (int)(v1 * v2 / this->time);
-		SDL_RenderCopy(ren, effectTex, NULL, &dst);
+		SDL_RenderCopy(ren, texB, NULL, &dst);
 		//移动的反向用黑色填充
 		if (dst.x > 0) {
 			dst.w = dst.x; dst.x = 0;
 		}
 		else {
 			dst.w = 0 - dst.x;
-			dst.x = efstex->baseW() + dst.x;
+			dst.x = G_gameWidth + dst.x;
 		}
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 		SDL_RenderFillRect(ren, &dst);
@@ -451,7 +447,7 @@ void LOEffect::QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Textur
 		dst.x = dx * ((int)(3.0*rand() / (RAND_MAX + 1.0)) - 1) * 2;
 		dst.y = dx * ((int)(3.0*rand() / (RAND_MAX + 1.0)) - 1) * 2;
 		//dst.x = 40; dst.y = 30;
-		SDL_RenderCopy(ren, effectTex, NULL, &dst);
+		SDL_RenderCopy(ren, texB, NULL, &dst);
 		SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 		//横向纵向均需要黑色覆盖
 		if (dst.x != 0) {
@@ -460,20 +456,20 @@ void LOEffect::QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Textur
 			}
 			else {
 				dst.w = 0 - dst.x;
-				dst.x = efstex->baseW() + dst.x;
+				dst.x = G_gameWidth + dst.x;
 			}
 			SDL_RenderFillRect(ren, &dst);
 		}
 		if (dst.y != 0) {
 			//重置已经被修改的X轴
-			dst.w = efstex->baseW();
+			dst.w = G_gameWidth;
 			dst.x = 0;
 			if (dst.y > 0) {
 				dst.h = dst.y; dst.y = 0;
 			}
 			else {
 				dst.h = 0 - dst.y;
-				dst.y = efstex->baseH() + dst.y;
+				dst.y = G_gameHeight + dst.y;
 			}
 			SDL_RenderFillRect(ren, &dst);
 		}
@@ -538,6 +534,9 @@ int LOEffect::UpdateEffect(SDL_Renderer *ren, SDL_Texture *texA, SDL_Texture *te
 		SDL_Rect rect = { 0,0, G_gameWidth, G_gameHeight };
 		UpdateDstRect(&rect);
 		SDL_RenderCopy(ren, texB, nullptr, &rect);
+	}
+	else if (nseffID == EFFECT_ID_QUAKE) {
+		QuakeEffect(ren, texB, postime);
 	}
 	else {//遮片类
 		LOtexture::ResetTextureMode(texA);  //重置纹理模式

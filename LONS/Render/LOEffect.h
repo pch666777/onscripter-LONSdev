@@ -58,7 +58,7 @@ private:
 	void TestEffect(SDL_Texture *edit, double pos, int direction);
 	void RollEffect(SDL_Texture *edit, double pos, int direction);
 	void MosaicEffect(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *maskTex, double pos, bool isout);
-	void QuakeEffect(SDL_Renderer *ren, LOShareTexture &efstex, SDL_Texture *maskTex, double postime);
+	void QuakeEffect(SDL_Renderer *ren, SDL_Texture *texB, double postime);
 	void CreateSmallPic(SDL_Renderer*ren, LOLayerData *info, SDL_Texture *effectTex);
 };
 

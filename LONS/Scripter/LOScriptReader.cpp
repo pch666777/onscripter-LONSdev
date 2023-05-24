@@ -483,6 +483,8 @@ int LOScriptReader::ContinueRun() {
 	switch (nextType)
 	{
 	case LINE_TEXT:
+		//输出信息
+		if (G_lineLog > 0) SDL_Log("[%d]:[showtext]", currentLable->c_line);
 		//首先尝试获取TagString，然后开始获取文字内容，期间可以反复进入eval模式，直到文字开始显示
 		//遇到文字 --> pretext -->返回后进入文字显示
 		TagString = scriptbuf->GetTagString(currentLable->c_buf);
