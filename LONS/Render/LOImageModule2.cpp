@@ -48,6 +48,7 @@ void LOImageModule::DoPreEvent(double postime) {
 		else if (e->param2 == LOEventHook::FUN_TEXT_ACTION) {
 			//文字处理完成
 			e->FinishMe();
+			//SDL_Log("text finish send!");
 		}
 	}
 
@@ -66,7 +67,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	auto *map = GetPrintNameMap(print_name)->map;
 	if (map->size() == 0 && !isEmptyContine) return 0;
 
-	SDL_Log("print start") ;
+	//SDL_Log("print start") ;
 	//print是一个竞争过程，只有执行完成一个才能下一个
 	SDL_LockMutex(doQueMutex);
 
@@ -85,7 +86,7 @@ int LOImageModule::ExportQuequ(const char *print_name, LOEffect *ef, bool iswait
 	}
 
 	SDL_UnlockMutex(doQueMutex);
-	SDL_Log("print finish") ;
+	//SDL_Log("print finish") ;
 	return 0;
 }
 

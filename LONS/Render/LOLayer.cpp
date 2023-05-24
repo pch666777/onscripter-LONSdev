@@ -738,6 +738,9 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 	}
 	else {
 		int posPx = ai->perPix * (curTime - ai->lastTime);
+        //如果是直接cut的，要注意不要溢出了
+        if(curTime == 0x7ffffff) posPx = 0x7ffffff;
+
 		if (posPx > 1) {
 			//posPx = 1;
 			int ret = texture->RollTextTexture(ai->currentPos, ai->currentPos + posPx);
@@ -746,6 +749,7 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 				ai->setEnble(false);
 				//添加帧刷新后事件
 				if(ai->hook) AddPreEvent(ai->hook);
+				//SDL_Log("text finish");
 				ai->currentPos += posPx;
 			}
 			else if (ret == LOtexture::RET_ROLL_CONTINUE) ai->currentPos += posPx;

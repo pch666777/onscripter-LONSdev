@@ -1698,6 +1698,7 @@ int LOScriptReader::RunEventAfterFinish(LOEventHook *e) {
 		//响应此事件的有文字和print
 		if (e->param2 == LOEventHook::FUN_TEXT_ACTION) {
 			//printf("***********text funish***********\n");
+            //SDL_Log("text finish get!");
 			RunFuncSayFinish(e);
 		}
 		else;
