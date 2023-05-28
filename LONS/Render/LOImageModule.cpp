@@ -289,18 +289,23 @@ int LOImageModule::MainLoop() {
 		hightTimeNow = LOTimer::GetHighTimer();
 		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
 
-		//每隔0.25ms或者快进模式下，都要检测释是否有print请求。
 		//注意在effect执行的过程中，printHook应该处于打开状态，防止再次进入 reflashNow1
-		if(posTime >= 0.25 || st_skipflag) reflashNow1 = printHook->enterEdit();
-		else reflashNow1 = false;
+		reflashNow1 = false;
+		if (posTime >= 1.5 || st_skipflag) {
+			//暂开队列与更新帧要错开时间，以免段时间内大量复制内存，造成音频爆音
+			if (printHook->enterEdit()) {
+				ExportQuequContinue(printHook.get());
+				//非快进模式还是要等待同步刷新的
+				//if (st_skipflag) reflashNow1 = true;
+				reflashNow1 = true;
+			}
+		}
 
 		if (!minisize && (posTime + 0.1 > fpstime || reflashNow1)) {
 			//if (posTime < fpstime - 0.1 && reflashNow1) printf("yes\n");
-			if (reflashNow1) {
-				//继续执行print
-				ExportQuequContinue(printHook.get());
-				//printHook->closeEdit();
-			}
+			//这是一个补救措施
+			if(printHook->enterEdit()) ExportQuequContinue(printHook.get());
+
 			if (RefreshFrame(posTime) == 0) {
 				//now do the delay event.like send finish signed.
 				DoPreEvent(posTime);
