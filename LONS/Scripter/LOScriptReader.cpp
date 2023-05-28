@@ -506,8 +506,9 @@ int LOScriptReader::ContinueRun() {
 		}
 		break;
 	default:
+		curCmd = GetLineFromCurrent();
+		SDL_LogError(0, "unknow line type at line:%d-->%s", currentLable->c_line, curCmd.c_str());
 		currentLable->c_buf = scriptbuf->NextLine(currentLable->c_buf);
-		//SDL_LogError(0, "unknow line type at line:%d,buf[0]:%s", currentLable->current_line, cmd.c_str());
 		//if (isAddLine) currentLable->c_line++;
 		currentLable->c_line++;
 		break;
@@ -609,6 +610,7 @@ int LOScriptReader::IdentifyLine(const char *&buf) {
 	int type = scriptbuf->GetCharacter(buf);
 	if (type == LOCodePage::CHARACTER_LETTER) return LINE_CAMMAND;
 	else if (type == LOCodePage::CHARACTER_MULBYTE) return LINE_TEXT;
+	if (ch == ',') return LINE_CONNECT;   //空格作为间隔，或者某些有意义的符号
 	return LINE_UNKNOW;
 }
 
@@ -1224,6 +1226,15 @@ void LOScriptReader::BackLineStart() {
 	while (buf[0] != '\n') buf -= scriptbuf->GetEncoder()->GetLastCharLen(buf);
 	buf++;
 	currentLable->c_buf = buf;
+}
+
+LOString LOScriptReader::GetLineFromCurrent() {
+	const char *buf = currentLable->c_buf;
+	const char *ebuf = buf;
+	while (ebuf[0] != '\r' && ebuf[0] != '\n' && ebuf[0] != '\0') ebuf++;
+	LOString s(buf, ebuf - buf);
+	s.SetEncoder(scriptbuf->GetEncoder());
+	return s;
 }
 
 void LOScriptReader::GotoLine(int lineID) {

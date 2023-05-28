@@ -8,9 +8,9 @@
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-//    if (reader->GetCurrentLine() == 38463) {
-//        int debugbreak = 1;
-//    }
+    //if (reader->GetCurrentLine() == 404673) {
+    //    int debugbreak = 1;
+    //}
 	bool visiable = !reader->isName("lsph");
 	//
 	int ids[] = { reader->GetParamInt(0),255,255 };
@@ -131,6 +131,9 @@ int LOImageModule::bgCommand(FunctionInterface *reader) {
 	//}
 	
 	LeveTextDisplayMode();
+
+	//bg命令会清除ns自带的系统立绘
+	CspCore(LOLayer::LAYER_STAND, LOLayer::IDEX_LD_BASE, LOLayer::IDEX_LD_BASE + 3, reader->GetPrintName());
 
 	int fullid = GetFullID(LOLayer::LAYER_BG, 5, 255, 255);
 	LOLayerData *info = CreateNewLayerData(fullid, reader->GetPrintName());
@@ -1133,14 +1136,14 @@ int LOImageModule::ldCommand(FunctionInterface *reader) {
 	LOString spos = reader->GetParamStr(0).toLower();
 	LOString tag = reader->GetParamStr(1);
 	int xx, id;
-	if (spos == "c") {
-		xx = G_gameWidth / 2; id = LOLayer::IDEX_LD_CENTER;
+	if (spos == "r") { 
+		id = standLD[0].index; xx = G_gameWidth * 3 / 4;
 	}
-	else if (spos == "l") {
-		xx = G_gameWidth / 4; id = LOLayer::IDEX_LD_LEFT;
+	else if (spos == "c") {
+		id = standLD[1].index; xx = G_gameWidth / 2;
 	}
-	else if (spos == "r") {
-		xx = G_gameWidth * 3 / 4; id = LOLayer::IDEX_LD_RIGHT;
+	else if(spos == "l"){
+		id = standLD[2].index; xx = G_gameWidth / 4;
 	}
 	else {
 		FatalError("[ld] command first parameter error!");
@@ -1165,11 +1168,11 @@ int LOImageModule::ldCommand(FunctionInterface *reader) {
 int LOImageModule::clCommand(FunctionInterface *reader) {
 	LOString spos = reader->GetParamStr(0).toLower();
 	int ids[] = { 0,0,0 };
-	if (spos == "c") ids[0] = LOLayer::IDEX_LD_CENTER;
-	else if (spos == "l") ids[0] = LOLayer::IDEX_LD_LEFT;
-	else if (spos == "r") ids[0] = LOLayer::IDEX_LD_RIGHT;
+	if (spos == "c") ids[0] = standLD[1].index;
+	else if (spos == "l") ids[0] = standLD[2].index;
+	else if (spos == "r") ids[0] = standLD[0].index;
 	else if (spos == "a") {
-		ids[0] = LOLayer::IDEX_LD_RIGHT; ids[1] = LOLayer::IDEX_LD_CENTER; ids[2] = LOLayer::IDEX_LD_LEFT;
+		ids[0] = standLD[0].index; ids[1] = standLD[1].index; ids[2] = standLD[2].index;
 	}
 	else {
 		FatalError("[cl] command first parameter error!");
@@ -1180,6 +1183,18 @@ int LOImageModule::clCommand(FunctionInterface *reader) {
 		CspCore(LOLayer::LAYER_STAND, ids[ii], ids[ii], reader->GetPrintName());
 	}
 	if (reader->GetParamCount() > 1) printStack(reader, 1);
+	return RET_CONTINUE;
+}
+
+
+int LOImageModule::humanorderCommand(FunctionInterface *reader) {
+	LOString tag = reader->GetParamStr(0);
+	//tag乱写会导致编号有问题
+	for (int ii = 0; ii < tag.length(); ii++) {
+		if (tag[ii] == 'r') standLD[0].index = ii + LOLayer::IDEX_LD_BASE;
+		else if(tag[ii] == 'c')  standLD[1].index = ii + LOLayer::IDEX_LD_BASE;
+		else if (tag[ii] == 'l')  standLD[2].index = ii + LOLayer::IDEX_LD_BASE;
+	}
 	return RET_CONTINUE;
 }
 

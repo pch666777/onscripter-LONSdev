@@ -133,6 +133,15 @@ public:
 		bool DeSerialize(BinArray *bin, int *pos);
 	};
 
+	//立绘的参数，ld系列命令
+	struct LDdata{
+		void init(char c);
+		char position;  // r c l
+		char index;   //叠加的顺序，这个之从10开始，默认是右中左
+		char effid;   //print 的参数，默认是1
+		char unuse;
+	};
+
 
 	int trans_mode;   //透明类型
 	int effectRunFalg[2];  //是否正处于特性运行阶段 [0] 1处于 0不处于  [1] 0允许点击时跳过  1不允许跳过
@@ -270,6 +279,7 @@ public:
 	int quakeCommand(FunctionInterface *reader);
 	int ldCommand(FunctionInterface *reader);
 	int clCommand(FunctionInterface *reader);
+	int humanorderCommand(FunctionInterface *reader);
 	int captionCommand(FunctionInterface *reader);
 
 private:
@@ -314,6 +324,7 @@ private:
 	SDL_TouchFingerEvent fingerEvent ;
 	LOShareTexture screenTex;    //屏幕截图
 	//int debugEventCount;  //检查事件队列中的事件数量，以免忘记移除事件
+	LDdata standLD[4];   //默认的ld位置顺序
 	
 	SDL_Window *window;
 	SDL_Renderer *render;

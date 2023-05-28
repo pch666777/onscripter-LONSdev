@@ -113,8 +113,9 @@ public:
 
 	char CurrentOP() { return currentLable->c_buf[0]; }
 	void NextAdress() { currentLable->c_buf++; }
-	void NextLineStart();
-	void BackLineStart();
+	void NextLineStart();    //到达下一行行首
+	void BackLineStart();   //返回到当前行首
+	LOString GetLineFromCurrent();  //从当前位置获取一行
 	void GotoLine(int lineID);
 
 	//1为else，2为endif -1表示出现错误

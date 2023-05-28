@@ -32,6 +32,11 @@ LOImageModule::LOImageModule(){
 	doQueMutex = SDL_CreateMutex();
 	PrintTextureA = PrintTextureB = PrintTextureEdit = nullptr;
 
+	//初始化默认立绘的参数
+	standLD[0].init('r');
+	standLD[1].init('c');
+	standLD[2].init('l');
+
 	memset(shaderList, 0, sizeof(int) * 20);
 }
 
@@ -1691,3 +1696,11 @@ bool LOImageModule::LOSayState::DeSerialize(BinArray *bin, int *pos) {
 	return true;
 }
 
+
+void LOImageModule::LDdata::init(char c) {
+	position = c;
+	effid = 1;
+	if (c == 'l') index = LOLayer::IDEX_LD_BASE + 2;
+	else if (c == 'c') index = LOLayer::IDEX_LD_BASE + 1;
+	else index = LOLayer::IDEX_LD_BASE;
+}

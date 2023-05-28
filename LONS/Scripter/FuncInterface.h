@@ -366,6 +366,7 @@ public:
 	virtual int quakeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int ldCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int clCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int humanorderCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int captionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
