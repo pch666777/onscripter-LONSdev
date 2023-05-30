@@ -1834,7 +1834,7 @@ bool LOScriptReader::DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) {
 			return false;
 		}
 	}
-	currentLable = &subStack.at(index);
+	currentLable = &subStack.at(subStack.size() - index - 1);
 	//逻辑堆栈
 	count = bin->GetIntAuto(pos);
 	for (int ii = 0; ii < count; ii++) {

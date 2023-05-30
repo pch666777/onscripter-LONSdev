@@ -109,6 +109,9 @@ bool LOAudioModule::CheckChannel(int channel, const char* info) {
 }
 
 int LOAudioModule::bgmCommand(FunctionInterface *reader) {
+	if (reader->GetCurrentLine() == 337) {
+		int bbk = 0;
+	}
 	LOString s = reader->GetParamStr(0);
 	BGMCore(s, -1);
 	return RET_CONTINUE;

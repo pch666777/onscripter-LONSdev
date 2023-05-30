@@ -295,9 +295,9 @@ int LOImageModule::MainLoop() {
 			//暂开队列与更新帧要错开时间，以免段时间内大量复制内存，造成音频爆音
 			if (printHook->enterEdit()) {
 				ExportQuequContinue(printHook.get());
-				//非快进模式还是要等待同步刷新的
-				//if (st_skipflag) reflashNow1 = true;
-				reflashNow1 = true;
+				//非快进模式还是要等待同步刷新的，不然似乎刷新速度过快？
+				if (st_skipflag) reflashNow1 = true;
+				//reflashNow1 = true;
 			}
 		}
 
