@@ -190,6 +190,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "btndef",        "Ns",        "Y",           &FunctionInterface::btndefCommand },
 	{ "btntime",       "i",         "Y",           &FunctionInterface::btntimeCommand },
 	{ "btntime2",      "i",         "Y",           &FunctionInterface::btntimeCommand },
+	{ "btime",		   "i,i",       "Y,N",         &FunctionInterface::btntimeCommand },
 	{ "getpixcolor",   "S,i,i",     "Y,Y,Y",       &FunctionInterface::getpixcolorCommand },
 	{ "_chkcolor_",    "i,i,i,i,S", "Y,Y,Y,Y,Y",   &FunctionInterface::chkcolorCommand },
 	{ "_mouseclick_",  "i,i,i",     "Y,Y,Y",       &FunctionInterface::mouseclickCommand },

@@ -639,12 +639,14 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	LOEventHook *e = LOEventHook::CreateBtnwaitHook(btnOverTime,v1->GetTypeRefid(), reader->GetPrintName(),  btnUseSeOver ? 1 : -1 , reader->GetCmdChar());
 	LOShareEventHook ev(e);
 	
-	//每次btnwait都需要设置btnovetime
-	btnOverTime = 0;
 	G_hookQue.push_N_back(ev);
 	reader->waitEventQue.push_N_back(ev);
 	//是否需要播放事件
 	if (btnUseSeOver) audioModule->waitEventQue.push_N_back(ev);
+
+	//每次btnwait都需要设置btnovetime
+	btnOverTime = 0;
+
 	return RET_CONTINUE;
 }
 
@@ -834,8 +836,12 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 
 int LOImageModule::btntimeCommand(FunctionInterface *reader) {
 	//btnOverTime 只有在btndef时才会被重置
+	//btntime，只是单纯的等待指定时间
+	//btntime2，如果已经超时，还要检查0通道是否还在播放，还在播放会等待0通道播放完成
+	//btime 1000 相当于 btntime 1000， btime 1000,1 相当于btntime2 1000
 	btnOverTime = reader->GetParamInt(0);
-	if (reader->isName("btntime2")) btnUseSeOver = true;
+	btnUseSeOver = reader->isName("btntime2");
+	if (reader->GetParamCount() > 1 && reader->GetParamInt(1) == 1) btnUseSeOver = true;
 	return RET_CONTINUE;
 }
 
