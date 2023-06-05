@@ -422,6 +422,7 @@ int LOImageModule::RunFuncBtnClear(LOEventHook *e) {
 
 
 int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
+	//后续的赋值处理在 LOScriptReader.cpp中
 	//来自超时的事件
 	LOUniqEventHook ev;
 	if (!e) {

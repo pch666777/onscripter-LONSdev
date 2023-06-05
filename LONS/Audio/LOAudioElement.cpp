@@ -1,4 +1,4 @@
-/*
+﻿/*
 //单个的音频资源，回调函数通常在其他线程，因此要考虑多线程的影响
 */
 
@@ -56,36 +56,6 @@ void LOAudioElement::SetData2(BinArray *bin) {
 	else chunk = Mix_LoadWAV_RW(rwpos, 0);
 }
 
-bool LOAudioElement::Play(int fade) {
-	if (channel < 0) {
-		if (music) {
-			if (fade > 0)  Mix_FadeInMusic(music, loopCount, fade);
-			else Mix_PlayMusic(music, loopCount);
-			return true;
-		}
-		else return false;
-	}
-	else if (channel >= 0) {
-		if (chunk) {
-			if (fade > 0) Mix_FadeInChannel(channel, chunk, 0, fade);
-			else Mix_PlayChannel(channel, chunk, 0);
-			return true;
-		}
-		else return false;
-	}
-	return false;
-}
-
-void LOAudioElement::Stop(int fade) {
-	if (channel < 0) {
-		if (fade > 0) Mix_FadeOutMusic(fade);
-		else Mix_HaltMusic();
-	}
-	else {
-		if(fade > 0) Mix_FadeOutChannel(channel, fade);
-		else Mix_HaltChannel(channel);
-	}
-}
 
 
 bool LOAudioElement::isAvailable() {

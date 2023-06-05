@@ -12,6 +12,7 @@
 bool LOImageModule::isShowFps = false;
 bool LOImageModule::st_filelog;  //是否使用文件记录
 extern void FatalError(const char *fmt, ...);
+extern void AudioDoEvent();
 extern bool st_skipflag;
 
 LOImageModule::LOImageModule(){
@@ -267,16 +268,20 @@ void LOImageModule::CaleWindowSize(int scX, int scY, int srcW, int srcH, int dst
 
 //渲染主循环在这里实现
 int LOImageModule::MainLoop() {
-	Uint64 hightTimeNow;
+	//时间非常重要，在主线程上处理帧刷新和外部事件
+	//在主线程上处理audio模块的音量淡入、淡出以及其他音量相关的模块
+	Uint64 imageTime[2];  //用于帧刷新计时的类
+	Uint64 audioTime[2];  //用于audio模块计时的类
+	double imagePostime = 0;   //帧刷新间隔
+	double audioPostime = 0;   //audio刷新的间隔
+	//Uint64 hightTimeNow;
 	bool loopflag = true;
 	bool reflashNow1 = false;
 	//G_fpsnum = 120;
 	if (G_fpsnum < 2) G_fpsnum = 2;
 	if (G_fpsnum > 120) G_fpsnum = 120;
 	double fpstime = 1000.01 / G_fpsnum;
-	double posTime;   //从上一帧后，当前帧花费的时间
 	SDL_Event ev;
-	Uint64 lastTime = 0;
 	bool minisize = false;
 	
 	ChangeModuleState(MODULE_STATE_RUNNING);
@@ -285,13 +290,19 @@ int LOImageModule::MainLoop() {
 	printHook->FinishMe();
 	effcetRunHook->FinishMe();
 
+	imageTime[0] = imageTime[1] = audioTime[0] = audioTime[1] = 0;
+
 	while (loopflag) {
-		hightTimeNow = LOTimer::GetHighTimer();
-		posTime = ((double)(hightTimeNow - lastTime)) / LOTimer::perTik64;
+		//time[0]存储当前的时间， time[1]存储上一次刷新的时间
+		imageTime[0] = LOTimer::GetHighTimer();
+		audioTime[0] = imageTime[0];
+
+		imagePostime = ((double)(imageTime[0] - imageTime[1])) / LOTimer::perTik64;
+		audioPostime = ((double)(audioTime[0] - audioTime[1])) / LOTimer::perTik64;
 
 		//注意在effect执行的过程中，printHook应该处于打开状态，防止再次进入 reflashNow1
 		reflashNow1 = false;
-		if (posTime >= 1.5 || st_skipflag) {
+		if (imagePostime >= 1.5 || st_skipflag) {
 			//暂开队列与更新帧要错开时间，以免段时间内大量复制内存，造成音频爆音
 			if (printHook->enterEdit()) {
 				ExportQuequContinue(printHook.get());
@@ -301,20 +312,26 @@ int LOImageModule::MainLoop() {
 			}
 		}
 
-		if (!minisize && (posTime + 0.1 > fpstime || reflashNow1)) {
+		if (!minisize && (imagePostime + 0.1 > fpstime || reflashNow1)) {
 			//if (posTime < fpstime - 0.1 && reflashNow1) printf("yes\n");
 			//这是一个补救措施
 			if(printHook->enterEdit()) ExportQuequContinue(printHook.get());
 
-			if (RefreshFrame(posTime) == 0) {
+			if (RefreshFrame(imagePostime) == 0) {
 				//now do the delay event.like send finish signed.
-				DoPreEvent(posTime);
-				lastTime = hightTimeNow;
+				DoPreEvent(imagePostime);
+				imageTime[1] = imageTime[0];
 			}
 			else {
                 SDL_Log("RefreshFrame faild!");
 			}
 			//if (reflashNow1) reflashNow.store(false);
+		}
+
+		//每隔10ms执行一次音频模块的检测事件
+		if (audioPostime > 10.0) {
+			//AudioDoEvent();  //定义在LOAudioModule.cpp
+			audioTime[1] = audioTime[0];
 		}
 
 		//检查模块状态变化
@@ -356,7 +373,7 @@ int LOImageModule::MainLoop() {
 		HandlingEvents(false);
 		
 		//降低CPU的使用率
-		if (posTime < fpstime - 1.5) SDL_Delay(1);
+		if (imagePostime < fpstime - 1.5) SDL_Delay(1);
 		else if (minisize) SDL_Delay(1);
 		else {
 			int sum = rand();
@@ -375,11 +392,11 @@ int LOImageModule::MainLoop() {
 	ChangeModuleState(MODULE_STATE_NOUSE);
 
 	//等待其他模块退出
-	hightTimeNow = LOTimer::GetHighTimer();
-	posTime = 0;
-	while (posTime < 2000 && (!scriptModule->isModuleNoUse() || !audioModule->isModuleNoUse())) {
+	imageTime[0] = LOTimer::GetHighTimer();
+	imagePostime = 0;
+	while (imagePostime < 2000 && (!scriptModule->isModuleNoUse() || !audioModule->isModuleNoUse())) {
 		SDL_Delay(1);
-		posTime = LOTimer::GetHighTimeDiff(hightTimeNow);
+		imagePostime = LOTimer::GetHighTimeDiff(imageTime[0]);
 	}
 	//
 	//if (scriptModule->isModuleNoUse()) LOLog_i("no use script");

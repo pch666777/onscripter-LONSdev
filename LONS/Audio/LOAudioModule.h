@@ -1,4 +1,4 @@
-/*
+﻿/*
 //音频部分
 */
 #ifndef __LOAUDIO_H__
@@ -50,7 +50,10 @@ public:
 	};
 
 	LOString afterBgmName;
+	void TestAudio();
 	int InitAudioModule();
+	int SendAudioEventToQue(int channel);
+	void DoTimerEvent();
 
 	void SetFlags(int f) { flags |= f; }
 	void UnsetFlags(int f) { flags &= (~f); }
@@ -65,13 +68,11 @@ public:
 	void ResetMe();
 	void LoadFinish();
 	void Serialize(BinArray *bin);
-        void SerializeVolume(BinArray *bin);
+    void SerializeVolume(BinArray *bin);
 	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
-        bool DeSerializeVolume(BinArray *bin, int *pos);
+    bool DeSerializeVolume(BinArray *bin, int *pos);
 
 	void PlayAfter();
-	void channelFinish_t(int channel);
-	
 	void SePlay(int channel, LOString s, int loopcount);
 
 	int bgmCommand(FunctionInterface *reader);
@@ -110,7 +111,9 @@ private:
 	LOAudioElement *audioPtr[INDEX_MUSIC + 1];
 	//设定的音量大小0-100
 	int8_t channelVol[INDEX_MUSIC + 1];
-	int8_t bgmVolBk;
+	//当前音量的系数0-100，计算方式：xs / 100 * channelVol = 实际音量大小
+	//设定系数主要是因为fadein、fadeout这样的功能要实现
+	int8_t channelVolXS[INDEX_MUSIC + 1];
 
 	//取出音频，存储的指针北置为null
 	LOAudioElement* takeChannelSafe(int channel);
@@ -124,8 +127,9 @@ private:
 	//LOAudioElement* GetAudioEl(int index);
 	//void FreeAudioEl(int index);
 	void BGMCore(LOString &s, int looptimes);
+	void BGMStopCore();
 	void SeCore(int channel, LOString &s, int looptimes);
-	void StopCore(int channel);
+	void StopSeCore(int channel);
 	void SetChannelVol(int channel, int vol);
 	void SetChannelVol(int channel);
 

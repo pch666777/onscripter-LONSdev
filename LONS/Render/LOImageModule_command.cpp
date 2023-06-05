@@ -636,13 +636,15 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 
 	ONSVariableRef *v1 = reader->GetParamRef(0);
 	//凡是有时间要求的事件，第一个参数都是超时时间
-	LOEventHook *e = LOEventHook::CreateBtnwaitHook(btnOverTime,v1->GetTypeRefid(), reader->GetPrintName(), -1, reader->GetCmdChar());
+	LOEventHook *e = LOEventHook::CreateBtnwaitHook(btnOverTime,v1->GetTypeRefid(), reader->GetPrintName(),  btnUseSeOver ? 1 : -1 , reader->GetCmdChar());
 	LOShareEventHook ev(e);
 	
 	//每次btnwait都需要设置btnovetime
 	btnOverTime = 0;
 	G_hookQue.push_N_back(ev);
 	reader->waitEventQue.push_N_back(ev);
+	//是否需要播放事件
+	if (btnUseSeOver) audioModule->waitEventQue.push_N_back(ev);
 	return RET_CONTINUE;
 }
 
