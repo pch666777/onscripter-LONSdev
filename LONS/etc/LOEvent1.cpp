@@ -67,6 +67,14 @@ bool LOEventHook::enterEdit() {
 	return state.compare_exchange_strong(ov, STATE_EDIT);
 }
 
+bool LOEventHook::enterUntillEdit() {
+	int ov = STATE_NONE;
+	while (state.load() < STATE_FINISH) {
+		if (state.compare_exchange_strong(ov, STATE_EDIT)) return true;
+	}
+	return false;
+}
+
 bool LOEventHook::closeEdit() {
 	int ov = STATE_EDIT;
 	return state.compare_exchange_strong(ov, STATE_NONE);

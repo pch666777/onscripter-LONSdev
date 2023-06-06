@@ -129,6 +129,8 @@ public:
 
 	bool InvalidMe();
 	bool enterEdit();
+	//一直尝试进入编辑模式，如果state在finish及之后，返回假，相当于自旋锁
+	bool enterUntillEdit();
 	bool closeEdit();
 	bool waitEvent(int sleepT, int overT);
 	void ResetMe();

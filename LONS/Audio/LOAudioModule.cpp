@@ -685,15 +685,19 @@ int LOAudioModule::SendAudioEventToQue(int channel) {
 
 	auto iter = waitEventQue.begin();
 	while (state == LOEventHook::RUNFUNC_CONTINUE) {
-		//必须进入enter，这样才能保障线程安全
-		LOShareEventHook hook = waitEventQue.GetEventHook(iter, true);
+		//注意，hook虽然不会是空指针，但是操作hook的参数列表时一定要小心线程安全！
+		LOShareEventHook hook = waitEventQue.GetEventHook(iter, false);
 		if (!hook) break;
 		//符合btntime2的要求
 		if (hook->catchFlag & LOEventHook::ANSWER_SEPLAYOVER) {
 			if (channel == 0) {
-				hook->PushParam(new LOVariant(-1));
-				//播放完成的值是-2
-				hook->PushParam(new LOVariant(-2));
+				//很可能在另一个线程中，注意线程安全！
+				if (hook->enterUntillEdit()) {  //能进去编辑模式说明获取到锁了
+					hook->PushParam(new LOVariant(-1));
+					//播放完成的值是-2
+					hook->PushParam(new LOVariant(-2));
+					hook->FinishMe();
+				}
 			}
 		}
 		else if (hook->catchFlag & LOEventHook::ANSWER_SEPLAYOVER_NORMAL) {

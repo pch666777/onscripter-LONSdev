@@ -4,6 +4,7 @@
 #include "../etc/LOMessage.h"
 #include "Buil_in_script.h"
 #include <stdarg.h>
+#include <SDL_mixer.h>
 //#include <SDL.h>
 //#include "LOMessage.h"
 
@@ -544,8 +545,15 @@ int LOScriptReader::ContinueEvent() {
 		//如果ev带有timer则验证是否超时
 		if (ev->catchFlag & LOEventHook::ANSWER_TIMER) {
 			if (CheckTimer(ev.get(), 2)) {
-				//即使是超时，也要检查hook是否还有效，可能已经被设置了值
-				if(ev->enterEdit()) RunFuncBase(ev.get(), nullptr);
+				if (ev->enterEdit()) {
+					//如果是等待音频的，要检查音频播放是否完成，没完成时间+100ms
+					if ((ev->catchFlag & LOEventHook::ANSWER_SEPLAYOVER) && Mix_Playing(0) > 0) {
+						//printf("add!\n");
+						ev->GetParam(0)->SetInt(ev->GetParam(0)->GetInt() + 100);
+						ev->closeEdit();
+					}
+					else RunFuncBase(ev.get(), nullptr); //已经完成
+				}
 			}
 		}
 		else if (ev->catchFlag == LOEventHook::ANSWER_NONE) {
