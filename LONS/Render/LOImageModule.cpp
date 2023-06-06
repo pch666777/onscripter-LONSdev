@@ -59,6 +59,7 @@ void LOImageModule::ResetConfig() {
 	textbtnValue = 1;
 
 	btndefStr.clear();
+	exbtn_dStr.clear();
 	btnOverTime = 0;
 	btnUseSeOver = false;
 
@@ -1608,7 +1609,7 @@ void LOImageModule::SerializePrintQue(BinArray *bin) {
 
 
 void LOImageModule::SerializeState(BinArray *bin) {
-	int len = bin->WriteLpksEntity("imgo", 0, 1);
+	int len = bin->WriteLpksEntity("imgo", 0, 2);
 
 	spStyle.Serialize(bin);
 	bin->WriteLOString(&spFontName);
@@ -1621,6 +1622,13 @@ void LOImageModule::SerializeState(BinArray *bin) {
     bin->WriteInt(G_textspeed);
 	//其他
 	bin->WriteLOString(&btndefStr);
+	bin->WriteLOString(&exbtn_dStr);
+	//预留的，版本>=2增加
+	bin->WriteLOString(nullptr);
+	bin->WriteLOString(nullptr);
+	bin->WriteInt(0);
+	bin->WriteInt(0);
+	//
 	bin->WriteInt(btnOverTime);
 	bin->WriteInt(btnUseSeOver);
 	//all sp操作
@@ -1640,7 +1648,8 @@ void LOImageModule::SerializeState(BinArray *bin) {
 
 bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
 	int next = -1;
-	if (!bin->CheckEntity("imgo", &next, nullptr, pos)) return false;
+	int version = 1;
+	if (!bin->CheckEntity("imgo", &next, &version, pos)) return false;
     if(!spStyle.DeSerialize(bin, pos)) return false ;
     spFontName = bin->GetLOString(pos);
     if(!sayStyle.DeSerialize(bin,pos))return false ;
@@ -1653,6 +1662,13 @@ bool LOImageModule::DeSerializeState(BinArray *bin, int *pos) {
     G_textspeed = bin->GetIntAuto(pos);
 	//其他
 	btndefStr = bin->GetLOString(pos);
+	if (version >= 2) { //版本2增加的
+		exbtn_dStr = bin->GetLOString(pos);
+		bin->GetLOString(pos);
+		bin->GetLOString(pos);
+		bin->GetIntAuto(pos);
+		bin->GetIntAuto(pos);
+	}
 	btnOverTime = bin->GetIntAuto(pos);
 	btnUseSeOver = bin->GetIntAuto(pos);
 	//

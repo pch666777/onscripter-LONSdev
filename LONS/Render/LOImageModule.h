@@ -303,7 +303,7 @@ private:
 	LOtexture *fpstex;
 
 	LOString btndefStr;     //btndef定义的按钮文件名
-	//LOString exbtn_dStr;
+	LOString exbtn_dStr;    //exbtn_d的定义
 	int BtndefCount;
 	//int exbtn_count;
 	int btnOverTime;

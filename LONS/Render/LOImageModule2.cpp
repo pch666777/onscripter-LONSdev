@@ -563,25 +563,44 @@ void LOImageModule::RunExbtnStr(LOString *s) {
 	const char *obuf, *buf;
 	obuf = buf = s->c_str();
 	int maxlen = s->length();
+	int from, end, cell;
 	
 	//注意显示类的操作都需要等到下一帧才刷新
 	while (buf - obuf < maxlen) {
 		int cc = toupper(buf[0]);
 		if (cc == 'C') {  //隐藏
 			buf++;
-			int fid = GetFullID(LOLayer::LAYER_SPRINT, s->GetInt(buf), 255, 255);
-			LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
-			if (lyr) lyr->data->cur.SetVisable(0);
+			end = from = s->GetInt(buf);
+			if (buf[0] == '-') {
+				buf++;
+				end = s->GetInt(buf);
+			}
+			for (int ii = from; ii <= end; ii++) {
+				int fid = GetFullID(LOLayer::LAYER_SPRINT, ii, 255, 255);
+				LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
+				if (lyr) lyr->data->cur.SetVisable(0);
+			}
 		}
 		else if (cc == 'P') {   //显示
 			buf++;
-			int fid = GetFullID(LOLayer::LAYER_SPRINT, s->GetInt(buf), 255, 255);
-			LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
-			if (lyr) lyr->data->cur.SetVisable(1);
+			end = from = s->GetInt(buf);
+			if (buf[0] == '-') {
+				buf++;
+				end = s->GetInt(buf);
+			}
+			cell = -1;
 			if (buf[0] == ',') {  //显示指定cell
 				buf++;
-				int cell = s->GetInt(buf);
-				if (lyr) lyr->setActiveCell(cell);
+				cell = s->GetInt(buf);
+			}
+			//
+			for (int ii = from; ii <= end; ii++) {
+				int fid = GetFullID(LOLayer::LAYER_SPRINT, ii, 255, 255);
+				LOLayer *lyr = LOLayer::FindLayerInCenter(fid);
+				if (lyr) {
+					lyr->data->cur.SetVisable(1);
+					if(cell >= 0)  lyr->setActiveCell(cell);
+				}
 			}
 		}
 		else if (cc == 'S') {  //播放音乐

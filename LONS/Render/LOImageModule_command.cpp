@@ -615,15 +615,11 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	//exbtn_d实际上就设置这空白层的btnstr
 	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 
-	//if (reader->GetCurrentLine() == 40148) {
-	//	int bbk = 0;
-	//}
-
-
 	LOLayerData *data = CreateNewLayerData(fullid, prin_name);
 	LOString s("**;_?_empty_?_");
 	loadSpCore(data, s, 0, 0, 255);
-	data->bak.SetBtndef(nullptr, 0, true, true);
+	if (exbtn_dStr.length() > 0) data->bak.SetBtndef(&exbtn_dStr, 0, true, true);
+	else data->bak.SetBtndef(nullptr, 0, true, true);
 	ExportQuequ(prin_name, nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
@@ -643,9 +639,6 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	reader->waitEventQue.push_N_back(ev);
 	//是否需要播放事件
 	if (btnUseSeOver) audioModule->waitEventQue.push_N_back(ev);
-
-	//每次btnwait都需要设置btnovetime
-	btnOverTime = 0;
 
 	return RET_CONTINUE;
 }
@@ -669,10 +662,11 @@ int LOImageModule::spbtnCommand(FunctionInterface *reader) {
 
 
 int LOImageModule::exbtn_dCommand(FunctionInterface *reader) {
-	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
-	LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
-	LOString s = reader->GetParamStr(0);  //it's safe
-	data->bak.SetBtndef(&s, 0, true, true);
+	//int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
+	//LOLayerData *data = CreateNewLayerData(fullid, reader->GetPrintName());
+	//LOString s = reader->GetParamStr(0);  //it's safe
+	//data->bak.SetBtndef(&s, 0, true, true);
+	exbtn_dStr = reader->GetParamStr(0);
 	return RET_CONTINUE;
 }
 
@@ -822,7 +816,9 @@ int LOImageModule::btndefCommand(FunctionInterface *reader) {
 	//无论如何btn的系统层都将被清除
 	ClearBtndef();
 	//All button related settings are cleared
+	//btnwait完成后只是清除了按钮的定义，btntime和btntime2的设定并没有清除，除非显示的使用btndef
 	btndefStr.clear();
+	exbtn_dStr.clear();
 	btnOverTime = 0;
 	btnUseSeOver = false;
 
