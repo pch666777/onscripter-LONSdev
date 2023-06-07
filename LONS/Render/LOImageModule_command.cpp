@@ -1209,3 +1209,9 @@ int LOImageModule::captionCommand(FunctionInterface *reader) {
 	SDL_SetWindowTitle(window, titleStr.c_str());
 	return RET_CONTINUE;
 }
+
+
+int LOImageModule::textspeedCommand(FunctionInterface *reader) {
+	G_textspeed = reader->GetParamInt(0);
+	return RET_CONTINUE;
+}

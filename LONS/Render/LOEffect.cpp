@@ -35,7 +35,11 @@ SDL_Surface* LOEffect::Create8bitMask(SDL_Surface *su, bool isscale) {
 		if (su->format->format != SDL_PIXELFORMAT_INDEX8) fsu = ConverToGraySurface(su);  //直接转为灰度图像
 		else {
 			fsu = CreateRGBSurfaceWithFormat(0, su->w, su->h, 8, SDL_PIXELFORMAT_INDEX8); //复制灰度图像
-			SDL_LockSurface(fsu);
+			//索引色与调色板有关，不能单纯的认为调色板就是符合梯度的
+			for (int line = 0; line < su->h; line++) {
+
+			}
+
 			for (int ii = 0; ii < su->h; ii++) {
 				char *dst = (char*)fsu->pixels + ii * fsu->pitch;
 				char *src = (char*)su->pixels + ii * su->pitch;
@@ -46,6 +50,12 @@ SDL_Surface* LOEffect::Create8bitMask(SDL_Surface *su, bool isscale) {
 	CreateGrayColor(fsu->format->palette);
 	//SDL_SaveBMP(fsu, "test.bmp");
 	return fsu;
+}
+
+
+SDL_Surface* LOEffect::Create8bitMask2(SDL_Surface *su, bool isscale) {
+
+	return nullptr;
 }
 
 //RGB图转灰度图

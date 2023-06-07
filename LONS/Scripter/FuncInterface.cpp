@@ -221,6 +221,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "cl",            "N,i,i,s",   "Y,N,N,N",     &FunctionInterface::clCommand },
 	{ "humanorder",    "s,i,i,i",   "Y,N,N,N",     &FunctionInterface::humanorderCommand },
 	{ "caption",       "s",         "Y",           &FunctionInterface::captionCommand },
+	{ "textspeed",     "i",         "Y",           &FunctionInterface::textspeedCommand },
 
 	//audio
 	{ "bgm",           "s",         "Y",           &FunctionInterface::bgmCommand },

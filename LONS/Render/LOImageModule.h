@@ -281,6 +281,7 @@ public:
 	int clCommand(FunctionInterface *reader);
 	int humanorderCommand(FunctionInterface *reader);
 	int captionCommand(FunctionInterface *reader);
+	int textspeedCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

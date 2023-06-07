@@ -368,6 +368,7 @@ public:
 	virtual int clCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int humanorderCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int captionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int textspeedCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int bgmonceCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
