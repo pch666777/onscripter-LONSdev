@@ -100,7 +100,10 @@ void LOAudioModule::SetChannelVol(int channel, int vol) {
 		if(isSePalyBgmDown() && Mix_Playing(-1) != 0) tvol *= 0.6;
 		Mix_VolumeMusic((int)tvol);
 	}
-	else Mix_Volume(channel, (int)tvol);
+	else {
+		Mix_Volume(channel, (int)tvol);
+		//SDL_Log("channel %d, vol is %d", channel, (int)tvol);
+	}
 }
 
 void LOAudioModule::SetChannelVol(int channel) {
@@ -206,6 +209,7 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 	inputChannelSafe(channel, aue);
 
 	if (aue->isAvailable()) {
+		SetChannelVol(aue->channel);
 		Mix_PlayChannel(aue->channel, aue->chunk, aue->loopCount);
 	}
 
@@ -372,7 +376,7 @@ int LOAudioModule::dwaveCommand(FunctionInterface *reader) {
 	int channel = reader->GetParamInt(0);
 	LOString s = reader->GetParamStr(1);
 
-	//if (reader->GetCurrentLine() == 185094) {
+	//if (reader->GetCurrentLine() == 38264 && channel == 0) {
 	//	int bbk = 1;
 	//}
 

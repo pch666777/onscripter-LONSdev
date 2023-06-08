@@ -8,6 +8,7 @@ LOAudioElement::LOAudioElement() {
 	SetNull();
 	channel = 0;
 	loopCount = 0;
+	flags = 0 ;
 }
 
 LOAudioElement::~LOAudioElement() {
