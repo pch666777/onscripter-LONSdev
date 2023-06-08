@@ -47,7 +47,7 @@ public:
 	bool UpdateDstRect(SDL_Rect *rect);
 	void ReadyToRun() { postime = 0; }
 	SDL_Surface* Create8bitMask(SDL_Surface *su,bool isscale);
-	SDL_Surface* Create8bitMask2(SDL_Surface *su, bool isscale);
+	SDL_Surface* Create8bitMask2(SDL_Surface *su, int w, int h);
 	static SDL_Surface* ConverToGraySurface(SDL_Surface *su);
 	static void CreateGrayColor(SDL_Palette *pale);
 

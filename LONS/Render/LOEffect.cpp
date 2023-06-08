@@ -53,9 +53,43 @@ SDL_Surface* LOEffect::Create8bitMask(SDL_Surface *su, bool isscale) {
 }
 
 
-SDL_Surface* LOEffect::Create8bitMask2(SDL_Surface *su, bool isscale) {
+//只平铺遮片，不缩放遮片，为了后面计算更方便，需要先做一个转换
+SDL_Surface* LOEffect::Create8bitMask2(SDL_Surface *su, int w, int h) {
+	//获取基础surface的RGB排列方式
+	char mbit[4];
+	SDL_Palette *pal = nullptr;
 
-	return nullptr;
+	if (su->format->BytesPerPixel == 1) {
+		mbit[0] = 0;  //8位索引色
+		pal = su->format->palette;
+	}
+	else if(su->format->BytesPerPixel == 3 || su->format->BytesPerPixel == 4){
+		GetFormatBit(su->format, mbit);  //获取 R G B A的排列模式
+	}
+	else {
+		FatalError("LOEffect::Create8bitMask2() not support %d bytes color module!", su->format->BytesPerPixel);
+		return nullptr;
+	}
+
+	//使用8位索引色，而且调色板要安装 0-255规则排列
+	SDL_Surface *fsu = CreateRGBSurfaceWithFormat(0, w, h, 8, SDL_PIXELFORMAT_INDEX8);
+	for (int line = 0; line < h; line++) {
+		Uint8 *dst = (Uint8*)fsu->pixels + line * fsu->pitch;
+		Uint8 *src = nullptr;
+		for (int kk = 0; kk < w; kk++) {
+			//回到src原点
+			if(kk % su->w == 0) src = (Uint8*)su->pixels + (line % su->h) * su->pitch;  //不能超出src的范围
+			//源图像是索引色，要取色板，因为色板的排列方式跟预期可能是不一样的
+			if (pal) dst[0] = pal->colors[src[0]].r;
+			else dst[0] = src[mbit[0]];  //RGB只取R通道
+			dst++;
+			src += su->format->BytesPerPixel;
+		}
+	}
+
+	//创建调色板
+	CreateGrayColor(fsu->format->palette);
+	return fsu;
 }
 
 //RGB图转灰度图

@@ -566,8 +566,8 @@ void LOImageModule::PrepareEffect(LOEffect *ef) {
 		//遮片不存在按渐变处理
 		if (!su) ef->nseffID = 10;
 		else {
-			//SDL_SaveBMP(su->GetSurface(), "666.bmp");
-			SDL_Surface *tmp = ef->Create8bitMask(su->GetSurface(), false);
+			//ons的遮片只平铺，不缩放
+			SDL_Surface *tmp = ef->Create8bitMask2(su->GetSurface(), G_gameWidth, G_gameHeight);
 			//SDL_SaveBMP(tmp,"666.bmp");
 			ef->masksu.reset(new LOtextureBase(tmp));
 			delete su;
