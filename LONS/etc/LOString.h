@@ -1,4 +1,4 @@
-/*
+﻿/*
 //带编码信息的字符串，c++是否总是陷入造轮子的怪圈？
 */
 #ifndef __LOSTRING_H__
@@ -90,6 +90,9 @@ public:
 	LOString substrWord(int start, int len);
 	LOString Itoa2(int number);
 	LOString PathTypeTo(PATH_TYPE ptype);
+
+	//获取指定符号的右边 "bac.ef" --> '.' --> "ef"，用于获取后缀，仅考虑英文
+	LOString GetRightOfChar(char c);
 	int HashStr();
 	void SelfToUtf8();
 

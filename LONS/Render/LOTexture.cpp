@@ -413,6 +413,7 @@ bool LOtexture::activeFlagControl() {
 }
 
 
+
 void LOtexture::setBlendModel(SDL_BlendMode model) {
 	useflag &= (~USE_BLEND_MOD);
 	if (model != SDL_BLENDMODE_NONE) {

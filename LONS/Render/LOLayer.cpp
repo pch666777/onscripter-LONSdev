@@ -459,6 +459,9 @@ void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
 			SDL_SetRenderDrawColor(render, cmd->drawColor.r, cmd->drawColor.g, cmd->drawColor.b, alpha & 0xff);
 			SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
 
+			//检查是否有colormodel
+			if (curInfo->texture->activeFlagControl());
+
 			switch (cmd->cmd){
 			case LOtexture::CMD_DRAW_FILL:
 				dst.x = cmd->A[0]; dst.y = cmd->A[1];

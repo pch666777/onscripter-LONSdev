@@ -533,7 +533,7 @@ int LOImageModule::windowbackCommand(FunctionInterface *reader) {
 }
 
 int LOImageModule::textCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 185450) {
+	//if (reader->GetCurrentLine() == 298263) {
 	//	int debugbreak = 1;
 	//}
 
@@ -1079,7 +1079,14 @@ int LOImageModule::aviCommand(FunctionInterface *reader) {
 	int isClickOver = 1;
 	if(reader->GetParamCount() > 1) reader->GetParamInt(1);
 	//默认的情况都是铺满屏幕
-	LOString tmp = StringFormat(512, "*v/%d,%d,mpg;%s", G_gameWidth, G_gameHeight, fn.c_str());
+	//LOString tmp = StringFormat(512, "*v/%d,%d,mpg;%s", G_gameWidth, G_gameHeight, fn.c_str());
+	LOString tmp = StringFormat(512, "*v/%d,%d,", G_gameWidth, G_gameHeight);
+	//确定是哪种格式
+	LOString suffix = fn.GetRightOfChar('.').toLower();
+	if (suffix.length() > 0) tmp += suffix;
+	else tmp += "mpg";
+	tmp += ";" + fn;
+
 	//准备纹理
 	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
 	//必须检查是否已经有正在播放的对象

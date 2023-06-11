@@ -1,4 +1,4 @@
-/*
+﻿/*
 //带编码信息的字符串，c++是否总是陷入造轮子的怪圈？
 */
 #include "LOString.h"
@@ -631,4 +631,17 @@ void LOString::SelfToUtf8(){
 		std::string s = GetEncoder()->GetUtf8String(this) ;
 		this->assign(s.c_str()) ;
 	}
+}
+
+
+LOString LOString::GetRightOfChar(char c) {
+	//只考虑英文
+	for (int ii = length() - 1; ii >= 0; ii--) {
+		if (at(ii) == c) {
+			LOString s(c_str() + ii + 1);
+			s.SetEncoder(GetEncoder());
+			return s;
+		}
+	}
+	return LOString();
 }

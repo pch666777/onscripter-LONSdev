@@ -1149,19 +1149,32 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 	LOString fn(buf);
 	fn.SetEncoder(s->GetEncoder());
 	LOIO::GetPathForRead(fn);
+	//根据格式选择不同的初始化方式
 
-	LOActionMovie *m = new LOActionMovie();
-	LOShareAction video(m);
-	char *errs = m->InitSmpeg(fn.c_str());
-	if (errs) {
-		FatalError("LOImageModule::TextureFromVideo() faild:%s", errs);
-		return;
+	LOShareAction video;
+	if (sufix == "mpg") {
+		LOActionMovie *m = new LOActionMovie();
+		char *errs = m->InitSmpeg(fn.c_str());
+		if (errs) {
+			SDL_Log("LOImageModule::TextureFromVideo() faild:%s", errs);
+			delete m;
+		}
+		else video.reset(m);
 	}
-	bak->SetAction(video);
+	//如果上一步没有成功，尝试调用外部播放器
+	if (!video) {
 
-	LOShareTexture tex(new LOtexture());
-	tex->setEmpty(bak->showWidth, bak->showHeight);
-	bak->SetNewFile(tex);
+	}
+
+	if (video) {
+		bak->SetAction(video);
+		LOShareTexture tex(new LOtexture());
+		tex->setEmpty(bak->showWidth, bak->showHeight);
+		bak->SetNewFile(tex);
+	}
+	else{
+		SDL_Log("video play faild:%s", fn.c_str());
+	}
 	return;
 }
 
