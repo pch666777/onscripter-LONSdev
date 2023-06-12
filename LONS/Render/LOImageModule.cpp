@@ -1352,7 +1352,8 @@ bool LOImageModule::LoadDialogWin() {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
 	if ( sayWindow.winstr.length() > 0) {
 		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
-		loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255, true);
+		//loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255, true);
+		loadSpCore(info, sayWindow.winstr, sayWindow.x, sayWindow.y, 255, true);
 		if (info->bak.texType == LOtexture::TEX_COLOR_AREA) {
 			if (info->bak.texture) {
 				info->bak.texture->setAplhaModel(-1);

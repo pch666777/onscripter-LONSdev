@@ -764,8 +764,17 @@ int LOImageModule::setwindowCommand(FunctionInterface *reader) {
 	sayWindow.y = reader->GetParamInt(13);
 
 	if (sayWindow.winstr.length() > 0 && sayWindow.winstr.at(0) == '#') {
-		sayWindow.w = reader->GetParamInt(14);
-		sayWindow.h = reader->GetParamInt(15);
+		sayWindow.w = reader->GetParamInt(14) - sayWindow.x + 1;
+		sayWindow.h = reader->GetParamInt(15) - sayWindow.y + 1;
+		if (sayWindow.w < 1) {
+			SDL_LogError(0, "[setwindow] command color mode w < 1, will reset 1");
+			sayWindow.w = 1;
+		}
+		if (sayWindow.h < 1) {
+			SDL_LogError(0, "[setwindow] command color mode h < 1, will reset 1");
+			sayWindow.h = 1;
+		}
+		//
 		sayWindow.winstr = StringFormat(64, ">%d,%d,%s", sayWindow.w, sayWindow.h, sayWindow.winstr.c_str());
 	}
 

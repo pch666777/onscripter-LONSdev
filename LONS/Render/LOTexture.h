@@ -186,6 +186,9 @@ public:
 	bool isTextTexture() { return useflag & USE_TEXTURE_TEXT; }
 	bool isCmdTexture() { return useflag & USE_TEXTURE_CMD; }
 	bool isEdit() { return useflag & USE_TEXTURE_EDIT; }
+	int  GetFlag() { return useflag; }
+	SDL_BlendMode GetBlendMode() {return blendmodel;}
+	SDL_Color GetBlendColor() { return color; }
 	
 	void SaveSurface(LOString *fname) ;  //debug use
 

@@ -459,12 +459,19 @@ void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
 			SDL_SetRenderDrawColor(render, cmd->drawColor.r, cmd->drawColor.g, cmd->drawColor.b, alpha & 0xff);
 			SDL_SetRenderDrawBlendMode(render, SDL_BLENDMODE_BLEND);
 
-			//检查是否有colormodel
-			if (curInfo->texture->activeFlagControl());
+			//是否有blendmod
+			int flag = curInfo->texture->GetFlag();
+			if (flag & LOtexture::USE_BLEND_MOD) {
+				SDL_SetRenderDrawBlendMode(render, curInfo->texture->GetBlendMode());
+			}
+
+			//是否有blendcolor，直接绘图不支持color mod
 
 			switch (cmd->cmd){
 			case LOtexture::CMD_DRAW_FILL:
-				dst.x = cmd->A[0]; dst.y = cmd->A[1];
+				//x y 填充为实际的偏移
+				//dst.x = cmd->A[0]; dst.y = cmd->A[1];
+				dst.x = curInfo->offsetX; dst.y = curInfo->offsetY;
 				dst.w = cmd->B[0]; dst.h = cmd->B[1];
 				SDL_RenderFillRectF(render, &dst);
 				break;
