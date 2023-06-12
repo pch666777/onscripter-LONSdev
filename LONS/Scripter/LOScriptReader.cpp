@@ -20,6 +20,7 @@ bool LOScriptReader::st_globalon; //是否使用全局变量
 bool LOScriptReader::st_labellog; //是否使用标签变量
 bool LOScriptReader::st_errorsave; //是否使用错误自动保存
 bool LOScriptReader::st_saveonflag = false;
+bool LOScriptReader::st_autosaveoff_flag = false;
 bool st_skipflag = false;   //快进标记
 //bool st_fastPrint = true;  //快速print模式，会导致print时帧数暴涨
 int LOScriptReader::gloableBorder = 200;
@@ -1755,13 +1756,15 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 }
 
 
+//文字显示完成，进入textgosub
 int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 	ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
 	hook->InvalidMe();
     //关闭rubyline模式
     imgeModule->SimpleEvent(SIMPLE_CLOSE_RUBYLINE, nullptr) ;
 	//如果是saveon模式，则添加存档点
-	if(st_saveonflag) savepointCommand(this);
+	//autosaveoff_flag有效时，saveon/saveoff会失效
+	if(st_saveonflag || st_autosaveoff_flag) savepointCommand(this);
 	return 0;
 }
 

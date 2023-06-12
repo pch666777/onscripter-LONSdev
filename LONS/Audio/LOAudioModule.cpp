@@ -169,7 +169,10 @@ void LOAudioModule::BGMCore(LOString &s, int looptimes) {
 			//提交到主线程
 			imgeModule->waitEventQue.push_N_back(fade->fadeInEvent);
 		}
-		else SetChannelVol(INDEX_MUSIC);  //恢复音量
+		else {
+			channelVolXS[INDEX_MUSIC] = 100;
+			SetChannelVol(INDEX_MUSIC);  //恢复音量
+		}
 
 		//播放
 		Mix_PlayMusic(aue->music, aue->loopCount);

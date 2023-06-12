@@ -1202,12 +1202,17 @@ int LOScriptReader::saveonCommand(FunctionInterface *reader) {
 	int ret = RET_CONTINUE;
 	if (reader->isName("saveon")) {
 		//saveon
-		st_saveonflag = true;
+		if(!st_autosaveoff_flag) st_saveonflag = true;
 	}
-	else {
+	else if(reader->isName("saveoff")){
 		//saveoff 从on切换到off要记录一次
-		if (st_saveonflag) ret = savepointCommand(reader);
-		st_saveonflag = false;
+		if (!st_autosaveoff_flag) {
+			if (st_saveonflag) ret = savepointCommand(reader);
+			st_saveonflag = false;
+		}
+	}
+	else { //autosaveoff
+		st_autosaveoff_flag = true;
 	}
 	return ret;
 }
