@@ -728,10 +728,17 @@ void LOScriptReader::TextPushParams() {
 			}
 			buf = scriptbuf->SkipSpace(currentLable->c_buf);
 		}
-		else if (buf[0] == '$') {
-			//work here!
-			LOString ss = ParseStrVariable();
-			if(ss.length() > 0) ReadyToRunEval(&ss);
+		else if (buf[0] == '$' || buf[0] == '%') { //变量
+			const char *c_buf = currentLable->c_buf;
+			currentLable->c_buf = buf;
+			ONSVariableRef *v = ParseVariableBase(buf[0] == '$');
+			if (v) {
+				LOString *ss = v->GetStr();
+				if (ss) text.append(ss->c_str(), ss->length());
+				buf = currentLable->c_buf;
+				currentLable->c_buf = c_buf;
+			}
+			else buf++;
 		}
 		else {
 			int ulen = scriptbuf->ThisCharLen(buf);
