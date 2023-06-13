@@ -25,7 +25,7 @@ public:
 
 	static LOString ioReadDir;
 	static LOString ioWriteDir;
-	static LOString ioWorkDir;
+	//static LOString ioWorkDir;
 	static LOString ioSaveDir;
 private:
 

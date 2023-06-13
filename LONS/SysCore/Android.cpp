@@ -53,6 +53,7 @@ Java_com_xc_lons_MainActivity_LonsSetStringFromJNI(
             //__android_log_print(ANDROID_LOG_INFO, "LONS", "writeDir is:%s",s_value.c_str());
             break;
         case SET_SAVE_DIR:
+			//非必要ioSaveDir不应该由外部更改
             LOIO::ioSaveDir = s_value;
             break;
     }

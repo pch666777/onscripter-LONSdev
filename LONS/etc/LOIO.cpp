@@ -5,10 +5,11 @@
 #include "LOIO.h"
 
 
-LOString LOIO::ioReadDir;
-LOString LOIO::ioWriteDir;
-LOString LOIO::ioWorkDir;
-LOString LOIO::ioSaveDir;
+LOString LOIO::ioReadDir;    //游戏文件所在的目录
+LOString LOIO::ioWriteDir;   //游戏写入文件的目录，可能存在存档、LOG等文件不能写入ioReadDir的情况，因此将其分开
+                             //因此可以设定与游戏目录无关的存档目录
+
+LOString LOIO::ioSaveDir;    //由游戏内savedir设定的目录，非必要不应该从外部设定，很可能会导致问题
 
 LOIO::LOIO() {
 }
