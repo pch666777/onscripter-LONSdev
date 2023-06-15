@@ -212,11 +212,14 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 			//在多线程脚本中可能同时出现 btnwait 和 delay这种需要同时响应按键的窘境，这里btnwait的优先级都被滞后了
 			//这里要注意检查事件类型是否被改变
 			int old = ev->catchFlag;
-			if (SendEventToHooks(ev.get(), 0) == LOEventHook::RUNFUNC_CONTINUE) {
-				if(ev->catchFlag == old) {
-					if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
-					else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
-					SendEventToLayer(ev.get());
+			//想要特效点击跳过的事件现在不在hook队列里了，将在这里处理
+			if (CutPrintEffect(nullptr, ev.get()) == LOEventHook::RUNFUNC_CONTINUE) {
+				if (SendEventToHooks(ev.get(), 0) == LOEventHook::RUNFUNC_CONTINUE) {
+					if (ev->catchFlag == old) {
+						if (event->button.button == SDL_BUTTON_LEFT) ev->catchFlag = LOLayerDataBase::FLAGS_LEFTCLICK;
+						else if (event->button.button == SDL_BUTTON_RIGHT) ev->catchFlag = LOLayerDataBase::FLAGS_RIGHTCLICK;
+						SendEventToLayer(ev.get());
+					}
 				}
 			}
 		}
@@ -318,11 +321,14 @@ void LOImageModule::CutDialogueAction() {
 int LOImageModule::CutPrintEffect(LOEventHook *hook, LOEventHook *e) {
 	if (!hook) hook = printHook.get();
 
-	if (hook->enterEdit() || hook->isState(LOEventHook::STATE_EDIT)) {
+	if (hook->isState(LOEventHook::STATE_EDIT)) {
 		LOEffect *ef = (LOEffect*)hook->GetParam(0)->GetPtr();
 		const char *printName = hook->GetParam(1)->GetChars(nullptr);
-		ContinueEffect(ef, printName, 0x7ffffff);
-		hook->FinishMe();
+		if (ef) {
+			//直接运行到最后
+			ef->RunEffect2(PrintTextureEdit, 0x7ffffff);
+			ef->postime = -2;
+		}
 		//转换事件类型
 		if (e && e->catchFlag == LOEventHook::ANSWER_LEFTCLICK) e->catchFlag = LOEventHook::ANSWER_PRINGJMP;
 		else return LOEventHook::RUNFUNC_FINISH;

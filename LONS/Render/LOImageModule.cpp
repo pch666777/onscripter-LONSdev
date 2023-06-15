@@ -389,6 +389,7 @@ int LOImageModule::MainLoop() {
 	
 	//退出前终止效果
 	CutPrintEffect(nullptr, nullptr);
+	if (printHook)printHook->FinishMe();
 
 	ChangeModuleState(MODULE_STATE_NOUSE);
 
@@ -470,7 +471,8 @@ int LOImageModule::RefreshFrame(double postime) {
 		//如果是print 2-18,我们将检查effect的运行情况
 		if (isPrinting) {
 			if (ef) {
-				if(ef->postime < 0) printHook->FinishMe();  //print 2-8已经完成了
+				if(ef->postime < 0) 
+					printHook->FinishMe();  //print 2-8已经完成了
 				else if (ef->RunEffect2(PrintTextureEdit, postime)) {
 					ef->postime = -2; //print 2-8执行完成了，但是还需要运行一帧
 				}
