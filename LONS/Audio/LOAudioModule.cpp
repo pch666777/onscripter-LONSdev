@@ -460,6 +460,25 @@ int LOAudioModule::stopCommand(FunctionInterface *reader) {
 }
 
 
+int LOAudioModule::getvoicestateCommand(FunctionInterface *reader) {
+	ONSVariableRef *v = reader->GetParamRef(0);
+	int channel = reader->GetParamInt(1);
+	int val = 0;
+	if (channel == -1) val = Mix_Playing(-1); //0~49
+	else if (channel == -2) val = Mix_PlayingMusic();
+	else if(channel == -3) val = Mix_Playing(INDEX_WAVE);
+	else if (channel >= 0 && channel < INDEX_MUSIC) val = Mix_Playing(channel);
+	else {
+		FatalError("LOAudioModule::getvoicestateCommand() out of range!");
+		return RET_ERROR;
+	}
+	v->SetValue(val);
+	return RET_CONTINUE;
+}
+
+
+
+
 void LOAudioModule::SePlay(int channel, LOString s, int loopcount) {
 	SeCore(channel, s, loopcount);
 }

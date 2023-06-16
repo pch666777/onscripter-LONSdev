@@ -1110,7 +1110,11 @@ btnwait %0
 return
 
 ;音频检测
-;*audio_test
+*audio_test
+
+
+
+
 bgmfadein 1000
 bgmfadeout 1000
 
@@ -1130,7 +1134,6 @@ print 1
 dwave 10,"sys_sra002.ogg"
 btnwait %0
 
-*audio_test
 lsp 10,":s/26,26,0;#ffffff在通道0播放se，播放结束自动进行下一项，如不自动则出现错误",10,200
 print 1
 resettimer

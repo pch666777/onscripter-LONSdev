@@ -255,12 +255,15 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "dwaveload",     "i,s",       "Y,Y",         &FunctionInterface::dwaveloadCommand },
 	{ "dwaveloop",     "i,s",       "Y,Y",         &FunctionInterface::dwaveCommand },
 	{ "dwaveplay",     "i",         "Y",           &FunctionInterface::dwaveplayCommand },
+	{ "dwaveplayloop", "i",         "Y",           &FunctionInterface::dwaveplayCommand },
 	{ "dwavestop",     "i",         "N",           &FunctionInterface::dwavestopCommand },
 	{ "getbgmvol",     "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "getmp3vol",     "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "getsevol",      "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "getvoicevol",   "I",         "Y",           &FunctionInterface::getvoicevolCommand },
 	{ "stop",          "\0",        "",            &FunctionInterface::stopCommand },
+	//lons添加了的获取某个音轨是否处于播放状态
+	{ "getvoicestate", "I,i",       "Y,Y",         &FunctionInterface::getvoicestateCommand },
 
 	//file
 	{ "nsadir",        "s",         "Y",           &FunctionInterface::nsadirCommand },

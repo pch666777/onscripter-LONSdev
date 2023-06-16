@@ -91,6 +91,7 @@ public:
 	int getvoicevolCommand(FunctionInterface *reader);
 	int loopbgmstopCommand(FunctionInterface *reader);
 	int stopCommand(FunctionInterface *reader);
+	int getvoicestateCommand(FunctionInterface *reader);
 
 private:
 	int bgmFadeInTime;
