@@ -181,7 +181,8 @@ public:
 	//创建一个图层相应事件
 	static LOEventHook* CreateLayerAnswer(int answer,void *lyr);
 	//创建一个se播放完成事件
-	static LOEventHook* CreateSePalyFinishEvent(int channel);
+	static LOEventHook* CreateSePalyFinishEvent(int channel, int eid);
+	//
 	//创建一个没有参数的信号
 	static LOEventHook* CreateSignal(int param1, int param2);
 	//创建一个脚本模块呼叫call，要求渲染线程响应

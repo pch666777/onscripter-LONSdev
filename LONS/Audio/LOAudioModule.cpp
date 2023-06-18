@@ -187,8 +187,8 @@ void LOAudioModule::BGMStopCore() {
 		//每秒是降低的
 		double per = -100.0 / bgmFadeOutTime;
 		fade->fadeOutEvent = LOShareEventHook(LOEventHook::CreateAudioFadeEvent(INDEX_MUSIC, per, 0.0));
-		//由100%开始
-		channelVolXS[INDEX_MUSIC] = 100;
+		//淡出事件并不一定由100开始，而是由当前系数开始的
+		//channelVolXS[INDEX_MUSIC] = 100;
 		SetChannelVol(INDEX_MUSIC);
 		//提交到主线程
 		imgeModule->waitEventQue.push_N_back(fade->fadeOutEvent);
@@ -271,17 +271,20 @@ int LOAudioModule::InitAudioModule() {
 
 int LOAudioModule::loopbgmCommand(FunctionInterface *reader) {
 	LOString s1 = reader->GetParamStr(0);
+	//afterBgmName必须在脚本线程操作
 	afterBgmName = reader->GetParamStr(1);
 	BGMCore(s1, 1);
-	Mix_HookMusicFinished(musicFinished);
-	SetFlags(FLAGS_BGM_CALLBACK);
+	//创建一个事件hook，当bgm播放完成时事件hook转到主脚本事件队列中，然后执行
+	//这样就能确保bgm播放是在脚本线程中
+	LOShareEventHook ev(LOEventHook::CreateSePalyFinishEvent(INDEX_MUSIC, 1));
+	waitEventQue.push_N_back(ev);
 	return RET_CONTINUE;
 }
 
 int LOAudioModule::loopbgmstopCommand(FunctionInterface *reader) {
+	//只要保证回调的bgm播放在脚本线程中执行，安全性就可以保障
 	afterBgmName.clear();
 	BGMStopCore();
-	UnsetFlags(FLAGS_BGM_CALLBACK);
 	return RET_CONTINUE;
 }
 
@@ -431,6 +434,7 @@ int LOAudioModule::dwavestopCommand(FunctionInterface *reader) {
 }
 
 int LOAudioModule::getvoicevolCommand(FunctionInterface *reader) {
+	//getvoicevol只是获取设定的音量，并不能获取实际的音量 ，比如正在淡入/淡出时
 	ONSVariableRef *v = reader->GetParamRef(0);
 	int vol = channelVol[INDEX_MUSIC];
 	if (reader->isName("getvoicevol")) vol = channelVol[INDEX_WAVE];
@@ -476,6 +480,49 @@ int LOAudioModule::getvoicestateCommand(FunctionInterface *reader) {
 	return RET_CONTINUE;
 }
 
+
+int LOAudioModule::getrealvolCommand(FunctionInterface *reader) {
+	//获取实际的音量
+	ONSVariableRef *v = reader->GetParamRef(0);
+	int channel = reader->GetParamInt(1);
+	if (channel == -2) channel = INDEX_MUSIC;
+	else if (channel == -3) channel = INDEX_WAVE;
+	else if (channel >= 0 && channel < INDEX_MUSIC);
+	else {
+		FatalError("LOAudioModule::getrealvolCommand() out of range!");
+		return RET_ERROR;
+	}
+
+	int val = (int)channelVolXS[channel] * channelVol[channel] / 100;
+	v->SetValue(val);
+	return RET_CONTINUE;
+}
+
+
+//获取正在播放的文件名，没有播放返回空字符串
+int LOAudioModule::getvoicefileCommand(FunctionInterface *reader) {
+	ONSVariableRef *v = reader->GetParamRef(0);
+	int channel = reader->GetParamInt(1);
+	if (channel == -2) channel = INDEX_MUSIC;
+	else if (channel == -3) channel = INDEX_WAVE;
+	else if (channel >= 0 && channel < INDEX_MUSIC);
+	else {
+		FatalError("LOAudioModule::getrealvolCommand() out of range!");
+		return RET_ERROR;
+	}
+
+	bool isplay = false;
+	if (channel == INDEX_MUSIC) isplay = Mix_PlayingMusic();
+	else isplay = Mix_Playing(channel);
+
+	if (isplay) {
+		lock();
+		if(audioPtr[channel]) v->SetValue(&audioPtr[channel]->buildStr);
+		unlock();
+	}
+	else v->SetValue((LOString*)nullptr);
+	return RET_CONTINUE;
+}
 
 
 
@@ -590,6 +637,9 @@ int LOAudioModule::RunFunc(LOEventHook *hook, LOEventHook *e) {
 	case LOEventHook::FUN_AudioFade:
 		RunFuncAudioFade(hook, e);
 		break;
+	case LOEventHook::FUN_SE_PLAYFINISH:
+		RunFuncPlayFinish(hook, e);
+		break;
 	default:
 		break;
 	}
@@ -631,6 +681,17 @@ int LOAudioModule::RunFuncAudioFade(LOEventHook *hook, LOEventHook *e) {
 			else Mix_HaltChannel(channel);
 		}
 	}
+	return LOEventHook::RUNFUNC_FINISH;
+}
+
+
+int LOAudioModule::RunFuncPlayFinish(LOEventHook *hook, LOEventHook *e) {
+	e->InvalidMe();
+	//目前只有loopbgm，所以不用做判断
+	if (afterBgmName.length() > 0) {
+		BGMCore(afterBgmName, -1);
+	}
+	afterBgmName.clear();
 	return LOEventHook::RUNFUNC_FINISH;
 }
 
@@ -727,9 +788,12 @@ int LOAudioModule::SendAudioEventToQue(int channel) {
 			}
 		}
 		else if (hook->catchFlag & LOEventHook::ANSWER_SEPLAYOVER_NORMAL) {
-			//work herr
-			FatalError("now,work here LOAudioModule::SendAudioEventToList()!");
-
+			if (channel == hook->GetParam(0)->GetInt()) {
+				if (hook->enterUntillEdit()) {
+					hook->FinishMe();
+					scriptModule->waitEventQue.push_N_back(hook);
+				}
+			}
 		}
 	}
 

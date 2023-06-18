@@ -95,6 +95,7 @@ public:
 	LOString GetRightOfChar(char c);
 	int HashStr();
 	void SelfToUtf8();
+	LOString ToUtf8();
 
 	const char* e_buf() { return c_str() + length(); }
 	const char* GetLineBuf(int line);

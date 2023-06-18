@@ -634,6 +634,20 @@ void LOString::SelfToUtf8(){
 }
 
 
+LOString LOString::ToUtf8() {
+	LOString s;
+	if (GetEncoder()->codeID == LOCodePage::ENCODER_UTF8) {
+		s.assign(this->c_str());
+		s.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8));
+	}
+	else {
+		s = GetEncoder()->GetUtf8String(this);
+		s.SetEncoder(LOCodePage::GetEncoder(LOCodePage::ENCODER_UTF8));
+	}
+	return s;
+}
+
+
 LOString LOString::GetRightOfChar(char c) {
 	//只考虑英文
 	for (int ii = length() - 1; ii >= 0; ii--) {

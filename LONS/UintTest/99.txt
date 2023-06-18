@@ -1112,7 +1112,128 @@ return
 ;音频检测
 *audio_test
 
+lsp 10,":s/26,26,0;#ffffff正在测试音频，请勿点击或触摸",300,80
+print 1
 
+mov %1,0
+bgm "001.ogg"
+getvoicestate %1,-2
+if %1 != 1 debuglog "[bgm]命令测试不通过"
+
+mov %2,0
+bgmstop
+getvoicestate %2,-2
+if %2 != 0 debuglog "[bgmstop]命令测试不通过"
+
+bgmonce "data\SRA_SYS02.ogg"
+getvoicestate %1,-2
+if %1 != 1 debuglog "[bgmonce]命令测试不通过"
+
+
+delay 3000
+getvoicestate %1,-2
+if %1 != 0 debuglog "[bgmonce]命令测试不通过"
+
+bgmvol 50
+getbgmvol %1
+if %1 != 50 debuglog "[bgmvol]命令测试不通过" 
+
+;测试fadein fadeout
+bgmvol 100
+mov %1,0
+bgmfadein 2000
+bgm "001.ogg"
+delay 1000
+;获取实际的音量
+getrealvol %1,-2
+if %1 < 45 || %1 > 60 debuglog "[bgmfadein]命令测试不通过" ,%1
+bgmstop
+
+;测试bgmfadeout
+bgmfadein -1
+mov %1,0
+bgmfadeout 2000
+bgm "001.ogg"
+delay 500
+bgmstop
+delay 1000
+getrealvol %1,-2
+if %1 < 38 || %1 > 52 debuglog "[bgmfadeout]命令测试不通过" ,%1
+
+bgmfadeout 0
+bgmfadein 0
+bgmstop
+
+loopbgm "data\SRA_SYS02.ogg","011.mp3"
+delay 3000
+getvoicefile $1,-2
+if $1 != "011.mp3" debuglog "[loopbgm]命令测试不通过",$1
+
+mov %1,11
+loopbgmstop
+getvoicestate %1,-2
+if %1 != 0 debuglog "[loopbgmstop]命令测试不通过"
+
+mov %1,11
+mp3 "data\SRA_SYS02.ogg"
+getvoicestate %1,-2
+if %1 != 1 debuglog "[mp3]命令测试不通过"
+delay 3000
+getvoicestate %1,-2
+if %1 != 0 debuglog "[mp3]命令测试不通过"
+
+mp3loop "data\SRA_SYS01.ogg"
+delay 3000
+mov %1,11
+getvoicestate %1,-2
+if %1 != 1 debuglog "[mp3loop]命令测试不通过"
+
+mov %1,11
+mp3stop
+getvoicestate %1,-2
+if %1 != 0 debuglog "[mp3stop]命令测试不通过"
+
+mov %1,11
+mp3save "data\SRA_SYS01.ogg"
+getvoicestate %1,-2
+if %1 != 1 debuglog "[mp3save]命令测试不通过"
+delay 2500
+getvoicestate %1,-2
+if %1 != 0 debuglog "[mp3save]命令测试不通过"
+
+mp3vol 20
+getbgmvol %1
+if %1 != 20 debuglog "[mp3vol]命令测试不通过"
+mp3vol 100
+
+bgmstop
+
+;mp3fadein  mp3fadeout
+mp3fadein 2000
+mp3fadeout 2000
+mp3 "011.mp3"
+delay 1000
+getrealvol %1,-2
+if %1 < 45 || %1 > 62 debuglog "[mp3fadein]命令测试不通过"
+
+mov %1,0
+delay 1000  ;完成fadein
+mp3stop
+delay 1000
+getrealvol %1,-2
+if %1 > 55 || %1 < 40 debuglog "[mp3fadeout]命令测试不通过",%1
+
+mp3fadein -1
+mp3fadeout -1
+
+;==========测试音效播放==========
+
+
+
+lsp 10,":s/26,26,0;#ffffff音频测试完成",300,80
+btnwait %0
+
+end
 
 
 bgmfadein 1000

@@ -264,6 +264,8 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "stop",          "\0",        "",            &FunctionInterface::stopCommand },
 	//lons添加了的获取某个音轨是否处于播放状态
 	{ "getvoicestate", "I,i",       "Y,Y",         &FunctionInterface::getvoicestateCommand },
+	{ "getvoicefile",  "S,i",       "Y,Y",         &FunctionInterface::getvoicefileCommand },
+	{ "getrealvol",    "I,i",       "Y,Y",         &FunctionInterface::getrealvolCommand },
 
 	//file
 	{ "nsadir",        "s",         "Y",           &FunctionInterface::nsadirCommand },

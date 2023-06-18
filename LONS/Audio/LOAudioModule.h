@@ -64,6 +64,7 @@ public:
 
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
 	int RunFuncAudioFade(LOEventHook *hook, LOEventHook *e);
+	int RunFuncPlayFinish(LOEventHook *hook, LOEventHook *e);
 
 	void ResetMe();
 	void LoadFinish();
@@ -92,6 +93,8 @@ public:
 	int loopbgmstopCommand(FunctionInterface *reader);
 	int stopCommand(FunctionInterface *reader);
 	int getvoicestateCommand(FunctionInterface *reader);
+	int getrealvolCommand(FunctionInterface *reader);
+	int getvoicefileCommand(FunctionInterface *reader);
 
 private:
 	int bgmFadeInTime;

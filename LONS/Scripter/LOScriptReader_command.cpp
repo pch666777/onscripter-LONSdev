@@ -471,12 +471,13 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 	for (int ii = 0; ii < reader->GetParamCount(); ii++) {
 		ONSVariableRef *v = GetParamRef(ii);
 		if (v->isIntRef()) {
-			errs.append("   %%" + std::to_string(v->GetNSid()) + "=" + std::to_string((int)v->GetReal()));
+			errs.append("   %" + std::to_string(v->GetNSid()) + "=" + std::to_string((int)v->GetReal()));
 		}
 		else if (v->isStrRef()) {
 			errs.append("   $" + std::to_string(v->GetNSid()) + "=\"");
-			LOString *s = v->GetStr();
-			if (s) errs.append(*s);
+			if (v->GetStr()) {
+				errs.append(v->GetStr()->ToUtf8());
+			}
 			errs.append("\"");
 		}
 		else if (v->isArrayRef()) {
@@ -490,9 +491,9 @@ int LOScriptReader::debuglogCommand(FunctionInterface *reader) {
 			errs.append("   number=" + std::to_string((int)v->GetReal()));
 		}
 		else if (v->isStr()) {
-			LOString *s = v->GetStr();
-			if (s) errs.append("   \"" + *s + "\"");
-			else errs.append("\"\"");
+			LOString s = v->GetStr()->ToUtf8();
+			errs.append("   \"" + s + "\"");
+			//else errs.append("\"\"");
 		}
 		else {
 			FatalError("at file:[ %s ],line:[ %d ],What information do you want to debug output?",

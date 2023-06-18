@@ -341,11 +341,13 @@ LOEventHook* LOEventHook::CreateLayerAnswer(int answer, void *lyr) {
 }
 
 
-LOEventHook* LOEventHook::CreateSePalyFinishEvent(int channel) {
+LOEventHook* LOEventHook::CreateSePalyFinishEvent(int channel, int eid) {
 	auto *e = CreateHookBase();
-	e->param1 = MOD_RENDER;
+	e->catchFlag |= ANSWER_SEPLAYOVER_NORMAL;  //loopbgm或者其他
+	e->param1 = MOD_AUDIO;
 	e->param2 = FUN_SE_PLAYFINISH;
 	e->PushParam(new LOVariant(channel));
+	e->PushParam(new LOVariant(eid));
 	return e;
 }
 

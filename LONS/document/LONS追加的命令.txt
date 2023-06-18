@@ -87,3 +87,8 @@ getvoicestate NUM1,NUM2
 获取voice的播放状态
     NUM1：数值型变量，1为正在播放，0为停止播放
     NUM2：数值，要获取状态的频道，-2表示bgm，-3表示wave，-1表示0~50频道是否有播放状态，包括wave频道
+
+getrealvol  NUM1,NUM2
+获取当前实际的voice音量
+    NUM1：数值型变量，用于存储音量，值范围在0~100
+    NUM2：数值，要获取状态的频道，-2表示bgm，-3表示wave，-1无效

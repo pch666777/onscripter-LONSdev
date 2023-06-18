@@ -387,6 +387,8 @@ public:
 	virtual int loopbgmstopCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int stopCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int getvoicestateCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int getrealvolCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+	virtual int getvoicefileCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int nsadirCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int nsaCommand(FunctionInterface *reader) { return RET_VIRTUAL; }

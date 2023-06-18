@@ -1730,6 +1730,9 @@ int LOScriptReader::RunEventAfterFinish(LOEventHook *e) {
 		e->param2 = LOEventHook::FUN_Video_Finish_After;
 		imgeModule->RunFunc(e, nullptr);
 	}
+	else if (e->catchFlag & LOEventHook::ANSWER_SEPLAYOVER_NORMAL) { //loopbgm
+		audioModule->RunFunc(nullptr, e);
+	}
 	return 0;
 }
 
