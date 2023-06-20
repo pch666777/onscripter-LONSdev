@@ -132,7 +132,7 @@ private:
 	//void FreeAudioEl(int index);
 	void BGMCore(LOString &s, int looptimes);
 	void BGMStopCore();
-	void SeCore(int channel, LOString &s, int looptimes);
+	void SeCore(int channel, LOString &s, int looptimes, bool isplay = true);
 	void StopSeCore(int channel);
 	void SetChannelVol(int channel, int vol);
 	void SetChannelVol(int channel);

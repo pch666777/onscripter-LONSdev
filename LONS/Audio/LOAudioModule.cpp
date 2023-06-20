@@ -200,7 +200,7 @@ void LOAudioModule::BGMStopCore() {
 	}
 }
 
-void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
+void LOAudioModule::SeCore(int channel, LOString &s, int looptimes, bool isplay) {
 	Mix_HaltChannel(channel);
 
 	LOAudioElement* aue = takeChannelSafe(channel);
@@ -213,11 +213,11 @@ void LOAudioModule::SeCore(int channel, LOString &s, int looptimes) {
 
 	if (aue->isAvailable()) {
 		SetChannelVol(aue->channel);
-		Mix_PlayChannel(aue->channel, aue->chunk, aue->loopCount);
+		if(isplay) Mix_PlayChannel(aue->channel, aue->chunk, aue->loopCount);
 	}
 
 	//需要的话降低/恢复bgm的音量
-	if (isSePalyBgmDown()) SetChannelVol(INDEX_MUSIC);
+	if (isplay && isSePalyBgmDown()) SetChannelVol(INDEX_MUSIC);
 }
 
 
@@ -401,12 +401,7 @@ int LOAudioModule::dwaveloadCommand(FunctionInterface *reader) {
 
 	if (!CheckChannel(channel, "[dwaveload] channel out of range:%d")) return RET_CONTINUE;
 
-	StopSeCore(channel);
-	BinArray *bin = fileModule->ReadFile(&s, false);
-	LOAudioElement *aue = new LOAudioElement;
-	aue->SetData(bin, channel, 0);
-	inputChannelSafe(channel, aue);
-
+	SeCore(channel, s, 1, false);
 	return RET_CONTINUE;
 
 }
@@ -417,12 +412,11 @@ int LOAudioModule::dwaveplayCommand(FunctionInterface *reader) {
 	int looptime = 0;
 	if (reader->isName("dwaveplayloop"))  looptime = -1;
 
-	LOAudioElement *aue = takeChannelSafe(channel);
-	if (aue) {
-		aue->SetLoop(looptime);
-		inputChannelSafe(channel, aue);
+	Mix_HaltChannel(channel);
+	if (audioPtr[channel] && audioPtr[channel]->chunk) {
+		Mix_PlayChannel(channel, audioPtr[channel]->chunk, looptime);
 	}
-	currentChannel = channel;
+
 	return RET_CONTINUE;
 }
 
