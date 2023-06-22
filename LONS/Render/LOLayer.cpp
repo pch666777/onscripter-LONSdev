@@ -360,9 +360,16 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 
 	//采用绘图命令的
 	if (curInfo->texture->isCmdTexture()) {
-		if (is_ex) FatalError("CmdTexture can't be scale or rotation!");
-		else ShowMeCmd(render, curInfo);   //显示绘图命令
-		return;
+        if (is_ex){
+            //转换为纹理实体
+            curInfo->texture->AddDrawCanvas( (int)curInfo->offsetX,  (int)curInfo->offsetY) ;
+            ShowMeCmd(render, curInfo, curInfo->texture.get());
+            //FatalError("CmdTexture can't be scale or rotation!");
+        }
+        else{
+            ShowMeCmd(render, curInfo, nullptr);   //显示绘图命令
+            return;
+        }
 	}
 
 	curInfo->texture->setForceAplha(curInfo->alpha);
@@ -439,12 +446,20 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 }
 
 
-void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
+void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo, LOtexture *tex) {
 	Uint8 r, g, b, a;
 	SDL_FRect dst;
 	int alpha;
 
 	SDL_GetRenderDrawColor(render, &r, &g, &b, &a);
+    //绘制到指定纹理上
+    SDL_Texture *target = SDL_GetRenderTarget(render);
+    if(tex){
+        SDL_SetRenderTarget(render, tex->GetTexture()) ;
+        SDL_SetRenderDrawColor(render, 0,0,0,0);
+        SDL_RenderClear(render);
+    }
+
 	for (int ii = 0; ii < curInfo->texture->cmdList.size(); ii++) {
 		LOtexture::CmdData *cmd = &curInfo->texture->cmdList.at(ii);
 		//第几格动画就是第几分组
@@ -471,7 +486,14 @@ void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
 			case LOtexture::CMD_DRAW_FILL:
 				//x y 填充为实际的偏移
 				//dst.x = cmd->A[0]; dst.y = cmd->A[1];
-				dst.x = curInfo->offsetX; dst.y = curInfo->offsetY;
+                if(tex){
+                    //绘制到纹理不需要
+                    dst.x = 0.0f ; dst.y = 0.0f ;
+                }
+                else{
+                    //绘制到渲染器需要加上偏移
+                    dst.x = curInfo->offsetX; dst.y = curInfo->offsetY;
+                }
 				dst.w = cmd->B[0]; dst.h = cmd->B[1];
 				SDL_RenderFillRectF(render, &dst);
 				break;
@@ -481,6 +503,9 @@ void LOLayer::ShowMeCmd(SDL_Renderer *render, LOLayerDataBase *curInfo) {
 		}
 	}
 
+    if(tex){
+        SDL_SetRenderTarget(render, target) ;
+    }
 	SDL_SetRenderDrawColor(render, r, g, b, a);
 }
 

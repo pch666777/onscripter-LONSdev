@@ -1114,3 +1114,37 @@ bool LOtexture::AddDrawCmd(CmdData &cm) {
 	cmdList.push_back(cm);
 	return true;
 }
+
+void LOtexture::AddDrawCanvas(int x, int y){
+    resetSurface();
+    resetTexture();
+    isRef = false ;
+    if(cmdList.size() == 0) return ;
+
+    SDL_Rect dst ;
+    dst.x = x ;
+    dst.y = y ;
+    dst.w = dst.h = 0 ;
+    //第一次计算出画布的宽度
+    for(int ii = 0; ii < cmdList.size(); ii++){
+        CmdData *cmd = &cmdList.at(ii);
+        switch (cmd->cmd){
+        case LOtexture::CMD_DRAW_FILL:
+            if(cmd->B[0] > dst.w) dst.w = cmd->B[0];
+            if(cmd->B[1] > dst.h) dst.h = cmd->B[1];
+            break ;
+        }
+    }
+    //创建好画布
+    texturePtr = CreateTexture(LOtextureBase::render,G_Texture_format,SDL_TEXTUREACCESS_TARGET, dst.w, dst.h);
+    bw = dst.w;
+    bh = dst.h;
+    //不再是命令纹理
+    unSetFlags(USE_TEXTURE_CMD);
+
+    //SDL_Texture *test = SDL_GetRenderTarget(LOtextureBase::render);
+    //SDL_SetRenderTarget(LOtextureBase::render, texturePtr);
+    //SDL_SetRenderDrawColor(LOtextureBase::render, 0, 0, 0, 255);
+    //SDL_RenderClear(LOtextureBase::render);
+    //SDL_SetRenderTarget(LOtextureBase::render, test);
+}

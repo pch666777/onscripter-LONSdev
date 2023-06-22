@@ -5,7 +5,7 @@
 */
 
 #ifndef ONS_VERSION
-#define ONS_VERSION "ver0.7.3-20230612"
+#define ONS_VERSION "ver0.7.5-20230622"
 #endif // !ONS_VERSION
 
 //#define LOLog_i SDL_Log()

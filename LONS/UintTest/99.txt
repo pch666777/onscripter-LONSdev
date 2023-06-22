@@ -3,6 +3,9 @@
 *define
 setintvar "linelog",1
 
+;lsp2 2,":c;>200,100,#08EFA3",200,100,50,50,0
+;btnwait %0
+
 delay 500
 
 globalon
@@ -127,8 +130,13 @@ gosub *ld_test
 
 game
 *start
+stop
+delay 2000
+gosub *audio_test
 
+stop
 btnwait %0
+
 reset
 end
 return

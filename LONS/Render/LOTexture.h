@@ -230,7 +230,8 @@ public:
 
 	//添加一个矩形绘图命令
 	bool AddDrawCmd(CmdData &cm);
-
+        //cmd纹理增加target纹理画布
+        void AddDrawCanvas(int x, int y) ;
 
 	//创建一个纹理
 	void CreateDstTexture(int w, int h, int access);
