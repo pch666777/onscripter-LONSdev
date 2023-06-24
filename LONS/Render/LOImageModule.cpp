@@ -1163,10 +1163,6 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 		}
 		else video.reset(m);
 	}
-	//如果上一步没有成功，尝试调用外部播放器
-	if (!video) {
-
-	}
 
 	if (video) {
 		bak->SetAction(video);
@@ -1175,6 +1171,7 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 		bak->SetNewFile(tex);
 	}
 	else{
+        bak->texture.reset();  //设置为空，以便可以检测到是否加载成功
 		SDL_Log("video play faild:%s", fn.c_str());
 	}
 	return;

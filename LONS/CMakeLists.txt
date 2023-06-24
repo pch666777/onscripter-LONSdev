@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+# 注意应该设置好你要在哪个平台编译，目前支持配置 LINUX
+
 
 add_definitions(
         -fsigned-char    #ARM平台下注意char 默认是无符号的，需要启用此定义

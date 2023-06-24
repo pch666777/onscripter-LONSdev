@@ -28,6 +28,7 @@ extern int G_destWidth;   //目标窗口宽度
 extern int G_destHeight;  //目标窗口高度
 extern int G_fpsnum;
 extern int G_textspeed;
+extern std::string G_playcmd;
 extern bool IsGameScale();
 extern int GetFullID(int t, int *ids);
 extern int GetFullID(int t, int father, int child, int grandson);

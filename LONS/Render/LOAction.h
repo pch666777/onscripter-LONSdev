@@ -28,6 +28,7 @@ public:
 		ANIM_ROTATE = 16,
 		ANIM_SCALE = 32,
 		ANIM_VIDEO = 64,
+                ANIM_EXVIDEO = 128,
 	};
 
 	enum AnimaLoop{
@@ -43,6 +44,8 @@ public:
 		FLAGS_ENBLE = 2,
 		//某些动作需要初始化，会设置这个值
 		FLAGS_INIT = 4 ,
+
+                //其他可能会标识用途的
 	};
 
 	AnimaType acType;
@@ -120,6 +123,15 @@ public:
 	SMPEG_Info info;
 	int frameID;
 };
+
+//外部播放器
+//class LOActionExMovie :public LOAction {
+//public:
+//        LOActionExMovie();
+//        ~LOActionExMovie();
+//        std::string playcmd;   //附加的命令
+//        LOString file ;     //播放的文件
+//};
 
 
 

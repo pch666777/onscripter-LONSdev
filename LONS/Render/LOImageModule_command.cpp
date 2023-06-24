@@ -1079,6 +1079,7 @@ int LOImageModule::filelogCommand(FunctionInterface *reader) {
 int LOImageModule::movieCommand(FunctionInterface *reader) {
 	LOString fn = reader->GetParamStr(0);
 	int isClickOver = 1;
+    FatalError("movieCommand not work now");
 	return RET_CONTINUE;
 }
 
@@ -1105,12 +1106,19 @@ int LOImageModule::aviCommand(FunctionInterface *reader) {
 	}
 
 	loadSpCore(info, tmp, 0, 0, -1, true);
-	//添加播放事件
-	LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, isClickOver));
-	G_hookQue.push_N_back(ev);
-	reader->waitEventQue.push_N_back(ev);
+    //要是否成功载入
+    if(info->bak.texture){
+        //添加播放事件
+        LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, isClickOver));
+        G_hookQue.push_N_back(ev);
+        reader->waitEventQue.push_N_back(ev);
 
-	ExportQuequ("_lons", nullptr, true);
+        ExportQuequ("_lons", nullptr, true);
+    }
+    else{
+        //调用外部播放器，注意这是一个阻塞的过程
+
+    }
 	return RET_CONTINUE;
 }
 

@@ -19,6 +19,7 @@ int G_destWidth = -1;   //目标窗口宽度
 int G_destHeight = -1;  //目标窗口高度
 int G_fpsnum = 60;      //默认的fps速度
 int G_textspeed = 20;   //默认的文字速度
+std::string G_playcmd ;   //调用外部播放器时附加的命令
 
 //定义在LOImageModule
 extern bool ImgLoadSpForce(LOLayerDataBase *cur, LOString *tag);

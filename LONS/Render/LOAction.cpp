@@ -119,6 +119,17 @@ char* LOActionMovie::InitSmpeg(const char *fn) {
 
 //========================
 
+//LOActionExMovie::LOActionExMovie(){
+//    acType = ANIM_EXVIDEO ;
+//}
+
+//LOActionExMovie::~LOActionExMovie(){
+//}
+
+
+
+//=======================
+
 LOActionText::LOActionText() {
 	acType = ANIM_TEXT;
 }
