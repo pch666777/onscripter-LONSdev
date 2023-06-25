@@ -5,6 +5,7 @@ setintvar "linelog",1
 
 ;lsp2 2,":c;>200,100,#08EFA3",200,100,50,50,0
 ;btnwait %0
+avi "dc2fst.mp4",1
 
 delay 500
 

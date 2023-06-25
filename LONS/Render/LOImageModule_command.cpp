@@ -1116,8 +1116,15 @@ int LOImageModule::aviCommand(FunctionInterface *reader) {
         ExportQuequ("_lons", nullptr, true);
     }
     else{
-        //调用外部播放器，注意这是一个阻塞的过程
+        //调用外部播放器，注意这是一个阻塞的过程，不支持读取包里的文件
+        LOString cmd = G_playcmd;
+        cmd.append(" ");
+        cmd.append(LOIO::ioReadDir);
+        if(LOIO::ioReadDir.length() > 0)cmd.append("/");
+        cmd.append(fn);
 
+        //执行
+        system(cmd.c_str()) ;
     }
 	return RET_CONTINUE;
 }

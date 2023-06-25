@@ -94,6 +94,9 @@ void ReadConfig() {
         else if(key == "fullscreen"){//全屏
             G_fullScreen = s.GetInt(buf) ;
         }
+        else if(key == "playcmd"){
+            G_playcmd = s.GetWord(buf);
+        }
 
 		buf = s.NextLine(buf);
 	}
@@ -137,15 +140,6 @@ int ScripterThreadEntry(void *ptr) {
 	reader->ChangeModuleState(FunctionInterface::MODULE_STATE_NOUSE);
  	return 0;
 }
-
-
-////注册基本的事件钩子
-//void RegisterBaseHook() {
-//	//注册脚本模块呼叫hook，有些事件总是需要响应，比如脚本的spstr、音频的淡入淡出事件
-//	LOShareEventHook ev(LOEventHook::CreateScriptCallHook());
-//	G_hookQue.push_N_front(ev);
-//}
-
 
 
 int main(int argc, char **argv) {
