@@ -52,6 +52,14 @@ public:
 		USERGOSUB_LOAD
 	};
 
+	//用于movie command 传递参数
+	enum {
+		MOVIE_CMD_STOP = 1,
+		MOVIE_CMD_CLICK = 2,
+		MOVIE_CMD_LOOP = 4,
+		MOVIE_CMD_ASYNC = 8
+	};
+
 	enum {
 		SCRIPTER_EVENT_DALAY = 1024,   //脚本阻塞延迟
 		SCRIPTER_EVENT_LEFTCLICK,

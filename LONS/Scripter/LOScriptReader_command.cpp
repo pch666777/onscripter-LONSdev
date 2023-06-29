@@ -1194,6 +1194,53 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 }
 
 
+int LOScriptReader::movieCommand(FunctionInterface *reader) {
+	int vflag = 0;
+	//首个参数允许 stop 和 文件名
+	LOUniqVariableRef v1(TryNextNormalWord());
+	if (!v1) v1.reset(ParseVariableBase(true));
+	if (!v1) {
+		FatalError("[movie] command param error!");
+		return RET_ERROR;
+	}
+
+	if (v1->GetStr()->toLower() != "stop") {
+		LOUniqVariableRef v2;
+		while (NextComma(true)) {
+			v2.reset(TryNextNormalWord());
+			if (!v2) v2.reset(ParseVariableBase(true));
+			if (!v2) break;
+
+			LOString key = v2->GetStr()->toLower();
+			if (key == "pos") {
+				for (int ii = 0; ii < 4; ii++) {
+					if (!NextComma()) {
+						FatalError("[movie] command param error!");
+						return RET_ERROR;
+					}
+					paramStack.push(ParseVariableBase(false));
+				}
+			}
+			else if (key == "click") vflag |= MOVIE_CMD_CLICK;
+			else if (key == "loop") vflag |= MOVIE_CMD_LOOP;
+			else if (key == "async") vflag |= MOVIE_CMD_ASYNC;
+			else {
+				FatalError("[movie] command param error!");
+				return RET_ERROR;
+			}
+		}
+		paramStack.push(new ONSVariableRef((double)vflag));
+		paramStack.push(v1.release());
+	}
+	else {
+		vflag |= MOVIE_CMD_STOP;
+		paramStack.push(new ONSVariableRef((double)vflag));
+	}
+	return RET_VIRTUAL; //返回没有处理的信号，这样才能继续往渲染模块执行
+}
+
+
+
 int LOScriptReader::saveonCommand(FunctionInterface *reader) {
 	if (LOScripFile::HasEval()) {
 		FatalError("script is eval state,can't use goto/gosub/saveon/saveoff/savepoint command!");
@@ -1239,7 +1286,6 @@ int LOScriptReader::getsavestrCommand(FunctionInterface *reader) {
 	ref->SetValue(&s_saveinfo.tag);
 	return RET_CONTINUE;
 }
-
 
 BinArray *LOScriptReader::ReadSaveFile(int id, int readLen) {
 	LOString fn = StringFormat(64, "save%d.datl", id);

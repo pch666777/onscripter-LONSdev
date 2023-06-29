@@ -5,6 +5,12 @@
 #include "../etc/LOIO.h"
 #include "LOImageModule.h"
 
+//#if defined(__WINDOWS__) || defined(_WIN32) || defined(WIN32) || defined(_WIN64) || \
+//    defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__)
+//#include <Windows.h>
+//#endif
+
+
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
@@ -1076,9 +1082,18 @@ int LOImageModule::filelogCommand(FunctionInterface *reader) {
 }
 
 
+//将预先由脚本线程执行好参数的获取
 int LOImageModule::movieCommand(FunctionInterface *reader) {
-	LOString fn = reader->GetParamStr(0);
-	int isClickOver = 1;
+	if (reader->GetParamCount() == 1) {  //movie stop
+
+	}
+
+	if (reader->GetParamCount() > 2) { //有pos参数
+
+	}
+
+	//转换为lsp执行
+
     FatalError("movieCommand not work now");
 	return RET_CONTINUE;
 }
@@ -1116,17 +1131,46 @@ int LOImageModule::aviCommand(FunctionInterface *reader) {
         ExportQuequ("_lons", nullptr, true);
     }
     else{
-        //调用外部播放器，注意这是一个阻塞的过程，不支持读取包里的文件
-        LOString cmd = G_playcmd;
-        cmd.append(" ");
-        cmd.append(LOIO::ioReadDir);
-        if(LOIO::ioReadDir.length() > 0)cmd.append("/");
-        cmd.append(fn);
-
-        //执行
-        system(cmd.c_str()) ;
+		//使用外部播放器
+		UseOutSidePlayer(fn);
     }
 	return RET_CONTINUE;
+}
+
+
+//调用外部播放器，注意这是一个阻塞的过程，不支持读取包里的文件
+void LOImageModule::UseOutSidePlayer(LOString &s) {
+	bool isok = false;
+	//安卓
+#ifdef ANDROID
+	if (!isok) {
+
+	}
+#endif // ANDROID
+
+	//windows
+#if defined(__WINDOWS__) || defined(_WIN32) || defined(WIN32) || defined(_WIN64) || \
+    defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__)
+	if (!isok) {
+		system(s.c_str());
+		isok = true;
+	}
+#endif
+
+	//linux
+#if defined(__linux__) || defined(linux) || defined(__linux) || defined(__LINUX__) || \
+    defined(LINUX) || defined(_LINUX)
+	if (!isok) {
+		LOString cmd = G_playcmd;
+		cmd.append(" ");
+		cmd.append(LOIO::ioReadDir);
+		if (LOIO::ioReadDir.length() > 0)cmd.append("/");
+		cmd.append(fn);
+		//执行
+		system(cmd.c_str());
+		isok = true;
+	}
+#endif
 }
 
 

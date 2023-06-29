@@ -183,7 +183,7 @@ public:
 	bool LoadDialogWin();
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
 	void ClearBtndef();
-        void SimpleEvent(int e, void *data);
+    void SimpleEvent(int e, void *data);
 
 	void DialogWindowSet(int showtext, int showwin, int showbmp);
 	void DialogWindowPrint();
@@ -380,4 +380,6 @@ private:
 	void CutDialogueAction();
 	int CutPrintEffect(LOEventHook *hook, LOEventHook *e);
 	bool WaitStateEvent();
+	//调用外部播放器
+	void UseOutSidePlayer(LOString &s);
 };

@@ -293,6 +293,7 @@ public:
 	int savetimeCommand(FunctionInterface *reader);
 	int getsavestrCommand(FunctionInterface *reader);
 	int linepageCommand(FunctionInterface *reader);
+	int movieCommand(FunctionInterface *reader);
 
 private:
 	static std::unordered_map<std::string, int> numAliasMap;   //整数别名
@@ -322,8 +323,6 @@ private:
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
 	std::vector<LOString> cselList;
-	
-	
 	
 	//LOScriptPoint* GetScriptPoint(LOString lname);
 	int GetCurrentLableIndex();
