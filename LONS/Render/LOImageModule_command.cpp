@@ -1084,57 +1084,79 @@ int LOImageModule::filelogCommand(FunctionInterface *reader) {
 
 //将预先由脚本线程执行好参数的获取
 int LOImageModule::movieCommand(FunctionInterface *reader) {
-	if (reader->GetParamCount() == 1) {  //movie stop
-
+    if (reader->GetParamCount() == 1) {
+        //movie stop，直接删除图层
+        LOLayerData *data = CreateLayerBakData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons") ;
+        if(data){
+            data->bak.SetDelete() ;
+            ExportQuequ("_lons", nullptr, true);
+        }
+        return RET_CONTINUE;
 	}
 
+    int vflag = reader->GetParamInt(reader->GetParamCount() - 2) ;
+    LOString fn = reader->GetParamStr(reader->GetParamCount() - 1);
+    SDL_Rect dst = {0, 0, G_gameWidth, G_gameHeight} ;
 	if (reader->GetParamCount() > 2) { //有pos参数
-
+        dst.x = reader->GetParamInt(0); dst.y = reader->GetParamInt(1);
+        dst.w = reader->GetParamInt(2); dst.h = reader->GetParamInt(3);
 	}
 
-	//转换为lsp执行
+    //普通的视频播放允许调用外部播放器
+    if(dst.x == 0 && dst.y == 0 && dst.w == G_gameWidth && dst.h == G_gameHeight && !(vflag & MOVIE_CMD_LOOP) &&
+            !(vflag & MOVIE_CMD_ASYNC)) vflag |= MOVIE_CMD_ALLOW_OUTSIDE;
 
-    FatalError("movieCommand not work now");
+    NormalPlayVideo(reader, fn, dst, vflag) ;
 	return RET_CONTINUE;
 }
 
 
 int LOImageModule::aviCommand(FunctionInterface *reader) {
 	LOString fn = reader->GetParamStr(0);
-	int isClickOver = 1;
-	if(reader->GetParamCount() > 1) reader->GetParamInt(1);
-	//默认的情况都是铺满屏幕
-	//LOString tmp = StringFormat(512, "*v/%d,%d,mpg;%s", G_gameWidth, G_gameHeight, fn.c_str());
-	LOString tmp = StringFormat(512, "*v/%d,%d,", G_gameWidth, G_gameHeight);
-	//确定是哪种格式
-	LOString suffix = fn.GetRightOfChar('.').toLower();
-	if (suffix.length() > 0) tmp += suffix;
-	else tmp += "mpg";
-	tmp += ";" + fn;
+    int vflag = MOVIE_CMD_ALLOW_OUTSIDE;
+    if(reader->GetParamCount() > 1) vflag |= MOVIE_CMD_CLICK;
+    //默认的情况都是铺满屏幕
+    SDL_Rect dst = {0, 0, G_gameWidth, G_gameHeight};
+    return  NormalPlayVideo(reader, fn, dst, vflag) ;
+	return RET_CONTINUE;
+}
 
-	//准备纹理
-	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
-	//必须检查是否已经有正在播放的对象
-	if (info->cur.texture) {
-		FatalError("A video is playing!");
-		return RET_CONTINUE;
-	}
 
-	loadSpCore(info, tmp, 0, 0, -1, true);
+int LOImageModule::NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag){
+    LOString tmp = StringFormat(512, "*v/%d,%d,", dst.w, dst.h);
+    //是否循环播放
+    if(vflag & MOVIE_CMD_LOOP) tmp.append((",1"));
+    else tmp.append((",0"));
+    //确定是哪种格式
+    LOString suffix = fn.GetRightOfChar('.').toLower();
+    if (suffix.length() > 0) tmp += suffix;
+    else tmp += "mpg";
+    tmp += ";" + fn;
+
+    //准备纹理
+    LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
+    //必须检查是否已经有正在播放的对象
+    if (info->cur.texture) {
+        FatalError("A video is playing!");
+        return RET_CONTINUE;
+    }
+
+    loadSpCore(info, tmp, 0, 0, -1, true);
     //要是否成功载入
     if(info->bak.texture){
         //添加播放事件
-        LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, isClickOver));
+        LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, vflag & MOVIE_CMD_CLICK));
         G_hookQue.push_N_back(ev);
-        reader->waitEventQue.push_N_back(ev);
+        //非异步模式都阻塞脚本线程
+        if(!(vflag & MOVIE_CMD_ASYNC)) reader->waitEventQue.push_N_back(ev);
 
         ExportQuequ("_lons", nullptr, true);
     }
-    else{
-		//使用外部播放器
-		UseOutSidePlayer(fn);
+    else if(vflag & MOVIE_CMD_ALLOW_OUTSIDE){
+        //使用外部播放器
+        UseOutSidePlayer(fn);
     }
-	return RET_CONTINUE;
+    return RET_CONTINUE;
 }
 
 
@@ -1165,7 +1187,7 @@ void LOImageModule::UseOutSidePlayer(LOString &s) {
 		cmd.append(" ");
 		cmd.append(LOIO::ioReadDir);
 		if (LOIO::ioReadDir.length() > 0)cmd.append("/");
-		cmd.append(fn);
+        cmd.append(s);
 		//执行
 		system(cmd.c_str());
 		isok = true;

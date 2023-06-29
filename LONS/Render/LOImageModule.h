@@ -382,4 +382,5 @@ private:
 	bool WaitStateEvent();
 	//调用外部播放器
 	void UseOutSidePlayer(LOString &s);
+        int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
 };

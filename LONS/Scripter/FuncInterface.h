@@ -57,7 +57,8 @@ public:
 		MOVIE_CMD_STOP = 1,
 		MOVIE_CMD_CLICK = 2,
 		MOVIE_CMD_LOOP = 4,
-		MOVIE_CMD_ASYNC = 8
+                MOVIE_CMD_ASYNC = 8,
+                MOVIE_CMD_ALLOW_OUTSIDE = 16
 	};
 
 	enum {
