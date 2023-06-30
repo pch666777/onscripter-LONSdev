@@ -1196,6 +1196,7 @@ int LOScriptReader::setintvarCommand(FunctionInterface *reader) {
 
 int LOScriptReader::movieCommand(FunctionInterface *reader) {
 	int vflag = 0;
+	paramStack.clear(true);
 	//首个参数允许 stop 和 文件名
 	LOUniqVariableRef v1(TryNextNormalWord());
 	if (!v1) v1.reset(ParseVariableBase(true));
@@ -1236,6 +1237,8 @@ int LOScriptReader::movieCommand(FunctionInterface *reader) {
 		vflag |= MOVIE_CMD_STOP;
 		paramStack.push(new ONSVariableRef((double)vflag));
 	}
+	//不知道为什么参数个数是这样定义的，不想改了
+	paramStack.push((ONSVariableRef*)(paramStack.size()));
 	return RET_VIRTUAL; //返回没有处理的信号，这样才能继续往渲染模块执行
 }
 

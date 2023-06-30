@@ -6,7 +6,15 @@ setintvar "linelog",1
 ;lsp2 2,":c;>200,100,#08EFA3",200,100,50,50,0
 ;btnwait %0
 avi "dc2fst.mp4",1
-;movie "DC3PP_OP01.mpg",click
+;avi "DC3PP_OP01.mpg",0
+;movie "DC3PP_OP01.mpg",click,pos,400,30,300,200
+;lsp 10,"*v/300,200,mpg;DC3PP_OP01.mpg",400,30
+;print 1
+
+delay 5000
+
+
+btnwait %0
 
 delay 500
 

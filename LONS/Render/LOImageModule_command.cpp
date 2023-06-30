@@ -1114,7 +1114,7 @@ int LOImageModule::movieCommand(FunctionInterface *reader) {
 int LOImageModule::aviCommand(FunctionInterface *reader) {
 	LOString fn = reader->GetParamStr(0);
     int vflag = MOVIE_CMD_ALLOW_OUTSIDE;
-    if(reader->GetParamCount() > 1) vflag |= MOVIE_CMD_CLICK;
+    if(reader->GetParamCount() > 1 && reader->GetParamInt(1) > 0) vflag |= MOVIE_CMD_CLICK;
     //默认的情况都是铺满屏幕
     SDL_Rect dst = {0, 0, G_gameWidth, G_gameHeight};
     return  NormalPlayVideo(reader, fn, dst, vflag) ;
@@ -1122,41 +1122,46 @@ int LOImageModule::aviCommand(FunctionInterface *reader) {
 }
 
 
-int LOImageModule::NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag){
-    LOString tmp = StringFormat(512, "*v/%d,%d,", dst.w, dst.h);
-    //是否循环播放
-    if(vflag & MOVIE_CMD_LOOP) tmp.append((",1"));
-    else tmp.append((",0"));
-    //确定是哪种格式
-    LOString suffix = fn.GetRightOfChar('.').toLower();
-    if (suffix.length() > 0) tmp += suffix;
-    else tmp += "mpg";
-    tmp += ";" + fn;
+int LOImageModule::NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag) {
+	LOString tmp = StringFormat(512, "*v/%d,%d,", dst.w, dst.h);
+	//确定是哪种格式
+	LOString suffix = fn.GetRightOfChar('.').toLower();
+	if (suffix.length() > 0) tmp += suffix;
+	else tmp += "mpg";
+	tmp += ";" + fn;
 
-    //准备纹理
-    LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
-    //必须检查是否已经有正在播放的对象
-    if (info->cur.texture) {
-        FatalError("A video is playing!");
-        return RET_CONTINUE;
-    }
+	//准备纹理
+	LOLayerData *info = CreateNewLayerData(GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255), "_lons");
+	//必须检查是否已经有正在播放的对象
+	if (info->cur.texture) {
+		FatalError("A video is playing!");
+		return RET_CONTINUE;
+	}
 
-    loadSpCore(info, tmp, 0, 0, -1, true);
-    //要是否成功载入
-    if(info->bak.texture){
-        //添加播放事件
-        LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, vflag & MOVIE_CMD_CLICK));
-        G_hookQue.push_N_back(ev);
-        //非异步模式都阻塞脚本线程
-        if(!(vflag & MOVIE_CMD_ASYNC)) reader->waitEventQue.push_N_back(ev);
+	loadSpCore(info, tmp, dst.x, dst.y, -1, true);
+	//要是否成功载入
+	if (info->bak.texture) {
+		//需要对动作做一些设置
+		LOAction *ac = info->bak.GetAction(LOAction::ANIM_VIDEO);
+		//if (vflag & MOVIE_CMD_CLICK) ac->setFlags(LOAction::FLAGS_CLICK_DEL);
+		if (vflag & MOVIE_CMD_LOOP)  ac->loopMode = LOAction::LOOP_CIRCULAR;
 
-        ExportQuequ("_lons", nullptr, true);
-    }
-    else if(vflag & MOVIE_CMD_ALLOW_OUTSIDE){
-        //使用外部播放器
-        UseOutSidePlayer(fn);
-    }
-    return RET_CONTINUE;
+		//添加播放事件
+		LOShareEventHook ev(LOEventHook::CreateVideoPlayHook(info->fullid, vflag & MOVIE_CMD_CLICK));
+		G_hookQue.push_N_back(ev);
+		//非异步模式都阻塞脚本线程
+		if (!(vflag & MOVIE_CMD_ASYNC)) {
+			reader->waitEventQue.push_N_back(ev);
+
+			ExportQuequ("_lons", nullptr, true);
+		}
+		return RET_CONTINUE;
+	}
+	else if (vflag & MOVIE_CMD_ALLOW_OUTSIDE) {
+		//使用外部播放器
+		UseOutSidePlayer(fn);
+	}
+	return RET_CONTINUE;
 }
 
 

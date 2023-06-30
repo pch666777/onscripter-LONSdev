@@ -6,6 +6,7 @@
 LOAction::LOAction() {
 	flags = FLAGS_ENBLE;
 	acType = ANIM_NONE;
+	loopMode = LOOP_NONE;
 	lastTime = 0;
 }
 

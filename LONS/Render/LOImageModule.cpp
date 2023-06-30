@@ -1143,10 +1143,10 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 	bak->showWidth = s->GetInt(buf);
 	while (buf[0] == ',' || buf[0] == ' ') buf++;
 	bak->showHeight = s->GetInt(buf);
+	//while (buf[0] == ',' || buf[0] == ' ') buf++;
+	//int vflag = s->GetInt(buf);
 	while (buf[0] == ',' || buf[0] == ' ') buf++;
 	LOString sufix = s->GetWordStill(buf, LOCodePage::CHARACTER_LETTER);
-    while (buf[0] == ',' || buf[0] == ' ') buf++;
-    int isloop = s->GetInt(buf) ;
 	while (buf[0] == ';' || buf[0] == ' ') buf++;
 	buf = s->SkipSpace(buf);
 	//文件名，注意不支持读取封包内的视频
@@ -1171,8 +1171,6 @@ void LOImageModule::TextureFromVideo(LOLayerDataBase *bak, LOString *s) {
 		LOShareTexture tex(new LOtexture());
 		tex->setEmpty(bak->showWidth, bak->showHeight);
 		bak->SetNewFile(tex);
-
-        if(isloop > 0) video->loopMode = LOAction::LOOP_CIRCULAR;
 	}
 	else{
         bak->texture.reset();  //设置为空，以便可以检测到是否加载成功

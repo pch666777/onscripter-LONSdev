@@ -464,9 +464,11 @@ int LOImageModule::RunFuncVideoFinish(LOEventHook *hook, LOEventHook *e) {
 		hook->GetParam(0)->GetInt() != e->GetParam(0)->GetInt()) {
 		return LOEventHook::RUNFUNC_CONTINUE;
 	}
-	//隐藏图层
+	int fid = GetFullID(LOLayer::LAYER_NSSYS, LOLayer::IDEX_NSSYS_MOVIE, 255, 255);
+	if (e->catchFlag == LOEventHook::ANSWER_VIDEOFINISH) fid = e->GetParam(0)->GetInt();
 	bool issys = false;
-	LOLayer *lyr = LOLayer::GetLayer(e->GetParam(0)->GetInt());
+	//播放完成的参数
+	LOLayer *lyr = LOLayer::GetLayer(fid);
 	if (lyr) {
 		lyr->data->cur.SetVisable(0);
 		//这里有个隐含的条件，如果是非sp和spex图层的，在有播放内容的时候不允许再次进入

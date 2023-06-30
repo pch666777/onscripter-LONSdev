@@ -28,7 +28,7 @@ public:
 		ANIM_ROTATE = 16,
 		ANIM_SCALE = 32,
 		ANIM_VIDEO = 64,
-                ANIM_EXVIDEO = 128,
+        ANIM_EXVIDEO = 128,
 	};
 
 	enum AnimaLoop{
@@ -44,8 +44,9 @@ public:
 		FLAGS_ENBLE = 2,
 		//某些动作需要初始化，会设置这个值
 		FLAGS_INIT = 4 ,
-
-                //其他可能会标识用途的
+		//视频播放类，如果遇到click直接删除动作
+		//FLAGS_CLICK_DEL = 8,
+        //其他可能会标识用途的
 	};
 
 	AnimaType acType;
