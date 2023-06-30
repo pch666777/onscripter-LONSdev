@@ -8,6 +8,7 @@ LOAction::LOAction() {
 	acType = ANIM_NONE;
 	loopMode = LOOP_NONE;
 	lastTime = 0;
+    gVal = 0 ;
 }
 
 LOAction::~LOAction() {
@@ -120,14 +121,16 @@ char* LOActionMovie::InitSmpeg(const char *fn) {
 
 //========================
 
-//LOActionExMovie::LOActionExMovie(){
-//    acType = ANIM_EXVIDEO ;
-//}
+LOActionMove::LOActionMove(){
+    acType = ANIM_MOVE;
+    startPt = {0, 0};
+    endPt = {0, 0};
+    duration = 0 ;
+}
 
-//LOActionExMovie::~LOActionExMovie(){
-//}
+LOActionMove::~LOActionMove(){
 
-
+}
 
 //=======================
 

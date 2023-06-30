@@ -653,6 +653,9 @@ void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
 			case LOAction::ANIM_VIDEO:
 				DoMovieAction(data, (LOActionMovie*)acb.get(), curTime);
 				break;
+            case LOAction::ANIM_MOVE:
+                DoMoveActon(data, (LOActionMove*)acb.get(), curTime);
+                break ;
 			default:
 				break;
 			}
@@ -792,6 +795,30 @@ void LOLayer::DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime) 
 			ai->lastTime = curTime;
 		}
 	}
+}
+
+
+void LOLayer::DoMoveActon(LOLayerData *data, LOActionMove *ai, Uint32 curTime){
+    //首帧
+    if(ai->lastTime == 0){
+        data->cur.offsetX = ai->startPt.x ;   data->cur.offsetY = ai->startPt.y ;
+        ai->lastTime = curTime ;
+        return ;
+    }
+    Uint32 pos = curTime - ai->lastTime;
+
+    ai->gVal += 1 ;
+    pos = 20 * ai->gVal ;
+
+    if(pos > ai->duration) pos = ai->duration ;
+    //计算出X，Y的位置
+    double perx = (double)(ai->endPt.x - ai->startPt.x) / ai->duration * pos ;
+    double pery = (double)(ai->endPt.y - ai->startPt.y) / ai->duration * pos ;
+
+    data->cur.offsetX = ai->startPt.x + (float)perx ;
+    data->cur.offsetY = ai->startPt.y + (float)pery ;
+
+    if(pos >= ai->duration) ai->setEnble(false) ;
 }
 
 

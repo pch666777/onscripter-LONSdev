@@ -125,16 +125,17 @@ public:
 	int frameID;
 };
 
-//外部播放器
-//class LOActionExMovie :public LOAction {
-//public:
-//        LOActionExMovie();
-//        ~LOActionExMovie();
-//        std::string playcmd;   //附加的命令
-//        LOString file ;     //播放的文件
-//};
 
+//移动类
+class LOActionMove :public LOAction {
+public:
+        LOActionMove();
+        ~LOActionMove();
 
+        SDL_Point startPt;
+        SDL_Point endPt;
+        Uint32 duration;
+};
 
 extern LOAction* CreateActionFromType(int acType);
 

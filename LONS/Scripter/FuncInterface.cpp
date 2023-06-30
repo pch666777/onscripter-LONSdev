@@ -214,7 +214,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "mpegplay",      "s,i",       "Y,N",         &FunctionInterface::aviCommand },
 	{ "avi",           "s,i",       "Y,N",         &FunctionInterface::aviCommand },
 	//movie命令的参数不符合规则，将由命令本身提取参数
-	{ "movie",         "\0",         "\0",           &FunctionInterface::movieCommand },
+    { "movie",         "\0",         "\0",         &FunctionInterface::movieCommand },
 	{ "spevent",       "i,s,s,s,i", "Y,Y,Y,N,N",   &FunctionInterface::speventCommand },
 	{ "quake",         "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
 	{ "quakex",        "i,i",       "Y,Y",         &FunctionInterface::quakeCommand },
@@ -224,6 +224,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 	{ "humanorder",    "s,i,i,i",   "Y,N,N,N",     &FunctionInterface::humanorderCommand },
 	{ "caption",       "s",         "Y",           &FunctionInterface::captionCommand },
 	{ "textspeed",     "i",         "Y",           &FunctionInterface::textspeedCommand },
+    { "action",        "i,s,i,#",   "Y,Y,Y,#",     &FunctionInterface::actionCommand },
 
 	//audio
 	{ "bgm",           "s",         "Y",           &FunctionInterface::bgmCommand },

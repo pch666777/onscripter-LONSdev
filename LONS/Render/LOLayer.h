@@ -127,6 +127,7 @@ public:
 	void DoNsAction(LOLayerData *data, LOActionNS *ai,  Uint32 curTime);
 	void DoTextAction(LOLayerData *data, LOActionText *ai, Uint32 curTime);
 	void DoMovieAction(LOLayerData *data, LOActionMovie *ai, Uint32 curTime);
+        void DoMoveActon(LOLayerData *data, LOActionMove *ai, Uint32 curTime);
         //bool GetTextEndPosition(int *xx, int *yy, int *lineH);
 	void GetLayerPosition(int *xx, int *yy, int *aph);
 	//void Serialize(BinArray *bin);

@@ -1317,3 +1317,46 @@ int LOImageModule::textspeedCommand(FunctionInterface *reader) {
 	G_textspeed = reader->GetParamInt(0);
 	return RET_CONTINUE;
 }
+
+int LOImageModule::actionCommand(FunctionInterface *reader){
+    int fid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255 );
+    //先确定sp是否已经载入，未载入action无效
+    LOLayerData *data = CreateLayerBakData(fid, reader->GetPrintName());
+    if(!data) return RET_CONTINUE;
+
+    LOString key = reader->GetParamStr(1).toLower();
+    int fix = 0 ;
+    LOAction *sac = nullptr;
+    if(key == "move"){
+        if(reader->GetParamCount() < 7){
+            FatalError("[action] command [move] action param error!") ;
+            return  RET_ERROR ;
+        }
+        LOActionMove *ac = new LOActionMove();
+        ac->startPt.x = reader->GetParamInt(2); ac->startPt.y = reader->GetParamInt(3);
+        ac->endPt.x = reader->GetParamInt(4); ac->endPt.y = reader->GetParamInt(5);
+        ac->duration = reader->GetParamInt(6) ;
+        fix = 7 ;
+        sac = ac ;
+    }
+    else if(key == "fade"){
+    }
+    else if(key == "scale"){
+    }
+    else if(key == "rotate"){
+    }
+    else{
+        FatalError("[action] command unknow action [%s] param error!", key.c_str()) ;
+        return  RET_ERROR ;
+    }
+
+
+    //有效
+    if(sac){
+        if(reader->GetParamCount() > fix) sac->gVal = reader->GetParamInt(fix) ;
+        data->bak.SetAction(sac) ;
+    }
+
+
+    return RET_CONTINUE;
+}
