@@ -200,6 +200,7 @@ bool LOLayerDataBase::SetCell(LOActionNS *ac, int ce) {
 		showType |= SHOW_RECT;
 		int perx = texture->baseW() / ac->cellCount;
 		ac->cellCurrent = ce;
+        //超大尺寸模式下，showSrcX可能会溢出，真就遇到过94*1280尺寸的。。。
 		showSrcX = ac->cellCurrent * perx;
 		showSrcY = 0;
 		showWidth = perx;
@@ -338,7 +339,8 @@ void LOLayerDataBase::GetSimpleDst(SDL_Rect *dst) {
 
 void LOLayerDataBase::Serialize(BinArray *bin) {
 	//长度记录在标记之后 base,len,version
-	int len = bin->WriteLpksEntity("base", 0, 1);
+    //version 2: int16_t showSrcX,showSrcY to int
+    int len = bin->WriteLpksEntity("base", 0, 2);
 
 	//优先存储重生成字符串
 	bin->WriteLOString(buildStr.get());
@@ -347,8 +349,9 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	bin->WriteInt(btnval);
 	float fvals[] = { offsetX, offsetY, showWidth , showHeight };
 	bin->Append((char*)fvals, 4 * 4);
-	int16_t vals[] = {alpha ,centerX ,centerY ,showSrcX ,showSrcY};
-	bin->Append((char*)vals, 5 * 2);
+    int16_t vals[] = {alpha ,centerX ,centerY};
+    bin->Append((char*)vals, 5 * 3);
+    bin->WriteInt2(showSrcX, showSrcY);
 	uint8_t bytes[] = { cellNum ,alphaMode ,texType ,showType };
 	bin->Append((char*)bytes, 4);
 
@@ -379,7 +382,8 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 
 bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 	int next = -1;
-	if (!bin->CheckEntity("base", &next, nullptr, pos)) return false;
+    int version = 1 ;
+    if (!bin->CheckEntity("base", &next, &version, pos)) return false;
 
 	LOString tmp = bin->GetLOString(pos);
 
@@ -397,8 +401,14 @@ bool LOLayerDataBase::DeSerialize(BinArray *bin, int *pos) {
 		alpha = bin->GetInt16Auto(pos);
 		centerX = bin->GetInt16Auto(pos);
 		centerY = bin->GetInt16Auto(pos);
-		showSrcX = bin->GetInt16Auto(pos);
-		showSrcY = bin->GetInt16Auto(pos);
+        if(version > 1){
+            showSrcX = bin->GetIntAuto(pos);
+            showSrcY = bin->GetIntAuto(pos);
+        }
+        else{
+            showSrcX = bin->GetInt16Auto(pos);
+            showSrcY = bin->GetInt16Auto(pos);
+        }
 		cellNum = bin->GetChar(pos);
 		//alphaMode = bin->GetChar(pos);
 		//不应该覆盖纹理透明模式

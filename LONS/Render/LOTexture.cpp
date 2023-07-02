@@ -374,6 +374,7 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 			//大尺寸合理确定裁切的范围
             setFlags(USE_SUPER_BING_CLIP) ;
 			LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, &actualRect);
+            printf("%d,%d,%d,%d\n", actualRect.x, actualRect.y, actualRect.w, actualRect.h);
 			surfacePtr = LOtextureBase::ClipSurface(baseTexture->GetSurface(), actualRect);
             //SDL_SaveBMP(surfacePtr, "666.bmp");
 			if (!surfacePtr) return false;

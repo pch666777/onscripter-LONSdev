@@ -174,8 +174,8 @@ public:
 	int16_t centerX;    //锚点，缩放旋转时有用
 	int16_t centerY;
 
-	int16_t showSrcX;      //显示区域的X偏移
-	int16_t showSrcY;     //显示区域的Y偏移
+        int showSrcX;      //显示区域的X偏移
+        int showSrcY;     //显示区域的Y偏移
 	float showWidth;   //显示区域的宽度
 	float showHeight;  //显示区域的高度
 

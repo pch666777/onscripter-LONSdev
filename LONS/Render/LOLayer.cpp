@@ -741,6 +741,10 @@ void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 	if (curTime - ai->lastTime > ai->cellTimes[ai->cellCurrent]) {
 		ai->lastTime = curTime;
 		int cell = ai->cellCurrent;
+//        if(cell >= 25){
+//            int bbk = 1 ;
+//        }
+
 		//确定下一格
 		//从头到尾循环模式
 		if (ai->loopMode == LOAction::LOOP_CIRCULAR) {
@@ -761,6 +765,7 @@ void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 			if (ai->cellCurrent < ai->cellCount - 1) cell = (ai->cellCurrent + ai->cellForward) % ai->cellCount;
 			else ai->setEnble(false);
 		}
+
 
         //超大纹理每一帧都必须进行初始化
         if(cell != ai->cellCurrent && !data->cur.texture->isCmdTexture() && data->cur.texture->isSuperClip()){
