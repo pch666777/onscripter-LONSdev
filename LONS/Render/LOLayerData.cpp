@@ -350,7 +350,7 @@ void LOLayerDataBase::Serialize(BinArray *bin) {
 	float fvals[] = { offsetX, offsetY, showWidth , showHeight };
 	bin->Append((char*)fvals, 4 * 4);
     int16_t vals[] = {alpha ,centerX ,centerY};
-    bin->Append((char*)vals, 5 * 3);
+    bin->Append((char*)vals, 2 * 3);
     bin->WriteInt2(showSrcX, showSrcY);
 	uint8_t bytes[] = { cellNum ,alphaMode ,texType ,showType };
 	bin->Append((char*)bytes, 4);

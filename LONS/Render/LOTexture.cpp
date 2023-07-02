@@ -167,6 +167,14 @@ SDL_Surface* LOtextureBase::ClipSurface(SDL_Surface *surface, SDL_Rect rect) {
 		unsigned char *dst = (unsigned char*)su->pixels + su->pitch * (ii - rect.y);
 		memcpy(dst, src, rect.w * bytes);
 	}
+
+	//是否有调色板
+	if (surface->format->palette && su->format->palette) {
+		for (int ii = 0; ii < surface->format->palette->ncolors && ii < su->format->palette->ncolors; ii++) {
+			su->format->palette->colors[ii] = surface->format->palette->colors[ii];
+		}
+	}
+
 	SDL_UnlockSurface(su);
 	SDL_UnlockSurface(surface);
 	return su;
@@ -374,7 +382,7 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 			//大尺寸合理确定裁切的范围
             setFlags(USE_SUPER_BING_CLIP) ;
 			LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, &actualRect);
-            printf("%d,%d,%d,%d\n", actualRect.x, actualRect.y, actualRect.w, actualRect.h);
+            //printf("%d,%d,%d,%d\n", actualRect.x, actualRect.y, actualRect.w, actualRect.h);
 			surfacePtr = LOtextureBase::ClipSurface(baseTexture->GetSurface(), actualRect);
             //SDL_SaveBMP(surfacePtr, "666.bmp");
 			if (!surfacePtr) return false;

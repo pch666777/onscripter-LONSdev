@@ -14,9 +14,9 @@
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-//    if (reader->GetCurrentLine() == 59703) {
-//        int debugbreak = 1;
-//    }
+    //if (reader->GetCurrentLine() == 5) {
+    //    int debugbreak = 1;
+    //}
 	bool visiable = !reader->isName("lsph");
 	//
 	int ids[] = { reader->GetParamInt(0),255,255 };
@@ -132,9 +132,9 @@ int LOImageModule::printStack(FunctionInterface *reader, int fix) {
 
 
 int LOImageModule::bgCommand(FunctionInterface *reader) {
-	//if (reader->GetCurrentLine() == 39403) {
-	//	int debugbreak = 0;
-	//}
+	if (reader->GetCurrentLine() == 5) {
+		int debugbreak = 0;
+	}
 	
 	LeveTextDisplayMode();
 
