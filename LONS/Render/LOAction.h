@@ -137,6 +137,18 @@ public:
         Uint32 duration;
 };
 
+
+//移动类
+class LOActionScale :public LOAction {
+public:
+        LOActionScale();
+        ~LOActionScale();
+
+        SDL_Point startSc;
+        SDL_Point endSc;
+        Uint32 duration;
+};
+
 extern LOAction* CreateActionFromType(int acType);
 
 #endif // !__H_LOACTION_

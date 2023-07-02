@@ -335,9 +335,9 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 	//LONS::printInfo("alpha:%d visiable:%d", ptr[LOLayerInfo::alpha], ptr[LOLayerInfo::visiable]);
 
 	if (!isVisible()) return;
-	//if (layerType == LOLayer::LAYER_SPRINT && id[0] == 501) {
-	//	int bbk = 1;
-	//}
+//    if (layerType == LOLayer::LAYER_SPRINT && id[0] == 999) {
+//        int bbk = 1;
+//    }
 
 	LOLayerDataBase *curInfo = &data->cur;
 
@@ -434,6 +434,11 @@ void LOLayer::ShowMe(SDL_Renderer *render) {
 		vec[2].position = { dst.x + dst.w, dst.y + dst.h };
 		vec[3].position = { dst.x + dst.w, dst.y };
 	}
+    //如果是NS动画，可能会出现超大纹理，这时候纹理可能是被裁剪下来的，计算的宽度/高度不一样
+    if(curInfo->texture->isSuperClip()){
+        curInfo->texture->getSuperClipSize(&bw, &bh) ;
+        src.x = src.y = 0 ;
+    }
 	vec[0].tex_coord = { (float)src.x / bw , (float)src.y / bh };
 	vec[1].tex_coord = { (float)src.x / bw , (float)(src.y + src.h) / bh };
 	vec[2].tex_coord = { (float)(src.x + src.w) / bw , (float)(src.y + src.h) / bh };
@@ -656,6 +661,9 @@ void LOLayer::DoAction(LOLayerData *data, Uint32 curTime) {
             case LOAction::ANIM_MOVE:
                 DoMoveActon(data, (LOActionMove*)acb.get(), curTime);
                 break ;
+            case LOAction::ANIM_SCALE:
+                DoScaleAction(data, (LOActionScale*)acb.get(), curTime);
+                break ;
 			default:
 				break;
 			}
@@ -754,6 +762,10 @@ void LOLayer::DoNsAction(LOLayerData *data, LOActionNS *ai, Uint32 curTime) {
 			else ai->setEnble(false);
 		}
 
+        //超大纹理每一帧都必须进行初始化
+        if(cell != ai->cellCurrent && !data->cur.texture->isCmdTexture() && data->cur.texture->isSuperClip()){
+            isinit = false ;
+        }
 		data->cur.SetCell(ai, cell);
 	}
 }
@@ -807,8 +819,8 @@ void LOLayer::DoMoveActon(LOLayerData *data, LOActionMove *ai, Uint32 curTime){
     }
     Uint32 pos = curTime - ai->lastTime;
 
-    ai->gVal += 1 ;
-    pos = 20 * ai->gVal ;
+    //ai->gVal += 1 ;
+    //pos = 20 * ai->gVal ;
 
     if(pos > ai->duration) pos = ai->duration ;
     //计算出X，Y的位置
@@ -818,7 +830,51 @@ void LOLayer::DoMoveActon(LOLayerData *data, LOActionMove *ai, Uint32 curTime){
     data->cur.offsetX = ai->startPt.x + (float)perx ;
     data->cur.offsetY = ai->startPt.y + (float)pery ;
 
-    if(pos >= ai->duration) ai->setEnble(false) ;
+    //printf("%f\n", data->cur.offsetY) ;
+
+    if(pos >= ai->duration){
+        if(ai->loopMode == LOAction::LOOP_CIRCULAR) ai->lastTime = 0 ; //重置
+        else if(ai->loopMode == LOAction::LOOP_GOBACK){
+            SDL_Point tmp = ai->endPt;
+            ai->endPt = ai->startPt;
+            ai->startPt = tmp ;
+            ai->lastTime = 0 ;
+        }
+        else ai->setEnble(false) ;
+    }
+
+}
+
+
+void LOLayer::DoScaleAction(LOLayerData *data, LOActionScale *ai, Uint32 curTime){
+    data->cur.showType |= LOLayerDataBase::SHOW_SCALE;
+    if(ai->lastTime == 0){ //首帧
+        data->cur.scaleX = (double)ai->startSc.x / 1000 ; data->cur.scaleY = (double)ai->startSc.y / 1000 ;
+        ai->lastTime = curTime ;
+        return ;
+    }
+    Uint32 pos = curTime - ai->lastTime;
+    //ai->gVal += 1 ;
+    //pos = 20 * ai->gVal ;
+    if(pos > ai->duration) pos = ai->duration ;
+    //计算出x y应该的缩放
+    int duration = (int)ai->duration ;
+    int dx = (ai->endSc.x - ai->startSc.x) * (int)pos / duration ;
+    int dy = (ai->endSc.y - ai->startSc.y) * (int)pos / duration ;
+    data->cur.scaleX = (double)(ai->startSc.x + dx) / 1000;
+    data->cur.scaleY = (double)(ai->startSc.x + dy) / 1000;
+    //循环
+    if(pos >= ai->duration){
+        if(ai->loopMode == LOAction::LOOP_CIRCULAR) ai->lastTime = 0 ; //重置
+        else if(ai->loopMode == LOAction::LOOP_GOBACK){
+            SDL_Point tmp = ai->endSc;
+            ai->endSc = ai->startSc;
+            ai->startSc = tmp ;
+            ai->lastTime = 0 ;
+            //ai->gVal = 0;  //debug
+        }
+        else ai->setEnble(false) ;
+    }
 }
 
 

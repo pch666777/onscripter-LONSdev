@@ -86,6 +86,8 @@ public:
 		USE_ALPHA_MOD = 4,
 		USE_TEXTACTION_MOD = 8,
 
+                //纹理是从超大纹理中裁剪出来的
+                USE_SUPER_BING_CLIP = 256,
 		//文字描述纹理
 		USE_TEXTURE_TEXT = 0x20000000,
 		//绘图命令式纹理
@@ -186,6 +188,7 @@ public:
 	bool isTextTexture() { return useflag & USE_TEXTURE_TEXT; }
 	bool isCmdTexture() { return useflag & USE_TEXTURE_CMD; }
 	bool isEdit() { return useflag & USE_TEXTURE_EDIT; }
+        bool isSuperClip(){ return useflag & USE_SUPER_BING_CLIP ;}
 	int  GetFlag() { return useflag; }
 	SDL_BlendMode GetBlendMode() {return blendmodel;}
 	SDL_Color GetBlendColor() { return color; }
@@ -206,6 +209,7 @@ public:
 	int W();
 	int H();
 	void setEmpty(int w, int h);
+        void getSuperClipSize(int *w, int *h);
 
 	//创建文字文描述，通常是创建文字纹理的前奏
 	bool CreateTextDescribe(LOString *s, LOTextStyle *style, LOString *fontName);
@@ -217,8 +221,8 @@ public:
 	int RollTextTexture(int start, int end);
 	void TranzPosition(int *lineID, int *linePos, bool *isend, int position);
 	int GetTextTextureEnd();
-    //获取最后一行的最后一个位置
-    bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
+        //获取最后一行的最后一个位置
+        bool GetTextShowEnd(int *xx, int *yy, int *endLineH);
 
 	//创建色块
 	void CreateSimpleColor(int w, int h);

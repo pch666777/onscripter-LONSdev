@@ -133,6 +133,18 @@ LOActionMove::~LOActionMove(){
 }
 
 //=======================
+LOActionScale::LOActionScale(){
+    acType = ANIM_SCALE;
+    startSc = {1000, 1000 };
+    endSc = {1000, 1000 };
+    duration = 0;
+}
+
+LOActionScale::~LOActionScale(){
+}
+
+
+//=======================
 
 LOActionText::LOActionText() {
 	acType = ANIM_TEXT;

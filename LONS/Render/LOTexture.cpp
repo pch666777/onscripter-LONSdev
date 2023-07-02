@@ -372,14 +372,24 @@ bool LOtexture::activeTexture(SDL_Rect *src, bool toGPUtex) {
 		}
 		else {
 			//大尺寸合理确定裁切的范围
+            setFlags(USE_SUPER_BING_CLIP) ;
 			LOtextureBase::AvailableRect(baseTexture->ww, baseTexture->hh, &actualRect);
 			surfacePtr = LOtextureBase::ClipSurface(baseTexture->GetSurface(), actualRect);
+            //SDL_SaveBMP(surfacePtr, "666.bmp");
 			if (!surfacePtr) return false;
 			texturePtr = CreateTextureFromSurface(LOtextureBase::render, surfacePtr);
 			resetSurface();
 		}
 	}
 	return true;
+}
+
+
+void LOtexture::getSuperClipSize(int *w, int *h){
+    if(useflag & USE_SUPER_BING_CLIP){
+        if(w) *w = actualRect.w ;
+        if(h) *h = actualRect.h ;
+    }
 }
 
 

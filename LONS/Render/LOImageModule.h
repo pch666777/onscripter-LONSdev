@@ -283,6 +283,7 @@ public:
 	int captionCommand(FunctionInterface *reader);
 	int textspeedCommand(FunctionInterface *reader);
         int actionCommand(FunctionInterface *reader);
+        int actionloopCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

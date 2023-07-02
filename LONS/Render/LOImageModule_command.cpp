@@ -14,9 +14,9 @@
 extern void FatalError(const char *fmt, ...);
 
 int LOImageModule::lspCommand(FunctionInterface *reader) {
-    //if (reader->GetCurrentLine() == 404673) {
-    //    int debugbreak = 1;
-    //}
+//    if (reader->GetCurrentLine() == 59703) {
+//        int debugbreak = 1;
+//    }
 	bool visiable = !reader->isName("lsph");
 	//
 	int ids[] = { reader->GetParamInt(0),255,255 };
@@ -1342,8 +1342,19 @@ int LOImageModule::actionCommand(FunctionInterface *reader){
     else if(key == "fade"){
     }
     else if(key == "scale"){
+        if(reader->GetParamCount() < 7){
+            FatalError("[action] command [scale] action param error!") ;
+            return  RET_ERROR ;
+        }
+        LOActionScale *ac = new LOActionScale();
+        ac->startSc.x = reader->GetParamInt(2); ac->startSc.y = reader->GetParamInt(3);
+        ac->endSc.x = reader->GetParamInt(4); ac->endSc.y = reader->GetParamInt(5);
+        ac->duration = reader->GetParamInt(6) ;
+        fix = 7 ;
+        sac = ac ;
     }
     else if(key == "rotate"){
+
     }
     else{
         FatalError("[action] command unknow action [%s] param error!", key.c_str()) ;
@@ -1356,6 +1367,27 @@ int LOImageModule::actionCommand(FunctionInterface *reader){
         if(reader->GetParamCount() > fix) sac->gVal = reader->GetParamInt(fix) ;
         data->bak.SetAction(sac) ;
     }
+
+
+    return RET_CONTINUE;
+}
+
+
+int LOImageModule::actionloopCommand(FunctionInterface *reader){
+    int fid = GetFullID(LOLayer::LAYER_SPRINT, reader->GetParamInt(0), 255, 255 );
+    //先确定sp是否已经载入，未载入action无效
+    LOLayerData *data = CreateLayerBakData(fid, reader->GetPrintName());
+    if(!data) return RET_CONTINUE;
+
+    LOString key = reader->GetParamStr(1).toLower();
+    int actype = LOAction::ANIM_NONE;
+    if(key == "move") actype = LOAction::ANIM_MOVE;
+    else if(key == "fade");
+    else if(key == "scale") actype = LOAction::ANIM_SCALE;
+    else if(key == "rotate");
+
+    LOAction *ac = data->bak.GetAction(actype);
+    if(ac) ac->loopMode = (LOAction::AnimaLoop)reader->GetParamInt(2);
 
 
     return RET_CONTINUE;
