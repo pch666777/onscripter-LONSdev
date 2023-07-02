@@ -48,7 +48,8 @@ public:
 	LOString GetWordStill(int &current, int still);
 	LOString GetWordStill(const char *&buf, int still);
 	LOString toLower();
-	LOString toLowerAndRePathSymble(char pathSymble);
+        LOString toLowerAndRePathSymble(char pathSymble);
+        LOString RePathSymble(char pathSymble);
 	LOString GetTagString(int &cur);
 	LOString GetTagString(const char *&buf);
 

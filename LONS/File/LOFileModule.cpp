@@ -49,11 +49,15 @@ BinArray *LOFileModule::ReadFileFromFileSys(LOString *fn) {
 
 BinArray* LOFileModule::ReadFileFromRecord(LOString *fn) {
 	LOString fnl = fn->toLowerAndRePathSymble('\\');
+    LOString fnr = fn->RePathSymble(('\\'));
 	LOPackFile::PackIndex index ;
 	LOPackFile *file = NULL;
 	for (int ii = 0; ii < packFiles.size() && index.length == 0; ii++) {
 		 file = (LOPackFile*)packFiles.at(ii);
+         //尝试小写
 		 index = file->FindFile(fnl);
+         //尝试原文件名
+         if(index.length == 0) index = file->FindFile(fnr);
 	}
 
 	if (index.length == 0) return NULL;
