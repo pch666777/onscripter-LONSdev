@@ -87,6 +87,8 @@ public:
 	void SetNewFile(LOShareTexture &tex);
 	void SetDelete();
 	void SetBtndef(LOString *s, int val, bool isleft, bool isright);
+	void SetMonoInfo(int color);
+	void SetNegaInfo(int nega);
 	void unSetBtndef();
 	void FirstSNC();
 	void LoadSNC(LOAction *&acb);
@@ -122,6 +124,9 @@ public:
 
 		//更新了哪一个action，使用LOAction的类型标识
 		UP_ACTION_ALL = -1,
+		//用于虚拟图层更新的
+		UP_VIRTUAL_MONO = 1,  //单色模式
+		UP_VIRTUAL_NEGA = 2,  //反色模式
 	};
 
 	enum {

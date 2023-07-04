@@ -119,6 +119,10 @@ int LOImageModule::ExportQuequContinue(LOEventHook *e) {
 			if (isnow) {
 				//注意纹理的释放必须在渲染主线程
 				if (lyr->data->bak.isDelete()) LOLayer::NoUseLayerForce(lyr);
+				else if (lyr->layerType == LOLayer::LAYER_BG && lyr->id[0] == LOLayer::IDEX_FLAGS_SYNC) {
+					//一些需要同步的设置
+					UpdataFlagsSYNC(lyr);
+				}
 				else {
 					//if (scriptModule->GetCurrentLine() == 40148) {
 					//	if(lyr->data->bak.buildStr) 
@@ -716,4 +720,9 @@ void LOImageModule::SimpleEvent(int e, void *data){
         sayStyle.UnSetFlags(LOTextStyle::STYLE_RUBYLINE);
         break ;
     }
+}
+
+
+void LOImageModule::UpdataFlagsSYNC(LOLayer *lyr) {
+
 }

@@ -275,6 +275,16 @@ void LOLayerDataBase::unSetBtndef() {
 	flags &= (~(FLAGS_BTNDEF | FLAGS_LEFTCLICK | FLAGS_RIGHTCLICK | FLAGS_MOUSEMOVE));
 }
 
+void LOLayerDataBase::SetMonoInfo(int color) {
+	upflags |= UP_VIRTUAL_MONO;
+	btnval = color;
+}
+
+void LOLayerDataBase::SetNegaInfo(int nega) {
+	upflags |= UP_VIRTUAL_NEGA;
+	cellNum = nega & 0xff;
+}
+
 void LOLayerDataBase::FirstSNC() {
 	if (!actions) return;
 	for (int ii = 0; ii < actions->size(); ii++) {

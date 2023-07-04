@@ -53,6 +53,8 @@ public:
 		IDEX_NSSYS_RMENU = 20,
 		IDEX_BG_BTNEND = 1022,
 
+		IDEX_FLAGS_SYNC = 1023,  //用于单色/反色模式的同步，直接使用一个虚拟图层
+
 		IDEX_LD_BASE = 11,
 	};
 

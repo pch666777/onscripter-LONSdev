@@ -282,8 +282,10 @@ public:
 	int humanorderCommand(FunctionInterface *reader);
 	int captionCommand(FunctionInterface *reader);
 	int textspeedCommand(FunctionInterface *reader);
-        int actionCommand(FunctionInterface *reader);
-        int actionloopCommand(FunctionInterface *reader);
+    int actionCommand(FunctionInterface *reader);
+    int actionloopCommand(FunctionInterface *reader);
+	int monocroCommand(FunctionInterface *reader);
+	int negaCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;
@@ -379,4 +381,5 @@ private:
 	//调用外部播放器
 	void UseOutSidePlayer(LOString &s);
     int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
+	void UpdataFlagsSYNC(LOLayer *lyr);
 };

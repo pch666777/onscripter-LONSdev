@@ -1392,3 +1392,30 @@ int LOImageModule::actionloopCommand(FunctionInterface *reader){
 
     return RET_CONTINUE;
 }
+
+
+int LOImageModule::monocroCommand(FunctionInterface *reader) {
+	LOString s = reader->GetParamStr(0);
+	if (s.length() > 0) {
+		int color = 0;
+		int fid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_FLAGS_SYNC, 255, 255);
+		if (s[0] == '#') color = reader->GetParamColor(0);
+		//模拟图层加载，这样状态技能跟随保存，又能符合print刷新的要求
+		//LONS随时可以介入画面模式改变，为了与ONS保持一致采用这种方法
+		LOLayerData *data = CreateLayerBakData(fid, reader->GetPrintName());
+		if (!data) data = CreateNewLayerData(fid, reader->GetPrintName());
+		data->bak.SetMonoInfo(color);
+	}
+	return RET_CONTINUE;
+}
+
+
+int LOImageModule::negaCommand(FunctionInterface *reader) {
+	int fid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_FLAGS_SYNC, 255, 255);
+	LOLayerData *data = CreateLayerBakData(fid, reader->GetPrintName());
+	if (!data) data = CreateNewLayerData(fid, reader->GetPrintName());
+	data->bak.SetNegaInfo(reader->GetParamInt(0));
+	return RET_CONTINUE;
+}
+
+
