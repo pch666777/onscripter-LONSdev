@@ -322,7 +322,7 @@ private:
 	std::vector<int> *allSpList;   //allsphide、allspresume命令使用的列表
 	std::vector<int> *allSpList2;  //allsp2hide、allsp2resume命令使用的列表
 	//char pageEndFlag[2];  //'\' or '@' or '/' 0位置反映真实的换页符号，1位置反映根据处理后的换页符号
-	int shaderList[20];
+        std::string monoShader ;
 	int mouseXY[2];
 	bool isFingerEvent ;
 	SDL_TouchFingerEvent fingerEvent ;
@@ -380,6 +380,7 @@ private:
 	bool WaitStateEvent();
 	//调用外部播放器
 	void UseOutSidePlayer(LOString &s);
-    int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
+        int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
 	void UpdataFlagsSYNC(LOLayer *lyr);
+        bool CreateMonoTexture(SDL_Texture *&tex) ;
 };

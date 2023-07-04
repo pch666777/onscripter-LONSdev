@@ -3,6 +3,7 @@
 */
 #include "../etc/LOEvent1.h"
 #include "LOImageModule.h"
+#include "LOShader.h"
 
 extern bool st_skipflag;
 
@@ -724,5 +725,32 @@ void LOImageModule::SimpleEvent(int e, void *data){
 
 
 void LOImageModule::UpdataFlagsSYNC(LOLayer *lyr) {
+    LOLayerDataBase *bak = &lyr->data->bak ;
+    if(bak->upflags & LOLayerDataBase::UP_VIRTUAL_MONO){
+        st_monocro = bak->btnval ;
+    }
+    if(bak->upflags & LOLayerDataBase::UP_VIRTUAL_NEGA){
+        st_neg = bak->cellNum ;
+    }
+    bak->SetDelete();
+}
 
+
+bool LOImageModule::CreateMonoTexture(SDL_Texture *&tex){
+    if(tex) SDL_DestroyTexture(tex) ;
+    tex = nullptr ;
+
+    int shadertype = 2 ;
+    if(st_neg != 2 && st_monocro != 0) shadertype = 1;
+    monoShader = CreateLonsShader(shadertype) ;
+    if(monoShader.length() < 10){
+        //shader获取失败
+        st_monocro = 0 ; st_neg = 0 ;
+        SDL_LogError(0, "LONS mono or nega shader faild!");
+        return false ;
+    }
+
+    tex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_gameWidth, G_gameHeight);
+    SDL_SetTextureUserData(tex, (void*)monoShader.c_str()) ;
+    return true ;
 }

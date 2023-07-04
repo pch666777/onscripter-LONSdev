@@ -3,10 +3,10 @@
 *define
 setintvar "linelog",1
 
-delay 5000
-
-
+gosub *special_effct_test
 btnwait %0
+end
+
 
 delay 500
 
@@ -1278,7 +1278,25 @@ if %1 != 0 debuglog "[dwaveplayloop]命令测试不通过"
 lsp 10,":s/26,26,0;#ffffff音频测试完成，单击继续",300,80
 btnwait %0
 
-;end
+return
+
+
+*special_effct_test
+nsadir "data"
+nsa
+ns2
+
+csp -1
+bg "bg308_e_no.jpg"
+lsp 2,":s/26,26,0;#ff0000画面正常",300,275
+lsp 9,":c;>50,50,#8a821e",10,20
+lsp 10,":a;6.jpg",300,100
+print 1
+
+monocro #fefefe
+
+btnwait %0
+
 return
 
 

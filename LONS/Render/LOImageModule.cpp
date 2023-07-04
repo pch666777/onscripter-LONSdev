@@ -7,6 +7,7 @@
 #include "../etc/LOString.h"
 #include "../etc/LOTimer.h"
 #include "LOImageModule.h"
+
 #include <SDL_image.h>
 
 bool LOImageModule::isShowFps = false;
@@ -38,8 +39,6 @@ LOImageModule::LOImageModule(){
 	standLD[0].init('r');
 	standLD[1].init('c');
 	standLD[2].init('l');
-
-	memset(shaderList, 0, sizeof(int) * 20);
 }
 
 void LOImageModule::ResetConfig() {
@@ -428,12 +427,26 @@ int LOImageModule::RefreshFrame(double postime) {
 		//printHook处于无效状态，说明是普通的刷新，帧首先刷新到PrintTextureA上，然后再刷新到渲染器上，这是为了print时可以最快速度获取当前的图像
 		//在脚本线程展开print队列时，会交换PrintTextureA和PrintTextureB，这样，前台图像就被交换到后台了
 		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
-		LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
-		SDL_SetRenderTarget(render, PrintTextureA);
-		SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
-		SDL_RenderClear(render);
-		UpDisplay(postime);
+        //如果是mono、rega等画面效果，按效果需要部分先刷新到PrintTextureC上，C纹理将被设置UserData，在UpDisplay时，部分纹理被刷新到A上
+        //这两种效果依赖SDL2的源码修改
+        bool ismono = false ;
+        if(st_monocro != 0 || st_neg == 1 || st_neg == 2){
+        }
 
+        if(!ismono){
+            //要检查PrintTextureC是否已经释放
+            if(PrintTextureC){
+                SDL_DestroyTexture(PrintTextureC) ;
+                PrintTextureC = nullptr ;
+            }
+            LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
+            SDL_SetRenderTarget(render, PrintTextureA);
+            SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+            SDL_RenderClear(render);
+        }
+
+        //mono nega时，在updisplay内部会有切换target的操作
+        UpDisplay(postime);
 		//debug
 		//if (ef && ef->postime < 0) {
 		//	int bbk = 0;

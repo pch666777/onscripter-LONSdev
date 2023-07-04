@@ -1108,6 +1108,7 @@ void LOtexture::ResetTextureMode(SDL_Texture *tex) {
 		SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_NONE);
 		SDL_SetTextureColorMod(tex, r, g, b);
 		SDL_SetTextureAlphaMod(tex, a);
+        SDL_SetTextureUserData(tex, nullptr) ;
 	}
 }
 

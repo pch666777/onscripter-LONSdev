@@ -276,11 +276,13 @@ void LOLayerDataBase::unSetBtndef() {
 }
 
 void LOLayerDataBase::SetMonoInfo(int color) {
+    flags &= (~FLAGS_DELETE);
 	upflags |= UP_VIRTUAL_MONO;
 	btnval = color;
 }
 
 void LOLayerDataBase::SetNegaInfo(int nega) {
+    flags &= (~FLAGS_DELETE);
 	upflags |= UP_VIRTUAL_NEGA;
 	cellNum = nega & 0xff;
 }

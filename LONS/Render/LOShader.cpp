@@ -3,7 +3,7 @@
 #include <SDL.h>
 #include <vector>
 
-std::vector<std::string> shaderCache;
+//std::vector<std::string> shaderCache;
 extern std::string G_RenderName;  //渲染器使用的驱动名称
 
 //适用于GLES2的黑白效果shader
@@ -31,7 +31,7 @@ std::string CreateLonsShader(int vtype) {
 
 		if (G_RenderName == "opengles2") s.append(GLES2_Array[vtype]);
 
-		s.append("\0\0");
+        s.append("\0\0");
 
 		return s;
 	}

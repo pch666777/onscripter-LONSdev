@@ -14,6 +14,7 @@ SOURCES += \
     ../LONS/Render/LOLayer.cpp \
     ../LONS/Render/LOLayerData.cpp \
     ../LONS/Render/LOMatrix2d.cpp \
+    ../LONS/Render/LOShader.cpp \
     ../LONS/Render/LOTextDescribe.cpp \
     ../LONS/Render/LOTexture.cpp \
     ../LONS/Scripter/FuncInterface.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
 QMAKE_CXXFLAGS += -Wunused-parameter
 
 INCLUDEPATH += $$PWD/../../LonsLibs/LoongArch/00_bin/include
+INCLUDEPATH += /usr/include/dbus-1.0/dbus
 
 INCLUDEPATH += $$PWD/../../LonsLibs/LoongArch/00_bin
 DEPENDPATH += $$PWD/../../LonsLibs/LoongArch/00_bin
