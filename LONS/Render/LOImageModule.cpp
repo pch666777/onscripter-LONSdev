@@ -32,6 +32,7 @@ LOImageModule::LOImageModule(){
 	layerDataMutex = SDL_CreateMutex();
 	doQueMutex = SDL_CreateMutex();
 	PrintTextureA = PrintTextureB = PrintTextureEdit = nullptr;
+	PrintTextureC = nullptr;
 
 	//初始化默认立绘的参数
 	standLD[0].init('r');
@@ -55,13 +56,14 @@ void LOImageModule::ResetConfig() {
 	sayStyle.reset();
 	sayStyle.xcount = 22;
 
-
 	textbtnValue = 1;
 
 	btndefStr.clear();
 	exbtn_dStr.clear();
 	btnOverTime = 0;
 	btnUseSeOver = false;
+	st_monocro = 0;
+	st_neg = 0;
 
 	if (allSpList) allSpList->clear();
 	if (allSpList2) allSpList2->clear();
@@ -78,6 +80,7 @@ LOImageModule::~LOImageModule(){
 	if (allSpList2)delete allSpList2;
 	if (PrintTextureA) SDL_DestroyTexture(PrintTextureA);
 	if (PrintTextureB) SDL_DestroyTexture(PrintTextureB);
+	if (PrintTextureC) SDL_DestroyTexture(PrintTextureC);
 	if (PrintTextureEdit) SDL_DestroyTexture(PrintTextureEdit);
 }
 
@@ -145,8 +148,8 @@ int LOImageModule::InitImageModule() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 
-	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d11");
-
+	//优先考虑gles2，比较多的平台会支持，另外LOShader目前均是针对gles2写的，为了实现单色/反色效果
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
 	window = SDL_CreateWindow(NULL, G_windowRect.x, G_windowRect.y, deviceSize.w, deviceSize.h, winflag | SDL_WINDOW_OPENGL);
 	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
@@ -160,6 +163,7 @@ int LOImageModule::InitImageModule() {
 	bool checkOK = false;
 	SDL_RendererInfo G_renderinfo;
 	SDL_GetRendererInfo(render, &G_renderinfo);
+	G_RenderName.assign(G_renderinfo.name);
 	printf("render is %s\n", G_renderinfo.name);
 	LOtextureBase::maxTextureW = G_renderinfo.max_texture_width;
 	LOtextureBase::maxTextureH = G_renderinfo.max_texture_height;

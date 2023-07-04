@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2023 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,6 +19,12 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 #include "../../SDL_internal.h"
+
+//========= LONS add start ==========
+//4字节 + shader，第0字节，sharder编号，最大不超过0~6
+char *LUserData = NULL ;
+#define GLES2_SHADER_COUNT_LONS 22
+//========= LONS add end ============
 
 #if SDL_VIDEO_RENDER_OGL_ES2 && !SDL_RENDER_DISABLED
 
@@ -52,9 +58,6 @@ extern int SDL_RecreateWindow(SDL_Window * window, Uint32 flags);
 /*************************************************************************************************
  * Context structures                                                                            *
  *************************************************************************************************/
-
-char *LOUserData = NULL;  //LONS add it
-
 
 typedef struct GLES2_FBOList GLES2_FBOList;
 
@@ -161,7 +164,7 @@ typedef struct GLES2_RenderData
     GLES2_FBOList *framebuffers;
     GLuint window_framebuffer;
 
-    GLuint shader_id_cache[GLES2_SHADER_COUNT];
+    GLuint shader_id_cache[GLES2_SHADER_COUNT_LONS]; //LONS add
 
     GLES2_ProgramCache program_cache;
     Uint8 clear_r, clear_g, clear_b, clear_a;
@@ -502,6 +505,12 @@ GLES2_CacheShader(GLES2_RenderData *data, GLES2_ShaderType type, GLenum shader_t
     int attempt, num_src;
     const GLchar *shader_src_list[3];
     const GLchar *shader_body = GLES2_GetShader(type);
+    //======= LONS add start ========
+    if (type > GLES2_SHADER_FRAGMENT_TEXTURE_EXTERNAL_OES && type < GLES2_SHADER_COUNT_LONS && LUserData) {
+        //data->texcoord_precision_hint = GLES2_GetTexCoordPrecisionEnumFromHint();
+        shader_body = (const GLchar*)(LUserData + 4);
+    }
+    //======= LONS add end ========
 
     if (!shader_body) {
         SDL_SetError("No shader body src");
@@ -688,11 +697,16 @@ GLES2_SelectProgram(GLES2_RenderData *data, GLES2_ImageSource source, int w, int
         goto fault;
     }
 
-    //====== LONS add start ========
-    if(LOUserData){
-        if(LOUserData[0] == 1) ftype = GLES2_SHADER_FRAGMENT_TEXTURE_TEXTUREGRAY;
+    //======= LONS add start ========
+    if (LUserData && LUserData[0] > 0) {
+        if (LUserData[0] + GLES2_SHADER_FRAGMENT_TEXTURE_EXTERNAL_OES >= GLES2_SHADER_COUNT_LONS) {
+            SDL_SetError("LONS sharder ID out range:%d\n", LUserData[0]);
+            goto fault;
+        }
+        //注意最多只设置22个对象
+        ftype = LUserData[0] + GLES2_SHADER_FRAGMENT_TEXTURE_EXTERNAL_OES;
     }
-    //====== LONS add end ==========
+    //======= LONS add end ========
 
     /* Load the requested shaders */
     vertex = data->shader_id_cache[(Uint32)vtype];
@@ -1336,8 +1350,9 @@ GLES2_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand *cmd, void *ver
                 }
 
                 if (thistexture) {
-                    LOUserData = (char*)SDL_GetTextureUserData(thistexture); //LONS add it
+                    LUserData = (char*)SDL_GetTextureUserData(thistexture) ;  //LONS add it
                     ret = SetCopyState(renderer, cmd, vertices);
+                    LUserData = NULL; //LONS add
                 } else {
                     ret = SetDrawState(data, cmd, GLES2_IMAGESOURCE_SOLID, vertices);
                 }
@@ -1375,7 +1390,7 @@ GLES2_DestroyRenderer(SDL_Renderer *renderer)
 
         {
             int i;
-            for (i = 0; i < GLES2_SHADER_COUNT; i++) {
+            for (i = 0; i < GLES2_SHADER_COUNT_LONS; i++) { //LONS add count
                 GLuint id = data->shader_id_cache[i];
                 if (id) {
                     data->glDeleteShader(id);

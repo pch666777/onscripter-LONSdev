@@ -6,6 +6,7 @@
 
 char G_Bit[4] = { 0, 1, 2, 3 };  //默认材质所只用的RGBA模式位置 0-A 1-R 2-G 3-B
 Uint32 G_Texture_format = SDL_PIXELFORMAT_ARGB8888;   //windows android use this format;   //默认编辑使用的材质格式
+std::string G_RenderName;
 SDL_Rect G_windowRect = { 0, 0, 800, 600 };    //整个窗口的位置和大小
 SDL_Rect G_viewRect = { 0, 0, 800, 600 };     //实际显示视口的位置和大小
 int G_gameWidth = 800;         //游戏的实际宽度

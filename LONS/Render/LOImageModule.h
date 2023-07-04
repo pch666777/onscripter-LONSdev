@@ -291,8 +291,8 @@ private:
 
 	//lsp时使用的样式
 	LOTextStyle spStyle;
-        //strsp时，使用一个变量传递值
-        LOTextStyle strspStyle;
+    //strsp时，使用一个变量传递值
+    LOTextStyle strspStyle;
 	//lsp使用的字体名称
 	LOString    spFontName;
 	//对话使用的样式
@@ -308,11 +308,10 @@ private:
 	LOString btndefStr;     //btndef定义的按钮文件名
 	LOString exbtn_dStr;    //exbtn_d的定义
 	int BtndefCount;
-	//int exbtn_count;
 	int btnOverTime;
 	bool btnUseSeOver;
-	//std::atomic_bool reflashNow;
-	//bool exbtn_d_hasrun;
+	char st_neg;       //反色模式，0为不启用，1为优先monocro，2为优先负片
+	int  st_monocro;  //=0时表示不启用单色模式，否则启用
 
 	int dialogDisplayMode;
 	bool effectSkipFlag;    //是否允许跳过效果（单击时）
@@ -334,19 +333,14 @@ private:
 
 	SDL_Texture *PrintTextureA;    //活动纹理，每一帧总是先刷新到此纹理，再刷新到渲染器
 	SDL_Texture *PrintTextureB;    //活动准备纹理，print时将与PrintTextureA交换指针，成为活跃纹理，是特效操作的重要对象
+	SDL_Texture *PrintTextureC;    //单色及反色时，需要借用特性
 	SDL_Texture *PrintTextureEdit;  //可编辑的纹理，特性时与PrintTextureB叠加，形成动态效果
-	//SDL_Texture *PrintTextureA; 
-	//SDL_Texture *PrintTextureB;  
-	//SDL_Texture *PrintTextureEdit; 
+
 
 	int max_texture_width;
 	int max_texture_height;
 	LOString titleStr;
 
-	//抓取图像的遮片
-	//LOShareTexture effectTex;
-	//遮片纹理
-	//LOShareTexture effmakTex;
 	Uint32 tickTime;
 
 	void ResetViewPort();
@@ -384,5 +378,5 @@ private:
 	bool WaitStateEvent();
 	//调用外部播放器
 	void UseOutSidePlayer(LOString &s);
-        int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
+    int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
 };

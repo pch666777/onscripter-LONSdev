@@ -1,3 +1,4 @@
 //RunCommandQueue -> SetCopyState -> SetDrawState -> SelectProgram
+//2.26.0~2.26.5 opgles2 is same
 
 add gray effcet support

@@ -1,7 +1,7 @@
 /*
-项目地址：https://gitee.com/only998/onscripter-lons
+项目地址：https://github.com/pch666777/onscripter-LONSdev
 邮件联系：pngchs@qq.com
-编辑时间：2020——2021
+编辑时间：2020——2023
 */
 
 #include "Render/LOImageModule.h"

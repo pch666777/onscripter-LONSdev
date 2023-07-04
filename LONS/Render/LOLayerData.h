@@ -15,6 +15,7 @@
 
 extern char G_Bit[4];             //默认材质所只用的RGBA模式位置 0-A 1-R 2-G 3-B
 extern Uint32 G_Texture_format;   //默认编辑使用的材质格式
+extern std::string G_RenderName;  //渲染器使用的驱动名称
 extern SDL_Rect G_windowRect;    //整个窗口的位置和大小
 extern SDL_Rect G_viewRect;     //实际显示视口的位置和大小
 extern int G_gameWidth;         //游戏的实际宽度

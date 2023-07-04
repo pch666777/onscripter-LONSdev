@@ -135,5 +135,8 @@
     <ClCompile Include="etc\LOMessage_ch_utf8.cpp">
       <Filter>源文件\etc</Filter>
     </ClCompile>
+    <ClCompile Include="Render\LOShader.cpp">
+      <Filter>源文件\Render</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

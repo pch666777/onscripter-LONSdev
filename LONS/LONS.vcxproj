@@ -181,6 +181,7 @@
     <ClCompile Include="Render\LOLayer.cpp" />
     <ClCompile Include="Render\LOLayerData.cpp" />
     <ClCompile Include="Render\LOMatrix2d.cpp" />
+    <ClCompile Include="Render\LOShader.cpp" />
     <ClCompile Include="Render\LOTextDescribe.cpp" />
     <ClCompile Include="Render\LOTexture.cpp" />
     <ClCompile Include="Scripter\FuncInterface.cpp" />
