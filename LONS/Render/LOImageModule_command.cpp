@@ -619,13 +619,13 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
 	}
 	//btnwait对右键和没有点击任何按钮均有反应，因此准备一个空白图层位于底部，以便进行反应
 	//exbtn_d实际上就设置这空白层的btnstr
-	int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
+    int fullid = GetFullID(LOLayer::LAYER_BG, LOLayer::IDEX_BG_BTNEND, 255, 255);
 
-	LOLayerData *data = CreateNewLayerData(fullid, prin_name);
-	LOString s("**;_?_empty_?_");
-	loadSpCore(data, s, 0, 0, 255);
-	if (exbtn_dStr.length() > 0) data->bak.SetBtndef(&exbtn_dStr, 0, true, true);
-	else data->bak.SetBtndef(nullptr, 0, true, true);
+    LOLayerData *data = CreateNewLayerData(fullid, prin_name);
+    LOString s("**;_?_empty_?_");
+    loadSpCore(data, s, 0, 0, 255);
+    if (exbtn_dStr.length() > 0) data->bak.SetBtndef(&exbtn_dStr, 0, true, true);
+    else data->bak.SetBtndef(nullptr, 0, true, true);
 	ExportQuequ(prin_name, nullptr, true);
 
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
@@ -1416,6 +1416,18 @@ int LOImageModule::negaCommand(FunctionInterface *reader) {
 	if (!data) data = CreateNewLayerData(fid, reader->GetPrintName());
 	data->bak.SetNegaInfo(reader->GetParamInt(0));
 	return RET_CONTINUE;
+}
+
+
+int LOImageModule::textcolorCommand(FunctionInterface *reader){
+    int color = reader->GetParamColor(0);
+    sayStyle.fontColor.r = (color >> 16) & 0xff ;
+    sayStyle.fontColor.g = (color >> 8) & 0xff ;
+    sayStyle.fontColor.b = color & 0xff ;
+//    Uint8 r = sayStyle.fontColor.r;
+//    Uint8 g = sayStyle.fontColor.g;
+//    Uint8 b = sayStyle.fontColor.b;
+    return RET_CONTINUE;
 }
 
 

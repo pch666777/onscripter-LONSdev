@@ -429,17 +429,13 @@ int LOImageModule::RefreshFrame(double postime) {
 		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
         //如果是mono、rega等画面效果，按效果需要部分先刷新到PrintTextureC上，C纹理将被设置UserData，在UpDisplay时，部分纹理被刷新到A上
         //这两种效果依赖SDL2的源码修改
-        bool ismono = false ;
-        if(st_monocro != 0 || st_neg == 1 || st_neg == 2){
+        LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
+        if(PrintTextureC){
+            SDL_SetRenderTarget(render, PrintTextureC);
+            SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+            SDL_RenderClear(render);
         }
-
-        if(!ismono){
-            //要检查PrintTextureC是否已经释放
-            if(PrintTextureC){
-                SDL_DestroyTexture(PrintTextureC) ;
-                PrintTextureC = nullptr ;
-            }
-            LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
+        else{
             SDL_SetRenderTarget(render, PrintTextureA);
             SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
             SDL_RenderClear(render);
@@ -447,13 +443,12 @@ int LOImageModule::RefreshFrame(double postime) {
 
         //mono nega时，在updisplay内部会有切换target的操作
         UpDisplay(postime);
-		//debug
-		//if (ef && ef->postime < 0) {
-		//	int bbk = 0;
-		//}
-		//if (isPrinting && !ef) {
-		//	int bbk = 0;
-		//}
+
+        //mono nega再次将C叠加到A上
+//        if(PrintTextureC){
+//            SDL_SetRenderTarget(render, PrintTextureA);
+//            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr);
+//        }
 
 		//有ef需要处理的话，需要检测RenderCopy的位置偏移
 		SDL_Rect rect = { 0,0,G_gameWidth , G_gameHeight };
@@ -509,13 +504,20 @@ int LOImageModule::RefreshFrame(double postime) {
 void LOImageModule::UpDisplay(double postime) {
 	tickTime += (int)postime;
 	//位于底部的要先渲染
-	UpDataLayer(G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
+    UpDataLayer(G_baseLayer[LOLayer::LAYER_BG], tickTime, 1023, 0, 0);
 	UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, 1023, sayState.z_order + 1, 0);
 	UpDataLayer(G_baseLayer[LOLayer::LAYER_STAND], tickTime, 1023, 0, 0);
 	if (sayState.isWinbak()) {
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
+
+        if(PrintTextureC){
+            SDL_SetRenderTarget(render, PrintTextureA) ;
+            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr) ;
+        }
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+        if(PrintTextureC) SDL_SetRenderTarget(render, PrintTextureC) ;
+
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, sayState.z_order, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
 	}
@@ -524,10 +526,20 @@ void LOImageModule::UpDisplay(double postime) {
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
-		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+
+        if(PrintTextureC){
+            SDL_SetRenderTarget(render, PrintTextureA) ;
+            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr) ;
+        }
+        UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+        //if(PrintTextureC) {
+        //    SDL_SetRenderTarget(render, PrintTextureC) ;
+            //SDL_RenderClear(render);
+        //}
 	}
+
 	//UpDataLayer(lonsLayers[LOLayer::LAYER_BUTTON], tickTime, 1023, 0);
-	UpDataLayer(G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
+    UpDataLayer(G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
 }
 
 void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int dest, int level) {

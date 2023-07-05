@@ -282,10 +282,11 @@ public:
 	int humanorderCommand(FunctionInterface *reader);
 	int captionCommand(FunctionInterface *reader);
 	int textspeedCommand(FunctionInterface *reader);
-    int actionCommand(FunctionInterface *reader);
-    int actionloopCommand(FunctionInterface *reader);
+        int actionCommand(FunctionInterface *reader);
+        int actionloopCommand(FunctionInterface *reader);
 	int monocroCommand(FunctionInterface *reader);
 	int negaCommand(FunctionInterface *reader);
+        int textcolorCommand(FunctionInterface *reader) ;
 
 private:
 	static bool isShowFps;
@@ -359,7 +360,7 @@ private:
 	void TextureFromSimpleStr(LOLayerDataBase *bak, LOString *s);
 	void TextureFromActionStr(LOLayerDataBase *bak, LOString *s);
 	void TextureFromVideo(LOLayerDataBase *bak, LOString *s);
-    void TextureFromStrspLine(LOLayerDataBase *bak, LOString *s);
+        void TextureFromStrspLine(LOLayerDataBase *bak, LOString *s);
 	//LOtextureBase* TextureFromNSbtn(LOLayerInfo*info, LOString *s);
 
 	void ScaleTextParam(LOLayerData *info, LOTextStyle *fontwin);

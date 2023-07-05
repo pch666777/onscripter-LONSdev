@@ -1285,15 +1285,23 @@ return
 nsadir "data"
 nsa
 ns2
+textcolor #fffefd
+
+erasetextwindow 0
 
 csp -1
+
 bg "bg308_e_no.jpg"
 lsp 2,":s/26,26,0;#ff0000画面正常",300,275
-lsp 9,":c;>50,50,#8a821e",10,20
+lsp 9,":c;>50,50,#ffffff",10,20
 lsp 10,":a;6.jpg",300,100
-print 1
+
+这是一个测试。 @
 
 monocro #fefefe
+lsp 9,":c;>50,50,#ff00ff",10,20
+;print 10,1500
+print 1
 
 btnwait %0
 

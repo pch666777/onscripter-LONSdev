@@ -228,6 +228,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
     { "actionloop",    "i,s,i",     "Y,Y,Y",       &FunctionInterface::actionloopCommand },
 	{ "monocro",       "CN",        "Y",           &FunctionInterface::monocroCommand },
 	{ "nega",          "i",         "Y",           &FunctionInterface::negaCommand },
+    { "textcolor",     "CN",        "Y",           &FunctionInterface::textcolorCommand },
 
 	//audio
 	{ "bgm",           "s",         "Y",           &FunctionInterface::bgmCommand },

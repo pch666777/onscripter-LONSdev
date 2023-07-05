@@ -248,7 +248,7 @@ public:
     static SDL_Surface* CreateTransAlpha(SDL_Surface *src, int position) ;
 	
 	//重置硬件纹理的混合模式、透明度、颜色混合
-	static void ResetTextureMode(SDL_Texture *tex);
+        static void ResetTextureMode(SDL_Texture *tex);
 
 	void resetSurface();
 	void resetTexture();

@@ -378,10 +378,11 @@ public:
 	virtual int humanorderCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int captionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int textspeedCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
-    virtual int actionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
-    virtual int actionloopCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+        virtual int actionCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+        virtual int actionloopCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int monocroCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int negaCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+        virtual int textcolorCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int bgmCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int bgmonceCommand(FunctionInterface *reader) { return RET_VIRTUAL; }

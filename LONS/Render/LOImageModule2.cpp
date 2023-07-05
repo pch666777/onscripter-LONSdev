@@ -724,6 +724,7 @@ void LOImageModule::SimpleEvent(int e, void *data){
 }
 
 
+//这个函数只应该从渲染线程调用
 void LOImageModule::UpdataFlagsSYNC(LOLayer *lyr) {
     LOLayerDataBase *bak = &lyr->data->bak ;
     if(bak->upflags & LOLayerDataBase::UP_VIRTUAL_MONO){
@@ -733,6 +734,19 @@ void LOImageModule::UpdataFlagsSYNC(LOLayer *lyr) {
         st_neg = bak->cellNum ;
     }
     bak->SetDelete();
+
+    //mono,nega
+    if(st_monocro != 0 || st_neg == 1 || st_neg == 2){
+        if(!CreateMonoTexture(PrintTextureC)){
+            st_monocro = 0;
+            st_neg = 0 ;
+        }
+    }
+    else{
+        if(PrintTextureC) SDL_DestroyTexture(PrintTextureC) ;
+        PrintTextureC = nullptr ;
+    }
+
 }
 
 
@@ -745,7 +759,7 @@ bool LOImageModule::CreateMonoTexture(SDL_Texture *&tex){
     monoShader = CreateLonsShader(shadertype) ;
     if(monoShader.length() < 10){
         //shader获取失败
-        st_monocro = 0 ; st_neg = 0 ;
+        //st_monocro = 0 ; st_neg = 0 ;
         SDL_LogError(0, "LONS mono or nega shader faild!");
         return false ;
     }
