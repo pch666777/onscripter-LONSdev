@@ -1285,23 +1285,28 @@ return
 nsadir "data"
 nsa
 ns2
-textcolor #fffefd
-
+textcolor #ffff00
+setwindow 10,410,30,30,24,24,0,0,30,1,1,#ff00ff,0,400,1024,576
 erasetextwindow 0
 
 csp -1
 
 bg "bg308_e_no.jpg"
-lsp 2,":s/26,26,0;#ff0000画面正常",300,275
+lsp 2,":s/26,26,0;#ff0000画面测试",300,275
 lsp 9,":c;>50,50,#ffffff",10,20
 lsp 10,":a;6.jpg",300,100
+print 1
 
-这是一个测试。 @
+这是一个测试。当前颜色正常，单击后颜色变为黑白。 @
 
 monocro #fefefe
 lsp 9,":c;>50,50,#ff00ff",10,20
 ;print 10,1500
 print 1
+
+
+测试继续进行。画面变化是否符合预期？ @
+
 
 btnwait %0
 

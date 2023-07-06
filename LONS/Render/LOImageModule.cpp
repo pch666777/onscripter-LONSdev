@@ -429,26 +429,28 @@ int LOImageModule::RefreshFrame(double postime) {
 		//每一帧刷新前应该使用SDL_RenderClear() 来清空帧
         //如果是mono、rega等画面效果，按效果需要部分先刷新到PrintTextureC上，C纹理将被设置UserData，在UpDisplay时，部分纹理被刷新到A上
         //这两种效果依赖SDL2的源码修改
-        LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
+        //LOtexture::ResetTextureMode(PrintTextureA);  //要重置纹理的混合模式、透明模式及颜色模式
         if(PrintTextureC){
-            SDL_SetRenderTarget(render, PrintTextureC);
-            SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
-            SDL_RenderClear(render);
+            //SDL_SetRenderTarget(render, PrintTextureC);
+            //SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+            //SDL_RenderClear(render);
+            ChangeTarget(PrintTextureC, true, true, false) ;
         }
         else{
-            SDL_SetRenderTarget(render, PrintTextureA);
-            SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
-            SDL_RenderClear(render);
+            ChangeTarget(PrintTextureA, false, true, true);
+            //SDL_SetRenderTarget(render, PrintTextureA);
+            //SDL_SetRenderDrawColor(render, 0, 0, 0, 255);
+            //SDL_RenderClear(render);
         }
 
         //mono nega时，在updisplay内部会有切换target的操作
         UpDisplay(postime);
 
         //mono nega再次将C叠加到A上
-//        if(PrintTextureC){
-//            SDL_SetRenderTarget(render, PrintTextureA);
-//            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr);
-//        }
+        if(PrintTextureC){
+            ChangeTarget(PrintTextureA, false, false, false) ;
+            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr) ;
+        }
 
 		//有ef需要处理的话，需要检测RenderCopy的位置偏移
 		SDL_Rect rect = { 0,0,G_gameWidth , G_gameHeight };
@@ -461,8 +463,9 @@ int LOImageModule::RefreshFrame(double postime) {
 		}
 
 		//将当前帧刷新到渲染器
-		SDL_SetRenderTarget(render, nullptr);
-		SDL_RenderClear(render);
+        //SDL_SetRenderTarget(render, nullptr);
+        //SDL_RenderClear(render);
+        ChangeTarget(nullptr, false, true, false) ;
 		SDL_RenderCopy(render, PrintTextureA, nullptr, &rect);
 
 		//有特效的执行特效
@@ -511,12 +514,16 @@ void LOImageModule::UpDisplay(double postime) {
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINTEX], tickTime, 1023, 0, 0);
 
+        //切换到A纹理，同时C纹理的队列会立即刷新到C纹理上，再将C纹理刷新到A纹理上，刷新的过程中片段着色器
+        //会按shader效果操作
         if(PrintTextureC){
-            SDL_SetRenderTarget(render, PrintTextureA) ;
-            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr) ;
+            ChangeTarget(PrintTextureA, false, true, true);
+            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr);
         }
-		UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
-        if(PrintTextureC) SDL_SetRenderTarget(render, PrintTextureC) ;
+        //对话将保持原样，因此直接刷新到A纹理上
+        UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
+        //剩余部分继续刷新到C纹理上
+        if(PrintTextureC) ChangeTarget(PrintTextureC, true, true, false) ;
 
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SPRINT], tickTime, sayState.z_order, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
@@ -527,19 +534,35 @@ void LOImageModule::UpDisplay(double postime) {
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_OTHER], tickTime, 1023, 0, 0);
 		UpDataLayer(G_baseLayer[LOLayer::LAYER_SELECTBAR], tickTime, 1023, 0, 0);
 
+        //切换到A纹理，同时C纹理的队列会立即刷新到C纹理上，再将C纹理刷新到A纹理上，刷新的过程中片段着色器
+        //会按shader效果操作
         if(PrintTextureC){
-            SDL_SetRenderTarget(render, PrintTextureA) ;
-            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr) ;
+            ChangeTarget(PrintTextureA, false, true, true);
+            SDL_RenderCopy(render, PrintTextureC, nullptr, nullptr);
         }
+        //对话将保持原样，因此直接刷新到A纹理上
         UpDataLayer(G_baseLayer[LOLayer::LAYER_DIALOG], tickTime, 1023, 0, 0);
-        //if(PrintTextureC) {
-        //    SDL_SetRenderTarget(render, PrintTextureC) ;
-            //SDL_RenderClear(render);
-        //}
+        //剩余部分继续刷新到C纹理上
+        if(PrintTextureC) ChangeTarget(PrintTextureC, true, true, false) ;
 	}
 
 	//UpDataLayer(lonsLayers[LOLayer::LAYER_BUTTON], tickTime, 1023, 0);
     UpDataLayer(G_baseLayer[LOLayer::LAYER_NSSYS], tickTime, 1023, 0, 0);
+}
+
+
+void LOImageModule::ChangeTarget(SDL_Texture *target, bool isAlpha, bool isclear, bool isrecolor){
+    if(target){
+        if(isAlpha) SDL_SetTextureBlendMode(target, SDL_BLENDMODE_BLEND) ;
+        else SDL_SetTextureBlendMode(target, SDL_BLENDMODE_NONE) ;
+        if(isrecolor) SDL_SetTextureColorMod(target, 255, 255, 255) ;
+        SDL_SetTextureAlphaMod(target, 255) ;
+    }
+    SDL_SetRenderTarget(render, target);
+    if(isclear){
+        SDL_SetRenderDrawColor(render, 0, 0, 0, isAlpha ? 0 : 255) ;
+        SDL_RenderClear(render);
+    }
 }
 
 void LOImageModule::UpDataLayer(LOLayer *layer, Uint32 curTime, int from, int dest, int level) {
@@ -1043,8 +1066,8 @@ void LOImageModule::TextureFromActionStr(LOLayerDataBase *bak, LOString *s) {
 	if (w <= 0 || h <= 0) return;
 	texture->CreateSurface(w, h);
 	//默认是白色
-	SDL_Color cc = { 255,255,255,255 };
-	texture->RenderTextSimple(0, 0, cc);
+    //SDL_Color cc = { 255,255,255,255 };
+    texture->RenderTextSimple(0, 0, sayStyle.fontColor);
 	//单字和文字区域已经不需要了
 	texture->textData->ClearTexts();
 	texture->textData->ClearWords();

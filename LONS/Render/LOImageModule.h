@@ -384,4 +384,5 @@ private:
         int NormalPlayVideo(FunctionInterface *reader, LOString &fn, SDL_Rect dst, int vflag);
 	void UpdataFlagsSYNC(LOLayer *lyr);
         bool CreateMonoTexture(SDL_Texture *&tex) ;
+        void ChangeTarget(SDL_Texture *target, bool isAlpha, bool isclear, bool isrecolor);
 };
