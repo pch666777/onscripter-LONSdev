@@ -1299,10 +1299,10 @@ print 1
 
 这是一个测试。当前颜色正常，单击后颜色变为黑白。 @
 
-monocro #fefefe
+monocro #ff3030
 lsp 9,":c;>50,50,#ff00ff",10,20
-;print 10,1500
-print 1
+print 11,1500
+;print 1
 
 
 测试继续进行。画面变化是否符合预期？ @

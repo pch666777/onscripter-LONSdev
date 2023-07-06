@@ -766,5 +766,11 @@ bool LOImageModule::CreateMonoTexture(SDL_Texture *&tex){
 
     tex = CreateTexture(render, G_Texture_format, SDL_TEXTUREACCESS_TARGET, G_gameWidth, G_gameHeight);
     SDL_SetTextureUserData(tex, (void*)monoShader.c_str()) ;
+    if(shadertype == 1){
+        Uint8 r = (st_monocro >> 16) & 0xff ;
+        Uint8 g = (st_monocro >> 8) & 0xff ;
+        Uint8 b = st_monocro & 0xff ;
+        SDL_SetTextureColorMod(tex, r, g, b);
+    }
     return true ;
 }
