@@ -55,6 +55,8 @@ extern int SDL_RecreateWindow(SDL_Window * window, Uint32 flags);
 
 //LONS add
 char *LUserData = NULL;
+int LMaxShader = 4;
+extern int CompileShader(char *use_data);
 //== end ==
 
 static const float inv255f = 1.0f / 255.0f;
@@ -1112,7 +1114,13 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
 
     if (data->shaders && (shader != data->drawstate.shader)) {
         //LONS work here，must check LONS shader!
-        GL_SelectShader(data->shaders, shader);
+        int isok = 0;
+        if (LUserData) {  //try use LONS shader
+            CompileShader(LUserData);
+        }
+
+        if(isok != 1) GL_SelectShader(data->shaders, shader);
+        //LONS add end
         data->drawstate.shader = shader;
     }
 
