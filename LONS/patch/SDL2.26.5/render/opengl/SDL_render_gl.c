@@ -56,7 +56,7 @@ extern int SDL_RecreateWindow(SDL_Window * window, Uint32 flags);
 //LONS add
 char *LUserData = NULL;
 int LMaxShader = 4;
-extern int CompileShader(char *use_data);
+extern int CompileShader(char *use_data, GL_ShaderContext *ctx);
 //== end ==
 
 static const float inv255f = 1.0f / 255.0f;

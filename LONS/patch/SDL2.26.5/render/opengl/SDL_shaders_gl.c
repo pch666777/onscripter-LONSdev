@@ -427,12 +427,24 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
     const int num_tmus_bound = 4;
     const char *vert_defines = "";
     const char *frag_defines = "";
+    const char *func_shaderV_source = "";  //vertex
+    const char *func_shaderF_source = "";  //fragment
     int i;
     GLint location;
 
     if (index == SHADER_NONE) {
         return SDL_TRUE;
     }
+
+    //=== LONS add,check if it's lons shader ===
+    if (index >= NUM_SHADERS) {
+
+    }
+    else {
+        func_shaderV_source = shader_source[index][0];
+        func_shaderF_source = shader_source[index][1];
+    }
+    //=== LONS add end ===
 
     ctx->glGetError();
 
@@ -452,13 +464,13 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
 
     /* Create the vertex shader */
     data->vert_shader = ctx->glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-    if (!CompileShader(ctx, data->vert_shader, vert_defines, shader_source[index][0])) {
+    if (!CompileShader(ctx, data->vert_shader, vert_defines, func_shaderV_source)) {
         return SDL_FALSE;
     }
 
     /* Create the fragment shader */
     data->frag_shader = ctx->glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-    if (!CompileShader(ctx, data->frag_shader, frag_defines, shader_source[index][1])) {
+    if (!CompileShader(ctx, data->frag_shader, frag_defines, func_shaderF_source)) {
         return SDL_FALSE;
     }
 
@@ -483,11 +495,20 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
 }
 
 
-//LONS add it
-int CompileShader(char *use_data) {
+//========LONS add it======
+int CompileShader(char *use_data, GL_ShaderContext *ctx) {
+    const char *vert_defines = "";
+    const char *frag_defines = "";
+    if (ctx->GL_ARB_texture_rectangle_supported) {
+        frag_defines =
+            "#define sampler2D sampler2DRect\n"
+            "#define texture2D texture2DRect\n"
+            "#define UVCoordScale 0.5\n";
+    }
+    else  frag_defines = "#define UVCoordScale 1.0\n";
 
 }
-//LONS add end
+//=======LONS add end=======
 
 static void
 DestroyShaderProgram(GL_ShaderContext *ctx, GL_ShaderData *data)
