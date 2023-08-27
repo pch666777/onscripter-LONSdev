@@ -1,4 +1,4 @@
-/* LONS使用的片段着色器 */
+﻿/* LONS使用的片段着色器 */
 #include "LOShader.h"
 #include <SDL.h>
 #include <vector>
@@ -23,6 +23,8 @@ char GLES2_Fragment_TextureGray[] = \
 
 char* GLES2_Array[] = { nullptr, GLES2_Fragment_TextureGray };
 
+//前4字节有特殊用途，[0]为shader id，[1]操作要求，[2]编译是否成功，
+//[3]SDL2内部使用，注意只有修改过的SDL2才支持
 std::string CreateLonsShader(int vtype) {
 	if (vtype > 0) {
 		char tmp[] = "\0\0\0\0";

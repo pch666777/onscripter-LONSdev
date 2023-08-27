@@ -1,4 +1,4 @@
-/*
+﻿/*
 项目地址：https://github.com/pch666777/onscripter-LONSdev
 邮件联系：pngchs@qq.com
 编辑时间：2020——2023
@@ -154,6 +154,10 @@ int main(int argc, char **argv) {
 	//setlocale(LC_ALL, "gbk");
 	//LoadLibs();
 #endif // WIN32
+	//LOString *test = new LOString("我就拉放假啦放假啦放假啦生发剂哦啊生发剂哦啊佛啊生发剂哦啊飞机啊激发生发剂哦啊飞机哦啊飞机哦啊接哦发");
+	//std::string *bb = test;
+	//delete bb;
+
 
 	ReadConfig();
 	//if (G_useLogFile) UseLogFile();

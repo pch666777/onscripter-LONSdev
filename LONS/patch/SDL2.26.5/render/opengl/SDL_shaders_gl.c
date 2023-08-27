@@ -1,6 +1,6 @@
 ﻿/*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2023 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -384,6 +384,13 @@ static const char *shader_source[NUM_SHADERS][2] =
         BT709_SHADER_CONSTANTS
         NV21_SHADER_BODY
     },
+    //LONS add user shader
+        { NULL,NULL},
+        { NULL,NULL },
+        { NULL,NULL },
+        { NULL,NULL },
+   //LONS add user shader
+
 #endif /* SDL_HAVE_YUV */
 };
 
@@ -427,24 +434,12 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
     const int num_tmus_bound = 4;
     const char *vert_defines = "";
     const char *frag_defines = "";
-    const char *func_shaderV_source = "";  //vertex
-    const char *func_shaderF_source = "";  //fragment
     int i;
     GLint location;
 
     if (index == SHADER_NONE) {
         return SDL_TRUE;
     }
-
-    //=== LONS add,check if it's lons shader ===
-    if (index >= NUM_SHADERS) {
-
-    }
-    else {
-        func_shaderV_source = shader_source[index][0];
-        func_shaderF_source = shader_source[index][1];
-    }
-    //=== LONS add end ===
 
     ctx->glGetError();
 
@@ -464,13 +459,13 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
 
     /* Create the vertex shader */
     data->vert_shader = ctx->glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-    if (!CompileShader(ctx, data->vert_shader, vert_defines, func_shaderV_source)) {
+    if (!CompileShader(ctx, data->vert_shader, vert_defines, shader_source[index][0])) {
         return SDL_FALSE;
     }
 
     /* Create the fragment shader */
     data->frag_shader = ctx->glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
-    if (!CompileShader(ctx, data->frag_shader, frag_defines, func_shaderF_source)) {
+    if (!CompileShader(ctx, data->frag_shader, frag_defines, shader_source[index][1])) {
         return SDL_FALSE;
     }
 
@@ -493,22 +488,6 @@ CompileShaderProgram(GL_ShaderContext *ctx, int index, GL_ShaderData *data)
 
     return (ctx->glGetError() == GL_NO_ERROR);
 }
-
-
-//========LONS add it======
-int CompileShader(char *use_data, GL_ShaderContext *ctx) {
-    const char *vert_defines = "";
-    const char *frag_defines = "";
-    if (ctx->GL_ARB_texture_rectangle_supported) {
-        frag_defines =
-            "#define sampler2D sampler2DRect\n"
-            "#define texture2D texture2DRect\n"
-            "#define UVCoordScale 0.5\n";
-    }
-    else  frag_defines = "#define UVCoordScale 1.0\n";
-
-}
-//=======LONS add end=======
 
 static void
 DestroyShaderProgram(GL_ShaderContext *ctx, GL_ShaderData *data)
@@ -581,6 +560,14 @@ GL_CreateShaderContext(void)
 
     /* Compile all the shaders */
     for (i = 0; i < NUM_SHADERS; ++i) {
+        //LONS add it, not compilete lons user shader
+        if (i >= SHADER_LONS_USER1 && i <= SHADER_LONS_USER4) {
+            ctx->shaders[i].vert_shader = NULL;
+            ctx->shaders[i].frag_shader = NULL;
+            ctx->shaders[i].program = NULL;
+            continue;
+        }
+        //LONS add end.
         if (!CompileShaderProgram(ctx, i, &ctx->shaders[i])) {
             GL_DestroyShaderContext(ctx);
             return NULL;
@@ -592,8 +579,32 @@ GL_CreateShaderContext(void)
 }
 
 void
-GL_SelectShader(GL_ShaderContext *ctx, GL_Shader shader)
+GL_SelectShader(GL_ShaderContext *ctx, GL_Shader shader, char* lons_user_data)
 {
+    //LONS add it
+    if (lons_user_data) {
+        lons_user_data[3] = 0;
+        if (!ctx->shaders[shader].program) {
+            shader_source[shader][0] = TEXTURE_VERTEX_SHADER;
+            shader_source[shader][1] = lons_user_data + 4;
+            if (!CompileShaderProgram(ctx, shader, &ctx->shaders[shader])) {
+                lons_user_data[2] = 1;  //faild!
+                //destroy shader
+                //if(ctx->shaders[shader].vert_shader) ctx->glDeleteObjectARB(ctx->shaders[shader].vert_shader);
+                //if (ctx->shaders[shader].frag_shader) ctx->glDeleteObjectARB(ctx->shaders[shader].frag_shader);
+                //if (ctx->shaders[shader].program) ctx->glDeleteObjectARB(ctx->shaders[shader].frag_shader);
+                DestroyShaderProgram(ctx, &ctx->shaders[shader]);
+                ctx->shaders[shader].vert_shader = NULL;
+                ctx->shaders[shader].frag_shader = NULL;
+                ctx->shaders[shader].program = NULL;
+                return;
+            }
+        }
+        //sucess
+        lons_user_data[3] = 1;
+    }
+    //LONS add end
+
     ctx->glUseProgramObjectARB(ctx->shaders[shader].program);
 }
 

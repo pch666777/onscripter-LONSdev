@@ -1,6 +1,6 @@
 ﻿/*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2023 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -52,12 +52,6 @@
 
 /* Used to re-create the window with OpenGL capability */
 extern int SDL_RecreateWindow(SDL_Window * window, Uint32 flags);
-
-//LONS add
-char *LUserData = NULL;
-int LMaxShader = 4;
-extern int CompileShader(char *use_data, GL_ShaderContext *ctx);
-//== end ==
 
 static const float inv255f = 1.0f / 255.0f;
 
@@ -1113,15 +1107,27 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
     }
 
     if (data->shaders && (shader != data->drawstate.shader)) {
-        //LONS work here，must check LONS shader!
         int isok = 0;
-        if (LUserData) {  //try use LONS shader
-            CompileShader(LUserData);
-        }
+        //LONS add it
+        //check if it's texture shader
+        if (shader != SHADER_NONE && shader != SHADER_SOLID && cmd->data.draw.texture) {
+            char *lons_user_data = (char*)SDL_GetTextureUserData(cmd->data.draw.texture);
+            //yes, it must do it
+            if (lons_user_data && lons_user_data[2] == 0) { //lons_user_data[2] it's a flag,if it faild ,set 1
+                GL_Shader lons_shader_id = lons_user_data[0] - 1 + SHADER_LONS_USER1;
+                //char[3] will return result, 1-sucess 0-faild
+                GL_SelectShader(data->shaders, lons_shader_id, lons_user_data);
 
-        if(isok != 1) GL_SelectShader(data->shaders, shader);
-        //LONS add end
-        data->drawstate.shader = shader;
+                isok = lons_user_data[3];
+                lons_user_data[3] = 0; //reset
+                if(isok == 1) data->drawstate.shader = lons_shader_id;
+            }
+        }
+        //LONS add it end
+        if (isok != 1) {
+            GL_SelectShader(data->shaders, shader, NULL); //LONS change it,selct default shader
+            data->drawstate.shader = shader;
+        }
     }
 
     if ((cmd->data.draw.texture != NULL) != data->drawstate.texturing) {
@@ -1376,9 +1382,7 @@ GL_RunCommandQueue(SDL_Renderer * renderer, SDL_RenderCommand *cmd, void *vertic
                 }
 
                 if (thistexture) {
-                    LUserData = (char*)SDL_GetTextureUserData(thistexture);  //LONS add it
                     ret = SetCopyState(data, cmd);
-                    LUserData = NULL; //LONS add
                 } else {
                     ret = SetDrawState(data, cmd, SHADER_SOLID);
                 }

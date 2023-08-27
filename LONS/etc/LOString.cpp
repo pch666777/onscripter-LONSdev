@@ -38,11 +38,12 @@ LOString::LOString() {
 }
 
 LOString::~LOString() {
-
+	//printf("~LOString()\n");
 }
 
 LOString::LOString(const char *ptr):std::string(ptr) {
 	_encoder = LOCodePage::GetEncoder(defaultEncoder);
+	//printf("0x%llx\n", &_encoder);
 }
 
 LOString::LOString(const char *ptr, int slen) : std::string(ptr, slen) {
