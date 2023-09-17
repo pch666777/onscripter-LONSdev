@@ -21,7 +21,23 @@ char GLES2_Fragment_TextureGray[] = \
 "}\n"                                                           \
 ;
 
+//适用于opengl的黑白效果shader
+char GL_Fragment_TextureGray[] = \
+"varying vec4 v_color;\n"
+"varying vec2 v_texCoord;\n"
+"uniform sampler2D tex0;\n"
+"\n"
+"void main()\n"
+"{\n"
+"    gl_FragColor = texture2D(tex0, v_texCoord) * v_color;\n"
+"    gl_FragColor.r = (gl_FragColor.r+gl_FragColor.g+gl_FragColor.b)/3.0;\n"
+"    gl_FragColor.g = gl_FragColor.r;\n"
+"    gl_FragColor.b = gl_FragColor.r;\n"
+"}"
+;
+
 char* GLES2_Array[] = { nullptr, GLES2_Fragment_TextureGray };
+char* GL_Array[] = { nullptr, GL_Fragment_TextureGray };
 
 //前4字节有特殊用途，[0]为shader id，[1]操作要求，[2]编译是否成功，
 //[3]SDL2内部使用，注意只有修改过的SDL2才支持
@@ -32,6 +48,7 @@ std::string CreateLonsShader(int vtype) {
 		std::string s(tmp, 4);
 
 		if (G_RenderName == "opengles2") s.append(GLES2_Array[vtype]);
+		else if(G_RenderName == "opengl") s.append(GL_Array[vtype]);
 
         s.append("\0\0");
 
