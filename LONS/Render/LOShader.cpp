@@ -49,7 +49,7 @@ std::string CreateLonsShader(int vtype) {
 
 		if (G_RenderName == "opengles2") s.append(GLES2_Array[vtype]);
 		else if(G_RenderName == "opengl") s.append(GL_Array[vtype]);
-
+		//printf(s.c_str() + 4);
         s.append("\0\0");
 
 		return s;

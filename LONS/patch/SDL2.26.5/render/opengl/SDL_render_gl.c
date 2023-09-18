@@ -1106,12 +1106,16 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
         data->drawstate.blend = blend;
     }
 
+    //LONS add it,we must ensure user shader be run.
+    char *lons_user_data = (char*)SDL_GetTextureUserData(cmd->data.draw.texture);
+    if (lons_user_data) data->drawstate.shader = SHADER_INVALID;
+    //LONS add end
+
     if (data->shaders && (shader != data->drawstate.shader)) {
         int isok = 0;
         //LONS add it
         //check if it's texture shader
         if (shader != SHADER_NONE && shader != SHADER_SOLID && cmd->data.draw.texture) {
-            char *lons_user_data = (char*)SDL_GetTextureUserData(cmd->data.draw.texture);
             //yes, it must do it
             if (lons_user_data && lons_user_data[2] == 0) { //lons_user_data[2] it's a flag,if it faild ,set 1
                 GL_Shader lons_shader_id = lons_user_data[0] - 1 + SHADER_LONS_USER1;
@@ -1119,7 +1123,7 @@ SetDrawState(GL_RenderData *data, const SDL_RenderCommand *cmd, const GL_Shader 
                 GL_SelectShader(data->shaders, lons_shader_id, lons_user_data);
 
                 isok = lons_user_data[3];
-                lons_user_data[3] = 0; //reset
+                //lons_user_data[3] = 0; //reset
                 if(isok == 1) data->drawstate.shader = lons_shader_id;
             }
         }

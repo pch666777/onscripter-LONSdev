@@ -1301,7 +1301,7 @@ print 1
 
 monocro #ffffff
 lsp 9,":c;>50,50,#ff00ff",10,20
-print 11,1500
+print 11,1000
 ;print 1
 
 
@@ -1317,3 +1317,5 @@ return
 debuglog "thread has run"
 
 return
+
+0x000002772da747e0
