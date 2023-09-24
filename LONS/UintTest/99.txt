@@ -3,9 +3,9 @@
 *define
 setintvar "linelog",1
 
-gosub *special_effct_test
-btnwait %0
-end
+;gosub *special_effct_test
+;btnwait %0
+;end
 
 
 delay 500
@@ -135,6 +135,9 @@ game
 stop
 delay 2000
 gosub *audio_test
+
+;单色模式及反色模式
+gosub *special_effct_test
 
 stop
 btnwait %0
@@ -1274,7 +1277,8 @@ getvoicestate %1,9
 if %1 != 0 debuglog "[dwaveplayloop]命令测试不通过"
 
 
-
+stop
+btndef clear
 lsp 10,":s/26,26,0;#ffffff音频测试完成，单击继续",300,80
 btnwait %0
 
@@ -1304,11 +1308,24 @@ lsp 9,":c;>50,50,#ff00ff",10,20
 print 11,1000
 ;print 1
 
+getpixcolor $1,33,45
+if $1 != "aaaaaa" debuglog "[monocro]命令测试不通过",$1
 
-测试继续进行。画面变化是否符合预期？ @
+测试■■■■■■■继续进行。画面应为黑白，单击继续。 @
 
 
-btnwait %0
+getpixcolor $1,46,460
+if $1 != "ffff00" debuglog "[monocro]命令测试不通过",$1
+
+
+;反色效果
+nega 2 ;反色优先
+print 1
+
+getpixcolor $1,33,45
+if $1 != "00ff00" debuglog "[monocro]命令测试不通过",$1
+getpixcolor $1,46,460
+if $1 != "ffff00" debuglog "[monocro]命令测试不通过",$1
 
 return
 

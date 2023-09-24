@@ -772,5 +772,8 @@ bool LOImageModule::CreateMonoTexture(SDL_Texture *&tex){
         Uint8 b = st_monocro & 0xff ;
         SDL_SetTextureColorMod(tex, r, g, b);
     }
+	else if (shadertype == 2) { //反色不应该存在颜色混合
+		SDL_SetTextureColorMod(tex, 255, 255, 255);
+	}
     return true ;
 }

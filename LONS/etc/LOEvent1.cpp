@@ -387,7 +387,6 @@ LOEventHook* LOEventHook::CreateVideoFinish(int fid) {
 	return e;
 }
 
-
 //LOEventHook* LOEventHook::CreateScriaptDelLayer(int fid, int vdo) {
 //	auto *e = CreateHookBase();
 //	e->catchFlag = ANSWER_SCRIPT_DO;

@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 	//某些平台可能需要一些初始化的操作
 #ifdef WIN32
 	//setlocale(LC_ALL, "gbk");
-	//LoadLibs();
+	LoadLibs();
 #endif // WIN32
 	//LOString *test = new LOString("我就拉放假啦放假啦放假啦生发剂哦啊生发剂哦啊佛啊生发剂哦啊飞机啊激发生发剂哦啊飞机哦啊飞机哦啊接哦发");
 	//std::string *bb = test;

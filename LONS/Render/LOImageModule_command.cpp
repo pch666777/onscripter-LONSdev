@@ -874,22 +874,20 @@ int LOImageModule::getpixcolorCommand(FunctionInterface *reader) {
 				break;
 			}
 		}
-		SDL_Rect rect;
-		char tmp[16];
-		memset(tmp, 0, 16);
-		rect.x = xx * G_gameScaleX;
-		rect.y = yy * G_gameScaleY;
-		rect.w = 1;
-		rect.h = 1;
-		
-		//防止帧刷新
-		SDL_LockMutex(layerQueMutex);
-		SDL_RenderReadPixels(render, &rect, SDL_PIXELFORMAT_RGB888, tmp, 4);
-		SDL_UnlockMutex(layerQueMutex);
-		int val = *(int*)(&tmp[0]);
-		sprintf(&tmp[4], "%06x", val & 0xffffff );
-		s.assign(&tmp[4]);
 	}
+	//使用截图功能
+	std::unique_ptr<LOtexture> tex(ScreenShot(xx, yy, 1, 1, 1, 1));
+	if (tex) {
+		SDL_Surface *su = tex->getSurface();
+		if (su) {
+			Uint8 r, g, b;
+			SDL_GetRGB( *(Uint32*)su->pixels, su->format, &r, &g, &b);
+			s = StringFormat(32, "%02x%02x%02x", r, g, b);
+		}
+	}
+	else s = "[getpixcolorCommand] error";
+
+
 	ONSVariableRef *v = reader->GetParamRef(0);
 	v->SetValue(&s);
 	return RET_CONTINUE;

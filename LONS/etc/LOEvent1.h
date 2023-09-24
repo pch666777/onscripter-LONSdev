@@ -195,8 +195,6 @@ public:
 	static LOEventHook* CreateVideoPlayHook(int fid, bool isclick);
 	//创建一个播放完成事件
 	static LOEventHook* CreateVideoFinish(int fid);
-	//创建一个图层事件，类型于图层被点击等
-
 	//创建一个图层清除事件，vdo = 1表示非newfile时删除图层，注意，只是进入列表，不需要print
 	//static LOEventHook* CreateScriaptDelLayer(int fid, int vdo);
 

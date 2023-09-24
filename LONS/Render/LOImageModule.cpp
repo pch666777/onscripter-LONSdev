@@ -148,7 +148,7 @@ int LOImageModule::InitImageModule() {
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 
 	//修改的SDL2代码实现了opengles2,opengl，direct3d 的单色/反色效果
-	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2");
 	window = SDL_CreateWindow(NULL, G_windowRect.x, G_windowRect.y, deviceSize.w, deviceSize.h, winflag | SDL_WINDOW_OPENGL);
 	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
