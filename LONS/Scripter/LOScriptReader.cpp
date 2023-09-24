@@ -486,6 +486,9 @@ int LOScriptReader::ContinueRun() {
 	{
 	case LINE_TEXT:
 		//输出信息
+		//if (currentLable->c_line == 0) {
+		//	ret = 0;
+		//}
 		if (G_lineLog > 0) SDL_Log("[%d]:[showtext]", currentLable->c_line);
 		//首先尝试获取TagString，然后开始获取文字内容，期间可以反复进入eval模式，直到文字开始显示
 		//遇到文字 --> pretext -->返回后进入文字显示
@@ -752,7 +755,7 @@ ONSVariableRef* LOScriptReader::ParseIntExpression(const char *&buf, bool isstrA
 
 
 //isstr决定是文字类型还是整数类型，默认都是整数类型的，文字类型只会出现在文字变量的首位置和+号之后
-ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
+ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr, bool isInDialog) { //在对话中  '/'  符号的意义是不一样的
 	const char *buf, *sbuf;
 	LOString ts;
 	double tval;
@@ -811,7 +814,12 @@ ONSVariableRef *LOScriptReader::ParseVariableBase(bool isstr) {
 
 	//检查立即处理模式的后一个对象是否为符号，符号交给表达式处理
 	buf = scriptbuf->SkipSpace(buf);
-	if (aret != 0 && ONSVariableRef::GetYFtype(buf, false) == ONSVariableRef::YF_Oper) aret = 0;
+	//如果是对话，要检查是否 '/' 符号，是的话也是终止符
+	if (aret != 0 && ONSVariableRef::GetYFtype(buf, false) == ONSVariableRef::YF_Oper) {
+		if (isInDialog && buf[0] == '/') aret = aret; //对话终止符
+		else aret = 0;
+	}
+
 	if (aret == 0) {
 		buf = sbuf;
 		ONSVariableRef *v = ParseIntExpression(buf, isstr);

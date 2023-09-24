@@ -732,7 +732,7 @@ void LOScriptReader::TextPushParams() {
 		else if (buf[0] == '$' || buf[0] == '%') { //变量
 			const char *c_buf = currentLable->c_buf;
 			currentLable->c_buf = buf;
-			ONSVariableRef *v = ParseVariableBase(buf[0] == '$');
+			ONSVariableRef *v = ParseVariableBase(buf[0] == '$', true);
 			if (v) {
 				LOString *ss = v->GetStr();
 				if (ss) text.append(ss->c_str(), ss->length());

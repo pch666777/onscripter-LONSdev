@@ -140,7 +140,7 @@ public:
 	bool NextStartFromStrVal();
 	
 	
-	ONSVariableRef *ParseVariableBase(bool isstr);
+	ONSVariableRef *ParseVariableBase(bool isstr, bool isInDialog = false);
 	ONSVariableRef* TryNextNormalWord();
 	int ParseIntVariable();
 	LOString ParseStrVariable();
