@@ -777,3 +777,14 @@ bool LOImageModule::CreateMonoTexture(SDL_Texture *&tex){
 	}
     return true ;
 }
+
+
+void LOImageModule::GetModValue(int vtype, void *val) {
+	switch (vtype){
+	case MODVALUE_PAGEEND:
+		*(int*)val = sayState.pageEnd;
+		break;
+	default:
+		break;
+	}
+}

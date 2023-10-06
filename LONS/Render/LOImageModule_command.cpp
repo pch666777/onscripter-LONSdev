@@ -544,11 +544,20 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 	//}
 
 	LOString text = reader->GetParamStr(0);
-	sayState.pageEnd = reader->GetParamInt(1);
-	//是不是添加模式只看原来有没有缓存的文字
+
+	//需要判断 '/' 的情况
+	//如果上一个符号是'/'那么本次显示应该是printName队列，以便刷新 '/' 之间的图像载入命令
+	int lastPageEnd = sayState.pageEnd;
 	bool isadd = sayState.say.length() > 0;
-	//texec标记只是决定新添加的文字是否换行
-	if (sayState.isTexec() && isadd > 0) sayState.say.append("\n");
+	sayState.pageEnd = reader->GetParamInt(1);
+
+	if (isadd) {
+		if ((lastPageEnd & 0xff) == '/') {//正常 '/'符号是不带有 0x1000标记的，只有换行的文字才带有
+			if(lastPageEnd & 0x1000) sayState.say.append("\n");
+		}
+		else if(sayState.isTexec()) sayState.say.append("\n");
+	}
+
 	sayState.say.append(text);
 	sayState.say.SetEncoder(text.GetEncoder());
 	//注意总是有文字被改变
@@ -560,7 +569,8 @@ int LOImageModule::textCommand(FunctionInterface *reader) {
 		reader->waitEventQue.push_N_back(ac->hook);
 	}
 
-	EnterTextDisplayMode(true);  //will display here
+	if ((lastPageEnd & 0xff) == '/') EnterTextDisplayMode(true, reader->GetPrintName());
+	else EnterTextDisplayMode(true);  //will display here
 
 	//after show text
 	//if (fontManager->rubySize[2] == LOFontManager::RUBY_LINE) fontManager->rubySize[2] = LOFontManager::RUBY_OFF;
@@ -688,7 +698,7 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 	//换页清除
 	if (lineEnd == '\\') {
 		ClearDialogText(lineEnd);
-		DialogWindowSet(0, -1, -1);
+		DialogWindowSet(0, -1, -1, "_lons");
 		sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
 	}
 	else if (lineEnd == '@') {
@@ -703,28 +713,28 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 
 int LOImageModule::texthideCommand(FunctionInterface *reader) {
 	if (reader->isName("texthide")) {
-		DialogWindowSet(0, -1, -1);
+		DialogWindowSet(0, -1, -1, "_lons");
 	}
 	else {
-		DialogWindowSet(1, -1, -1);
+		DialogWindowSet(1, -1, -1, "_lons");
 	}
 	return RET_CONTINUE;
 }
 
 int LOImageModule::textonCommand(FunctionInterface *reader) {
 	if (reader->isName("texton")) {
-		DialogWindowSet(1, 1, 1);
+		DialogWindowSet(1, 1, 1, "_lons");
 
 		//dialogDisplayMode = DISPLAY_MODE_TEXT;
 	}
 	else if (reader->isName("textclear")) {
 		ClearDialogText('\\');
-		DialogWindowSet(0, -1, -1);
+		DialogWindowSet(0, -1, -1, "_lons");
 	}
 	else { //textoff 整个对话框隐藏，包括文字
 //		pageEndFlag[1] = pageEndFlag[0];
 //		ClearDialogText(pageEndFlag[0]);
-		DialogWindowSet(0, 0, 0);
+		DialogWindowSet(0, 0, 0, "_lons");
 		//实际上显示模式只跟对话框的存在与否有关，跟文字是否存在无关
 		//dialogDisplayMode = DISPLAY_MODE_NORMAL; 
 	}
@@ -1029,7 +1039,7 @@ int LOImageModule::getcursorposCommand(FunctionInterface *reader) {
 
 int LOImageModule::ispageCommand(FunctionInterface *reader) {
 	ONSVariableRef *v = reader->GetParamRef(0);
-	if (sayState.pageEnd == '\\') v->SetValue(1.0);
+	if ( (sayState.pageEnd & 0xff) == '\\') v->SetValue(1.0);
 	else v->SetValue(0.0);
 	return RET_CONTINUE;
 }

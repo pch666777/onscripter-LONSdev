@@ -115,6 +115,11 @@ public:
 		//MODULE_FLAGE_MOVETO = 0x10000,
 	};
 
+	//跨越模块取变量枚举
+	enum {
+		MODVALUE_PAGEEND = 1,
+	};
+
 	////本质上就是一个大型状态机，将需要设置的状态集中起来，便于管理
 	//enum {
 	//	ST_btnnowindowerase,  //显示按钮的时候，不消除文字窗口的显示
@@ -229,8 +234,8 @@ public:
 	virtual intptr_t GetSDLRender() { return 0; }
 	virtual void ResetMe() { return; };
 	virtual void LoadFinish() { return; };
-        //简单的事件，比如想要在脚本线程更改渲染线程模块的变量，避免头文件相互依赖
-        virtual void SimpleEvent(int e, void *data){return ;}
+    //简单的事件，比如想要在脚本线程更改渲染线程模块的变量，避免头文件相互依赖
+    virtual void SimpleEvent(int e, void *data){return ;}
 	virtual int RunFunc(LOEventHook *hook, LOEventHook *e) { return 0; }
 	//virtual int DoMustEvent(int val) { return 0; }
 	int RunFuncBase(LOEventHook *hook, LOEventHook *e);
@@ -240,6 +245,8 @@ public:
 	virtual void ClearBtndef() { return; };
 	virtual void Serialize(BinArray *bin) { return; };
 	virtual bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) { return false; };
+	//跨越模块获取变量
+	virtual void GetModValue(int vtype, void *val) {};
 
 	//===== scripter virtual  ========
 	virtual void GetGameInit(int &w, int &h) { return; };

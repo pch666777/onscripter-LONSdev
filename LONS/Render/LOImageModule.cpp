@@ -1347,28 +1347,29 @@ LOEffect* LOImageModule::GetEffect(int id) {
 }
 
 
-void LOImageModule::EnterTextDisplayMode(bool force) {
+void LOImageModule::EnterTextDisplayMode(bool force, const char* printName) {
 	//TextDispaly在DialogWindowSet中自动设置
 	if (!sayState.isTextDispaly() || force) {
-		DialogWindowSet(1, 1, 1);
+		DialogWindowSet(1, 1, 1, printName);
 	}
 }
 
 
-void LOImageModule::LeveTextDisplayMode(bool force) {
+void LOImageModule::LeveTextDisplayMode(bool force, const char* printName) {
 	//增加TextDispaly模式，减少频繁判断
 	if (sayState.isTextDispaly() && (force || sayState.isPrinHide())) {
-		DialogWindowSet(0, 0, 0);
+		DialogWindowSet(0, 0, 0, printName);
 	}
 }
 
 //控制对话框和文字的显示状态，负数表示不改变，0隐藏，1显示
-void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
+void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp, const char* printName) {
 	int fullid, index, haschange = 0;
+
 	//文字显示
 	if (showtext >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_TEXT, 255, 255);
-		if (SetLayerShow(showtext, fullid, "_lons")) haschange |= 1;
+		if (SetLayerShow(showtext, fullid, printName)) haschange |= 1;
 		//注意检查是否文字已经被改变
 		if (sayState.FLAGS_TEXT_CHANGE) haschange |= 1;
 	}
@@ -1377,20 +1378,20 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 	if (showwin >= 0) {
 		fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
 		if (showwin > 0 && sayState.isWindowChange()) {
-			LoadDialogWin();
+			LoadDialogWin(printName);
 			haschange |= 2;
 		}
 
-		if (SetLayerShow(showwin, fullid, "_lons")) haschange |= 2;
+		if (SetLayerShow(showwin, fullid, printName)) haschange |= 2;
 	}
 	//文字后的符号显示
 	if (haschange > 1) {
-		DialogWindowPrint();
+		DialogWindowPrint(printName);
 		sayState.unSetFlags(LOSayState::FLAGS_WINDOW_CHANGE);
 		sayState.unSetFlags(LOSayState::FLAGS_TEXT_CHANGE);
 	}
 	else if (haschange == 1) {
-		ExportQuequ("_lons", NULL, true);
+		ExportQuequ(printName, NULL, true);
 		sayState.unSetFlags(LOSayState::FLAGS_TEXT_CHANGE);
 	}
 
@@ -1401,10 +1402,10 @@ void LOImageModule::DialogWindowSet(int showtext, int showwin, int showbmp) {
 }
 
 //加载对话框
-bool LOImageModule::LoadDialogWin() {
+bool LOImageModule::LoadDialogWin(const char *printName) {
 	int fullid = GetFullID(LOLayer::LAYER_DIALOG, LOLayer::IDEX_DIALOG_WINDOW, 255, 255);
 	if ( sayWindow.winstr.length() > 0) {
-		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
+		LOLayerData *info = CreateNewLayerData(fullid, printName);
 		//loadSpCore(info, sayWindow.winstr, sayWindow.x + sayStyle.xruby, sayWindow.y + sayStyle.yruby, 255, true);
 		loadSpCore(info, sayWindow.winstr, sayWindow.x, sayWindow.y, 255, true);
 		if (info->bak.texType == LOtexture::TEX_COLOR_AREA) {
@@ -1416,7 +1417,7 @@ bool LOImageModule::LoadDialogWin() {
 		}
 	}
 	else {
-		LOLayerData *info = CreateNewLayerData(fullid, "_lons");
+		LOLayerData *info = CreateNewLayerData(fullid, printName);
 		info->bak.SetDelete();
 	}
 	return true;
@@ -1441,15 +1442,15 @@ bool LOImageModule::SetLayerShow(bool isVisi, int fullid, const char *printName)
 
 
 
-void LOImageModule::DialogWindowPrint() {
+void LOImageModule::DialogWindowPrint(const char *printName) {
 	LOEffect *ef = nullptr;
 	if (sayState.winEffect) {
 		ef = new LOEffect;
 		ef->CopyFrom(sayState.winEffect.get());
-		ExportQuequ("_lons", ef, true);
+		ExportQuequ(printName, ef, true);
 		delete ef;
 	}
-	else ExportQuequ("_lons", nullptr, true);
+	else ExportQuequ(printName, nullptr, true);
 }
 
 //文字显示进入队列

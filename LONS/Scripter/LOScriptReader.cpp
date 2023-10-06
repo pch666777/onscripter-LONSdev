@@ -493,8 +493,15 @@ int LOScriptReader::ContinueRun() {
 		//首先尝试获取TagString，然后开始获取文字内容，期间可以反复进入eval模式，直到文字开始显示
 		//遇到文字 --> pretext -->返回后进入文字显示
 		TagString = scriptbuf->GetTagString(currentLable->c_buf);
-		//TextPushParams(currentLable->c_buf);
-		ReadyToRun(&userGoSubName[USERGOSUB_PRETEXT], LOScriptPoint::CALL_BY_PRETEXT_GOSUB);
+		// '/'只有首次显示才执行pretextgosub
+		//line_text执行pretextgosub --> ReturnEvent执行textcommand --> 等待事件完成，执行textgosub
+		imgeModule->GetModValue(MODVALUE_PAGEEND, &callby);
+		if ((callby & 0xff) == '/') { //直接进入textcommand
+			TextPushParams();
+			ret = imgeModule->textCommand(this);
+			ClearParams(false);
+		}
+		else ReadyToRun(&userGoSubName[USERGOSUB_PRETEXT], LOScriptPoint::CALL_BY_PRETEXT_GOSUB);
 		return RET_CONTINUE;
 	case LINE_CAMMAND:
 		ret = RunCommand(currentLable->c_buf);
@@ -1769,7 +1776,11 @@ int LOScriptReader::RunFuncBtnSetVal(LOEventHook *hook) {
 
 //文字显示完成，进入textgosub
 int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
-	ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
+	// '\''@'才进入等待，'/'不进入等待
+	int pageEnd = 0;
+	imgeModule->GetModValue(MODVALUE_PAGEEND, &pageEnd);
+	if((pageEnd&0xff) != '/') ReadyToRun(&userGoSubName[USERGOSUB_TEXT], LOScriptPoint::CALL_BY_TEXT_GOSUB);
+
 	hook->InvalidMe();
     //关闭rubyline模式
     imgeModule->SimpleEvent(SIMPLE_CLOSE_RUBYLINE, nullptr) ;

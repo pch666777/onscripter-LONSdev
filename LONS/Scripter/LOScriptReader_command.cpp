@@ -681,29 +681,49 @@ int LOScriptReader::linepageCommand(FunctionInterface *reader) {
 
 //返回的是增加的行数
 void LOScriptReader::TextPushParams() {
-	int currentEndFlag = '/';
+	//1. '\'总是换行，启用了换行文字等待也是换行。
+	//2. @不清除文本，是否换行根据 @之后是否紧跟 \n（忽略空格）
+	//3. '/'为忽略换行符，忽略之后下一行通常用来写命令，可以在文字显示的过程中执行。
+	//4. 可以直接在下一行文字写入需要执行的命令，后再接文字，这样可以换行显示。
+	
+	//斜杠换行测试1。 /
+	//lsp 30, "data\3.jpg", 0, 40
+	//中间夹了忽略换行的符号。
+	//csp - 1
+	//这次是不忽略换行的\
 
 	//获取要显示的文字
+	int currentEndFlag = '/';
+
 	LOString text;
 	text.SetEncoder(scriptbuf->GetEncoder());
 	const char* buf = scriptbuf->SkipSpace(currentLable->c_buf);
 
 	while (true) {
-		if (buf[0] == '\\') {  //强结束符
+		if (buf[0] == '\\') {  //换页，换不换行没有意义了。
 			currentEndFlag = buf[0];
+			currentEndFlag |= 0x1000; //换行符号
 			buf++;
 			break;
 		}
-		else if (buf[0] == '@') {
+		else if (buf[0] == '@') { //等待点击，是否换行要看后面是否换行
 			currentEndFlag = buf[0]; //将检查下一个符号是否 \n，\n遇到texec时从下一行开始，否则接着开始
 			buf++;
 			const char *obuf = scriptbuf->SkipSpace(buf);
 			if (obuf[0] == '\n' || obuf[0] == ';') currentEndFlag |= 0x1000; //换行符号
 			break;
 		}
-		else if (buf[0] == '/') {
+		else if (buf[0] == '/') { //忽略换行符，会检查下一行，如果下一行是全角，则继续，否则进入文字显示（不等待点击）
 			currentEndFlag = buf[0];
 			buf++;
+			const char *obuf = scriptbuf->SkipSpace(buf);
+			if (obuf[0] == '\n') obuf++;
+
+			if (scriptbuf->ThisCharLen(obuf) > 1) {
+				buf = obuf;
+				continue;  //继续
+			}
+
 			break;
 		}
 		else if (buf[0] == '\n') {
@@ -711,6 +731,7 @@ void LOScriptReader::TextPushParams() {
 			currentLable->c_line++;
 			if (st_linePageFlag) { //换行视为句子结束
 				currentEndFlag = '\\';
+				currentEndFlag |= 0x1000; //换行符号
 				break;
 			}
 			else {
@@ -718,8 +739,10 @@ void LOScriptReader::TextPushParams() {
 				buf = scriptbuf->SkipSpace(buf);
 				if (scriptbuf->ThisCharLen(buf) == 1) {
 					currentEndFlag = '/';
+					currentEndFlag |= 0x1000; //换行符号
 					break;
 				}
+				else text.append("\n");
 			}
 		}
 		else if (buf[0] == '\0') {//end of text

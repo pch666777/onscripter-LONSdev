@@ -102,6 +102,8 @@ public:
 			FLAGS_WINDOW_CHANGE = 128 ,
 			FLAGS_TEXT_CHANGE = 256,
 			FLAGS_TEXT_DISPLAY = 512,
+			//
+			FLAGS_TEXT_PRINTQUE = 1024, //对话将使用printName队列刷新
 		};
 		//当前显示的对话文字
 		LOString say;
@@ -180,15 +182,15 @@ public:
 	bool ParseImgSP(LOLayerDataBase *bak, LOString *tag, const char *buf);
 
 	LOActionText* LoadDialogText(LOString *s,int pageEnd,  bool isAdd);
-	bool LoadDialogWin();
+	bool LoadDialogWin(const char *printName);
 	bool SetLayerShow(bool isVisi, int fullid, const char *printName);
 	void ClearBtndef();
     void SimpleEvent(int e, void *data);
 
-	void DialogWindowSet(int showtext, int showwin, int showbmp);
-	void DialogWindowPrint();
-	void EnterTextDisplayMode(bool force = false);
-	void LeveTextDisplayMode(bool force = false);
+	void DialogWindowSet(int showtext, int showwin, int showbmp, const char* printName);
+	void DialogWindowPrint(const char *printName);
+	void EnterTextDisplayMode(bool force = false, const char* printName = "_lons");
+	void LeveTextDisplayMode(bool force = false, const char* printName = "_lons");
 	void ClearDialogText(char flag);
 	void RunExbtnStr(LOString *s);
 	int RunFunc(LOEventHook *hook, LOEventHook *e);
@@ -209,6 +211,8 @@ public:
 	void PrintError(LOString *err);
 	void ResetMe();
 	void LoadReset();
+
+	void GetModValue(int vtype, void *val);
 
 	void Serialize(BinArray *bin);
 	//序列化print执行队列
