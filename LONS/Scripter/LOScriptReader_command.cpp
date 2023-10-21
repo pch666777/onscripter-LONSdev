@@ -1336,3 +1336,18 @@ void LOScriptReader::ReadSaveInfo(int id) {
 	}
     else SDL_Log("can't read save file [save%d.datl]", id);
 }
+
+
+//呼叫系统功能
+int LOScriptReader::systemcallCommand(FunctionInterface *reader) {
+	LOString cmd = reader->GetParamStr(0);
+	cmd = cmd.toLower();
+	if (cmd == "automode") {  //自动模式
+		cmd = "";
+	}
+	else {
+		SDL_Log("[systemcall %s] not support!", cmd.c_str());
+	}
+
+	return RET_CONTINUE;
+}

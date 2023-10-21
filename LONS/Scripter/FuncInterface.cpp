@@ -122,6 +122,7 @@ static FunctionInterface::FuncLUT func_lut[] = {
 
 	{"savetime",   "i,I,I,I,I","Y,Y,Y,Y,Y",&FunctionInterface::savetimeCommand},
 	{"getsavestr", "S,i",     "Y,Y",       &FunctionInterface::getsavestrCommand},
+	{"systemcall",   "Ns",    "Y",         &FunctionInterface::systemcallCommand},
 
 	{"pretextgosub", "L",     "Y",         &FunctionInterface::usergosubCommand},
 	{"textgosub",    "L",     "Y",         &FunctionInterface::usergosubCommand},

@@ -294,6 +294,7 @@ public:
 	int getsavestrCommand(FunctionInterface *reader);
 	int linepageCommand(FunctionInterface *reader);
 	int movieCommand(FunctionInterface *reader);
+	int systemcallCommand(FunctionInterface *reader);
 
 private:
 	static std::unordered_map<std::string, int> numAliasMap;   //整数别名
