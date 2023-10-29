@@ -287,12 +287,13 @@ public:
 	int humanorderCommand(FunctionInterface *reader);
 	int captionCommand(FunctionInterface *reader);
 	int textspeedCommand(FunctionInterface *reader);
-        int actionCommand(FunctionInterface *reader);
-        int actionloopCommand(FunctionInterface *reader);
+    int actionCommand(FunctionInterface *reader);
+    int actionloopCommand(FunctionInterface *reader);
 	int monocroCommand(FunctionInterface *reader);
 	int negaCommand(FunctionInterface *reader);
-        int textcolorCommand(FunctionInterface *reader) ;
-        int automode_timeCommand(FunctionInterface *reader);
+    int textcolorCommand(FunctionInterface *reader) ;
+    int automode_timeCommand(FunctionInterface *reader);
+	int isskipCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;

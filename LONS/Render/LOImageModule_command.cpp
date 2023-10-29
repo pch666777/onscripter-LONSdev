@@ -5,6 +5,8 @@
 #include "../etc/LOIO.h"
 #include "LOImageModule.h"
 
+extern bool st_skipflag;
+
 //#if defined(__WINDOWS__) || defined(_WIN32) || defined(WIN32) || defined(_WIN64) || \
 //    defined(WIN64) || defined(__WIN32__) || defined(__TOS_WIN__)
 //#include <Windows.h>
@@ -1456,4 +1458,10 @@ int LOImageModule::automode_timeCommand(FunctionInterface *reader){
     return RET_CONTINUE;
 }
 
-
+int LOImageModule::isskipCommand(FunctionInterface *reader) {
+	ONSVariableRef *v = reader->GetParamRef(0);
+	if (st_skipflag) v->SetValue(1.0);
+	else if (st_automode) v->SetValue(2.0);
+	else v->SetValue(0.0);
+	return RET_CONTINUE;
+}
