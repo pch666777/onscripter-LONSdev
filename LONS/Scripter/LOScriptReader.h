@@ -205,6 +205,7 @@ public:
 	bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap);
 	BinArray *ReadSaveFile(int id, int readLen);
 	void      ReadSaveInfo(int id);
+        void GetModValue(int vtype, void *val);
 
 	//需要用到脚本的函数，因此运行点的反序列化放在这里，point为null
 	bool ScCallDeSerialize(BinArray *bin, int *pos);
@@ -324,6 +325,8 @@ private:
 	LOScriptReader *activeReader;          //当前激活的脚本
 	LOString TagString;  //显示文字前的tag
 	std::vector<LOString> cselList;
+
+        int autoModeTime;  //auto模式下应该等待的时间
 	
 	//LOScriptPoint* GetScriptPoint(LOString lname);
 	int GetCurrentLableIndex();

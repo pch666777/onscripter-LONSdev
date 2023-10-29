@@ -213,6 +213,7 @@ public:
 	void LoadReset();
 
 	void GetModValue(int vtype, void *val);
+        void SetModValue(int vtype, intptr_t val);
 
 	void Serialize(BinArray *bin);
 	//序列化print执行队列
@@ -291,10 +292,13 @@ public:
 	int monocroCommand(FunctionInterface *reader);
 	int negaCommand(FunctionInterface *reader);
         int textcolorCommand(FunctionInterface *reader) ;
+        int automode_timeCommand(FunctionInterface *reader);
 
 private:
 	static bool isShowFps;
 	static bool st_filelog;  //是否使用文件记录
+        static bool st_automode;  //是否处于自动模式
+        static int st_automode_time; //自动模式下的最小时间
 
 	//lsp时使用的样式
 	LOTextStyle spStyle;

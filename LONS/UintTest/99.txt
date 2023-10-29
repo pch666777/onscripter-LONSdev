@@ -20,7 +20,7 @@ gettimer %1
 debuglog %1
 
 
-;gosub *audio_test
+gosub *auto_test
 
 debuglog "分辨率是否是1024*576？"
 
@@ -1342,4 +1342,27 @@ debuglog "thread has run"
 
 return
 
-0x000002772da747e0
+*auto_test
+;automode_time 3000
+systemcall automode
+goto *auto_test1
+
+mov $2,"一秒后自动切换"
+for %1 = 0 to 10
+$2 \
+add $2,"测试"
+next
+
+准备测试有声音的自动没模式。 \
+
+*auto_test1
+automode_time 1000
+dwave 0,"data\SRA_SYS02.ogg"
+resettimer
+语音结束及自动前进。 \
+gettimer %0
+if %0 > 3000 debuglog "[automode]测试不通过",%0
+automode_time 0
+测试结束，点击继续。 \
+end
+return

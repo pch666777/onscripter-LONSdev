@@ -118,6 +118,9 @@ public:
 	//跨越模块取变量枚举
 	enum {
 		MODVALUE_PAGEEND = 1,
+                MODVALUE_TEXTSPEED ,
+                MODVALUE_AUTOMODE,
+                MODVALUE_CHANNEL_STATE,  //频道的播放状态
 	};
 
 	////本质上就是一个大型状态机，将需要设置的状态集中起来，便于管理
@@ -247,6 +250,7 @@ public:
 	virtual bool DeSerialize(BinArray *bin, int *pos, LOEventMap *evmap) { return false; };
 	//跨越模块获取变量
 	virtual void GetModValue(int vtype, void *val) {};
+        virtual void SetModValue(int vtype, intptr_t val){};
 
 	//===== scripter virtual  ========
 	virtual void GetGameInit(int &w, int &h) { return; };
@@ -326,6 +330,7 @@ public:
 	virtual int getsavestrCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int linepageCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 	virtual int systemcallCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
+        virtual int automode_timeCommand(FunctionInterface *reader) { return RET_VIRTUAL; }
 
 	virtual int movieCommand(FunctionInterface *reader) { return RET_VIRTUAL; };
 	virtual int aviCommand(FunctionInterface *reader) { return RET_VIRTUAL; };

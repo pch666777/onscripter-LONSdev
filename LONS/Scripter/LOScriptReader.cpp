@@ -1790,6 +1790,13 @@ int LOScriptReader::RunFuncSayFinish(LOEventHook *hook) {
 	return 0;
 }
 
+void LOScriptReader::GetModValue(int vtype, void *val){
+    switch (vtype) {
+    case MODVALUE_AUTOMODE:
+        break;
+    }
+}
+
 
 void LOScriptReader::Serialize(BinArray *bin) {
 	int len = bin->WriteLpksEntity("scri", 0, 1);

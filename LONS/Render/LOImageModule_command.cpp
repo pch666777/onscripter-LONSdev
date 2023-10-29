@@ -638,6 +638,18 @@ int LOImageModule::btnwaitCommand(FunctionInterface *reader) {
     else data->bak.SetBtndef(nullptr, 0, true, true);
 	ExportQuequ(prin_name, nullptr, true);
 
+    //textbtnwait需要考虑是否位于automode状态
+    if(reader->isName("textbtnwait")){
+        int zeroPlay = 0 ;
+        if(st_automode){//自动模式要检测是否正在播放，正在播放则不设置时间延迟，否则设置时间延迟
+            if(audioModule) audioModule->GetModValue(MODVALUE_CHANNEL_STATE, &zeroPlay);
+            if(zeroPlay == 1){
+                btnUseSeOver = true;
+                btnOverTime = 0;
+            }
+            else btnOverTime = st_automode_time;
+        }
+    }
 	//有btntime的话我们希望能比较准确的确定时间，因此要扣除print 1花费的时间
 	//要排除btnOverTime很小的情况，这可能导致无法接收到点击事件
 	pos = SDL_GetTicks() - timesnap;
@@ -1435,6 +1447,12 @@ int LOImageModule::textcolorCommand(FunctionInterface *reader){
 //    Uint8 r = sayStyle.fontColor.r;
 //    Uint8 g = sayStyle.fontColor.g;
 //    Uint8 b = sayStyle.fontColor.b;
+    return RET_CONTINUE;
+}
+
+int LOImageModule::automode_timeCommand(FunctionInterface *reader){
+    st_automode_time = reader->GetParamInt(0);
+    SDL_Log("auto time:%d", st_automode_time);
     return RET_CONTINUE;
 }
 

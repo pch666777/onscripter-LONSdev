@@ -233,6 +233,9 @@ void LOImageModule::CaptureEvents(SDL_Event *event) {
 		//按下ctrl键，快进
 		if (event->key.keysym.sym == SDL_KeyCode::SDLK_LCTRL || event->key.keysym.sym == SDL_KeyCode::SDLK_RCTRL) {
 			st_skipflag = true;
+            //快进会退出auto模式
+            st_automode = false ;
+            btnOverTime = 0 ;
 			//所有print特性都改为print 1
 			//textbtnwait立即完成，文字滚动特效改为立即完成，延迟类命令无效
 		}
@@ -440,14 +443,23 @@ int LOImageModule::RunFuncBtnFinish(LOEventHook *hook, LOEventHook *e) {
 		ev.reset(new LOEventHook());
 		e = ev.get();
 		e->PushParam(new LOVariant(-1));
-		//btnval的超时值为-2
-		e->PushParam(new LOVariant(-2));
+        //btnval的超时值为-2，自动模式时为0
+        if(st_automode) e->PushParam(new LOVariant(0));
+        else e->PushParam(new LOVariant(-2));
 	}
 
 	if (e->catchFlag == LOEventHook::ANSWER_SEPLAYOVER) {
 		//没有满足要求
 		if (e->param1 != hook->GetParam(LOEventHook::PINDS_SE_CHANNEL)->GetInt()) return LOEventHook::RUNFUNC_CONTINUE;
 	}
+
+    //来自点击的事件会推出automode模式
+    if(st_automode){
+        if(e->catchFlag & (LOEventHook::ANSWER_LEFTCLICK|LOEventHook::ANSWER_RIGHTCLICK|LOEventHook::ANSWER_BTNCLICK)){
+            st_automode = false ;
+            btnOverTime = 0 ;
+        }
+    }
 	//要确定是否清除btndef
 	if (strcmp(hook->GetParam(LOEventHook::PINDS_CMD)->GetChars(nullptr), "btnwait2") != 0) {
 		if (e->GetParam(1)->GetInt() > 0)
@@ -784,7 +796,19 @@ void LOImageModule::GetModValue(int vtype, void *val) {
 	case MODVALUE_PAGEEND:
 		*(int*)val = sayState.pageEnd;
 		break;
+    case MODVALUE_AUTOMODE:
+        *(bool*)val = st_automode ;
+        break;
 	default:
 		break;
 	}
+}
+
+
+void LOImageModule::SetModValue(int vtype, intptr_t val){
+    switch (vtype) {
+    case MODVALUE_AUTOMODE:
+        st_automode = (bool)val;
+        break ;
+    }
 }

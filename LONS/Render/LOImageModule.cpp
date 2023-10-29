@@ -12,6 +12,8 @@
 
 bool LOImageModule::isShowFps = false;
 bool LOImageModule::st_filelog;  //是否使用文件记录
+bool LOImageModule::st_automode = false ;  //自动模式
+int LOImageModule::st_automode_time = 1000 ; //自动模式无语音时的等待时间ms
 extern void FatalError(const char *fmt, ...);
 extern void AudioDoEvent();
 extern bool st_skipflag;

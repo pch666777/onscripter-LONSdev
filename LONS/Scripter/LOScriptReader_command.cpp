@@ -773,6 +773,14 @@ void LOScriptReader::TextPushParams() {
 
 	text = text.TrimEnd();
 
+    //auto模式下应该等待的时间
+//    if(text.length() > 0){
+//        int tim = 0;
+//        GetModValue(MODVALUE_TEXTSPEED, &tim) ;
+//        tim *= (text.length() / 2 + 2);
+//    }
+
+
 	ONSVariableRef *v1 = new ONSVariableRef();
 	//if (text.length() > 0) ExpandStr(text);
 	v1->SetImVal(&text);
@@ -1343,7 +1351,7 @@ int LOScriptReader::systemcallCommand(FunctionInterface *reader) {
 	LOString cmd = reader->GetParamStr(0);
 	cmd = cmd.toLower();
 	if (cmd == "automode") {  //自动模式
-		cmd = "";
+        imgeModule->SetModValue(MODVALUE_AUTOMODE, (intptr_t)true) ;
 	}
 	else {
 		SDL_Log("[systemcall %s] not support!", cmd.c_str());

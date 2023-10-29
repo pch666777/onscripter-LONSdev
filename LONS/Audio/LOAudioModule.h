@@ -54,6 +54,7 @@ public:
 	int InitAudioModule();
 	int SendAudioEventToQue(int channel);
 	void DoTimerEvent();
+        void GetModValue(int vtype, void *val);
 
 	void SetFlags(int f) { flags |= f; }
 	void UnsetFlags(int f) { flags &= (~f); }

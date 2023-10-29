@@ -775,8 +775,11 @@ int LOAudioModule::SendAudioEventToQue(int channel) {
 				//很可能在另一个线程中，注意线程安全！
 				if (hook->enterUntillEdit()) {  //能进去编辑模式说明获取到锁了
 					hook->PushParam(new LOVariant(-1));
-					//播放完成的值是-2
-					hook->PushParam(new LOVariant(-2));
+                    //播放完成的值是-2，自动模式时为0
+                    bool isauto = false ;
+                    imgeModule->GetModValue(MODVALUE_AUTOMODE, &isauto);
+                    if(isauto) hook->PushParam(new LOVariant(0));
+                    else hook->PushParam(new LOVariant(-2));
 					hook->FinishMe();
 				}
 			}
@@ -794,4 +797,18 @@ int LOAudioModule::SendAudioEventToQue(int channel) {
 	//事件处理完成后要判断是否应该恢复bgm音量
 
 	return state;
+}
+
+
+void LOAudioModule::GetModValue(int vtype, void *val){
+    int v1 ;
+    switch (vtype) {
+    case MODVALUE_CHANNEL_STATE:
+        v1 = *(int*)val ;
+        if(v1 >= 0 && v1 < INDEX_MUSIC){
+            //没有在播放则返回0
+            *(int*)val = Mix_Playing(v1) ;
+        }
+        break;
+    }
 }
