@@ -74,6 +74,7 @@ set(SRCFILES1
         ./Render/LOMatrix2d.cpp
         ./Render/LOTextDescribe.cpp
         ./Render/LOTexture.cpp
+        ./Render/LOShader.cpp
 
         ./Scripter/FuncInterface.cpp
         ./Scripter/LOScriptPoint.cpp
