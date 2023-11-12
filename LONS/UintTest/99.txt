@@ -20,7 +20,7 @@ gettimer %1
 debuglog %1
 
 
-gosub *auto_test
+;gosub *auto_test
 
 debuglog "分辨率是否是1024*576？"
 

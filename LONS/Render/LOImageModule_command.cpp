@@ -717,7 +717,7 @@ int LOImageModule::texecCommand(FunctionInterface *reader) {
 	}
 	else if (lineEnd == '@') {
 		//换页不清除，但是句子的结束是 \n，那么下一行还是要换页的
-		if (sayState.pageEnd & 0xff00 == 0x1000) sayState.setFlags(LOSayState::FLAGS_TEXT_TEXEC);
+		if ((sayState.pageEnd & 0xff00) == 0x1000) sayState.setFlags(LOSayState::FLAGS_TEXT_TEXEC);
 		else sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
 	}
 	else sayState.unSetFlags(LOSayState::FLAGS_TEXT_TEXEC);
@@ -1006,6 +1006,7 @@ int LOImageModule::savescreenshotCommand(FunctionInterface *reader) {
 		LOIO::GetPathForWrite(s);
 		SDL_Surface *su = screenTex->getSurface();
 		if (su) {
+			s = s.RePathSymble('/'); //windows也能使用反斜杠
 			SDL_SaveBMP(screenTex->getSurface(), s.c_str());
 		}
 		if (reader->isName("savescreenshot")) {

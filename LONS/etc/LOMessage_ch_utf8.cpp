@@ -1,4 +1,7 @@
-﻿const char *msg_has_run = "LONS已经从main()函数启动！";
+﻿#pragma execution_character_set("utf-8")
+//vc++环境下必须提示编译器按utf8读取此文件
+
+const char *msg_has_run = "LONS已经从main()函数启动！";
 const char *msg_work_dir_is = "LONS的工作目录是：";
 const char *msg_base_int_no = "基本数据类型[int]不满足要求！";
 const char *msg_base_double_no = "基本数据类型[double]不满足要求！";;
